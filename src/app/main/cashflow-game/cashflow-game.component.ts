@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { AfterViewChecked, Component, OnDestroy } from '@angular/core';
 import { CommonModule, formatNumber } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +19,7 @@ import {
   doodadAccount,
   MARKET_COST_ACCOUNT,
   propertyCardTypes,
+  moveToken,
   savedGameStatus,
   summarizeGameFinances,
   toMinorUnits,
@@ -47,6 +48,7 @@ import {
   CashflowCardTextService,
 } from 'src/app/shared/services/cashflow-card-text.service';
 import { CashflowCardPlanText } from 'src/app/shared/services/cashflow-game.service';
+import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import {
   APP_LANGUAGES,
   AppLanguage,
@@ -57,7 +59,7 @@ import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
-import { RatRaceBoardComponent, SPACE_GLYPHS } from './rat-race-board.component';
+import { RatRaceBoardComponent, SPACE_GLYPHS, type BoardToken } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 
 // Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
@@ -125,7 +127,7 @@ const DICE_DECISION_REST_MS = 900;
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
 })
-export class CashflowGameComponent implements OnDestroy {
+export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   static isOpen = false;
   static zIndex = 0;
   static instance: CashflowGameComponent;
@@ -155,8 +157,15 @@ export class CashflowGameComponent implements OnDestroy {
    * `'payLoan'` and `'history'` each hide everything else and show only that step, with a way back.
    */
   dashboardView:
-    'main' | 'dealPile' | 'cards' | 'bankLoan' | 'payLoan' | 'history' | 'games' | 'confirmSpace' =
-    'main';
+    | 'main'
+    | 'dealPile'
+    | 'cards'
+    | 'bankLoan'
+    | 'payLoan'
+    | 'history'
+    | 'games'
+    | 'confirmSpace'
+    | 'table' = 'main';
 
   constructor(
     private router: Router,
@@ -171,8 +180,16 @@ export class CashflowGameComponent implements OnDestroy {
   ) {
     CashflowGameComponent.instance = this;
     document.addEventListener('click', this.onAnyClick, true);
+    // the table layer floats its telling at the top only where the wheel is not there to hold it
+    RemoteGameHook.ringVisible = () =>
+      CashflowGameComponent.isOpen && this.dashboardView === 'main' && this.isSolo;
     // Paying a dice card (gold coins) brings the player here, to the decision.
     this.cashflowGameService.decisionNeeded$?.subscribe(() => this.showOpenDecision());
+    // The game ended with a move (the winning buy made from Grow ...): the dashboard shows the result, the player need not look for it.
+    this.cashflowGameService.gameEnded$?.subscribe(() => {
+      CashflowGameComponent.open();
+      this.backToMain();
+    });
   }
 
   /** Opens the game dashboard on its main view, where the open dice decision stands out. */
@@ -192,6 +209,15 @@ export class CashflowGameComponent implements OnDestroy {
     CashflowGameComponent.instance?.appData.loadCashflowGameData();
     // The list of saved games is small and always shown on the start screen.
     CashflowGameComponent.instance?.savedGames.refresh().catch(() => undefined);
+  }
+
+  /** The list of saved games (solo and played with others), the same as the one in the solo game - for the multiplayer lobby. */
+  static openGamesList(): void {
+    CashflowGameComponent.open();
+    const screen = CashflowGameComponent.instance;
+    if (!screen) return;
+    if (screen.hasActiveGame) screen.openGames();
+    else screen.openStartGames();
   }
 
   /** Bumps this panel above every other panel, same convention as Add/Info/Menu. */
@@ -225,6 +251,7 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Leaves a focused sub-view (Deal pile choice, or the Cards find/draw flow) back to the main dashboard. */
   backToMain(): void {
+    this.historyCardView = false;
     this.recordOpenCard();
     this.dashboardView = 'main';
     this.activeCard = null;
@@ -289,6 +316,29 @@ export class CashflowGameComponent implements OnDestroy {
   get currentGameSet() {
     const { gameSetId } = this.appState.cashflowGame;
     return this.gameSets.find((set) => set.id === gameSetId);
+  }
+
+  /** The open card was picked from the History to be read again: no action of the game is offered with it. */
+  historyCardView = false;
+
+  /**
+   * A card of the History is brought back on screen to read (JFK, 2026-10-17: cards go by quickly at the top, the History keeps
+   * the id of each one): the card as it was dealt, with none of its buttons.
+   */
+  showHistoryCard(cardId: string): void {
+    const decks = this.currentGameSet?.decks;
+    if (!decks) return;
+    for (const kind of ['dealSmall', 'dealBig', 'market', 'doodad'] as const) {
+      const card = (decks[kind] as { id: string }[] | undefined)?.find((c) => c.id === cardId);
+      if (!card) continue;
+      this.activeDeckKind = kind;
+      this.changeDeck();
+      void this.cardText.ensureLoaded();
+      this.historyCardView = true;
+      this.activeCard = card as typeof this.activeCard;
+      this.dashboardView = 'cards';
+      return;
+    }
   }
 
   /** What a card in the History was (a picked card, or the card a pass left), by its id. */
@@ -728,11 +778,40 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   get gameOver(): boolean {
-    return this.isSolo && this.soloTurn.phase === 'over' && !this.walking;
+    return !!this.remoteOver || (this.isSolo && this.soloTurn.phase === 'over' && !this.walking);
+  }
+
+  /** The menu entries are rebuilt on every look: they are matched by their id, so a click always finds its button. */
+  trackById(_: number, entry: { id: string }): string {
+    return entry.id;
+  }
+
+  runTableMenuItem(item: { id: string; confirm?: string; label?: string }): void {
+    if (item.confirm) {
+      // asked in the app's own dialog, not the browser's
+      this.confirm.confirm(
+        item.confirm,
+        () => void this.remote?.runTableMenu(item.id),
+        item.label ?? 'Info.delete',
+        'delete',
+      );
+      return;
+    }
+    void this.remote?.runTableMenu(item.id);
+  }
+
+  /** A game with others that has ended (finished or closed): how it ended for the player. */
+  get remoteOver() {
+    return this.remote?.over() ?? null;
   }
 
   /** The faces on show: random ones while the dice tumble, otherwise the last roll (also after a reload). */
   get shownDice(): number[] {
+    // another player's roll being told: their dice, in the same dice
+    const other = RemoteGameHook.otherDice?.();
+    if (other) return other.faces;
+    // while it is somebody else's turn the dice are theirs: none are shown unless their roll is being told
+    if (this.remote?.turnBanner()) return [];
     if (this.diceTumbling) return this.tumbleFaces;
     if (this.decisionOutcome) return this.decisionFaces ?? [];
     if (this.decisionFaces) return this.decisionFaces;
@@ -759,6 +838,7 @@ export class CashflowGameComponent implements OnDestroy {
    */
   get canRoll(): boolean {
     return (
+      (!this.remote || this.remote.canAct()) &&
       !this.isBusy &&
       !this.walking &&
       !this.appState.isLoading &&
@@ -822,9 +902,138 @@ export class CashflowGameComponent implements OnDestroy {
     return this.cashflowGameService.soloSummary();
   }
 
+  /** The game being played somewhere else (a shared table), or null for a normal solo game: its moves are sent, not worked out here. */
+  get remote(): RemoteGame | null {
+    return RemoteGameHook.current;
+  }
+
+  /** The box that tells what the others do, laid in the wheel (a game with others only). */
+  get stageBox() {
+    return RemoteGameHook.stage;
+  }
+
+  /** The tokens of everyone at the table, or none for a solo game (the board then draws the single token). */
+  get boardTokens(): BoardToken[] {
+    return RemoteGameHook.tokens?.(this.tokenPosition) ?? [];
+  }
+
+  /** The dice are tumbling: the player's own, or another player's roll being told. */
+  get dieTumbling(): boolean {
+    return this.diceTumbling || !!RemoteGameHook.otherDice?.()?.tumbling;
+  }
+
+  /** Another player's books are on screen: read only, no action of the game is offered. */
+  get viewOnly(): boolean {
+    return !!this.remote?.viewOnly();
+  }
+
+  /** What waits for the player at the place of the roll button: End turn, or Continue after selling; null when nothing does. */
+  get remoteGate() {
+    // not before the token has walked and the roll has been shown to the end
+    if (this.walking) return null;
+    return this.remote?.gate() ?? null;
+  }
+
+  /** Whose turn it is while it is not the player's own, for the place of the roll button. */
+  get turnBanner() {
+    return this.remote?.turnBanner() ?? null;
+  }
+
+  proceedGate(): void {
+    void this.remoteMove((remote) => remote.proceed());
+  }
+
+  /** The online layer shown on top of the screen while a game is played with others (a generic hook; the shared code knows nothing of it). */
+  get onlineLayer() {
+    return RemoteGameHook.layer;
+  }
+
+  /** A remote move: busy while it is on its way; a refusal is shown as the toast every refusal is. Returns whether it went through. */
+  private async remoteMove(
+    run: (remote: RemoteGame) => ReturnType<RemoteGame['roll']>,
+  ): Promise<{ type: string; seat: number | null; data?: Record<string, unknown> }[] | null> {
+    const remote = this.remote;
+    if (!remote) return null;
+    this.isBusy = true;
+    try {
+      const outcome = await run(remote);
+      if (!outcome.ok) {
+        this.toastService.show(outcome.message ?? 'The move did not go through.', 'error');
+        return null;
+      }
+      // the books of the new situation are on screen before whatever follows looks at them (the Grow page after a plan)
+      if (!RemoteGameHook.holdUpdates) RemoteGameHook.resume?.();
+      return outcome.events;
+    } finally {
+      this.isBusy = false;
+    }
+  }
+
+  /**
+   * A roll made elsewhere, shown exactly as a solo roll is: the dice tumble and come to rest on the faces the other end rolled, the
+   * token walks space by space (a Payday flashing as it is entered), and only then do the new books appear - the screen is kept
+   * on the books from before the roll until the token has landed (`holdUpdates`), so nothing shows before the animation settles.
+   */
+  private async rollRemote(dice: 1 | 2): Promise<void> {
+    const from = this.appState.cashflowGame.boardPosition;
+    this.paydayBanner = null;
+    RemoteGameHook.holdUpdates = true;
+    this.walking = true;
+    this.walkingAt = from;
+    this.skipWalking = this.reducedMotion;
+    try {
+      const events = await this.remoteMove((remote) => remote.roll(dice));
+      const rolled = events?.find((event) => event.type === 'rolled');
+      if (!rolled) return;
+      const data = rolled.data ?? {};
+      const faces = (data['dice'] as number[] | undefined) ?? [];
+      const total = Number(data['total'] ?? 0);
+      this.isBusy = true;
+      this.lastDice = faces;
+      this.paydayBanner = null;
+      await this.tumbleDice(faces.length || dice);
+      // the dice are at rest: the history line may say what was rolled (where the token lands follows when it has landed)
+      RemoteGameHook.diceRested = true;
+      const paydays = Number(data['paydays'] ?? 0);
+      this.paydaySummary = paydays
+        ? {
+            count: paydays,
+            incomeMinor: Number(data['paydayIncomeMinor'] ?? 0),
+            expensesMinor: Number(data['paydayExpensesMinor'] ?? 0),
+            netMinor:
+              Number(data['paydayIncomeMinor'] ?? 0) - Number(data['paydayExpensesMinor'] ?? 0),
+          }
+        : null;
+      if (data['openingPayday']) this.showPayday();
+      const move = total > 0 ? moveToken(this.board, from, total) : null;
+      for (const space of move?.entered ?? []) {
+        if (this.skipWalking) break;
+        await this.pause(WALK_STEP_MS);
+        this.walkingAt = space.index;
+        if (space.kind === 'payday') this.showPayday();
+      }
+      if (this.skipWalking && paydays > 0) this.showPayday();
+      this.walkingAt = typeof data['to'] === 'number' ? (data['to'] as number) : undefined;
+      // the token is on its tile: now the books of the new situation appear
+      RemoteGameHook.holdUpdates = false;
+      RemoteGameHook.resume?.();
+      if (data['landed'] === 'charity') this.diceChoice = 2;
+    } finally {
+      RemoteGameHook.holdUpdates = false;
+      RemoteGameHook.resume?.();
+      this.walkingAt = undefined;
+      this.walking = false;
+      this.isBusy = false;
+    }
+  }
+
   /** Rolls the dice: the engine decides, this only shows it - the die faces, then the token walking there. */
   rollSolo(): void {
     if (!this.canRoll) return;
+    if (this.remote) {
+      void this.rollRemote(this.canChooseDice && this.diceChoice === 2 ? 2 : 1);
+      return;
+    }
     const from = this.appState.cashflowGame.boardPosition;
     const dice = this.canChooseDice ? this.diceChoice : 1;
     // Busy for the whole reveal: nothing else may change the books between the roll and its being applied.
@@ -896,6 +1105,68 @@ export class CashflowGameComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     document.removeEventListener('click', this.onAnyClick, true);
+    this.fitObserver?.disconnect();
+    if (RemoteGameHook.ringVisible) RemoteGameHook.ringVisible = null;
+  }
+
+  private fitQueued = false;
+  private fitObserver: ResizeObserver | null = null;
+  private fitWatching: Element | null = null;
+
+  ngAfterViewChecked(): void {
+    this.queueFit();
+  }
+
+  private queueFit(): void {
+    if (this.fitQueued || typeof requestAnimationFrame === 'undefined') return;
+    this.fitQueued = true;
+    requestAnimationFrame(() => {
+      this.fitQueued = false;
+      this.fitBoard();
+    });
+  }
+
+  /**
+   * On a big landscape screen the dashboard is one page: the wheel takes exactly the height that is left once everything else is
+   * on screen (the dice and the roll button, a dice card's gold box, the buttons of a decision, the table's bar above) - so it
+   * never has to be scrolled, whatever shows or hides. Smaller or upright screens keep the one column and scroll as before.
+   */
+  private fitBoard(): void {
+    const panel = document.querySelector('app-cashflow-game .cf-panel--dash') as HTMLElement | null;
+    if (panel !== this.fitWatching) {
+      this.fitObserver?.disconnect();
+      this.fitWatching = panel;
+      if (panel && typeof ResizeObserver !== 'undefined') {
+        this.fitObserver ??= new ResizeObserver(() => this.queueFit());
+        this.fitObserver.observe(panel);
+        const watch = panel.querySelector('.cf-solo');
+        if (watch) this.fitObserver.observe(watch);
+      }
+    }
+    if (!panel) return;
+    const card = panel.querySelector('.cf-solo') as HTMLElement | null;
+    const board = card?.querySelector('app-rat-race-board') as HTMLElement | null;
+    const dash = panel.querySelector('.cf-dashboard--main') as HTMLElement | null;
+    const wide =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(min-width: 900px) and (min-height: 521px) and (orientation: landscape)')
+        .matches;
+    if (!wide || !card || !board || !dash || !board.offsetWidth) {
+      panel.style.removeProperty('--cf-board-max');
+      return;
+    }
+    const style = getComputedStyle(panel);
+    const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    // the panel may be 96% of the window tall; what is not the dashboard (header, the table's bar) is taken off first
+    const chrome = panel.scrollHeight - padding - dash.offsetHeight;
+    const room = window.innerHeight * 0.96 - padding - chrome - 2;
+    const nonBoard = card.offsetHeight - board.offsetHeight;
+    const aspect = board.offsetHeight / board.offsetWidth;
+    const width = Math.max(180, Math.min(600, Math.floor((room - nonBoard) / aspect)));
+    const held = parseFloat(panel.style.getPropertyValue('--cf-board-max'));
+    if (!Number.isFinite(held) || Math.abs(held - width) > 1.5) {
+      panel.style.setProperty('--cf-board-max', `${width}px`);
+    }
   }
 
   /** An amount with its sign, for the Payday popup: "+2.500,00 €", "−2.200,00 €". */
@@ -1040,6 +1311,12 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** The card was dealt with (or there was nothing to do): the next roll is open. */
   finishSoloDecision(how: 'done' | 'passed'): void {
+    if (this.remote) {
+      void this.remoteMove((remote) => (how === 'passed' ? remote.pass() : remote.finish())).then(
+        () => this.backToMain(),
+      );
+      return;
+    }
     this.isBusy = true;
     this.cashflowGameService.settleSoloDecision(how, {
       onSuccess: () => {
@@ -1058,6 +1335,27 @@ export class CashflowGameComponent implements OnDestroy {
    * panel (JFK, 2026-10-06). Asks first, with the same wording and confirmation as the reset in Settings.
    */
   resetCurrentGame(): void {
+    const remote = this.remote;
+    // a game that is over has nothing to give up: this is the way out, to the app's home
+    if (remote && this.remoteOver) {
+      RemoteGameHook.leaveHome?.();
+      return;
+    }
+    if (remote) {
+      // at a table this is giving up the seat: the player loses, the others play on
+      const words = remote.resignWords();
+      this.confirm.confirm(
+        words.confirm,
+        () => {
+          void this.remoteMove((r) => r.resign()).then((events) => {
+            if (events) RemoteGameHook.leaveGame?.();
+          });
+        },
+        words.label,
+        'delete',
+      );
+      return;
+    }
     this.confirm.confirm(
       this.translate.instant('CashflowGame.resetConfirm'),
       () => {
@@ -1137,6 +1435,11 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Reverts the single most recent action, whichever one it was — Payday, Baby, Charity, Downsized, a bank loan move, a Deal, a Doodad, or Reset (todo/cashflow-game.md decision 40). */
   undoLastAction(): void {
+    if (this.remote) {
+      // at a table undoing is the table's vote: this only asks
+      void this.remoteMove((remote) => remote.askUndo());
+      return;
+    }
     this.isBusy = true;
     const message = this.undoneMessage(1);
     this.cashflowGameService.undoLastAction({
@@ -1501,7 +1804,17 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   /** The card open on screen was played on this space: it is read, nothing more can be done with it. */
+  /** At a table: the card in hand has been played already (a Market card takes effect as it is opened) and waits to be ticked off. */
+  get cardInHandPlayed(): boolean {
+    if (!this.remote || this.historyCardView || this.remote.viewOnly()) return false;
+    const pending = this.appState.cashflowGame.turn?.pending;
+    const card = this.activeCard as { id?: string } | null;
+    return !!pending?.played && !!card?.id && pending.offered?.cardId === card.id;
+  }
+
   get activeCardReadOnly(): boolean {
+    // a card brought back from the history is only read, whatever became of it
+    if (this.historyCardView) return true;
     const card = this.activeCard as { id?: string } | null;
     return !!card?.id && CashflowGameService.isPlayedCard(card.id);
   }
@@ -1557,6 +1870,17 @@ export class CashflowGameComponent implements OnDestroy {
   sellActiveCardToFriend(): void {
     // a share card belongs to whoever drew it: only property and asset cards can be sold (JFK, 2026-10-06)
     if (!this.activeCard || this.friendPrice === null || this.isShareCard) return;
+    if (this.remote) {
+      const priceMinor = Math.round(this.friendPrice * 100);
+      void this.remoteMove((remote) => remote.offerTrade(priceMinor)).then((events) => {
+        if (events) {
+          this.friendPrice = null;
+          this.showFriendSale = false;
+          this.toastService.show(this.translate.instant('CashflowGame.cardOffered'), 'success');
+        }
+      });
+      return;
+    }
     this.recordOpenCard();
     this.isBusy = true;
     this.cashflowGameService.sellCardToFriend(
@@ -1628,8 +1952,12 @@ export class CashflowGameComponent implements OnDestroy {
    * roll, rests there for a moment, and then the result shows and the normal panel is back.
    */
   get firstDiceDecision(): CashflowAssetDeal | null {
-    return this.isSolo ? (this.visibleDecisions[0] ?? null) : null;
+    // at a table the roll is settled by the server before the die has tumbled: the card stays in its box until it is told
+    return this.isSolo ? (this.rollingDecision ?? this.visibleDecisions[0] ?? null) : null;
   }
+
+  /** The dice action being rolled at a table: its box stays where it is while the die tumbles (no switching to the roll panel). */
+  private rollingDecision: CashflowAssetDeal | null = null;
 
   /** The cards of open dice actions shown as cards of their own (a companion game; a solo game has the dice panel). */
   get decisionCards(): CashflowAssetDeal[] {
@@ -1638,6 +1966,23 @@ export class CashflowGameComponent implements OnDestroy {
 
   async rollDecisionDice(deal: CashflowAssetDeal): Promise<void> {
     if (this.isBusy || this.decisionFaces) return;
+    if (this.remote) {
+      const payoutTotal = (deal.payoutMinor ?? 0) * this.cashflowGameService.paydayRollCount(deal);
+      this.rollingDecision = deal;
+      const events = await this.remoteMove((remote) => remote.rollDecision(deal.title));
+      const decided = events?.find((event) => event.type === 'dice_decided');
+      const face = decided?.data?.['roll'];
+      if (typeof face === 'number') {
+        this.decisionFaces = [face];
+        this.skipWalking = false;
+        await this.tumbleDice(1);
+        await this.pause(DICE_DECISION_REST_MS);
+        // as in the solo game: the die stays on its number, with what it came to, until the player continues
+        this.tellDecisionOutcome(deal, decided?.data?.['won'] === true, face, payoutTotal);
+      }
+      this.rollingDecision = null;
+      return;
+    }
     this.isBusy = true;
     const roll = this.cashflowGameService.rollDie();
     this.decisionFaces = [roll];
@@ -1694,6 +2039,51 @@ export class CashflowGameComponent implements OnDestroy {
     this.rollResult = null;
   }
 
+  /** What a rolled die came to, told in the dice panel (and the toast): the same for a roll made here and one made at a table. */
+  private tellDecisionOutcome(
+    deal: CashflowAssetDeal,
+    won: boolean,
+    roll: number | undefined,
+    payoutTotal: number,
+  ): void {
+    const rolled = roll ? `${this.translate.instant('CashflowGame.diceRolled', { roll })} ` : '';
+    const result = deal.split
+      ? ((won ? deal.successText : deal.failureText) ?? '')
+      : this.translate.instant(
+          won
+            ? deal.payoutMinor
+              ? 'CashflowGame.diceWonPayoutToast'
+              : 'CashflowGame.diceWonToast'
+            : 'CashflowGame.diceLostToast',
+          {
+            coins: deal.coins,
+            amount: deal.payoutMinor ? this.cardAmount(payoutTotal) : '',
+          },
+        );
+    this.toastService.show(`${rolled}${result}`, won ? 'success' : 'update');
+    if (this.isSolo) {
+      this.decisionOutcome = {
+        title: deal.split?.shareTag ?? deal.title,
+        ...(roll ? { roll } : {}),
+        won,
+        headline: result,
+        text: deal.recurring ? '' : ((won ? deal.successText : deal.failureText) ?? ''),
+      };
+    }
+    if (deal.recurring) {
+      // the Payday bonus of a kept MLM card: a box beside the Payday box in a companion game; a solo game tells it in the
+      // dice panel (decisionOutcome), where it is read once and gone (JFK, 2026-10-11: no second banner)
+      if (!this.isSolo) this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
+    } else if (roll && !this.isSolo) {
+      this.rollResult = {
+        roll,
+        won,
+        headline: result,
+        text: (won ? deal.successText : deal.failureText) ?? '',
+      };
+    }
+  }
+
   private settleDecision(deal: CashflowAssetDeal, won: boolean, roll?: number): void {
     this.isBusy = true;
     // A Payday roll pays once per kept card; counted before the roll clears it.
@@ -1704,44 +2094,7 @@ export class CashflowGameComponent implements OnDestroy {
       {
         onSuccess: () => {
           this.isBusy = false;
-          const rolled = roll
-            ? `${this.translate.instant('CashflowGame.diceRolled', { roll })} `
-            : '';
-          const result = deal.split
-            ? ((won ? deal.successText : deal.failureText) ?? '')
-            : this.translate.instant(
-                won
-                  ? deal.payoutMinor
-                    ? 'CashflowGame.diceWonPayoutToast'
-                    : 'CashflowGame.diceWonToast'
-                  : 'CashflowGame.diceLostToast',
-                {
-                  coins: deal.coins,
-                  amount: deal.payoutMinor ? this.cardAmount(payoutTotal) : '',
-                },
-              );
-          this.toastService.show(`${rolled}${result}`, won ? 'success' : 'update');
-          if (this.isSolo) {
-            this.decisionOutcome = {
-              title: deal.split?.shareTag ?? deal.title,
-              ...(roll ? { roll } : {}),
-              won,
-              headline: result,
-              text: deal.recurring ? '' : ((won ? deal.successText : deal.failureText) ?? ''),
-            };
-          }
-          if (deal.recurring) {
-            // the Payday bonus of a kept MLM card: a box beside the Payday box in a companion game; a solo game tells it in the
-            // dice panel (decisionOutcome), where it is read once and gone (JFK, 2026-10-11: no second banner)
-            if (!this.isSolo) this.mlmBanner = { won, text: `${rolled}${result}`.trim() };
-          } else if (roll && !this.isSolo) {
-            this.rollResult = {
-              roll,
-              won,
-              headline: result,
-              text: (won ? deal.successText : deal.failureText) ?? '',
-            };
-          }
+          this.tellDecisionOutcome(deal, won, roll, payoutTotal);
         },
         onError: (message) => {
           this.isBusy = false;
@@ -2134,6 +2487,10 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Declining a Deal card ends the turn's card business - straight back to the main dashboard (JFK, 2026-09-30). */
   declineActiveCard(): void {
+    if (this.remote) {
+      void this.remoteMove((remote) => remote.pass()).then(() => this.backToMain());
+      return;
+    }
     // declining uses the card up: back on the dashboard it can be looked at again, or ticked off with Done
     this.recordOpenCard();
     this.cashflowGameService.declineCard({
@@ -2148,16 +2505,36 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** "In this app we pick randomly a card" (JFK, 2026-09-26) — no physical deck needed. */
   drawActiveCard(): void {
+    // the pile is shuffled in view first (a moment), then the card pops up - never an empty card frame
+    this.drawing = true;
+    const started = Date.now();
+    if (this.remote) {
+      void this.remoteMove((remote) => remote.draw(this.activeDeckKind)).then((events) => {
+        if (!events) {
+          this.drawing = false;
+          return;
+        }
+        const offered = this.appState.cashflowGame.turn?.pending?.offered;
+        const card = offered
+          ? this.cashflowGameService
+              .browseCards(offered.deck, '')
+              .find((candidate: { id: string }) => candidate.id === offered.cardId)
+          : undefined;
+        void this.revealCard(card as typeof this.activeCard | undefined, started);
+      });
+      return;
+    }
     this.isBusy = true;
     this.cashflowGameService.drawCard(
       this.activeDeckKind,
       {
         onSuccess: (card) => {
           this.isBusy = false;
-          this.activeCard = card;
+          void this.revealCard(card, started);
         },
         onError: (message) => {
           this.isBusy = false;
+          this.drawing = false;
           this.toastService.show(message, 'error');
         },
       },
@@ -2165,9 +2542,41 @@ export class CashflowGameComponent implements OnDestroy {
     );
   }
 
+  /** The card is being drawn: the pile shuffles on screen. */
+  drawing = false;
+
+  /** How long the pile shuffles at least, so the player sees it (0 in the tests). */
+  static shuffleMs = 650;
+
+  private async revealCard(
+    card: typeof this.activeCard | undefined,
+    started: number,
+  ): Promise<void> {
+    const left = CashflowGameComponent.shuffleMs - (Date.now() - started);
+    if (left > 0) await this.pause(left);
+    if (card) this.activeCard = card;
+    this.drawing = false;
+  }
+
   /** Deal: plans it. Doodad: pays its cost now. Market: nothing to apply — see CASHFLOW_GAME_GUIDE.md §4/§6. */
   applyActiveCard(): void {
     if (!this.activeCard) return;
+    if (this.remote) {
+      const card = this.activeCard;
+      // as in the solo game: the card becomes a planned Grow project, which is bought (and its share count set) over there
+      void this.remoteMove((remote) => remote.plan(card.id)).then((events) => {
+        const played = events?.find((event) => event.type === 'card_played');
+        if (!played) return;
+        const title = String(
+          played.data?.['title'] ?? (card as CashflowDealCard).symbol ?? card.title,
+        );
+        this.toastService.show(this.translate.instant('CashflowGame.cardApplied'), 'success');
+        const kind = (card as CashflowDealCard).assetKind;
+        this.backToMain();
+        void this.openPlannedInGrow(title, kind);
+      });
+      return;
+    }
     this.recordOpenCard();
     if (this.activeShareProject) {
       this.updateActiveSharePrice();
@@ -2245,6 +2654,11 @@ export class CashflowGameComponent implements OnDestroy {
    * apply to them - they own none of that type - only says so here.
    */
   playActiveMarket(): void {
+    // at a table the Market card took effect for everyone when it was opened: playing it is ticking it off
+    if (this.remote) {
+      this.finishSoloDecision('done');
+      return;
+    }
     const card = this.activeMarket;
     if (!card?.sells) return;
     this.recordOpenCard();
@@ -2285,6 +2699,11 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Plays the open stock split card: with the share a dice decision opens, without it the card does not apply. */
   playActiveMarketSplit(): void {
+    // at a table the Market card took effect for everyone when it was opened: playing it is ticking it off
+    if (this.remote) {
+      this.finishSoloDecision('done');
+      return;
+    }
     const card = this.activeMarket;
     if (!card?.splits) return;
     this.recordOpenCard();
@@ -2313,6 +2732,11 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Plays the open cashflow boost card: raises the cashflow of every investment under its limit. */
   playActiveMarketBoost(): void {
+    // at a table the Market card took effect for everyone when it was opened: playing it is ticking it off
+    if (this.remote) {
+      this.finishSoloDecision('done');
+      return;
+    }
     const card = this.activeMarket;
     if (!card?.boost) return;
     this.recordOpenCard();
@@ -2435,6 +2859,32 @@ export class CashflowGameComponent implements OnDestroy {
    */
   playActiveMarketCost(): void {
     const card = this.activeMarket;
+    // at a table the cost applies to the person who drew the card, who pays it through the normal Add dialog (the game waits for
+    // it, a clock that runs out pays it for them); without a property the card is ignored and only ticked off
+    if (this.remote) {
+      if (!card?.pays) return;
+      const property = this.cashflowGameService.marketCostProperty(
+        card,
+        propertyCardTypes((symbol) => this.cardText.symbolFor(symbol)),
+      );
+      if (!property) {
+        this.marketNotice = this.translate.instant('CashflowGame.marketNoProperty');
+        this.finishSoloDecision('done');
+        return;
+      }
+      const flavor = (this.activeCardText.comment ?? '').split('{property}').join(property);
+      void this.openAddDialog({
+        account: MARKET_COST_ACCOUNT,
+        category: property,
+        costMinor: card.pays.costMinor,
+        comment: cardExpenseComment(
+          'marketCost',
+          { title: this.activeCardTitle, flavor },
+          this.cashflowGameService.doodadLoanNote(card.pays.costMinor),
+        ),
+      });
+      return;
+    }
     if (!card?.pays) return;
     this.recordOpenCard();
     const pays = card.pays;
@@ -2582,6 +3032,14 @@ export class CashflowGameComponent implements OnDestroy {
   }
 
   saveGameNow(): void {
+    // a game played with others is filed by the table, in the player's saved games, as a game that has ended
+    if (this.remote) {
+      void this.remoteMove((remote) => remote.saveGame()).then((events) => {
+        if (events)
+          this.toastService.show(this.translate.instant('CashflowGame.gameSaved'), 'success');
+      });
+      return;
+    }
     void this.runSavedGames(async () => {
       await this.savedGames.saveCurrent();
     }, 'gameSaved').then((saved) => {
@@ -2594,6 +3052,29 @@ export class CashflowGameComponent implements OnDestroy {
         );
       }
     });
+  }
+
+  /** What a game played with others came to for the player: first place, a place, bankruptcy, gave up. */
+  tableResultLabel(mp: { rank: number | null; outcome?: string }): string {
+    if (mp.outcome === 'left') return this.translate.instant('CashflowGame.mpGaveUp');
+    if (mp.outcome === 'bankrupt') return this.translate.instant('CashflowGame.mpBankrupt');
+    if (mp.rank === 1) return this.translate.instant('CashflowGame.mpFirst');
+    if (mp.rank) return this.translate.instant('CashflowGame.mpPlace', { rank: mp.rank });
+    return '';
+  }
+
+  /** The saved games played alone, and - apart - the ones played at a table with others. */
+  get soloGames(): SavedGameSummary[] {
+    return this.savedGames.games.filter((game) => !game.multiplayer);
+  }
+
+  get tableGames(): SavedGameSummary[] {
+    return this.savedGames.games.filter((game) => !!game.multiplayer);
+  }
+
+  /** Back to the lobby after a game played with others: the app reloads on the player's own account. */
+  backToLobby(): void {
+    RemoteGameHook.leaveGame?.();
   }
 
   /** Saves the game being played and clears the account for the next one. */
@@ -2613,6 +3094,13 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** Makes a saved game the one being played (the game being played is saved first). */
   continueGame(game: SavedGameSummary): void {
+    // a game played with others is looked at where it was played: the table, read only, with all its players and its history
+    const table = game.multiplayer?.roomId;
+    if (table) {
+      this.closeWindow();
+      void this.router.navigate(['/tables', table]);
+      return;
+    }
     const load = () => {
       void this.runSavedGames(async () => {
         await this.savedGames.loadGame(game.id);
@@ -2709,6 +3197,15 @@ export class CashflowGameComponent implements OnDestroy {
     this.dashboardView = 'history';
   }
 
+  trackLine(_index: number, line: { id: number }): number {
+    return line.id;
+  }
+
+  /** The history of a game played with others: everybody's moves, newest first. */
+  get remoteHistory() {
+    return this.remote?.history() ?? [];
+  }
+
   /** The History list: one line per undo step, newest first. */
   historySteps: CashflowHistoryStep[] = [];
   private expandedSteps = new Set<string>();
@@ -2719,7 +3216,11 @@ export class CashflowGameComponent implements OnDestroy {
 
   /** The History button shows once there is anything to show: a step to undo, or older saved rounds. */
   get hasHistory(): boolean {
-    return this.cashflowGameService.canUndo || this.appState.cashflowGame.history.length > 0;
+    return (
+      !!this.remote ||
+      this.cashflowGameService.canUndo ||
+      this.appState.cashflowGame.history.length > 0
+    );
   }
 
   toggleStep(id: string): void {
@@ -2785,6 +3286,16 @@ export class CashflowGameComponent implements OnDestroy {
 
   private adjustLoan(delta: number): void {
     if (!delta) return;
+    if (this.remote) {
+      void this.remoteMove((remote) => remote.bankLoan(Math.round(delta * 100))).then((events) => {
+        if (events) {
+          this.toastService.show(this.translate.instant('CashflowGame.loanUpdated'), 'success');
+          this.loanIncrements = 1;
+          this.backToMain();
+        }
+      });
+      return;
+    }
     this.isBusy = true;
     this.cashflowGameService.adjustBankLoan(delta, {
       onSuccess: () => {

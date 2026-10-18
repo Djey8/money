@@ -4,8 +4,12 @@
   <a routerLink="/authentication" (click)="exitDemo()">Sign up for the full experience →</a>
 </div>
 
+<ng-container *ngIf="pageBanner as banner"
+  ><ng-container *ngComponentOutlet="banner"></ng-container
+></ng-container>
+
 <div [class.demo-active]="isDemoMode">
-  <router-outlet></router-outlet>
+  <router-outlet *ngIf="showPages"></router-outlet>
 </div>
 
 <app-add></app-add>

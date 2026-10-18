@@ -1,3 +1,4 @@
+import { viewportHeight } from '../../stats/viewport';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { formatNumber } from '@angular/common';
 import { Router } from '@angular/router';
@@ -247,7 +248,7 @@ export class BudgetComponent implements OnInit {
     const toolbarHeight = 150;
 
     const maxHeight = isLandscape
-      ? window.innerHeight - toolbarHeight - Math.floor(window.innerHeight * 0.12)
+      ? viewportHeight() - toolbarHeight - Math.floor(viewportHeight() * 0.12)
       : 400;
     const margin = { top: 50, right: 30, bottom: 90, left: 70 };
     const width =

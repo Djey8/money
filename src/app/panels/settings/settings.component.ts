@@ -31,6 +31,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { ProfilePictureEditorComponent } from 'src/app/shared/profile-picture';
 
 // Deferred imports — resolved after module init to break circular chains
 let ProfileComponent: any;
@@ -110,7 +111,13 @@ setTimeout(() =>
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [TrapFocusDirective, CommonModule, FormsModule, TranslateModule],
+  imports: [
+    TrapFocusDirective,
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    ProfilePictureEditorComponent,
+  ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
 })

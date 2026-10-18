@@ -1478,16 +1478,26 @@ describe('CashflowGameComponent', () => {
       expect(component.cardQuery).toBe('');
     });
 
-    it('drawActiveCard sets the drawn card as active on success', () => {
+    it('drawActiveCard shuffles the pile in view, then sets the drawn card as active', async () => {
       const card = { id: '1', title: 'Duplex' };
       const { component, cashflowGameService } = makeComponent();
       cashflowGameService.drawCard.mockImplementation((_kind: string, callbacks: any) =>
         callbacks.onSuccess(card),
       );
 
-      component.drawActiveCard();
-
-      expect(component.activeCard).toBe(card);
+      const wait = CashflowGameComponent.shuffleMs;
+      CashflowGameComponent.shuffleMs = 30;
+      try {
+        component.drawActiveCard();
+        // while the pile shuffles there is no card yet, and the player is told so
+        expect(component.drawing).toBe(true);
+        expect(component.activeCard).toBeNull();
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        expect(component.activeCard).toBe(card);
+        expect(component.drawing).toBe(false);
+      } finally {
+        CashflowGameComponent.shuffleMs = wait;
+      }
     });
 
     it('a stock card for a share you still hold updates the price instead of planning', () => {
@@ -2904,5 +2914,27 @@ describe('CashflowGameComponent quick filters as dropdowns (JFK, 2026-10-06)', (
     expect(component.cardFamilyFilter).toBe('EFH');
     component.pickCardFamily('');
     expect(component.cardFamilyFilter).toBeNull();
+  });
+});
+
+describe('the lists of saved games', () => {
+  const games = [
+    { id: 'solo-1', name: 'Alone' },
+    { id: 'table-1', name: 'Friday table', multiplayer: { table: 'Friday', players: 3, rank: 2 } },
+    { id: 'solo-2', name: 'Alone again' },
+  ];
+  const lists = { savedGames: { games } };
+  const read = (name: 'soloGames' | 'tableGames') =>
+    (
+      Object.getOwnPropertyDescriptor(CashflowGameComponent.prototype, name)!.get as () => {
+        id: string;
+      }[]
+    )
+      .call(lists)
+      .map((game) => game.id);
+
+  it('keeps the games played alone apart from the ones played at a table', () => {
+    expect(read('soloGames')).toEqual(['solo-1', 'solo-2']);
+    expect(read('tableGames')).toEqual(['table-1']);
   });
 });

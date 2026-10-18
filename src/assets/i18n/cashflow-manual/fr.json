@@ -154,7 +154,23 @@
     "noteCardLabDice": "La chance, ce sont les dés : la carte gagne avec son chiffre ou plus. Les deux dernières colonnes sont mesurées : ce que payer la carte a fait à la chance de sortir et de faire faillite, en moyenne sur de nombreuses positions.",
     "noteCardLabMilestones": "Revenu passif en part des dépenses (100 % est la sortie), au lancer de la colonne, pour les parties qui sont sorties avec la meilleure stratégie trouvée. Le premier chiffre est la partie médiane, entre parenthèses le dixième rapide et le dixième lent. Une partie sous le chiffre lent est derrière presque toutes celles qui sont sorties.",
     "noteCardLabBands": "Chance de sortir / chance de faire faillite, à partir du point qu'une partie a atteint à ce lancer (une stratégie polyvalente, tous les métiers). Plus le revenu passif s'est rapproché des dépenses, plus la sortie est sûre.",
-    "noteCardLabRuin": "Parmi les parties qui ont fait faillite : la dernière décision avant la fin, et les cartes les plus souvent parmi les trois dernières."
+    "noteCardLabRuin": "Parmi les parties qui ont fait faillite : la dernière décision avant la fin, et les cartes les plus souvent parmi les trois dernières.",
+    "colBot": "Bot",
+    "colWins": "Victoires",
+    "colWins2": "Victoires, 2 places",
+    "colWins4": "Victoires, 4 places",
+    "colWins6": "Victoires, 6 places",
+    "colMeanRank4": "Rang moyen, 4 places",
+    "colRange": "Intervalle 95%",
+    "colChampion": "Champion",
+    "colCleo": "Champion Cleo",
+    "colTables": "Tables",
+    "championOwn": "Le sien",
+    "championAll": "Champion Cleo",
+    "tournamentMissing": "Les résultats du tournoi ne sont pas disponibles.",
+    "championsMissing": "Le livre des champions n'est pas disponible.",
+    "noteTournament": "Les victoires sont des victoires par place jouée ; à 2 places un pile ou face donne 50%, à 4 places 25%, à 6 places 17%. Rang moyen : 1 est le vainqueur.",
+    "noteChampions": "Victoires : la part de tables neuves (2, 4 et 6 places, les deux jeux de règles) que le champion a gagnée, avec son intervalle à 95%. Une profession n'a un champion à elle que lorsqu'elle a nettement battu Champion Cleo ; la dernière colonne de victoires est la part de Cleo sur les mêmes tables."
   },
   "sections": {
     "start": {
@@ -1592,6 +1608,388 @@
               "text": "Les quatre comptes de dépenses de Money App. Dans le jeu, les achats passent par Feu, les dépenses imprévues de rêve par Sourire, les petites par Plaisir."
             }
           ]
+        }
+      ]
+    },
+    "tables": {
+      "nav": "Jouer avec les autres",
+      "title": "Jouer avec les autres : les tables",
+      "intro": "Le même jeu, entre amis, à une table.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Une **table** est le jeu Cashflow joué par plusieurs joueurs en même temps, sur le serveur. Chaque joueur a ses propres livres, les piles de cartes sont communes et tout est ouvert à tous - la profession, le compte de résultat et le bilan de chaque joueur - sauf les dés et l'ordre des piles. Une table ne lit ni n'écrit jamais les livres de votre propre compte. Les tables sont réservées aux comptes de jeu."
+        },
+        {
+          "type": "h3",
+          "text": "Ouvrir, rejoindre, commencer"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Ouvrir ou rejoindre",
+              "text": "Ouvrez une table depuis le salon (menu, \"Multijoueur\") avec un nom, le nombre de places, publique ou privée, l'horloge et la fin de partie - ou rejoignez une table ouverte, ou utilisez un code d'invitation."
+            },
+            {
+              "title": "Se préparer",
+              "text": "Tout le monde appuie sur \"Prêt\". L'hôte lance la partie dès qu'au moins deux joueurs sont prêts."
+            },
+            {
+              "title": "Choisir une profession",
+              "text": "Tout le monde choisit en même temps et les choix restent cachés jusqu'au dernier. Les doublons sont permis, sauf si l'hôte a rendu les professions uniques ou aléatoires."
+            },
+            {
+              "title": "Jouer",
+              "text": "Chaque joueur reçoit ses propres livres de départ. L'anneau montre un pion par joueur, chacun avec sa couleur et sa lettre."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Ce qui change par rapport au jeu en solo"
+        },
+        {
+          "type": "table",
+          "head": ["Quoi", "En solo", "À une table"],
+          "rows": [
+            ["Qui lance", "Vous", "Le joueur dont c'est le tour ; les dés sont ceux du serveur"],
+            [
+              "Piles de cartes",
+              "Les vôtres",
+              "Communes : une carte tirée disparaît pour tous jusqu'au remélange de la pile"
+            ],
+            [
+              "Regarder les cartes",
+              "N'importe quelle pile, n'importe quelle carte (règles libres)",
+              "Une carte au hasard par case : la prendre ou passer"
+            ],
+            ["Acheter", "À tout moment (règles libres)", "Seulement avec la carte en main"],
+            [
+              "Jets et écritures",
+              "Vous pouvez déclarer un jet, saisir une écriture",
+              "Jamais : seul le serveur lance, rien n'est saisi"
+            ],
+            [
+              "Vendre",
+              "À un prix que vous annoncez (règles libres)",
+              "Seulement dans une offre qu'une carte a faite"
+            ],
+            [
+              "Dépenses",
+              "Peuvent être cochées sans payer (règles libres)",
+              "Toujours payées : personne ne peut en passer une"
+            ],
+            [
+              "Gagner",
+              "Sortir de la course de rats",
+              "Le premier à sortir, une limite de tours, ou tout le monde a fini - l'hôte choisit"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Imposé, pas facultatif",
+          "text": "Une table partagée ne peut pas suivre les règles souples du jeu en solo : un jet déclaré, une écriture saisie à la main, une pile regardée ou un prix de vente fixé par soi-même permettraient à un joueur de tricher."
+        }
+      ]
+    },
+    "tableplay": {
+      "nav": "Un tour à la table",
+      "title": "Un tour à la table",
+      "intro": "Lancer, régler la case, passer la main.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Lancer",
+              "text": "À votre tour vous lancez et le pion avance. Chaque Payday atteint par le pion est payé."
+            },
+            {
+              "title": "Régler la case",
+              "text": "Sur une case Affaires vous piochez Petite ou Grosse et achetez ou passez ; sur une Dépense vous payez ; une carte Marché est piochée pour vous et vaut pour tous à la table."
+            },
+            {
+              "title": "Passer le tour",
+              "text": "Quand la case est réglée, c'est au suivant. Un prêt bancaire peut être pris ou remboursé quand les règles le permettent."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "L'horloge, l'absence et les pauses"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**L'horloge** - aucune, un temps par coup, une réserve de temps par joueur (avec incrément facultatif) ou une horloge quotidienne pour les parties lentes. Seul le serveur décide quand le temps est écoulé.",
+            "**Temps écoulé** - le serveur joue pour le joueur le tour légal le plus passif : lancer, passer la carte, ne rien acheter ni vendre.",
+            "**Absent** - après plusieurs dépassements de suite (2 par défaut) un joueur est marqué absent et ses tours sont joués aussitôt, jusqu'à ce qu'il dise être de retour.",
+            "**Pause** - l'hôte peut mettre en pause et reprendre ; une pause rend le temps à tous."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "La fin"
+        },
+        {
+          "type": "p",
+          "text": "La partie se termine comme l'hôte l'a réglé : le **premier à sortir** de la course de rats (par défaut), tout le monde a fini, ou après un nombre de tours. Le classement place d'abord ceux qui sont sortis (le plus tôt en tête), puis par revenu passif, puis les faillis. Chaque joueur peut enregistrer la partie dans ses propres parties, une fois."
+        }
+      ]
+    },
+    "tabletrade": {
+      "nav": "Vendre et échanger",
+      "title": "Vendre et échanger à la table",
+      "intro": "Personne ne vend de sa propre initiative.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Pour vendre il faut une carte. Une **carte Marché** piochée par n'importe qui fait une offre à chaque joueur qui possède ce qu'elle achète (biens immobiliers, or) ; une **carte de cours** déplace le prix de cette action pour tous les détenteurs. Tant qu'une telle offre est ouverte pour vous, vous pouvez y vendre - à votre tour ou non - et elle disparaît quand elle se termine. Pas de carte, pas de vente."
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Échanger une carte Affaire** - la carte de bien ou d'actif dans votre main (jamais une action) peut être proposée aux autres joueurs à un prix. Ils la prennent à ce prix, répondent par un prix à eux ou refusent ; vous pouvez accepter l'un de leurs prix.",
+            "**Les deux parties doivent être d'accord** - rien ne bouge avant, et l'offre prend fin avec votre tour.",
+            "**Les actions ne s'échangent jamais** - seul le joueur qui a pioché une carte d'action peut l'acheter."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Pourquoi",
+          "text": "Comme seule une carte peut déclencher une vente, personne ne peut créer de l'argent en annonçant son propre prix."
+        }
+      ]
+    },
+    "bots": {
+      "nav": "Bots et champions",
+      "title": "Les bots et les champions",
+      "intro": "Une place qui joue toute seule, selon les règles.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "L'hôte peut installer des **bots** dans le salon. Un bot n'a pas de compte ; il est toujours prêt, choisit sa profession et joue son tour un instant après chaque changement à la table - avec les mêmes règles, la même horloge et le même journal qu'une personne, si bien que tout le monde le voit jouer coup par coup. Il ne voit que ce que voit un joueur : ses livres et les livres publics de tous, jamais les dés ni l'ordre des piles."
+        },
+        {
+          "type": "table",
+          "head": ["Niveau", "Bots", "Comment ils jouent"],
+          "rows": [
+            [
+              "Facile",
+              "Sleepy Sam, Careful Carla, Cash Charlie",
+              "N'investit jamais / seulement des biens sélectifs / seulement ce que le comptant paie"
+            ],
+            [
+              "Moyen",
+              "Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus",
+              "Actions pour les apports / emprunte quand ça paie / marketing d'abord / petites puis grosses affaires / grosses affaires à crédit"
+            ],
+            [
+              "Difficile",
+              "Allie All-Round, Quick Quinn",
+              "Les meilleures stratégies générales du laboratoire de stratégies et de sa recherche"
+            ],
+            [
+              "Champion",
+              "Champion Cleo, Champion Cleo II, Master Maxine",
+              "Cleo joue la première stratégie championne générale, Cleo II la plus récente ; Maxine joue le champion de sa propre profession (quelques professions ont un spécialiste)"
+            ],
+            [
+              "Personnages",
+              "Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen",
+              "Chacun joue la meilleure version d'un style - seulement des biens / actions / marketing / emprunts / cartes de dés et marketing / sans prêt et prudent / plus de risque quand il est en retard - de la force difficile à celle de champion"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Fair-play",
+          "text": "Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup. Chaque bot peut être installé à un niveau de jeu - maître, fort, occasionnel ou débutant : les niveaux inférieurs se trompent de temps en temps (laissent passer une bonne affaire, en prennent une mauvaise, oublient de vendre), ce qui permet de régler la difficulté de la table."
+        }
+      ]
+    },
+    "tournament": {
+      "nav": "Comment les champions ont été trouvés",
+      "title": "Comment les champions ont été trouvés",
+      "intro": "Des milliers de tables, jouées par des stratégies.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Le **tournoi** joue des tables entières en mémoire - avec les vraies règles de table - avec une stratégie à chaque place et une profession à chaque place, chaque stratégie à chaque place, encore et encore. Une table est gagnée par le premier à sortir. L'ordre des places est mélangé, donc aucune stratégie ne profite de jouer en premier."
+        },
+        {
+          "type": "data",
+          "id": "tournamentOverall",
+          "caption": "À quelle fréquence chaque stratégie a gagné les tables où elle était assise (tous avec la même profession ; règles guidées et strictes ensemble)"
+        },
+        {
+          "type": "p",
+          "text": "Une **recherche** fait ensuite varier les réglages de la stratégie - quels biens acheter, quelle réserve garder, quand emprunter, quand viser les Grosses affaires et combien de risque en plus prendre quand un rival prend de l'avance - et garde ce qui gagne, génération après génération. Les finalistes sont rejoués sur des parties que la recherche n'a jamais vues ; alors seulement une stratégie est appelée championne. Une profession n'a un champion à elle que si elle bat le champion général sur ces parties neuves."
+        },
+        {
+          "type": "data",
+          "id": "championBook",
+          "caption": "Le champion de chaque profession"
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Pas une promesse",
+          "text": "Une part de victoires est une moyenne sur des milliers de tables. Dans une partie donnée les dés décident beaucoup, et un joueur qui lit bien la table peut battre un champion. Les chiffres sont remesurés quand les règles changent."
+        }
+      ]
+    },
+    "rating": {
+      "nav": "Notation et classement",
+      "title": "Comment une partie est notée",
+      "intro": "Qui finit à quelle place, et ce que cela fait à une cote.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Chaque partie terminée donne à chaque joueur une **place**. À une table qui compte, les places font bouger les **cotes** des joueurs, et le classement est trié par cote. Tout cela, ce sont des règles fixes - cette page les donne toutes."
+        },
+        {
+          "type": "h3",
+          "text": "1. La place"
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "**Échappé** à la course de rats (le revenu passif couvre toutes les dépenses mensuelles) : premier. Celui qui est sorti plus tôt est mieux placé.",
+            "**Encore en jeu** à la fin : classé selon sa proximité de l'évasion - revenu passif divisé par toutes les dépenses mensuelles, mensualités de prêt comprises. Un métier aux grosses dépenses, ou un joueur qui a emprunté, est mesuré à la même échelle que les autres ; le revenu brut ne décide pas. À progression égale : le revenu passif le plus élevé, puis le cashflow mensuel le plus élevé.",
+            "**Failli** (cashflow mensuel négatif) : sous tous ceux qui jouent encore. Celui qui a tenu le plus longtemps est mieux placé.",
+            "**Parti** de la partie : dernier."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "2. La partie compte-t-elle ?"
+        },
+        {
+          "type": "p",
+          "text": "Une partie terminée ne fait bouger les cotes que si tout ceci est vrai. Sinon elle compte dans les statistiques (parties, victoires, place moyenne) mais pas dans la cote :"
+        },
+        {
+          "type": "list",
+          "items": [
+            "L'hôte a laissé **Classée** activée à la création de la table.",
+            "La partie est **terminée** : une table fermée ou expirée ne compte pas.",
+            "Au moins **deux places et une personne** : des bots qui ne jouent que contre des bots ne font jamais bouger le classement.",
+            "Au moins **8 tours** ont été joués, ou quelqu'un s'est échappé avant."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Le panneau de fin de partie dit si la partie a compté, et pourquoi non le cas échéant."
+        },
+        {
+          "type": "h3",
+          "text": "3. La cote"
+        },
+        {
+          "type": "p",
+          "text": "Une table est une série de duels, chacun contre chacun. Dans chaque duel la meilleure place marque 1, la moins bonne 0, des places égales un demi. Chacun a une cote (les personnes commencent à **1500**) qui dit comment le duel était attendu. Seule la **surprise** la déplace : battre plus fort rapporte beaucoup, battre bien plus faible presque rien, perdre contre plus faible coûte beaucoup."
+        },
+        {
+          "type": "p",
+          "text": "Le changement est `K × champ × (somme des surprises de tous les duels) ÷ (joueurs - 1)`. Les éléments :"
+        },
+        {
+          "type": "table",
+          "head": ["Élément", "Valeur", "Pourquoi"],
+          "rows": [
+            [
+              "K - la vitesse de la cote",
+              "40 pour les 20 premières parties cotées d'une personne, puis 24. Bots : 8",
+              "Un nouveau joueur trouve vite son niveau. Un bot joue des milliers de parties et bouge lentement."
+            ],
+            [
+              "Champ - qui est à la table",
+              "`0,4 + 0,6 × (personnes - 1) ÷ (places - 1)` : 0,4 avec une personne parmi des bots, 1,0 avec des personnes seulement",
+              "Une table de vrais joueurs vaut plus qu'une contre des bots. Pour les gains comme pour les pertes."
+            ],
+            [
+              "Battre un bot débutant",
+              "compte pour 25 %",
+              "Pomper les adversaires les plus faibles ne rapporte presque rien."
+            ],
+            [
+              "Les mêmes personnes à nouveau",
+              "sous 24 heures la k-ième répétition compte `1 ÷ (1 + k)`",
+              "S'échanger des victoires entre amis ne paie pas."
+            ],
+            [
+              "Partir",
+              "avant le tour 3 : rien, et vous n'êtes pas un adversaire pour les autres. Après : dernière place",
+              "Quitter un salon ou un départ perdu est gratuit. Abandonner une partie perdue est une défaite."
+            ],
+            ["La cote minimale", "100", "Une cote ne descend jamais plus bas."]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "example",
+          "title": "Un exemple chiffré",
+          "text": "Quatre personnes, toutes à 1500, un nouveau joueur gagne. Trois duels gagnés, chacun attendu à un demi, donc la surprise est 1,5 : 40 × 1,0 × 1,5 ÷ 3 = **+20**. La même victoire comme seule personne contre trois bots à 1500 vaut 40 × 0,4 × 1,5 ÷ 3 = **+8** - et moins encore si les bots sont débutants."
+        },
+        {
+          "type": "h3",
+          "text": "4. Le classement"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Une cote est **provisoire** jusqu'à 5 parties cotées.",
+            "Les personnes ne figurent qu'après avoir activé **Me montrer dans le classement** - leur choix. Les bots figurent dès qu'ils ont une partie cotée.",
+            "Les bots partent d'une cote mesurée (combien de fois chacun a gagné sur des milliers de tables simulées) puis bougent lentement.",
+            "La fiche d'un joueur montre la cote, le bilan (jouées, gagnées, perdues, place moyenne) et les dernières parties avec un graphique."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Volontairement pas noté",
+          "text": "**Métier :** les joueurs le choisissent ou il est tiré, selon la table, et la place compare la progression vers l'évasion, donc un métier aux grosses dépenses n'est pas désavantagé. **Rapidité :** s'échapper plus tôt donne une meilleure place, mais le nombre de tours d'une victoire n'ajoute pas de points - une victoire est une victoire. **Argent liquide :** le but est le revenu, pas l'épargne. **Prêts :** ils comptent par leur mensualité. Tout cela peut être affiné quand de vraies parties en montreront le besoin."
+        }
+      ]
+    },
+    "agents": {
+      "nav": "Jouer avec un agent",
+      "title": "Jouer avec un agent",
+      "intro": "Laissez votre assistant IA prendre une place.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Lui donner sa propre place",
+              "text": "L'agent a besoin de son propre compte de jeu et d'un jeton d'accès personnel avec les portées `game:r` et `game:w`, avec le serveur MCP connecté."
+            },
+            {
+              "title": "Ouvrir une table",
+              "text": "Vous ouvrez une table (ou l'agent) et installez quelques bots si vous voulez. Donnez à l'agent le code d'invitation ou l'identifiant de la table."
+            },
+            {
+              "title": "Le laisser jouer",
+              "text": "L'agent rejoint, se met prêt, choisit une profession, puis lit la table avant chaque coup et ne joue que les coups que la table donne comme légaux - toujours avec un identifiant de commande, pour qu'un appel répété ne soit appliqué qu'une fois."
+            },
+            {
+              "title": "Demander le récit",
+              "text": "Demandez-lui de dire ce qu'il a fait et pourquoi, et quand il attend les autres. Ne le laissez pas revenir en arrière, exclure ou fermer une table sans que vous l'ayez demandé."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Le serveur décide",
+          "text": "Le serveur impose le tour, les règles et l'horloge, donc un agent ne peut ni tricher ni jouer pour une place qui n'est pas la sienne. Dites-lui que sa tâche est de sortir le premier : il joue dans les règles, avec la même information qu'une personne."
         }
       ]
     }

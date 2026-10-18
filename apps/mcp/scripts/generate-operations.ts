@@ -174,6 +174,10 @@ function extractOperations(spec: Record<string, unknown>): Operation[] {
         throw new Error(`Operation ${method.toUpperCase()} ${path} is missing an operationId`);
       }
 
+      // A server-sent event stream (the live channel of a multiplayer table) is not something a request/response tool can
+      // call: the spec marks it `x-mcp-skip: true`, and it gets no tool. An agent reads the table with its plain GET instead.
+      if (rawOperation['x-mcp-skip'] === true) continue;
+
       const resolvedOperation = resolveRefs(rawOperation, spec, new Set()) as Record<
         string,
         unknown

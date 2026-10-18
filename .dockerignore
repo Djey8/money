@@ -10,6 +10,9 @@
 **/node_modules
 dist
 .angular
+# The desktop shell's Rust build output (gigabytes): no image needs the Tauri sources or what they compiled to, and sending it
+# to the builder made every image build minutes slower.
+src-tauri
 .vscode
 *.log
 .env

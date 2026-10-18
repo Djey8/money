@@ -942,3 +942,99 @@ body.tour-active *:focus-visible {
     opacity: 1;
   }
 }
+
+/* Another player's books are on screen (a game played with others): everything is there to read, nothing to add or change. */
+body.table-view-only .add-circle-btn,
+body.table-view-only #addbtn,
+body.table-view-only .bottom-nav-add,
+body.table-view-only .desktop-nav-add,
+body.table-view-only .card-btn-buy,
+body.table-view-only .card-btn-sell {
+  display: none !important;
+}
+
+/*
+ * A game played with others (strict rules): what the game's logic owns - transactions, subscriptions, what is held in the balance
+ * sheet - is only ever changed by a move of the game, never by editing, deleting or adding it by hand. Budgets, locations, notes
+ * and the like stay free. The controls are not offered; the books themselves live on the server.
+ */
+body.table-mode
+  :is(
+    app-info,
+    app-info-subscription,
+    app-info-asset,
+    app-info-share,
+    app-info-investment,
+    app-info-liabilitie,
+    app-info-interests,
+    app-info-properties,
+    app-info-mojo,
+    app-info-smile,
+    app-info-fire
+  )
+  :is(#editbtn, #addbtn, #deletebtn),
+body.table-mode app-info-grow #deletebtn,
+body.table-mode
+  :is(
+    app-grow,
+    app-subscription,
+    app-accounting,
+    app-income,
+    app-balance,
+    app-smile,
+    app-fire,
+    app-mojo,
+    app-splurge,
+    app-daily
+  )
+  .add-circle-btn,
+body.table-mode :is(.bottom-nav-add, .desktop-nav-add) {
+  display: none !important;
+}
+
+/* Another player's books: nothing at all can be done with them, whatever panel is open. */
+body.table-view-only
+  :is(
+    app-info,
+    app-info-subscription,
+    app-info-asset,
+    app-info-share,
+    app-info-investment,
+    app-info-liabilitie,
+    app-info-interests,
+    app-info-properties,
+    app-info-mojo,
+    app-info-smile,
+    app-info-fire,
+    app-info-grow
+  )
+  :is(
+    #editbtn,
+    #addbtn,
+    #deletebtn,
+    #buyButton,
+    #sellButton,
+    .btn-icon,
+    .btn--danger,
+    .phase-advance,
+    .card-btn-buy,
+    .card-btn-sell
+  ),
+body.table-view-only
+  :is(app-info-grow, app-info-fire, app-info-smile)
+  :is(input, textarea, select, .info-trade-actions) {
+  display: none !important;
+}
+body.table-view-only app-info-grow [class*='note'] button,
+body.table-view-only app-info-grow [class*='link'] button,
+body.table-view-only app-info-grow [class*='action'] button {
+  display: none !important;
+}
+
+/* A picture of the account's own on the toolbar (self-hosted): a round, centred crop. */
+img#profile-pic.profile-pic--custom {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+}

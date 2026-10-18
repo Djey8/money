@@ -1,0 +1,451 @@
+{
+ "profession": {
+  "setId": "cashflow",
+  "id": "arzt",
+  "title": "Arzt/Ärztin"
+ },
+ "meta": {
+  "generatedAt": "2026-10-16T08:33:25.573Z",
+  "rulesDigest": "02d612c9ec287f",
+  "config": {
+   "candidates": 32,
+   "generations": 7,
+   "matches": 10,
+   "verify": 1500,
+   "seedBase": 410000,
+   "field": [
+    "champion-v1",
+    "all-rounder",
+    "best-found",
+    "big-deals-when-rich",
+    "mlm-then-properties",
+    "bridge-loans"
+   ]
+  },
+  "seconds": 302
+ },
+ "history": [
+  {
+   "generation": 0,
+   "tables": 30,
+   "best": [
+    {
+     "id": "cand-arzt-2054",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-arzt-2040",
+     "known": false,
+     "winRate": 0.6333333333333333
+    },
+    {
+     "id": "cand-arzt-2046",
+     "known": false,
+     "winRate": 0.6333333333333333
+    }
+   ]
+  },
+  {
+   "generation": 1,
+   "tables": 30,
+   "best": [
+    {
+     "id": "cand-arzt-2073",
+     "known": false,
+     "winRate": 0.7
+    },
+    {
+     "id": "cand-arzt-2071",
+     "known": false,
+     "winRate": 0.6333333333333333
+    },
+    {
+     "id": "cand-arzt-2067",
+     "known": false,
+     "winRate": 0.6
+    }
+   ]
+  },
+  {
+   "generation": 2,
+   "tables": 60,
+   "best": [
+    {
+     "id": "cand-arzt-2071",
+     "known": false,
+     "winRate": 0.65
+    },
+    {
+     "id": "cand-arzt-2099",
+     "known": false,
+     "winRate": 0.65
+    },
+    {
+     "id": "cand-arzt-2101",
+     "known": false,
+     "winRate": 0.65
+    }
+   ]
+  },
+  {
+   "generation": 3,
+   "tables": 60,
+   "best": [
+    {
+     "id": "cand-arzt-2071",
+     "known": false,
+     "winRate": 0.6
+    },
+    {
+     "id": "cand-arzt-2099",
+     "known": false,
+     "winRate": 0.6
+    },
+    {
+     "id": "cand-arzt-2101",
+     "known": false,
+     "winRate": 0.6
+    }
+   ]
+  },
+  {
+   "generation": 4,
+   "tables": 90,
+   "best": [
+    {
+     "id": "cand-arzt-2149",
+     "known": false,
+     "winRate": 0.5666666666666667
+    },
+    {
+     "id": "cand-arzt-2071",
+     "known": false,
+     "winRate": 0.5555555555555556
+    },
+    {
+     "id": "cand-arzt-2099",
+     "known": false,
+     "winRate": 0.5555555555555556
+    }
+   ]
+  },
+  {
+   "generation": 5,
+   "tables": 90,
+   "best": [
+    {
+     "id": "cand-arzt-2184",
+     "known": false,
+     "winRate": 0.6
+    },
+    {
+     "id": "cand-arzt-2191",
+     "known": false,
+     "winRate": 0.6
+    },
+    {
+     "id": "cand-arzt-2190",
+     "known": false,
+     "winRate": 0.5888888888888889
+    }
+   ]
+  },
+  {
+   "generation": 6,
+   "tables": 120,
+   "best": [
+    {
+     "id": "cand-arzt-2205",
+     "known": false,
+     "winRate": 0.6583333333333333
+    },
+    {
+     "id": "cand-arzt-2184",
+     "known": false,
+     "winRate": 0.6416666666666667
+    },
+    {
+     "id": "cand-arzt-2190",
+     "known": false,
+     "winRate": 0.6416666666666667
+    }
+   ]
+  }
+ ],
+ "verdict": [
+  {
+   "id": "champion-v2",
+   "known": true,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 938,
+   "tables": 1500,
+   "winRate": 0.6253333333333333,
+   "escapeRate": 0.6286666666666667,
+   "bankruptRate": 0.0013333333333333333,
+   "interval": {
+    "low": 0.6005467404516233,
+    "high": 0.6494795921089336
+   }
+  },
+  {
+   "id": "cand-arzt-2205",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.25x, Big Deals from 5000 cash, dice gambles, buys shares only when a 5x card is still in the pile, scales its bar by what is left in the pile (2), trades stocks, sells at 24 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 500000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1500,
+     "sellAboveMinor": 2000,
+     "maxLotShare": 0.3
+    },
+    "sellWhenProfitMonths": 24,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": {
+     "minGain": 5,
+     "maxWaitDraws": 12,
+     "maxLotShare": 0.2,
+     "sellAboveMinor": 3500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 2,
+    "speculate": null
+   },
+   "wins": 930,
+   "tables": 1500,
+   "winRate": 0.62,
+   "escapeRate": 0.626,
+   "bankruptRate": 0,
+   "interval": {
+    "low": 0.5951589934051758,
+    "high": 0.644227920748549
+   }
+  },
+  {
+   "id": "cand-arzt-2195",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.25x, Big Deals from 10000 cash, dice gambles, buys shares only when a 5x card is still in the pile, scales its bar by what is left in the pile (2), trades stocks, sells at 6 months of profit",
+   "overrides": {
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1500,
+     "sellAboveMinor": 2000,
+     "maxLotShare": 0.3
+    },
+    "sellWhenProfitMonths": 6,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "countShares": {
+     "minGain": 5,
+     "maxWaitDraws": 12,
+     "maxLotShare": 0.2,
+     "sellAboveMinor": 3500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 2,
+    "speculate": null,
+    "catchUp": null,
+    "protectLead": null
+   },
+   "wins": 930,
+   "tables": 1500,
+   "winRate": 0.62,
+   "escapeRate": 0.6226666666666667,
+   "bankruptRate": 0.0006666666666666666,
+   "interval": {
+    "low": 0.5951589934051758,
+    "high": 0.644227920748549
+   }
+  },
+  {
+   "id": "cand-arzt-2190",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.25x, Big Deals from 0 cash, dice gambles, buys shares only when a 5x card is still in the pile, scales its bar by what is left in the pile (2), trades stocks, sells at 12 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 0,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1500,
+     "sellAboveMinor": 2000,
+     "maxLotShare": 0.3
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": {
+     "minGain": 5,
+     "maxWaitDraws": 12,
+     "maxLotShare": 0.2,
+     "sellAboveMinor": 3500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 2,
+    "speculate": null
+   },
+   "wins": 926,
+   "tables": 1500,
+   "winRate": 0.6173333333333333,
+   "escapeRate": 0.6253333333333333,
+   "bankruptRate": 0.002,
+   "interval": {
+    "low": 0.5924662968075716,
+    "high": 0.641600908142737
+   }
+  },
+  {
+   "id": "cand-arzt-2184",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, 250 kept in reserve, borrows when covered 1.25x, Big Deals from 10000 cash, dice gambles, buys shares only when a 5x card is still in the pile, scales its bar by what is left in the pile (2), trades stocks, sells at 6 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": false,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1500,
+     "sellAboveMinor": 2000,
+     "maxLotShare": 0.3
+    },
+    "sellWhenProfitMonths": 6,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": {
+     "minGain": 5,
+     "maxWaitDraws": 12,
+     "maxLotShare": 0.2,
+     "sellAboveMinor": 3500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 2,
+    "speculate": null
+   },
+   "wins": 925,
+   "tables": 1500,
+   "winRate": 0.6166666666666667,
+   "escapeRate": 0.6193333333333333,
+   "bankruptRate": 0.002,
+   "interval": {
+    "low": 0.5917932447165599,
+    "high": 0.6409440329328947
+   }
+  }
+ ],
+ "champion": {
+  "id": "champion-v2",
+  "source": "champion-v2",
+  "spec": {
+   "id": "champion-v2",
+   "label": "Champion",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   }
+  },
+  "winRate": 0.6253333333333333,
+  "interval": {
+   "low": 0.6005467404516233,
+   "high": 0.6494795921089336
+  },
+  "tables": 1500,
+  "againstChampionV1": 0.6253333333333333
+ },
+ "adopted": false
+}

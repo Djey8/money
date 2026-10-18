@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { RemoteGameHook } from 'src/app/shared/services/remote-game';
 
 /**
  * Represents the MenuComponent class.
@@ -375,6 +376,51 @@ export class MenuComponent {
   /** Only an account whose email contains "cashflow" ever sees this entry (todo/cashflow-game.md decision 2). */
   isCashflowGame(): boolean {
     return CashflowGameService.isCashflowGame();
+  }
+
+  private translate = inject(TranslateService, { optional: true });
+
+  /**
+   * Extra entries for game accounts that the route table itself brings: a route with `data.gameMenu = { icon, label(lang) }`
+   * (docs/adr/0004 - the self-hosted route table only; the Firebase one has none, so this is empty there and no text of it
+   * is in that build).
+   */
+  gameMenuEntries(): { path: string; icon: string; label: string }[] {
+    if (!this.isCashflowGame()) return [];
+    const lang = this.translate?.currentLang || this.translate?.defaultLang || 'en';
+    return this.router.config
+      .filter((route) => route.data?.['gameMenu'])
+      .map((route) => {
+        const entry = route.data!['gameMenu'] as { icon: string; label: (lang: string) => string };
+        return { path: `/${route.path}`, icon: entry.icon, label: entry.label(lang) };
+      });
+  }
+
+  /**
+   * The list is built afresh on every change detection; without a stable identity the buttons would be replaced between the press
+   * and the release of a click (a click on the entry did nothing).
+   */
+  trackEntry(_index: number, entry: { path: string }): string {
+    return entry.path;
+  }
+
+  clickedGameMenuEntry(path: string) {
+    // a game played with others takes its own entry (it brings the game screen back instead of the lobby)
+    if (RemoteGameHook.onMenuEntry?.(path)) {
+      MenuComponent.isMenu = false;
+      return;
+    }
+    this.router.navigate([path]);
+    MenuComponent.isMenu = false;
+  }
+
+  /**
+   * Whether a game is loaded - a solo game in progress (or just ended), or a table's game that is on screen. The entry then says
+   * "Cashflow Game" and brings that game up; with nothing loaded it says "Solo" and opens the panel to start one (JFK, 2026-10-18).
+   * Leaving a table reloads the app on the account's own data, so a table's game never stays loaded behind the lobby.
+   */
+  hasLoadedGame(): boolean {
+    return AppStateService.instance.cashflowGame?.professionId != null;
   }
 
   clickedCashflowGame() {

@@ -11,6 +11,7 @@ import { SmileProjectsComponent } from '../../main/smile/smile-projects/smile-pr
 import { FireEmergenciesComponent } from '../../main/fire/fire-emergencies/fire-emergencies.component';
 import { GrowComponent } from '../../main/grow/grow.component';
 import { FireComponent } from '../../main/fire/fire.component';
+import { viewportHeight } from '../viewport';
 import { HomeComponent } from '../../main/home/home.component';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 
@@ -198,7 +199,7 @@ export function createZoomableChart() {
 
   // Specify the chart’s dimensions.
   StatsComponent.screenWidth = window.innerWidth;
-  StatsComponent.screenHeight = window.innerHeight;
+  StatsComponent.screenHeight = viewportHeight();
 
   const size = Math.min(StatsComponent.screenWidth, StatsComponent.screenHeight - 100);
   const width = size;
@@ -357,7 +358,7 @@ export function createHistogramChart() {
 
   // Set up dimensions and margins
   StatsComponent.screenWidth = window.innerWidth - 20;
-  StatsComponent.screenHeight = window.innerHeight - 130;
+  StatsComponent.screenHeight = viewportHeight() - 130;
 
   const margin = { top: 20, right: 30, bottom: 70, left: 40 };
   const width = StatsComponent.screenWidth - margin.left - margin.right;
@@ -648,7 +649,7 @@ export function createCashflowBarChart(period?, selectedYear?) {
 
   // Set up dimensions and margins
   StatsComponent.screenWidth = window.innerWidth - 20;
-  StatsComponent.screenHeight = window.innerHeight - 130;
+  StatsComponent.screenHeight = viewportHeight() - 130;
 
   const margin = { top: 20, right: 30, bottom: 70, left: 50 };
   const width = StatsComponent.screenWidth - margin.left - margin.right;
@@ -805,7 +806,7 @@ export function createCategoryBubbleChart(selectedPeriod = 'all', selectedIndex 
 
   // Specify the dimensions of the chart
   const width = window.innerWidth;
-  const height = window.innerHeight - 100; // Adjust height to account for the header and navbar
+  const height = viewportHeight() - 100; // Adjust height to account for the header and navbar
   const margin = 1; // To avoid clipping the root circle stroke
   const format = d3.format(',d');
 
@@ -996,7 +997,7 @@ export function createChart(
 
   // Dimensions
   StatsComponent.screenWidth = window.innerWidth - 20;
-  StatsComponent.screenHeight = window.innerHeight - 110;
+  StatsComponent.screenHeight = viewportHeight() - 110;
   const margin = { top: 25, right: 50, bottom: 60, left: 40 };
   // The left margin grows with the y-axis labels (see below), so the plot width is adjusted then.
   let width = StatsComponent.screenWidth - margin.left - margin.right;
@@ -1771,7 +1772,7 @@ export function createPieChart() {
 
   // Always use current window dimensions for pie chart
   const width = window.innerWidth - 20;
-  const height = window.innerHeight - 110;
+  const height = viewportHeight() - 110;
 
   // Use filtered transactions for pie chart
   const filteredTransactions = ChartFilterService.filterTransactions(StatsComponent.chartFilter);

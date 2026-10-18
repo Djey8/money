@@ -111,4 +111,52 @@ describe('RatRaceBoardComponent', () => {
       expect(top + size).toBeLessThanOrEqual(y + height);
     }
   });
+
+  describe('with the tokens of a table', () => {
+    const at = (el: Element) =>
+      el
+        .getAttribute('transform')!
+        .match(/-?\d+(\.\d+)?/g)!
+        .map(Number) as [number, number];
+
+    it('draws one token per player, each with its letter, and no single solo token', () => {
+      fixture.componentRef.setInput('tokens', [
+        { id: 'a', position: 3, color: '#e74c3c', label: 'A' },
+        { id: 'b', position: 9, color: '#3498db', label: 'B', active: true },
+      ]);
+      fixture.detectChanges();
+      const tokens = Array.from(element.querySelectorAll('.rr-token--player'));
+      expect(tokens).toHaveLength(2);
+      expect(tokens.map((t) => t.querySelector('text')!.textContent)).toEqual(['A', 'B']);
+      expect(element.querySelectorAll('.rr-token')).toHaveLength(2);
+      expect(tokens[1].classList).toContain('rr-token--active');
+    });
+
+    it('spreads tokens that share a space so none hides another', () => {
+      fixture.componentRef.setInput('tokens', [
+        { id: 'a', position: 5, color: '#111', label: 'A' },
+        { id: 'b', position: 5, color: '#222', label: 'B' },
+        { id: 'c', position: 5, color: '#333', label: 'C' },
+      ]);
+      fixture.detectChanges();
+      const spots = Array.from(element.querySelectorAll('.rr-token--player')).map((t) => at(t));
+      const keys = new Set(spots.map(([x, y]) => `${Math.round(x)},${Math.round(y)}`));
+      expect(keys.size).toBe(3);
+    });
+
+    it('keeps START while anyone waits there, and drops it once all are in the ring', () => {
+      fixture.componentRef.setInput('tokens', [
+        { id: 'a', position: null, color: '#111', label: 'A' },
+        { id: 'b', position: 2, color: '#222', label: 'B' },
+      ]);
+      fixture.detectChanges();
+      expect(element.querySelector('.rr-start-text')).not.toBeNull();
+      fixture.componentRef.setInput('tokens', [
+        { id: 'a', position: 1, color: '#111', label: 'A' },
+        { id: 'b', position: 2, color: '#222', label: 'B' },
+      ]);
+      fixture.detectChanges();
+      expect(element.querySelector('.rr-start-text')).toBeNull();
+    });
+  });
 });

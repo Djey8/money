@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { baseRoutes } from './app.routes.base';
+import { tablesTexts } from './tables/tables.texts';
+import { leaderboardTexts } from './tables/leaderboard.texts';
 
 // Selfhosted-edition route table: the shared base routes plus Pro-only
 // routes. Swapped in for app.routes.ts via angular.json's fileReplacements
@@ -28,5 +30,26 @@ export const routes: Routes = [
       import('./panels/settings/personal-access-tokens/personal-access-tokens.component').then(
         (m) => m.PersonalAccessTokensComponent,
       ),
+  },
+  {
+    // Multiplayer Cashflow tables (game accounts only; the backend refuses any other account).
+    path: 'tables',
+    // The menu of a game account lists this (panels/menu gameMenuEntries); the words are the tables' own, not i18n JSON.
+    data: { gameMenu: { icon: '👥', label: (lang: string) => tablesTexts(lang).title } },
+    loadComponent: () =>
+      import('./tables/tables-lobby.component').then((m) => m.TablesLobbyComponent),
+  },
+  {
+    // The leaderboard: a page of its own (todo/cashflow-leaderboard.md); also in the menu of a game account.
+    path: 'leaderboard',
+    data: { gameMenu: { icon: '🏆', label: (lang: string) => leaderboardTexts(lang).title } },
+    loadComponent: () =>
+      import('./tables/tables-leaderboard-page.component').then(
+        (m) => m.TablesLeaderboardPageComponent,
+      ),
+  },
+  {
+    path: 'tables/:id',
+    loadComponent: () => import('./tables/table-room.component').then((m) => m.TableRoomComponent),
   },
 ];

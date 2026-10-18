@@ -186,6 +186,8 @@
       rows="4"
       cols="50"
       [(ngModel)]="classReference.commentTextField"
+      [class.comment-grow]="isGame"
+      (input)="growComment($event)"
       style="font-size: 16px"
     ></textarea>
     <div

@@ -25,6 +25,8 @@ let authDb;
 let communityDb;
 let auditDb;
 let gameSavesDb;
+let gameRoomsDb;
+let gameStatsDb;
 
 async function createDbIfNotExists(name) {
   try {
@@ -53,12 +55,20 @@ async function initializeDatabase() {
     // One document per saved Cashflow game (repositories/game-save-store.js), so saved games no longer share the
     // user's single document and its CouchDB size limit.
     await createDbIfNotExists('gamesaves');
+    // Multiplayer Cashflow tables (docs/adr/0010): one room document per table, its event log and the seat markers that
+    // keep the per-account limits (backend/repositories/game-room-store.js). Game accounts only.
+    await createDbIfNotExists('gamerooms');
+    // The Cashflow leaderboard (todo/cashflow-leaderboard.md): a profile per player (human or bot) and one immutable result per
+    // finished table (backend/repositories/game-stats-store.js). Game accounts only.
+    await createDbIfNotExists('gamestats');
 
     usersDb = connection.db.use('users');
     authDb = connection.db.use('auth');
     communityDb = connection.db.use('community');
     auditDb = connection.db.use('audit');
     gameSavesDb = connection.db.use('gamesaves');
+    gameRoomsDb = connection.db.use('gamerooms');
+    gameStatsDb = connection.db.use('gamestats');
 
     // Create indexes
     await createIndexes();
@@ -156,6 +166,39 @@ async function createIndexes() {
         fields: ['userId'],
       },
       name: 'gamesaves-user-index',
+    });
+
+    // Serve the lobby list (public rooms by phase), the invite-code lookup and the idle-room sweep of
+    // repositories/game-room-store.js.
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'phase', 'visibility'] },
+      name: 'gamerooms-lobby-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['inviteCode'] },
+      name: 'gamerooms-invite-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'updatedAt'] },
+      name: 'gamerooms-updated-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['roomId', 'seq'] },
+      name: 'gamerooms-events-index',
+    });
+
+    // The leaderboard: a human profile by its account, the board by rating, results by time and by whether they were applied.
+    await gameStatsDb.createIndex({
+      index: { fields: ['kind', 'accountId'] },
+      name: 'gamestats-account-index',
+    });
+    await gameStatsDb.createIndex({
+      index: { fields: ['kind', 'type', 'visible', 'rating'] },
+      name: 'gamestats-board-index',
+    });
+    await gameStatsDb.createIndex({
+      index: { fields: ['kind', 'applied', 'endedAt'] },
+      name: 'gamestats-results-index',
     });
 
     console.log('Indexes created successfully');
@@ -264,6 +307,7 @@ async function setupDatabaseSecurity() {
 
     // Saved games: encrypted payloads, service account only.
     const gameSavesSecurity = auditSecurity;
+    const gameRoomsSecurity = auditSecurity;
 
     // Apply security settings
     try {
@@ -325,6 +369,30 @@ async function setupDatabaseSecurity() {
     } catch (err) {
       console.error('Error setting game saves database security:', err.message);
     }
+
+    try {
+      await connection.request({
+        db: 'gamerooms',
+        path: '_security',
+        method: 'PUT',
+        body: gameRoomsSecurity,
+      });
+      console.log('Game rooms database security configured');
+    } catch (err) {
+      console.error('Error setting game rooms database security:', err.message);
+    }
+
+    try {
+      await connection.request({
+        db: 'gamestats',
+        path: '_security',
+        method: 'PUT',
+        body: gameRoomsSecurity,
+      });
+      console.log('Game stats database security configured');
+    } catch (err) {
+      console.error('Error setting game stats database security:', err.message);
+    }
   } catch (error) {
     console.error('Error setting up database security:', error);
     // Don't fail initialization if security setup fails
@@ -351,6 +419,14 @@ function getGameSavesDb() {
   return gameSavesDb;
 }
 
+function getGameStatsDb() {
+  return gameStatsDb;
+}
+
+function getGameRoomsDb() {
+  return gameRoomsDb;
+}
+
 module.exports = {
   initializeDatabase,
   getUsersDb,
@@ -358,4 +434,6 @@ module.exports = {
   getCommunityDb,
   getAuditDb,
   getGameSavesDb,
+  getGameRoomsDb,
+  getGameStatsDb,
 };

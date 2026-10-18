@@ -9,6 +9,7 @@ import { SmileProjectsComponent } from '../../main/smile/smile-projects/smile-pr
 import { FireEmergenciesComponent } from '../../main/fire/fire-emergencies/fire-emergencies.component';
 import { GrowComponent } from '../../main/grow/grow.component';
 import { FireComponent } from '../../main/fire/fire.component';
+import { viewportHeight } from '../viewport';
 import { HomeComponent } from '../../main/home/home.component';
 
 export function createKPI(kpiType: string) {
@@ -97,7 +98,7 @@ export function createNetWorthTrendChart() {
   const width = container
     ? container.clientWidth - margin.left - margin.right
     : window.innerWidth - margin.left - margin.right - 20;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
   const chartWidth = width;
   const chartHeight = height;
 
@@ -353,7 +354,7 @@ export function createExpenseIncomeRatio() {
 
   const margin = { top: 20, right: 30, bottom: 60, left: 60 };
   const width = window.innerWidth - margin.left - margin.right - 20;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
 
   const svg = d3
     .select('#chart-container')
@@ -648,7 +649,7 @@ export function createIncomeStreamsBreakdown(selectedPeriod = 'all', selectedInd
   // Fullscreen layout with some padding, centered in the middle of the screen
   const margin = { top: 40, right: 10, bottom: 50, left: 10 };
   const width = window.innerWidth - margin.left - margin.right - 20;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
 
   // Create main SVG with margin
   const svg = d3
@@ -1172,7 +1173,7 @@ export function createSavingsRate() {
   // Dimensions
   const margin = { top: 20, right: 50, bottom: 60, left: 50 };
   const width = window.innerWidth - margin.left - margin.right - 20;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
 
   const svg = d3
     .select('#chart-container')
@@ -1477,7 +1478,7 @@ export function createBurnRate() {
 
   const margin = { top: 20, right: 30, bottom: 60, left: 60 };
   const width = window.innerWidth - margin.left - margin.right - 20;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
 
   const svg = d3
     .select('#chart-container')
@@ -1791,7 +1792,7 @@ export function createTopSpendingCategories(
 
   const margin = { top: 40, right: 30, bottom: 50, left: 60 };
   const width = window.innerWidth - margin.left - margin.right - 20;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
 
   const svg = d3
     .select('#chart-container')
@@ -2103,7 +2104,7 @@ export function createRecurringVsOneTimeChart(selectedPeriod = 'all', selectedIn
   // Chart dimensions
   const container = document.getElementById('chart-container');
   const width = container ? container.clientWidth : window.innerWidth - 20;
-  const height = window.innerHeight - 150;
+  const height = viewportHeight() - 150;
   const isLandscape = width > height;
   const radius = (Math.min(width, height) * (isLandscape ? 0.85 : 1)) / 2;
 
@@ -2280,7 +2281,7 @@ export function createHeatmapCalendar(
   // Use window.innerWidth for width, but clamp to 100vw if container is smaller (fixes mobile centering)
   const container = document.getElementById('chart-container');
   let width = (container ? container.clientWidth : window.innerWidth) - margin.left - margin.right;
-  const height = window.innerHeight - margin.top - margin.bottom - 80 - 75;
+  const height = viewportHeight() - margin.top - margin.bottom - 80 - 75;
 
   // On mobile, ensure width is at least 95vw (fixes left-half bug)
   if (window.innerWidth < 600) {
@@ -2781,7 +2782,7 @@ export function createHeatmapCalendar(
   // Calculate available space and determine if legends should be repositioned
   const minHeatmapHeight = 400; // Minimum height needed for readable heatmap
   const legendRequiredHeight = 40; // Height needed for legends (15 + margins)
-  const availableHeight = window.innerHeight - 130; // Account for other UI elements and navbar
+  const availableHeight = viewportHeight() - 130; // Account for other UI elements and navbar
 
   // Determine if we need to move legends to avoid cramping the heatmap
   const shouldRepositionLegends =

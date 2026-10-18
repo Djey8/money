@@ -53,7 +53,12 @@ const apiLimiter = rateLimit({
     const credential = req.headers.authorization || req.cookies?.access_token || req.ip;
     return crypto.createHash('sha256').update(credential).digest('hex');
   },
-  skip: () => process.env.SKIP_RATE_LIMIT === 'true',
+  // Multiplayer tables have a bucket of their own (routes/game-rooms.js), so they neither use up nor are starved by this one.
+  skip: (req) =>
+    process.env.SKIP_RATE_LIMIT === 'true' ||
+    req.path.startsWith('/game/rooms') ||
+    req.path.startsWith('/game/leaderboard') ||
+    req.path.startsWith('/game/players'),
 });
 
 // Bulk endpoints (larger blast radius per call) get a stricter limit on top
@@ -123,10 +128,27 @@ app.use('/api/data/write', (req, res, next) => {
 
 // Initialize database (only when run directly — tests handle their own init)
 if (require.main === module) {
-  initializeDatabase().catch((err) => {
-    logger.logError(err, { context: 'database_initialization' });
-    process.exit(1);
-  });
+  initializeDatabase()
+    .then(() =>
+      // Tables being played with a clock get their timers back after a restart (todo/cashflow-multiplayer.md, slice S4).
+      // A failure here must not stop the server: the clocks arm again as soon as anyone touches a table.
+      require('./routes/game-rooms')
+        .startClocks()
+        .then((count) => logger.info('Table clocks armed', { tables: count }))
+        .catch((err) => logger.logError(err, { context: 'game_room_clocks' }))
+        // The leaderboard: a profile for every bot (idempotent) and the applications a crash left half done.
+        .then(async () => {
+          const stats = require('./routes/game-rooms').stats();
+          const seeded = await stats.seedBots();
+          const repaired = await stats.repair();
+          logger.info('Leaderboard ready', { botsMade: seeded.made, repaired: repaired.repaired });
+        })
+        .catch((err) => logger.logError(err, { context: 'game_stats_startup' })),
+    )
+    .catch((err) => {
+      logger.logError(err, { context: 'database_initialization' });
+      process.exit(1);
+    });
 }
 
 // Health check

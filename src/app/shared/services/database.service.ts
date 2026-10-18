@@ -49,6 +49,21 @@ export class DatabaseService {
    */
   readonly staleWrite$ = new Subject<void>();
 
+  /**
+   * A generic read-only switch: while it is on, nothing is written to the account - the app is showing data that does not belong
+   * to it (a shared game table's books held in memory, todo/cashflow-multiplayer-solo-ui.md). Whoever turns it on is
+   * responsible for turning it off by reloading the app, so the account's own data comes back from the database and never from
+   * memory that held something else.
+   */
+  static readOnly = false;
+
+  /** What stays writable while `readOnly` is on: the account's own plans, which are not part of what is on screen. */
+  private static readonly ACCOUNT_OWN = new Set(['budget', 'locations']);
+
+  private static blocked(tag: string): boolean {
+    return DatabaseService.readOnly && !DatabaseService.ACCOUNT_OWN.has(tag);
+  }
+
   /** Self-hosted writes run one at a time — see `queueSelfhostedWrite`. */
   private selfhostedWriteQueue: Promise<unknown> = Promise.resolve();
 
@@ -73,6 +88,7 @@ export class DatabaseService {
    * The auth database email (backend) remains unencrypted for login matching.
    */
   writeObject(tag: string, element: any): Observable<any> {
+    if (DatabaseService.blocked(tag)) return of({ success: true, skipped: true, readOnly: true });
     this.ensureStableIds(tag, element);
     const dataToWrite = this.encryptForStorage(tag, element);
 
@@ -148,6 +164,7 @@ export class DatabaseService {
    * @returns {Observable<any>} Observable that completes when write succeeds or errors on failure.
    */
   writeObjectIfDirty(tag: string, element: any): Observable<any> {
+    if (DatabaseService.blocked(tag)) return of({ success: true, skipped: true, readOnly: true });
     if (this.mode === 'firebase') {
       // Firebase mode: write immediately (no optimization needed)
       return this.writeObject(tag, element);
@@ -176,6 +193,10 @@ export class DatabaseService {
    *   itself loss-safe, since nothing is silently overwritten).
    */
   batchWrite(writes: { tag: string; data: any }[], forceWrite = false): Observable<any> {
+    if (DatabaseService.readOnly) {
+      writes = writes.filter((write) => !DatabaseService.blocked(write.tag));
+      if (writes.length === 0) return of({ success: true, skipped: true, readOnly: true });
+    }
     if (this.mode === 'firebase') {
       // Firebase: write all
       const observables = writes

@@ -1,3 +1,4 @@
+import { RemoteGameHook } from './remote-game';
 import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
@@ -80,6 +81,7 @@ import {
   registerInvestmentIncome as registerInvestmentIncomeRule,
   removeExpenseForPaidLiability as removeExpenseForPaidLiabilityRule,
   sellCardToFriend as sellCardToFriendRule,
+  closePlanOfSettledCard as closePlanOfSettledCardRule,
   setPhaseAfterTrade as setPhaseAfterTradeRule,
   syncPlanNote as syncPlanNoteRule,
   takenDealLabels,
@@ -528,6 +530,8 @@ export class CashflowGameService {
 
   /** Snapshots every real entity a game action can touch, right before that action mutates anything — one call per public mutating method, always before its first mutation. */
   private pushUndoSnapshot(step: CashflowStepInfo): void {
+    // undoing at a table is the table's vote: nothing is kept on this device
+    if (RemoteGameHook.current) return;
     this.undoStack = pushSnapshotOnto(this.undoStack, {
       step: { ...step, at: this.clock.nowIso() },
       ...this.captureGameSnapshot(),
@@ -1270,12 +1274,15 @@ export class CashflowGameService {
    * No undo step of its own: Undo of the move that caused it restores the game as it was, still being played.
    */
   endSoloGameIfOver(): boolean {
+    // at a table the server ends the game; these are the table's books, never to be saved to the account
+    if (RemoteGameHook.current) return false;
     const state = AppStateService.instance;
     const game = state.cashflowGame;
     if (game.mode !== 'solo' || !game.professionId || game.turn?.phase === 'over') return false;
     const next = endIfOver(game, this.gameBooks().subscriptions);
     if (next === game) return false;
     state.cashflowGame = next;
+    this.gameEnded$.next();
     this.persistAll(
       'cashflow_game_end',
       { outcome: next.turn?.outcome },
@@ -1311,8 +1318,16 @@ export class CashflowGameService {
       return;
     }
     if (settled.step) this.pushUndoSnapshot(settled.step);
+    // the card's chance to be bought is over: an unbought plan leaves the plan phase (JFK, 2026-10-18)
+    const closing = closePlanOfSettledCardRule(this.gameBooks());
+    if (closing) this.applyGameEffects(closing);
     AppStateService.instance.cashflowGame = settled.state;
-    this.persistAll('cashflow_decision', { how }, callbacks, { quiet: true });
+    this.persistAll(
+      'cashflow_decision',
+      { how },
+      callbacks,
+      closing ? { quiet: true, includeGrow: true } : { quiet: true },
+    );
   }
 
   /** Resolves a Baby space: +1 child (max 3), scales the children-expense Subscription. */
@@ -1677,6 +1692,9 @@ export class CashflowGameService {
   /** Fires when a dice card has just been paid - the game panel listens and opens on the open decision (JFK, 2026-10-03). */
   readonly decisionNeeded$ = new Subject<void>();
 
+  /** Fires when the game has just ended (escaped or bankrupt) by a move: the game panel opens on the result (JFK, 2026-10-18). */
+  readonly gameEnded$ = new Subject<void>();
+
   /** Paid dice cards still waiting for their roll - shown on the game dashboard as an open decision. */
   get openDecisions(): CashflowAssetDeal[] {
     return openDecisionsOf(AppStateService.instance.cashflowGame);
@@ -1933,6 +1951,15 @@ export class CashflowGameService {
    * played). `options.types` lists the labels every kind of property goes by. The rule is
    * `playMarketCostCard` in @money/domain.
    */
+  /** The property a Market cost card is booked on (the first one the player owns that the card names), or null: nothing is changed. */
+  marketCostProperty(card: CashflowMarketCard, types: { labels: string[] }[]): string | null {
+    try {
+      return playMarketCostCard(this.cardBooks(), card, { types }).property;
+    } catch {
+      return null;
+    }
+  }
+
   playMarketCostCard(
     card: CashflowMarketCard,
     options: { title?: string; types: { labels: string[] }[] },
@@ -1971,7 +1998,11 @@ export class CashflowGameService {
   } | null {
     if (!CashflowGameService.isCashflowGame()) return null;
     const books = this.cardBooks();
-    const sale = marketSaleFor(books.state, books.investments, title);
+    const sale = marketSaleFor(
+      CashflowGameService.askingState(books.state),
+      books.investments,
+      title,
+    );
     if (!sale) return null;
     return {
       salePrice: fromMinorUnits(sale.salePriceMinor),
@@ -2258,8 +2289,19 @@ export class CashflowGameService {
   }
 
   /** The same without an instance, for the templates that decide whether to show a Sell button. */
+  /**
+   * At a table a buyer's offer stays open until the player's next roll, also off their own turn: a question about selling is asked as
+   * if they were still deciding (as the table itself does), or the Sell button would be missing exactly when somebody else drew the
+   * card that makes selling possible.
+   */
+  static askingState<T extends { turn?: { phase: string } | undefined }>(state: T): T {
+    return RemoteGameHook.current && state.turn?.phase === 'roll'
+      ? { ...state, turn: { ...state.turn, phase: 'decide' } }
+      : state;
+  }
+
   static sellRefusalFor(title: string): string | null {
-    const game = AppStateService.instance.cashflowGame;
+    const game = CashflowGameService.askingState(AppStateService.instance.cashflowGame);
     return CashflowGameService.isCashflowGame() && game.professionId
       ? CashflowGameService.ruleTextOrNull(whyCannotSell(game, title))
       : null;
@@ -2313,7 +2355,8 @@ export class CashflowGameService {
     kind: 'property' | 'asset' | 'share' = 'share',
   ): string | null {
     const isProperty = kind === 'property';
-    const game = AppStateService.instance.cashflowGame;
+    // at a table a stock price card somebody else drew is open until the player's next roll: asked as if they were deciding
+    const game = CashflowGameService.askingState(AppStateService.instance.cashflowGame);
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
     // Owned: in the balance sheet - which is only there once the balance data has been loaded - or, as it is always loaded
     // with the Grow projects, a project that has been bought (phase execute / monitor) and not sold since.
@@ -2414,13 +2457,15 @@ export class CashflowGameService {
       ...offered,
       drawnCardIds: { ...state.cashflowGame.drawnCardIds, [deckKind]: result.drawnIds },
     };
+    // the card shows at once: the draw is already in the game's state, and saving it is not something the player waits for
+    callbacks.onSuccess(result.card);
     this.persistence.writeAndSync({
       tag: 'cashflowGame',
       data: state.cashflowGame,
       localStorageKey: 'cashflowGame',
       logEvent: 'cashflow_draw_card',
       logMetadata: { deckKind, cardId: result.card.id },
-      onSuccess: () => callbacks.onSuccess(result.card),
+      onSuccess: () => undefined,
       onError: (error: any) => callbacks.onError(error?.message || 'Database write failed'),
     });
   }
@@ -2430,6 +2475,8 @@ export class CashflowGameService {
    * which card was on the table when it is passed or played. Picking the card that was picked last again adds nothing.
    */
   recordCardPicked(deckKind: CashflowDeckKind, card: { id: string; title: string }): void {
+    // in a game played with others the card in hand is the table's (its server names the project the card became)
+    if (RemoteGameHook.current) return;
     if (!AppStateService.instance.cashflowGame.professionId) return;
     // The same card is recorded once per turn: the dialog closing after the card was planned or played would otherwise
     // log it a second time, after the step it led to.

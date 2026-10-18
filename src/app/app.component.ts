@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
+import { ProfilePictureService } from './shared/profile-picture';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
-import { NgIf } from '@angular/common';
+import { NgComponentOutlet, NgIf } from '@angular/common';
+import { RemoteGameHook } from './shared/services/remote-game';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
@@ -155,6 +157,7 @@ setTimeout(() =>
     RouterOutlet,
     RouterLink,
     NgIf,
+    NgComponentOutlet,
     TranslateModule,
     AddComp,
     AddSmileComp,
@@ -190,6 +193,14 @@ setTimeout(() =>
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
+  /** A bar the app shows on every page while a game played with others needs one (looking at another player's books). */
+  get pageBanner() {
+    return RemoteGameHook.banner;
+  }
+
+  /** Off for a moment to rebuild the page on screen (RemoteGameHook.refreshPages). */
+  showPages = true;
+
   static instance: AppComponent;
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
@@ -227,9 +238,14 @@ export class AppComponent {
     private tourService: TourService,
     private selfhosted: SelfhostedService,
     private cashflowGameService: CashflowGameService,
+    private profilePicture: ProfilePictureService,
     private cashflowHistorySync: CashflowHistorySyncService,
   ) {
     AppComponent.instance = this;
+    RemoteGameHook.refreshPages = () => {
+      this.showPages = false;
+      setTimeout(() => (this.showPages = true));
+    };
 
     // Subscribe to tour actions for panel management
     this.tourService.action$.subscribe((action) => this.handleTourAction(action));
@@ -360,6 +376,8 @@ export class AppComponent {
             return;
           }
           AppStateService.instance.isLoading = false;
+          this.profilePicture.reload();
+          this.resumeTable();
           // Recalculate home amounts now that data is loaded
           if (HomeComponent) HomeComponent.getAmounts();
           if (!CashflowGameService.isCashflowGame()) {
@@ -401,6 +419,11 @@ export class AppComponent {
 
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'visible') {
+        // At a table the books on screen are the table's: the account's data is not read over them, and the table follows itself
+        if (DatabaseService.readOnly) {
+          RemoteGameHook.resume?.();
+          return;
+        }
         // Skip auth checks for demo mode and landing page
         if (DemoService.isDemoMode()) return;
         const hash = window.location.hash;
@@ -435,6 +458,22 @@ export class AppComponent {
         }
       }
     });
+  }
+
+  /**
+   * A browser reload in the middle of a game played with others: the tab goes back to its table, which brings table mode back.
+   * Until it does, the pages would show the account's own (empty) books.
+   */
+  private resumeTable(): void {
+    let id: string | null;
+    try {
+      id = sessionStorage.getItem('mm.resumeTable');
+    } catch {
+      return;
+    }
+    if (!id || !CashflowGameService.isCashflowGame()) return;
+    if (window.location.hash.startsWith('#/tables')) return;
+    void this.router.navigate(['/tables', id]);
   }
 
   /**
@@ -568,6 +607,7 @@ export class AppComponent {
     // logout we remove also this part for the localStorage"). Clears both the in-memory stack on
     // this running singleton and its localStorage copy.
     this.cashflowGameService.clearPersistedUndoStack();
+    this.profilePicture.clear();
 
     AppStateService.instance.allTransactions = [];
     AppStateService.instance.allSubscriptions = [];

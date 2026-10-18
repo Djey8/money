@@ -593,3 +593,153 @@ The words of the game in one place.
 - **Live game**: The game your account is playing right now. Saved games are copies that can become live again.
 - **Bank loan**: Money from the bank in steps of 1.000 at 10% of the loan per month.
 - **Fire / Smile / Splurge / Daily**: The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Smile, small ones through Splurge.
+
+## 24. Playing with others: tables
+
+The same game, with friends, at one table.
+
+A **table** is the Cashflow game played by several players at once, on the server. Every player has their own books, the card piles are shared, and everything is open to everyone - every player's profession, income statement and balance sheet - except the dice and the order of the piles. A table never reads or writes the books of your own account. Tables are for game accounts only.
+
+### Open, join, start
+
+1. **Open or join** - Open a table from the lobby (menu, "Multiplayer") with a name, the number of seats, public or private, the clock and how the game ends - or join an open table, or use an invite code.
+2. **Get ready** - Everyone presses ready. The host starts the game once at least two players are ready.
+3. **Pick a profession** - Everyone picks at the same time and the picks stay hidden until the last one is in. Duplicates are allowed unless the host made professions unique or random.
+4. **Play** - Each player gets their own starting books. The ring shows one token per player, each with its colour and letter.
+
+### What is different from the solo game
+
+| What | Solo | At a table |
+| --- | --- | --- |
+| Who rolls | You | The player whose turn it is; the dice are the server's |
+| Card piles | Yours | Shared: a card drawn is gone for everyone until the pile is reshuffled |
+| Looking at cards | Any pile, any card (free rules) | One random card per space: take it or pass it |
+| Buying | Any time (free rules) | Only with the card in hand |
+| Rolls and entries | You may report a roll, type a transaction | Never: only the server rolls, nothing is typed in |
+| Selling | At a price you name (free rules) | Only into an offer a card made |
+| Doodads | May be ticked off without paying (free rules) | Always paid: nobody can pass one |
+| Winning | Escape the rat race | The first to escape, a round limit, or everyone finished - the host chooses |
+
+> **Forced, not optional** A shared table cannot run under the solo game's loose rules: a claimed roll, a typed-in transaction, a peeked-at pile or a self-named sale price would let one player cheat the others.
+
+## 25. A turn at a table
+
+Roll, settle the space, pass the dice on.
+
+1. **Roll** - On your turn you roll and the token moves. Every Payday the token reaches is paid.
+2. **Settle the space** - On a Deals space you draw Small or Big and buy or pass; on a Doodad you pay; a Market card is drawn for you and applies to every player at the table.
+3. **Pass the turn** - When the space is settled the next player is up. A bank loan can be taken or repaid when the rules let you.
+
+### The clock, absence and pauses
+
+- **The clock** - none, a time per move, a time bank per player (with an optional increment), or a daily clock for slow games. The server alone decides when time is up.
+- **Out of time** - the server plays the most passive legal turn for the player: roll, pass the card, buy and sell nothing.
+- **Away** - after a number of timeouts in a row (2 by default) a player is marked away and their turns are played at once, until they say they are back.
+- **Pause** - the host can pause and resume; a pause gives everyone the time back.
+
+### The end
+
+The game ends as the host set it: the **first player to escape** the rat race (the default), everyone finished, or after a number of rounds. The ranking puts those who escaped first (the earliest first), then by passive income, then the bankrupt. Every player can save the game to their own saved games, once.
+
+## 26. Selling and trading at a table
+
+Nobody sells on their own initiative.
+
+Selling needs a card. A **Market card** drawn by anyone makes an offer to every player who owns what it buys (properties, gold); a **stock price card** moves that share's price for every holder. While such an offer is open for you, you can sell into it - on your turn or off it - and it is gone when it is. No card, no selling.
+
+- **Trading a Deal card** - the property or asset card in your hand (never a share) can be offered to the other players at a price. They take it at that price, answer with a price of their own, or decline; you can accept one of their prices.
+- **Both sides must agree** - nothing moves until they do, and the offer ends with your turn.
+- **Shares are never traded** - only the player who drew a stock card can buy it.
+
+> **Why** Because only a card can start a sale, nobody can make money out of thin air by naming their own price.
+
+## 27. Bots and the champions
+
+A seat that plays itself, by the rules.
+
+The host can seat **bots** in the lobby. A bot has no account; it is always ready, picks its own profession, and plays its turn a moment after the table changes - through the same rules, the same clock and the same log as a person, so everyone watches it move by move. It sees only what a player sees: its own books and everyone's public books, never the dice or the order of the piles.
+
+| Level | Bots | How they play |
+| --- | --- | --- |
+| Easy | Sleepy Sam, Careful Carla, Cash Charlie | Never invests / only picky properties / only what cash pays for |
+| Medium | Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus | Stocks for deposits / borrows when it pays / marketing first / small then big deals / leveraged big deals |
+| Hard | Allie All-Round, Quick Quinn | The best all-round strategies of the strategy lab and its search |
+| Champion | Champion Cleo, Champion Cleo II, Master Maxine | Cleo plays the first all-round champion strategy, Cleo II the latest one; Maxine plays the champion of her own profession (a few professions have a specialist) |
+| Characters | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Each plays the best version of one style - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength |
+
+> **Fair play** Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is.
+
+## 28. How the champions were found
+
+Thousands of tables, played by strategies.
+
+The **tournament** plays whole tables in memory - the real table rules - with a strategy at every seat and a profession at every seat, every strategy in every seat, again and again. A table is won by the first player to escape. Seat order is shuffled, so no strategy profits from going first.
+
+_(Table: How often each strategy won the tables it sat at (everyone the same profession; guided and strict rules together) - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+A **search** then varies the strategy's knobs - which properties to buy, how much to keep in reserve, when to borrow, when to go for Big Deals, and how much more risk to take when a rival pulls ahead - and keeps what wins, generation after generation. The finalists are played again on games the search never saw; only then is a strategy called a champion. A profession gets a champion of its own only if it beats the all-round champion on those fresh games.
+
+_(Table: The champion of every profession - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
+
+> **Not a promise** A win share is an average over thousands of tables. In any one game the dice decide a lot, and a player who reads the table well can beat a champion. The numbers are measured again whenever the rules change.
+
+## 29. How a game is scored
+
+Who placed where, and what that does to a rating.
+
+Every finished game gives each player a **place**. At a table that counts, the places move the players' **ratings**, and the leaderboard is sorted by rating. All of it is fixed rules - this page lists every one of them.
+
+### 1. The place
+
+1. **Escaped** the rat race (passive income covers every monthly expense): first. Whoever got out earlier is placed higher.
+2. **Still playing** when the game ends: placed by how close they are to escaping - passive income divided by all monthly expenses, loan payments included. A profession with high expenses, or a player who borrowed, is measured on the same scale as everyone else; the raw income does not decide. Equal progress: the higher passive income, then the higher monthly cashflow.
+3. **Bankrupt** (a negative monthly cashflow): below everybody still playing. Whoever lasted longer is placed higher.
+4. **Left** the game: last.
+
+### 2. Does the game count?
+
+A finished game moves the ratings only when all of this holds. Otherwise it still adds to the statistics (games, wins, average place), but not to the rating:
+
+- The host left **Ranked** switched on when the table was made.
+- The game **finished** - a table that was closed, or timed out, does not count.
+- At least **two seats and one person**: bots playing only against bots never move the board.
+- At least **8 rounds** were played, or somebody escaped earlier.
+
+The game-over panel says whether the game counted, and why not when it did not.
+
+### 3. The rating
+
+A table is a series of duels, everybody against everybody. In each duel the better place scores 1, the worse place 0, equal places half. Everyone has a rating (people start at **1500**) that says how a duel was expected to go. Only the **surprise** moves it: beating a stronger player earns a lot, beating a much weaker one almost nothing, losing to a weaker one costs a lot.
+
+The change is `K × field × (sum of the surprises of all duels) ÷ (players - 1)`. The parts:
+
+| Part | Value | Why |
+| --- | --- | --- |
+| K - how fast a rating moves | 40 for a person's first 20 rated games, then 24. Bots: 8 | A new player finds their level quickly. A bot plays thousands of games and moves slowly. |
+| Field - who sits at the table | `0.4 + 0.6 × (people - 1) ÷ (seats - 1)`: 0.4 for one person among bots, 1.0 for people only | A table of real players is worth more than one against bots. It applies to gains and losses alike. |
+| Beating a beginner bot | counts 25% | Farming the easiest opponents earns almost nothing. |
+| The same people again | within 24 hours the k-th repeat counts `1 ÷ (1 + k)` | Trading wins between friends does not pay. |
+| Leaving | before round 3: nothing, and you are not an opponent for the others. Later: last place | Leaving a lobby or a doomed start is free. Walking away from a lost game is a loss. |
+| The lowest rating | 100 | A rating never goes below it. |
+
+> **A worked example** Four people, everybody at 1500, a new player wins. Three duels are won, each expected at one half, so the surprise is 1.5: 40 × 1.0 × 1.5 ÷ 3 = **+20**. The same win as the only person against three bots at 1500 is worth 40 × 0.4 × 1.5 ÷ 3 = **+8** - and less again when the bots are beginners.
+
+### 4. The leaderboard
+
+- A rating is marked **provisional** until it has 5 rated games.
+- People are listed only after they switch **Show me on the leaderboard** on - their choice. Bots are listed once they have a rated game.
+- Bots start from a measured rating (how often each won in thousands of simulated tables) and then move slowly.
+- A player's card shows the rating, the record (played, won, lost, average place) and the last games with a rating chart.
+
+> **Deliberately not scored** **Profession:** players pick one or it is drawn, depending on the table, and the place compares progress to escaping, so a big-expense profession is not at a disadvantage. **Speed:** an earlier escape is a better place, but the number of rounds a win took adds no points - a win is a win. **Cash on hand:** the goal of the game is income, not savings. **Loans:** they count through their monthly payment. All of these can be refined once real games show a need.
+
+## 30. Playing with an agent
+
+Let your AI assistant take a seat.
+
+1. **Give it a seat of its own** - The agent needs its own game account and a personal access token with the scopes `game:r` and `game:w`, with the MCP server connected.
+2. **Open a table** - You open a table (or the agent does) and seat a few bots if you like. Give the agent the invite code or the table id.
+3. **Let it play** - The agent joins, readies up, picks a profession, and then reads the table before every move and plays only the moves the table lists as legal - always with a command id, so a repeated call is applied once.
+4. **Ask for the story** - Ask it to say what it did and why, and when it is waiting for others. Do not let it rewind, kick or close a table unless you asked.
+
+> **The server decides** The server enforces the turn, the rules and the clock, so an agent cannot cheat and cannot play for a seat that is not its own. Tell it its task is to be the first to escape: it plays within the rules, from the same information a person has.

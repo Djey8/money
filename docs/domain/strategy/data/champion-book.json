@@ -1,0 +1,677 @@
+{
+ "meta": {
+  "generatedAt": "2026-10-16T08:49:23.318Z",
+  "rulesDigest": "02d612c9ec287f",
+  "note": "A champion per profession. winRate: the share of fresh verdict tables (2, 4 and 6 seats, guided and strict rules, rivals from the field with random professions) the champion won; championV1WinRate: the same for champion-v1. A profession has its own champion only when its lower 95% bound beat champion-v1.",
+  "field": [
+   "champion-v1",
+   "all-rounder",
+   "best-found",
+   "big-deals-when-rich",
+   "mlm-then-properties",
+   "bridge-loans"
+  ]
+ },
+ "entries": {
+  "hausmeister": {
+   "setId": "cashflow",
+   "title": "Hausmeister/in",
+   "adopted": false,
+   "winRate": 0.562,
+   "interval": {
+    "low": 0.5367650052322352,
+    "high": 0.5869182337471893
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.562,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "lehrer": {
+   "setId": "cashflow",
+   "title": "Lehrer/in",
+   "adopted": false,
+   "winRate": 0.614,
+   "interval": {
+    "low": 0.5891015231417234,
+    "high": 0.6383160453043151
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.614,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "pilot": {
+   "setId": "cashflow",
+   "title": "Pilot/in",
+   "adopted": false,
+   "winRate": 0.686,
+   "interval": {
+    "low": 0.6620625370877415,
+    "high": 0.7089871798505318
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.686,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "sekretaer": {
+   "setId": "cashflow",
+   "title": "Sekretär/in",
+   "adopted": false,
+   "winRate": 0.5513333333333333,
+   "interval": {
+    "low": 0.5260642451195575,
+    "high": 0.5763401570462026
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.5513333333333333,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "manager": {
+   "setId": "cashflow",
+   "title": "Manager/in",
+   "adopted": true,
+   "winRate": 0.6246666666666667,
+   "interval": {
+    "low": 0.5998730997845133,
+    "high": 0.6488233054751896
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.598,
+   "spec": {
+    "id": "champion-manager-v3",
+    "label": "Champion (Manager/in)",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, buys shares only when a 2x card is still in the pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.25,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": false,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "countShares": {
+      "minGain": 2,
+      "maxWaitDraws": 12,
+      "maxLotShare": 0.6,
+      "sellAboveMinor": 1500
+     },
+     "pileByCount": false,
+     "countReturnFactor": 0,
+     "speculate": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "lkwFahrer": {
+   "setId": "cashflow",
+   "title": "LKW-Fahrer/in",
+   "adopted": true,
+   "winRate": 0.52,
+   "interval": {
+    "low": 0.4946979315047373,
+    "high": 0.5451998875208836
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.49333333333333335,
+   "spec": {
+    "id": "champion-lkwFahrer-v3",
+    "label": "Champion (LKW-Fahrer/in)",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": true,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null,
+     "countShares": null,
+     "pileByCount": false,
+     "countReturnFactor": 0,
+     "speculate": {
+      "maxWaitDraws": 4,
+      "minEvRatio": 0.5
+     }
+    }
+   }
+  },
+  "polizist": {
+   "setId": "cashflow",
+   "title": "Polizist/in",
+   "adopted": false,
+   "winRate": 0.6233333333333333,
+   "interval": {
+    "low": 0.5985259663821443,
+    "high": 0.6475105842758505
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.6233333333333333,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "mechaniker": {
+   "setId": "cashflow",
+   "title": "Mechaniker/in",
+   "adopted": false,
+   "winRate": 0.5653333333333334,
+   "interval": {
+    "low": 0.5401113963589611,
+    "high": 0.5902214791247334
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.5653333333333334,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "anwalt": {
+   "setId": "cashflow",
+   "title": "Anwalt/Anwältin",
+   "adopted": false,
+   "winRate": 0.5986666666666667,
+   "interval": {
+    "low": 0.5736391073768009,
+    "high": 0.6231901331495949
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.5986666666666667,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "krankenpfleger": {
+   "setId": "cashflow",
+   "title": "Krankenpfleger/in",
+   "adopted": false,
+   "winRate": 0.61,
+   "interval": {
+    "low": 0.5850653959956961,
+    "high": 0.6343726086452182
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.61,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "ingenieur": {
+   "setId": "cashflow",
+   "title": "Ingenieur/in",
+   "adopted": false,
+   "winRate": 0.6466666666666666,
+   "interval": {
+    "low": 0.622129618995307,
+    "high": 0.6704543871925787
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.6466666666666666,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "arzt": {
+   "setId": "cashflow",
+   "title": "Arzt/Ärztin",
+   "adopted": false,
+   "winRate": 0.6253333333333333,
+   "interval": {
+    "low": 0.6005467404516233,
+    "high": 0.6494795921089336
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.6253333333333333,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "softwareentwickler": {
+   "setId": "custom-jfk",
+   "title": "Softwareentwickler/in",
+   "adopted": false,
+   "winRate": 0.6453333333333333,
+   "interval": {
+    "low": 0.620779172200211,
+    "high": 0.6691449793859667
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.6453333333333333,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "freiberufler": {
+   "setId": "custom-jfk",
+   "title": "Freiberufler/in",
+   "adopted": false,
+   "winRate": 0.5826666666666667,
+   "interval": {
+    "low": 0.557531234739552,
+    "high": 0.6073797505663472
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.5826666666666667,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  },
+  "unternehmer": {
+   "setId": "custom-jfk",
+   "title": "Unternehmer/in",
+   "adopted": false,
+   "winRate": 0.6106666666666667,
+   "interval": {
+    "low": 0.5857379629300887,
+    "high": 0.6350299690116796
+   },
+   "tables": 1500,
+   "championV1WinRate": 0.6106666666666667,
+   "spec": {
+    "id": "champion-v2",
+    "label": "Champion",
+    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+    "overrides": {
+     "buyProperties": true,
+     "minMonthlyReturn": 0.01,
+     "reserveMinor": 0,
+     "loans": "bridge",
+     "loanCoverage": 1.5,
+     "bigDealFromCashMinor": 1000000,
+     "buyMlm": true,
+     "buyGambles": false,
+     "shares": {
+      "buyBelowMinor": 1000,
+      "sellAboveMinor": 2500,
+      "maxLotShare": 0.4
+     },
+     "sellWhenProfitMonths": 12,
+     "repayLoans": true,
+     "charityTwoDice": true,
+     "skipDoodadsAboveMinor": null,
+     "catchUp": {
+      "gap": 0.1,
+      "minMonthlyReturnFactor": 0.8,
+      "loanCoverageFactor": 1,
+      "reserveFactor": 0.3
+     },
+     "protectLead": null
+    }
+   }
+  }
+ }
+}

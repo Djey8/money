@@ -13,8 +13,34 @@ describe('extractOperations against the real openapi.yaml', () => {
   const operations = extractOperations(spec);
   const byId = Object.fromEntries(operations.map((op) => [op.operationId, op]));
 
-  it('finds exactly 166 operations', () => {
-    expect(operations).toHaveLength(166);
+  it('finds exactly 188 operations', () => {
+    expect(operations).toHaveLength(188);
+  });
+
+  it('leaves out a stream: the live channel of a table is x-mcp-skip, not a tool', () => {
+    expect(byId.streamGameRoomEvents).toBeUndefined();
+    expect(byId.getGameRoom).toBeDefined();
+    const withStream = extractOperations({
+      openapi: '3.1.0',
+      paths: {
+        '/watch': {
+          get: {
+            operationId: 'watch',
+            'x-mcp-skip': true,
+            responses: {
+              '200': { content: { 'text/event-stream': { schema: { type: 'string' } } } },
+            },
+          },
+        },
+        '/read': {
+          get: {
+            operationId: 'read',
+            responses: { '200': { content: { 'application/json': { schema: {} } } } },
+          },
+        },
+      },
+    });
+    expect(withStream.map((op) => op.operationId)).toEqual(['read']);
   });
 
   it('has no duplicate operationIds', () => {

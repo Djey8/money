@@ -15,6 +15,7 @@ const {
   isEncodedUndoChain,
   decodeUndoChain,
   buildLiveHistory,
+  snapshotFromBooks,
   textOrFallback,
 } = require('@money/domain');
 const { encodeGameState } = require('../services/game-state-codec');
@@ -317,6 +318,42 @@ function requireRunning(state) {
 
 // ── The operations ────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Files the final books of a finished multiplayer game in the player's own saved games (todo/cashflow-multiplayer.md slice S5):
+ * the same `{ schema, payload }` a solo save is, encrypted with the account's key, so it opens in the games list and loads
+ * like any other - as a game that has ended, without an undo history (a table has none to give). `books` are the player's
+ * books at the table; nothing about the other players or the table goes into it.
+ */
+async function fileFinishedGame(deps, userId, { books, name, multiplayer }) {
+  return withSaves(deps, userId, async (context) => {
+    const { session, settings, data } = context;
+    const id = newGameId();
+    const now = systemClock.nowIso();
+    const named = { ...books, state: { ...books.state, gameId: id, gameName: name } };
+    const summary = {
+      ...liveSummary(named, settings),
+      id,
+      name,
+      createdAt: now,
+      updatedAt: now,
+      endedAt: now,
+      ...(multiplayer ? { multiplayer } : {}),
+    };
+    const blob = {
+      schema: SAVED_GAME_SCHEMA,
+      summary,
+      steps: [],
+      snapshot: snapshotFromBooks(named),
+    };
+    const games = readIndex(data, session);
+    return {
+      data: writeIndex(data, [...games, summary], session),
+      blobs: [{ id, blob }],
+      result: { id, summary: { ...summary, status: savedGameStatus(summary) } },
+    };
+  });
+}
+
 async function listSaves(deps, userId) {
   const context = await loadSavesContext(deps, userId);
   const games = readIndex(context.data, context.session);
@@ -505,6 +542,7 @@ async function pruneSaves(deps, userId, { keepIds = [], keepLatest = 0 }) {
 }
 
 module.exports = {
+  fileFinishedGame,
   listSaves,
   getSave,
   saveGame,

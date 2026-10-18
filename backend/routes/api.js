@@ -189,6 +189,7 @@ const {
   ImportError,
 } = require('../repositories/data-repository');
 const { getUsersDb, getAuthDb, getGameSavesDb } = require('../config/db');
+const profilePicture = require('../repositories/profile-picture');
 const { getEncryptionSession } = require('../services/encryption-session');
 const {
   authenticateApiToken,
@@ -4182,6 +4183,11 @@ async function requireGameAccount(req, res, next) {
   }
 }
 
+// Multiplayer tables (todo/cashflow-multiplayer.md, docs/adr/0010): their own router, guard and rate-limit bucket.
+router.use('/game/rooms', require('./game-rooms'));
+// The Cashflow leaderboard and player profiles (routes/game-stats.js): its own paths under /game, anything else falls through.
+router.use('/game', require('./game-stats'));
+
 router.get('/game', requireScope('game:r'), requireGameAccount, async (req, res, next) => {
   try {
     return res.json(await getGame({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId));
@@ -5558,6 +5564,55 @@ router.delete('/budget', requireScope('budget:w'), async (req, res, next) => {
   }
 });
 
+/**
+ * The profile picture of the account (self-hosted): `GET` the picture as a data URL (or null), `PUT {image}` a small PNG / JPEG /
+ * WebP data URL, `DELETE` it again. A game account's leaderboard profile is told, so other players see it (no other trace of it
+ * leaves the account).
+ */
+async function pictureChanged(userId, picture) {
+  try {
+    const { stats } = require('./game-rooms');
+    await stats().setPicture(userId, picture ? picture.updatedAt : null);
+  } catch (error) {
+    require('../config/logger').warn('picture_sync_failed', { message: error.message });
+  }
+}
+
+router.get('/profile/picture', requireScope('settings:r'), async (req, res, next) => {
+  try {
+    const picture = await profilePicture.getPicture(getUsersDb(), req.userId);
+    return res.json({
+      picture: picture ? profilePicture.toDataUrl(picture) : null,
+      updatedAt: picture ? picture.updatedAt : null,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.put('/profile/picture', requireScope('settings:w'), async (req, res, next) => {
+  try {
+    const picture = await profilePicture.setPicture(getUsersDb(), req.userId, req.body?.image);
+    await pictureChanged(req.userId, picture);
+    return res.json({ picture: profilePicture.toDataUrl(picture), updatedAt: picture.updatedAt });
+  } catch (error) {
+    if (error instanceof profilePicture.PictureError) {
+      return problem(res, 400, 'validation_invalid', 'Invalid picture', error.message);
+    }
+    return next(error);
+  }
+});
+
+router.delete('/profile/picture', requireScope('settings:w'), async (req, res, next) => {
+  try {
+    await profilePicture.deletePicture(getUsersDb(), req.userId);
+    await pictureChanged(req.userId, null);
+    return res.status(204).end();
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get('/settings', requireScope('settings:r'), async (req, res, next) => {
   try {
     const settings = await getSettings({ usersDb: getUsersDb(), authDb: getAuthDb() }, req.userId);
@@ -5585,6 +5640,9 @@ router.patch('/settings', requireScope('settings:w'), async (req, res, next) => 
       path: req.baseUrl + req.path,
       resource: 'settings',
     });
+    if (req.body.username !== undefined) {
+      void require('./game-rooms').afterNicknameChanged(req.userId, req.body.username);
+    }
     return res.json(settings);
   } catch (error) {
     return next(error);
@@ -5851,6 +5909,7 @@ router.delete('/account', requireSession, async (req, res, next) => {
       itemCount: result.deletedTokenCount,
     });
     clearAuthCookies(res);
+    void require('./game-rooms').afterAccountDeleted(req.userId);
     return res.json({ deletedTokenCount: result.deletedTokenCount });
   } catch (error) {
     if (error instanceof AccountError) {

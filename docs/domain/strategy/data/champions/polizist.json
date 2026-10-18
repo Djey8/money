@@ -1,0 +1,447 @@
+{
+ "profession": {
+  "setId": "cashflow",
+  "id": "polizist",
+  "title": "Polizist/in"
+ },
+ "meta": {
+  "generatedAt": "2026-10-16T08:10:17.574Z",
+  "rulesDigest": "02d612c9ec287f",
+  "config": {
+   "candidates": 32,
+   "generations": 7,
+   "matches": 10,
+   "verify": 1500,
+   "seedBase": 410000,
+   "field": [
+    "champion-v1",
+    "all-rounder",
+    "best-found",
+    "big-deals-when-rich",
+    "mlm-then-properties",
+    "bridge-loans"
+   ]
+  },
+  "seconds": 248
+ },
+ "history": [
+  {
+   "generation": 0,
+   "tables": 30,
+   "best": [
+    {
+     "id": "champion-v2",
+     "known": true,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-polizist-1111",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-polizist-1112",
+     "known": false,
+     "winRate": 0.6666666666666666
+    }
+   ]
+  },
+  {
+   "generation": 1,
+   "tables": 30,
+   "best": [
+    {
+     "id": "cand-polizist-1150",
+     "known": false,
+     "winRate": 0.7666666666666667
+    },
+    {
+     "id": "cand-polizist-1143",
+     "known": false,
+     "winRate": 0.7
+    },
+    {
+     "id": "cand-polizist-1114",
+     "known": false,
+     "winRate": 0.6666666666666666
+    }
+   ]
+  },
+  {
+   "generation": 2,
+   "tables": 60,
+   "best": [
+    {
+     "id": "cand-polizist-1180",
+     "known": false,
+     "winRate": 0.6333333333333333
+    },
+    {
+     "id": "cand-polizist-1150",
+     "known": false,
+     "winRate": 0.6166666666666667
+    },
+    {
+     "id": "cand-polizist-1158",
+     "known": false,
+     "winRate": 0.6166666666666667
+    }
+   ]
+  },
+  {
+   "generation": 3,
+   "tables": 60,
+   "best": [
+    {
+     "id": "cand-polizist-1195",
+     "known": false,
+     "winRate": 0.5833333333333334
+    },
+    {
+     "id": "cand-polizist-1199",
+     "known": false,
+     "winRate": 0.5666666666666667
+    },
+    {
+     "id": "cand-polizist-1203",
+     "known": false,
+     "winRate": 0.5666666666666667
+    }
+   ]
+  },
+  {
+   "generation": 4,
+   "tables": 90,
+   "best": [
+    {
+     "id": "cand-polizist-1208",
+     "known": false,
+     "winRate": 0.6333333333333333
+    },
+    {
+     "id": "cand-polizist-1218",
+     "known": false,
+     "winRate": 0.6333333333333333
+    },
+    {
+     "id": "cand-polizist-1174",
+     "known": false,
+     "winRate": 0.6222222222222222
+    }
+   ]
+  },
+  {
+   "generation": 5,
+   "tables": 90,
+   "best": [
+    {
+     "id": "cand-polizist-1174",
+     "known": false,
+     "winRate": 0.6555555555555556
+    },
+    {
+     "id": "cand-polizist-1197",
+     "known": false,
+     "winRate": 0.6555555555555556
+    },
+    {
+     "id": "cand-polizist-1245",
+     "known": false,
+     "winRate": 0.6555555555555556
+    }
+   ]
+  },
+  {
+   "generation": 6,
+   "tables": 120,
+   "best": [
+    {
+     "id": "cand-polizist-1208",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-polizist-1276",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-polizist-1295",
+     "known": false,
+     "winRate": 0.6666666666666666
+    }
+   ]
+  }
+ ],
+ "verdict": [
+  {
+   "id": "cand-polizist-1281",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 4,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 963,
+   "tables": 1500,
+   "winRate": 0.642,
+   "escapeRate": 0.6466666666666666,
+   "bankruptRate": 0.04066666666666666,
+   "interval": {
+    "low": 0.617403949001319,
+    "high": 0.6658705660805886
+   }
+  },
+  {
+   "id": "cand-polizist-1208",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 4,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 954,
+   "tables": 1500,
+   "winRate": 0.636,
+   "escapeRate": 0.6406666666666667,
+   "bankruptRate": 0.058666666666666666,
+   "interval": {
+    "low": 0.6113317437329664,
+    "high": 0.659973425641255
+   }
+  },
+  {
+   "id": "cand-polizist-1276",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 4,
+     "minEvRatio": 0.5
+    },
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 954,
+   "tables": 1500,
+   "winRate": 0.636,
+   "escapeRate": 0.6406666666666667,
+   "bankruptRate": 0.058666666666666666,
+   "interval": {
+    "low": 0.6113317437329664,
+    "high": 0.659973425641255
+   }
+  },
+  {
+   "id": "cand-polizist-1295",
+   "known": false,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 4,
+     "minEvRatio": 0.5
+    },
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 954,
+   "tables": 1500,
+   "winRate": 0.636,
+   "escapeRate": 0.6406666666666667,
+   "bankruptRate": 0.058666666666666666,
+   "interval": {
+    "low": 0.6113317437329664,
+    "high": 0.659973425641255
+   }
+  },
+  {
+   "id": "champion-v2",
+   "known": true,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 935,
+   "tables": 1500,
+   "winRate": 0.6233333333333333,
+   "escapeRate": 0.6313333333333333,
+   "bankruptRate": 0.03866666666666667,
+   "interval": {
+    "low": 0.5985259663821443,
+    "high": 0.6475105842758505
+   }
+  }
+ ],
+ "champion": {
+  "id": "champion-v2",
+  "source": "champion-v2",
+  "spec": {
+   "id": "champion-v2",
+   "label": "Champion",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   }
+  },
+  "winRate": 0.6233333333333333,
+  "interval": {
+   "low": 0.5985259663821443,
+   "high": 0.6475105842758505
+  },
+  "tables": 1500,
+  "againstChampionV1": 0.6233333333333333
+ },
+ "adopted": false
+}

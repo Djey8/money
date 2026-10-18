@@ -1,4 +1,5 @@
 import { merge, Subscription } from 'rxjs';
+import { BANNER_HEIGHT_EVENT, viewportHeight } from './viewport';
 import { debounceTime } from 'rxjs/operators';
 import {
   Component,
@@ -942,9 +943,9 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
     // Initialize the component
     // Track initial screen dimensions
     StatsComponent.lastScreenWidth = window.innerWidth;
-    StatsComponent.lastScreenHeight = window.innerHeight;
+    StatsComponent.lastScreenHeight = viewportHeight();
     StatsComponent.screenWidth = window.innerWidth;
-    StatsComponent.screenHeight = window.innerHeight;
+    StatsComponent.screenHeight = viewportHeight();
   }
 
   ngAfterViewInit(): void {
@@ -955,13 +956,15 @@ export class StatsComponent implements AfterViewInit, AfterViewChecked, OnDestro
   /**
    * Handle resize events - detect orientation changes and window moves
    */
+  // the bar above the pages (another player's books, a seller waiting) came, went or changed: less or more room for the charts
+  @HostListener(`window:${BANNER_HEIGHT_EVENT}`)
   @HostListener('window:resize')
   onResize(): void {
     // Debounce resize events
     clearTimeout(StatsComponent.resizeTimeout);
     StatsComponent.resizeTimeout = setTimeout(() => {
       const currentWidth = window.innerWidth;
-      const currentHeight = window.innerHeight;
+      const currentHeight = viewportHeight();
 
       // Check if either dimension changed OR if orientation flipped (width/height swapped)
       const dimensionsChanged =

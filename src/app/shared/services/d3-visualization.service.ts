@@ -1,3 +1,4 @@
+import { viewportHeight } from '../../stats/viewport';
 import { Injectable } from '@angular/core';
 import * as d3 from 'd3';
 
@@ -69,7 +70,7 @@ export class D3VisualizationService {
     const width = container
       ? container.clientWidth - margin.left - margin.right
       : window.innerWidth - margin.left - margin.right - 20;
-    const height = window.innerHeight - margin.top - margin.bottom - heightOffset;
+    const height = viewportHeight() - margin.top - margin.bottom - heightOffset;
 
     const svg = d3
       .select(containerSelector)

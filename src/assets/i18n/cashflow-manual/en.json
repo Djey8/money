@@ -154,7 +154,23 @@
     "noteCardLabDice": "The chance is the dice: the card wins on its number or higher. The last two columns are measured: what paying for the card did to the chance to escape and to go bankrupt, averaged over many positions.",
     "noteCardLabMilestones": "Passive income as a share of the expenses (100% is the exit), at the roll in the column, for the games that escaped with the best strategy found. The first figure is the middle game, in brackets the fast tenth and the slow tenth. A game below the slow figure is behind almost every game that escaped.",
     "noteCardLabBands": "Chance to escape / chance to go bankrupt, from the point a game has reached at that roll (an all-round strategy, every profession). The further the passive income has got toward the expenses, the surer the exit.",
-    "noteCardLabRuin": "Among the games that went bankrupt: the last decision before the end, and the cards most often among the last three."
+    "noteCardLabRuin": "Among the games that went bankrupt: the last decision before the end, and the cards most often among the last three.",
+    "colBot": "Bot",
+    "colWins": "Wins",
+    "colWins2": "Wins, 2 seats",
+    "colWins4": "Wins, 4 seats",
+    "colWins6": "Wins, 6 seats",
+    "colMeanRank4": "Mean rank, 4 seats",
+    "colRange": "95% range",
+    "colChampion": "Champion",
+    "colCleo": "Champion Cleo",
+    "colTables": "Tables",
+    "championOwn": "Its own",
+    "championAll": "Champion Cleo",
+    "tournamentMissing": "The tournament results are not available.",
+    "championsMissing": "The champion book is not available.",
+    "noteTournament": "Wins are wins per seat played; at 2 seats a coin flip gives 50%, at 4 seats 25%, at 6 seats 17%. Mean rank: 1 is the winner.",
+    "noteChampions": "Wins: the share of fresh tables (2, 4 and 6 seats, both rule sets) the champion won, with its 95% range. A profession has a champion of its own only when it clearly beat Champion Cleo; the last column of wins is Cleo's share on the same tables."
   },
   "sections": {
     "start": {
@@ -210,7 +226,10 @@
       "title": "The goal: out of the rat race",
       "intro": "You start with a job that pays for your life and little else. The rat race ends when you no longer need the job.",
       "blocks": [
-        { "type": "h3", "text": "Passive income" },
+        {
+          "type": "h3",
+          "text": "Passive income"
+        },
         {
           "type": "p",
           "text": "**Passive income** is the money that comes in every month without your work: the cashflow of the properties and businesses you own. Your **expenses** are everything that goes out every month - taxes, rent or mortgage, loan payments, living costs, the cost of your children and the interest on a bank loan. Your salary is not passive income."
@@ -221,7 +240,10 @@
           "title": "You have won the rat race when",
           "text": "**passive income ≥ monthly expenses**. The dashboard then shows a green banner: ‘You escaped the rat race!’ You can keep playing as long as you like - the banner simply disappears again if your expenses rise above your passive income."
         },
-        { "type": "h3", "text": "How the game can go wrong" },
+        {
+          "type": "h3",
+          "text": "How the game can go wrong"
+        },
         {
           "type": "p",
           "text": "If your **monthly cashflow** (all income minus all expenses) is negative, every Payday takes cash away instead of adding it. The dashboard warns you in red. It does not stop you: sell something, pay off a loan or find a better deal before the next Payday."
@@ -232,7 +254,10 @@
           "title": "Debt is not a loss - bleeding is",
           "text": "Owing money is part of the game; a mortgage is how almost every property is bought. What hurts is a monthly cashflow below zero, especially together with an expensive bank loan (10% of the loan every month)."
         },
-        { "type": "h3", "text": "What you are playing for" },
+        {
+          "type": "h3",
+          "text": "What you are playing for"
+        },
         {
           "type": "list",
           "items": [
@@ -287,7 +312,10 @@
             ]
           ]
         },
-        { "type": "h3", "text": "The profession card" },
+        {
+          "type": "h3",
+          "text": "The profession card"
+        },
         {
           "type": "p",
           "text": "Tap the info button next to your profession to open its card. It has two views you can switch between: **Starting Scenario** (the printed card as you began) and **Live - Current Game** (the same layout with today’s numbers: your income and expenses, the properties you own, your debts)."
@@ -310,7 +338,10 @@
           "id": "professions",
           "caption": "All professions, best monthly cashflow first"
         },
-        { "type": "h3", "text": "What to look at when you choose" },
+        {
+          "type": "h3",
+          "text": "What to look at when you choose"
+        },
         {
           "type": "list",
           "items": [
@@ -327,7 +358,11 @@
           "title": "High salary is not automatically easy",
           "text": "The doctor earns the most, but also spends the most: 8.300 of expenses have to be covered by passive income. The caretaker needs only 1.000 - one good Big Deal property. A high salary buys deposits faster; low expenses make the finish line closer. Both routes work."
         },
-        { "type": "data", "id": "escape", "caption": "Passive income each profession must reach" }
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Passive income each profession must reach"
+        }
       ]
     },
     "payday": {
@@ -335,7 +370,10 @@
       "title": "Payday and the game calendar",
       "intro": "Payday is the heartbeat of the game. One press books one month.",
       "blocks": [
-        { "type": "h3", "text": "What Payday does" },
+        {
+          "type": "h3",
+          "text": "What Payday does"
+        },
         {
           "type": "list",
           "items": [
@@ -350,7 +388,10 @@
           "type": "p",
           "text": "Payday never skips. Even with a Charity or Downsized reminder showing, you press Payday every time you pass it on the board. The reminders are for your turns on the physical board, which the app cannot see."
         },
-        { "type": "h3", "text": "The calendar" },
+        {
+          "type": "h3",
+          "text": "The calendar"
+        },
         {
           "type": "p",
           "text": "The game has its own calendar that moves one month per Payday. For bookkeeping the transactions are placed inside the **current real month**, each on the day of its subscription (salary early in the month, mortgage on its day …). Purchases and payments you make between two Paydays take the next free day of the month, so the account list stays readable."
@@ -414,8 +455,14 @@
           "title": "Charity, Downsized and Baby ask first",
           "text": "They show what they will do - with your real numbers - and wait for **Play** or **Cancel**, so a mis-tap changes nothing."
         },
-        { "type": "h3", "text": "Finding the card you drew" },
-        { "type": "p", "text": "After you choose a pile you have two ways to bring a card up:" },
+        {
+          "type": "h3",
+          "text": "Finding the card you drew"
+        },
+        {
+          "type": "p",
+          "text": "After you choose a pile you have two ways to bring a card up:"
+        },
         {
           "type": "list",
           "items": [
@@ -463,7 +510,10 @@
           "title": "A project for every card",
           "text": "A second house of the same type becomes a second project with a number added to its name: `SFH`, `SFH-II`, `SFH-III`. Each can be sold on its own."
         },
-        { "type": "h3", "text": "Not enough cash?" },
+        {
+          "type": "h3",
+          "text": "Not enough cash?"
+        },
         {
           "type": "p",
           "text": "If the deposit is more than your cash, the app takes a **bank loan** for exactly the missing amount - rounded up to the next 1.000 - and books it first, as its own step. The purchase follows as the second step. Undo takes the purchase back first, and the loan with the next Undo. See ‘Bank loans’ for what that costs."
@@ -473,7 +523,10 @@
           "cardId": "classic-small-efh-45k-2k",
           "caption": "A Small Deal card: a single-family home for 45.000 with 2.000 deposit - it pays 250 a month."
         },
-        { "type": "h3", "text": "The names of your purchases" },
+        {
+          "type": "h3",
+          "text": "The names of your purchases"
+        },
         {
           "type": "p",
           "text": "Each purchase is named by a short label in the language of your game, so they are easy to tell apart in the lists and charts:"
@@ -508,7 +561,10 @@
       "title": "Small Deal",
       "intro": "The Small Deal pile is for beginners: small prices, small deposits. It has 38 cards - 20 stocks and funds, 11 houses and condos, and 7 special cards (gold, dice gambles and Multi-Level-Marketing).",
       "blocks": [
-        { "type": "h3", "text": "Stocks and funds" },
+        {
+          "type": "h3",
+          "text": "Stocks and funds"
+        },
         {
           "type": "p",
           "text": "There are four securities - three stocks and one fund - and five cards for each, one per price. A stock is a **liquidity tool, not passive income**: it pays no monthly cashflow. You buy low, sell high and use the cash for a bigger deposit."
@@ -518,7 +574,11 @@
           "cardId": "classic-small-ok4u-20",
           "caption": "A stock card: you may buy at this price. The trading range tells you where the price will move."
         },
-        { "type": "data", "id": "shares", "caption": "The four securities" },
+        {
+          "type": "data",
+          "id": "shares",
+          "caption": "The four securities"
+        },
         {
           "type": "list",
           "items": [
@@ -527,20 +587,30 @@
             "**Stock splits** (Market pile, see ‘Market cards’) double or halve the number of shares you hold."
           ]
         },
-        { "type": "h3", "text": "Single-family homes and condos" },
+        {
+          "type": "h3",
+          "text": "Single-family homes and condos"
+        },
         {
           "type": "face",
           "cardId": "classic-small-etw-55k-5k",
           "caption": "A condo with a big mortgage - watch what a buyer would pay for it before you buy."
         },
-        { "type": "data", "id": "smallProperties", "caption": "Small Deal properties" },
+        {
+          "type": "data",
+          "id": "smallProperties",
+          "caption": "Small Deal properties"
+        },
         {
           "type": "callout",
           "kind": "warning",
           "title": "Two cards pay nothing",
           "text": "The 30.000 single-family home and the 40.000 condo with 1.000 deposit have a cashflow of **0**. They are traps: they eat a deposit and give nothing back until a buyer shows up. The table above counts them in the last column."
         },
-        { "type": "h3", "text": "Gold, gambles and multi-level marketing" },
+        {
+          "type": "h3",
+          "text": "Gold, gambles and multi-level marketing"
+        },
         {
           "type": "list",
           "items": [
@@ -566,8 +636,15 @@
       "title": "Big Deal",
       "intro": "Big Deal cards need real deposits - from 10.000 up to 200.000 - and pay real cashflow. There are 36 cards: a pizza franchise, ten apartment buildings, eight single-family homes, five semi-detached houses, four apartment complexes and eight businesses.",
       "blocks": [
-        { "type": "data", "id": "bigProperties", "caption": "Big Deal cards by type" },
-        { "type": "h3", "text": "Real estate" },
+        {
+          "type": "data",
+          "id": "bigProperties",
+          "caption": "Big Deal cards by type"
+        },
+        {
+          "type": "h3",
+          "text": "Real estate"
+        },
         {
           "type": "p",
           "text": "Houses, apartment buildings and complexes are bought with a mortgage. You pay the deposit; the mortgage becomes a liability in your balance sheet, and the **cashflow on the card is what is left after the mortgage payment** - so it is the number that lands on your Payday."
@@ -582,7 +659,10 @@
           "cardId": "classic-big-aph12-350k-50k",
           "caption": "An apartment complex with 12 units."
         },
-        { "type": "h3", "text": "Businesses" },
+        {
+          "type": "h3",
+          "text": "Businesses"
+        },
         {
           "type": "p",
           "text": "The pizza franchise, the business partners, the automated companies and the car wash work like properties: a deposit and a monthly cashflow. Partners are bought outright (no mortgage), the others have one. Businesses are **not** counted as properties by the cards that talk about ‘your property’ - repair bills do not hit them."
@@ -605,7 +685,10 @@
       "title": "Dice cards",
       "intro": "Some cards are decided by a die. You pay first, then the roll is made - with the app’s die or with your own.",
       "blocks": [
-        { "type": "h3", "text": "How a roll works" },
+        {
+          "type": "h3",
+          "text": "How a roll works"
+        },
         {
           "type": "list",
           "items": [
@@ -689,7 +772,11 @@
           "type": "p",
           "text": "The big, dreamy purchases (a boat, a kitchen, a first car for a child) are suggested on your **Smile** account; the small things on **Splurge**. Neither takes money from your **Fire** or **Daily** accounts. Every card has a category such as Leisure, Home or Events, so your statements show where a game’s worth of Doodads went."
         },
-        { "type": "data", "id": "doodads", "caption": "Doodads by category" },
+        {
+          "type": "data",
+          "id": "doodads",
+          "caption": "Doodads by category"
+        },
         {
           "type": "callout",
           "kind": "tip",
@@ -703,8 +790,15 @@
       "title": "Market cards",
       "intro": "Blue cards are events for the whole table. In the app they only matter for you: if a card has nothing to do with what you own, the app tells you it does not apply, and the play is still noted in your History.",
       "blocks": [
-        { "type": "data", "id": "marketKinds", "caption": "What the 39 Market cards are" },
-        { "type": "h3", "text": "Buyers for your properties" },
+        {
+          "type": "data",
+          "id": "marketKinds",
+          "caption": "What the 39 Market cards are"
+        },
+        {
+          "type": "h3",
+          "text": "Buyers for your properties"
+        },
         {
           "type": "p",
           "text": "A buyer card makes an **offer** for one type of property. Play it and every property of that type you own gets the offer, with a note in its Grow project; then you sell the ones you want with the normal **sell** button, which is already filled in. The offer lasts until the next Payday, and you may sell as many properties as you like at that price."
@@ -755,7 +849,10 @@
           "cardId": "classic-market-gold-central-2k",
           "caption": "A gold buyer: every coin at 2.000."
         },
-        { "type": "h3", "text": "Repair costs" },
+        {
+          "type": "h3",
+          "text": "Repair costs"
+        },
         {
           "type": "p",
           "text": "‘A tenant damages your property’ and ‘Sewer pipe broken’ cost property owners 500 to 2.000 once. If you own no property, you ignore the card. Otherwise the Add dialog opens on **Fire**, filled in with the cost and the name of the first property you own as the category. Businesses are not properties."
@@ -765,7 +862,10 @@
           "cardId": "classic-market-cost-pipe-2k",
           "caption": "Only for property owners."
         },
-        { "type": "h3", "text": "Stock splits and star cards" },
+        {
+          "type": "h3",
+          "text": "Stock splits and star cards"
+        },
         {
           "type": "p",
           "text": "A **stock split** card has the name of one company on it. Without its shares the card does not apply. With them a dice decision opens: 1–3 doubles your shares, 4–6 halves them (rounded in your favour). The price and your costs stay the same."
@@ -779,7 +879,11 @@
           "cardId": "classic-market-boost-small-250",
           "caption": "A star card: your passive income goes up for the rest of the game."
         },
-        { "type": "data", "id": "marketOdds", "caption": "How often a Market card concerns you" }
+        {
+          "type": "data",
+          "id": "marketOdds",
+          "caption": "How often a Market card concerns you"
+        }
       ]
     },
     "life": {
@@ -909,7 +1013,10 @@
       "title": "History, Undo and saved games",
       "intro": "Every step you take is recorded, every step can be undone, and an account can keep as many games as you like.",
       "blocks": [
-        { "type": "h3", "text": "Undo and History" },
+        {
+          "type": "h3",
+          "text": "Undo and History"
+        },
         {
           "type": "list",
           "items": [
@@ -919,7 +1026,10 @@
             "A saved game keeps its whole history: after you load it, History lists every move and Undo can walk back step by step, even to before the game started. Games saved before this was added load with an empty history."
           ]
         },
-        { "type": "h3", "text": "My games" },
+        {
+          "type": "h3",
+          "text": "My games"
+        },
         {
           "type": "p",
           "text": "Your account always holds one **live game** - the one you are playing. **My games** keeps the others."
@@ -954,7 +1064,10 @@
           "type": "p",
           "text": "Each saved game shows its status - **Playing**, **Out of the rat race**, **Bankrupt** or **Ended** - with cash, passive income against expenses and the round, so the list is also a scoreboard."
         },
-        { "type": "h3", "text": "Ending a game" },
+        {
+          "type": "h3",
+          "text": "Ending a game"
+        },
         {
           "type": "list",
           "items": [
@@ -974,12 +1087,18 @@
       "title": "Strategy",
       "intro": "This is the approach the numbers of the card piles support. It is a guide, not a law - the dice and the draw decide a lot.",
       "blocks": [
-        { "type": "h3", "text": "1 · Know your finish line" },
+        {
+          "type": "h3",
+          "text": "1 · Know your finish line"
+        },
         {
           "type": "p",
           "text": "Your expenses are your target. Look at the ‘passive income needed’ table before the first move and think in properties: one Big Deal property for a caretaker, five for a doctor. Remember that every baby and every bank loan moves the line."
         },
-        { "type": "h3", "text": "2 · Build the first deposit with the small things" },
+        {
+          "type": "h3",
+          "text": "2 · Build the first deposit with the small things"
+        },
         {
           "type": "list",
           "items": [
@@ -989,7 +1108,10 @@
             "**Gold** is cheap when you buy it from a card and expensive when a gold buyer asks for it: coins from a 3.000-for-10 card sell for 10.000–20.000 on a buyer’s card. The catch is waiting for the buyer (three Market cards in 39)."
           ]
         },
-        { "type": "h3", "text": "3 · Move to Big Deals as soon as a deposit is affordable" },
+        {
+          "type": "h3",
+          "text": "3 · Move to Big Deals as soon as a deposit is affordable"
+        },
         {
           "type": "p",
           "text": "A Big Deal property pays 700–11.000 a month. Two or three of them end the race for most professions. Compare the **return a year** (cash-on-cash) between cards: apartment buildings with 4 units and semi-detached houses are among the highest; businesses bought outright are slower to repay."
@@ -1000,7 +1122,10 @@
           "title": "Deposit first, cashflow second",
           "text": "Two cards can pay the same cashflow with very different deposits. Ask: how many months until the deposit is back? The table of Big Deal types shows the range. A card with a smaller deposit and the same cashflow is the better card."
         },
-        { "type": "h3", "text": "4 · Use loans like a bridge" },
+        {
+          "type": "h3",
+          "text": "4 · Use loans like a bridge"
+        },
         {
           "type": "list",
           "items": [
@@ -1009,17 +1134,26 @@
             "Repay the loan from the first cash that arrives. A 5.000 loan costs 500 every month - that is two Multi-Level-Marketing cards’ worth of income."
           ]
         },
-        { "type": "h3", "text": "5 · Keep a cushion" },
+        {
+          "type": "h3",
+          "text": "5 · Keep a cushion"
+        },
         {
           "type": "p",
           "text": "Doodads average a little under 1.400, repair bills reach 2.000, Downsized costs a month of expenses. A cushion of 1.500–3.000 in cash keeps those from becoming loans."
         },
-        { "type": "h3", "text": "6 · Diversify against the Market" },
+        {
+          "type": "h3",
+          "text": "6 · Diversify against the Market"
+        },
         {
           "type": "p",
           "text": "Holding both single-family homes and apartment buildings means more Market cards help you. Holding only semi-detached houses means no buyer card ever applies, while repair bills do. The ‘how often a Market card concerns you’ table shows it."
         },
-        { "type": "h3", "text": "7 · Sell when a buyer overpays" },
+        {
+          "type": "h3",
+          "text": "7 · Sell when a buyer overpays"
+        },
         {
           "type": "p",
           "text": "A buyer offering 20% on top, or a fixed profit of 10.000–20.000, often beats a year of the property’s cashflow. Selling and re-buying a better card can raise your passive income - but remember a sale also removes the cashflow."
@@ -1130,7 +1264,10 @@
       "title": "Odds and numbers",
       "intro": "Everything below is read from the card piles themselves, so it is exactly what the game uses.",
       "blocks": [
-        { "type": "h3", "text": "What a random draw gives you" },
+        {
+          "type": "h3",
+          "text": "What a random draw gives you"
+        },
         {
           "type": "data",
           "id": "pileOdds",
@@ -1140,7 +1277,10 @@
           "type": "p",
           "text": "In the Small Deal pile one draw in two is a stock card; in the Big Deal pile, nearly two in five are an apartment building or complex. Doodads are always a cost and have no good outcome - there are 42 of them and the average is a little under 1.400."
         },
-        { "type": "h3", "text": "Gambles - what they are worth on average" },
+        {
+          "type": "h3",
+          "text": "Gambles - what they are worth on average"
+        },
         {
           "type": "table",
           "head": ["Card", "You pay", "You get", "Average result"],
@@ -1171,18 +1311,28 @@
           "type": "p",
           "text": "The only gamble that is better than fair on its own is Multi-Level-Marketing. Stock splits help the holder (+25% shares on average); the sister-in-law’s loan is fair, so take it only when you can afford to lose 5.000."
         },
-        { "type": "h3", "text": "How often the Market helps or hurts you" },
+        {
+          "type": "h3",
+          "text": "How often the Market helps or hurts you"
+        },
         {
           "type": "data",
           "id": "marketOdds",
           "caption": "Market cards that concern each kind of asset"
         },
-        { "type": "h3", "text": "The rat race in numbers" },
+        {
+          "type": "h3",
+          "text": "The rat race in numbers"
+        },
         {
           "type": "p",
           "text": "An average Big Deal property pays about 1.800 a month; an average paying Small Deal property about 180. To cover 1.000 of expenses you need one Big Deal property or six small ones. The caretaker’s +600 a month alone would take years to save the 32.000–40.000 deposit - which is why the small, quick deals, the gamble cards and the share trades matter at the start."
         },
-        { "type": "data", "id": "escape", "caption": "Passive income needed per profession" }
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Passive income needed per profession"
+        }
       ]
     },
     "cards": {
@@ -1196,7 +1346,9 @@
           "title": "Why the ids matter",
           "text": "Every card you pick - drawn at random, or found among your physical cards - is written into the History with its exact id. When a game is analysed, the analyst reads those ids to see which deal you passed on, and plays both choices out many times. **Open the card before you pass it** and the analyst can say whether it was a deal worth taking. Browsing is not tracked, only the card that is open when you act on it or decline it; passing without opening any card is allowed, and the analyst only notes, as a small minus, that you did not look."
         },
-        { "type": "cardbrowser" },
+        {
+          "type": "cardbrowser"
+        },
         {
           "type": "p",
           "text": "An agent reads the same list from `GET /api/v1/game/cards` (it needs no running game: pass `gameSetId=cashflow`) and from `docs/domain/CASHFLOW_CARDS.md`."
@@ -1214,7 +1366,10 @@
           "title": "How to read the tables",
           "text": "Plus helps, minus hurts. \"Taken\" means a Deal bought, a Doodad paid or a Market card played, and every game after it is played by the all-round strategy of the strategy lab. **From cash** counts the positions where the deposit was in cash on hand, **with a loan** those where the bank had to lend it. The measuring error is about one point for the Small Deals and the Doodads. A built-up game is one deep into the game with properties already owned (the best strategy found, roll 20 to 60)."
         },
-        { "type": "h3", "text": "Small Deals" },
+        {
+          "type": "h3",
+          "text": "Small Deals"
+        },
         {
           "type": "p",
           "text": "The best Small Deal is the **Multi-Level-Marketing** buy-in: **+6 points** and about five rolls saved, for 500 €. Next come the **single-family homes with a 2,000 € deposit** (+3 points from cash, about eight rolls saved) - and the surprise: when the bank has to lend that deposit, they are worth **+10 to +12 points**, because a property that pays 200 to 250 € a month for 2,000 € is worth borrowing for. Condos and the expensive houses (4,000 to 5,000 € deposit) are the other way round: from cash they do roughly nothing, with a loan they cost 10 to 19 points. **Shares** are small bets either way (between −2.5 and +1.5 points): buying half of your cash in shares that you then hold ties it up, and the cheap ones (5, 10 or 20 €) cost slightly more than the dear ones."
@@ -1224,31 +1379,62 @@
           "id": "cardLabSmall",
           "caption": "Every Small Deal, the best to buy first"
         },
-        { "type": "h3", "text": "Big Deals" },
+        {
+          "type": "h3",
+          "text": "Big Deals"
+        },
         {
           "type": "p",
           "text": "A Big Deal is a question of **where the deposit comes from**. Bought from cash, the good ones save 5 to 12 rolls (the 10,000 € apartment building and the 10,000 € semi-detached house the most). Bought with a loan they are the single most dangerous thing in the game: **−9 to −84 points** (most of them between −20 and −65), because the loan's interest and the mortgage eat what the property pays. The Pizza franchise and the big apartment complexes are at the bottom of the table (−77 to −84 points with a loan): the deposit is far more than a game at that stage holds. The one exception is the **semi-detached house for 10,000 €** (1,100 € a month): worth buying even with a loan (+3.6 points)."
         },
-        { "type": "data", "id": "cardLabBig", "caption": "Every Big Deal" },
-        { "type": "h3", "text": "Doodads: what they cost you" },
+        {
+          "type": "data",
+          "id": "cardLabBig",
+          "caption": "Every Big Deal"
+        },
+        {
+          "type": "h3",
+          "text": "Doodads: what they cost you"
+        },
         {
           "type": "p",
           "text": "A Doodad is paid, whatever it says - so the question is only how much it hurts. **Each 1,000 € of a Doodad costs about 3.5 to 4.5 points** of the chance to escape: the 7,500 € kitchen takes 34 points, the 5,000 € car or boat 23, a 1,000 € doodad 3.5 and anything under 300 € about one. The same Doodad costs **one and a half to two times as much in the early game** as in the late game - and in a built-up game about half as much, because the properties pay it back sooner. In 6 of 10 bankruptcies the last thing that happened was a Doodad (see below)."
         },
-        { "type": "data", "id": "cardLabDoodads", "caption": "Every Doodad, the worst first" },
-        { "type": "h3", "text": "Market cards" },
+        {
+          "type": "data",
+          "id": "cardLabDoodads",
+          "caption": "Every Doodad, the worst first"
+        },
+        {
+          "type": "h3",
+          "text": "Market cards"
+        },
         {
           "type": "p",
           "text": "Most Market cards do nothing to you. A **buyer** for your single-family home is worth the most when it offers a fixed amount on top: +20,000 € is worth **4.7 points** (15 rolls saved), +5,000 € only 1 - and +10% not much more than that. The two **business boom** cards (+250 € and +400 € on a business) are worth 2.6 and 3.2 points, and about 12 and 17 rolls in a built-up game. The cost cards (tenant, pipe) cost 0.7 to 3.5 points, about what the same money costs as a Doodad. Stock splits do not matter."
         },
-        { "type": "data", "id": "cardLabMarket", "caption": "The Market cards that touch you" },
-        { "type": "h3", "text": "Dice cards: what a gamble costs" },
+        {
+          "type": "data",
+          "id": "cardLabMarket",
+          "caption": "The Market cards that touch you"
+        },
+        {
+          "type": "h3",
+          "text": "Dice cards: what a gamble costs"
+        },
         {
           "type": "p",
           "text": "A dice card wins on its number or higher: a 4 wins half the time, a 6 one time in six. **The Multi-Level-Marketing buy-in wins half the time and pays every month**: +6 points. **The gold boxes** (a 6 wins, one in six) are small bets that mostly lose: −0.6 and −1.7 points - the coins are worth little compared with what the same money earns in a property. **The sister-in-law** pays 10,000 € back for 5,000 € half the time: on average that is exactly zero, and still it costs 7.6 points - 0.6 when the 5,000 € were in cash, 11.7 when the bank had to lend them: a fair gamble is not free, because the money is gone from the properties it could have bought."
         },
-        { "type": "data", "id": "cardLabDice", "caption": "The cards decided by a die" },
-        { "type": "h3", "text": "Where a game stands on the way" },
+        {
+          "type": "data",
+          "id": "cardLabDice",
+          "caption": "The cards decided by a die"
+        },
+        {
+          "type": "h3",
+          "text": "Where a game stands on the way"
+        },
         {
           "type": "p",
           "text": "Passive income as a share of the expenses is the figure that tells how near the exit is. The first table shows, per profession, where the games that **did escape** stood at roll 10, 20, 30, 40 and 60 - the middle game, and in brackets the fast tenth and the slow tenth. At roll 20 a game that escapes has typically covered 7 to 24% of its expenses; at roll 40 20 to 60%."
@@ -1267,12 +1453,19 @@
           "id": "cardLabBands",
           "caption": "Chance to escape / go bankrupt, by how far a game has got"
         },
-        { "type": "h3", "text": "What ends a game in bankruptcy" },
+        {
+          "type": "h3",
+          "text": "What ends a game in bankruptcy"
+        },
         {
           "type": "p",
           "text": "Of 12,000 games with the all-round strategy, 16% went bankrupt. The table shows what the last decision before the end was and which cards were most often among the last three. It is **almost always a Doodad** (61%), a Deal that was passed (26%, the game was already lost) or a Market cost card. The kitchen, the first car, the braces and the boat are the most frequent - the expensive Doodads in the deck. The best protection is not a clever Deal but **cash on hand for the next Doodad** (see section 17)."
         },
-        { "type": "data", "id": "cardLabRuin", "caption": "The last decision before a bankruptcy" },
+        {
+          "type": "data",
+          "id": "cardLabRuin",
+          "caption": "The last decision before a bankruptcy"
+        },
         {
           "type": "callout",
           "kind": "tip",
@@ -1393,7 +1586,10 @@
               "term": "Open decision",
               "text": "A card that waits for a dice roll on the dashboard."
             },
-            { "term": "Offer", "text": "What a Market buyer pays. Good until the next Payday." },
+            {
+              "term": "Offer",
+              "text": "What a Market buyer pays. Good until the next Payday."
+            },
             {
               "term": "Live game",
               "text": "The game your account is playing right now. Saved games are copies that can become live again."
@@ -1407,6 +1603,384 @@
               "text": "The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Smile, small ones through Splurge."
             }
           ]
+        }
+      ]
+    },
+    "tables": {
+      "nav": "Playing with others",
+      "title": "Playing with others: tables",
+      "intro": "The same game, with friends, at one table.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "A **table** is the Cashflow game played by several players at once, on the server. Every player has their own books, the card piles are shared, and everything is open to everyone - every player's profession, income statement and balance sheet - except the dice and the order of the piles. A table never reads or writes the books of your own account. Tables are for game accounts only."
+        },
+        {
+          "type": "h3",
+          "text": "Open, join, start"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Open or join",
+              "text": "Open a table from the lobby (menu, \"Multiplayer\") with a name, the number of seats, public or private, the clock and how the game ends - or join an open table, or use an invite code."
+            },
+            {
+              "title": "Get ready",
+              "text": "Everyone presses ready. The host starts the game once at least two players are ready."
+            },
+            {
+              "title": "Pick a profession",
+              "text": "Everyone picks at the same time and the picks stay hidden until the last one is in. Duplicates are allowed unless the host made professions unique or random."
+            },
+            {
+              "title": "Play",
+              "text": "Each player gets their own starting books. The ring shows one token per player, each with its colour and letter."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "What is different from the solo game"
+        },
+        {
+          "type": "table",
+          "head": ["What", "Solo", "At a table"],
+          "rows": [
+            ["Who rolls", "You", "The player whose turn it is; the dice are the server's"],
+            [
+              "Card piles",
+              "Yours",
+              "Shared: a card drawn is gone for everyone until the pile is reshuffled"
+            ],
+            [
+              "Looking at cards",
+              "Any pile, any card (free rules)",
+              "One random card per space: take it or pass it"
+            ],
+            ["Buying", "Any time (free rules)", "Only with the card in hand"],
+            [
+              "Rolls and entries",
+              "You may report a roll, type a transaction",
+              "Never: only the server rolls, nothing is typed in"
+            ],
+            ["Selling", "At a price you name (free rules)", "Only into an offer a card made"],
+            [
+              "Doodads",
+              "May be ticked off without paying (free rules)",
+              "Always paid: nobody can pass one"
+            ],
+            [
+              "Winning",
+              "Escape the rat race",
+              "The first to escape, a round limit, or everyone finished - the host chooses"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Forced, not optional",
+          "text": "A shared table cannot run under the solo game's loose rules: a claimed roll, a typed-in transaction, a peeked-at pile or a self-named sale price would let one player cheat the others."
+        }
+      ]
+    },
+    "tableplay": {
+      "nav": "A turn at a table",
+      "title": "A turn at a table",
+      "intro": "Roll, settle the space, pass the dice on.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Roll",
+              "text": "On your turn you roll and the token moves. Every Payday the token reaches is paid."
+            },
+            {
+              "title": "Settle the space",
+              "text": "On a Deals space you draw Small or Big and buy or pass; on a Doodad you pay; a Market card is drawn for you and applies to every player at the table."
+            },
+            {
+              "title": "Pass the turn",
+              "text": "When the space is settled the next player is up. A bank loan can be taken or repaid when the rules let you."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "The clock, absence and pauses"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**The clock** - none, a time per move, a time bank per player (with an optional increment), or a daily clock for slow games. The server alone decides when time is up.",
+            "**Out of time** - the server plays the most passive legal turn for the player: roll, pass the card, buy and sell nothing.",
+            "**Away** - after a number of timeouts in a row (2 by default) a player is marked away and their turns are played at once, until they say they are back.",
+            "**Pause** - the host can pause and resume; a pause gives everyone the time back."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "The end"
+        },
+        {
+          "type": "p",
+          "text": "The game ends as the host set it: the **first player to escape** the rat race (the default), everyone finished, or after a number of rounds. The ranking puts those who escaped first (the earliest first), then by passive income, then the bankrupt. Every player can save the game to their own saved games, once."
+        }
+      ]
+    },
+    "tabletrade": {
+      "nav": "Selling and trading",
+      "title": "Selling and trading at a table",
+      "intro": "Nobody sells on their own initiative.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Selling needs a card. A **Market card** drawn by anyone makes an offer to every player who owns what it buys (properties, gold); a **stock price card** moves that share's price for every holder. While such an offer is open for you, you can sell into it - on your turn or off it - and it is gone when it is. No card, no selling."
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Trading a Deal card** - the property or asset card in your hand (never a share) can be offered to the other players at a price. They take it at that price, answer with a price of their own, or decline; you can accept one of their prices.",
+            "**Both sides must agree** - nothing moves until they do, and the offer ends with your turn.",
+            "**Shares are never traded** - only the player who drew a stock card can buy it."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Why",
+          "text": "Because only a card can start a sale, nobody can make money out of thin air by naming their own price."
+        }
+      ]
+    },
+    "bots": {
+      "nav": "Bots and champions",
+      "title": "Bots and the champions",
+      "intro": "A seat that plays itself, by the rules.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The host can seat **bots** in the lobby. A bot has no account; it is always ready, picks its own profession, and plays its turn a moment after the table changes - through the same rules, the same clock and the same log as a person, so everyone watches it move by move. It sees only what a player sees: its own books and everyone's public books, never the dice or the order of the piles."
+        },
+        {
+          "type": "table",
+          "head": ["Level", "Bots", "How they play"],
+          "rows": [
+            [
+              "Easy",
+              "Sleepy Sam, Careful Carla, Cash Charlie",
+              "Never invests / only picky properties / only what cash pays for"
+            ],
+            [
+              "Medium",
+              "Trader Tina, Banker Ben, Marketing Mia, Steady Stella, Gambler Gus",
+              "Stocks for deposits / borrows when it pays / marketing first / small then big deals / leveraged big deals"
+            ],
+            [
+              "Hard",
+              "Allie All-Round, Quick Quinn",
+              "The best all-round strategies of the strategy lab and its search"
+            ],
+            [
+              "Champion",
+              "Champion Cleo, Champion Cleo II, Master Maxine",
+              "Cleo plays the first all-round champion strategy, Cleo II the latest one; Maxine plays the champion of her own profession (a few professions have a specialist)"
+            ],
+            [
+              "Characters",
+              "Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen",
+              "Each plays the best version of one style - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength"
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Fair play",
+          "text": "Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is."
+        }
+      ]
+    },
+    "tournament": {
+      "nav": "How the champions were found",
+      "title": "How the champions were found",
+      "intro": "Thousands of tables, played by strategies.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The **tournament** plays whole tables in memory - the real table rules - with a strategy at every seat and a profession at every seat, every strategy in every seat, again and again. A table is won by the first player to escape. Seat order is shuffled, so no strategy profits from going first."
+        },
+        {
+          "type": "data",
+          "id": "tournamentOverall",
+          "caption": "How often each strategy won the tables it sat at (everyone the same profession; guided and strict rules together)"
+        },
+        {
+          "type": "p",
+          "text": "A **search** then varies the strategy's knobs - which properties to buy, how much to keep in reserve, when to borrow, when to go for Big Deals, and how much more risk to take when a rival pulls ahead - and keeps what wins, generation after generation. The finalists are played again on games the search never saw; only then is a strategy called a champion. A profession gets a champion of its own only if it beats the all-round champion on those fresh games."
+        },
+        {
+          "type": "data",
+          "id": "championBook",
+          "caption": "The champion of every profession"
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Not a promise",
+          "text": "A win share is an average over thousands of tables. In any one game the dice decide a lot, and a player who reads the table well can beat a champion. The numbers are measured again whenever the rules change."
+        }
+      ]
+    },
+    "rating": {
+      "nav": "Scoring and the leaderboard",
+      "title": "How a game is scored",
+      "intro": "Who placed where, and what that does to a rating.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Every finished game gives each player a **place**. At a table that counts, the places move the players' **ratings**, and the leaderboard is sorted by rating. All of it is fixed rules - this page lists every one of them."
+        },
+        {
+          "type": "h3",
+          "text": "1. The place"
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "**Escaped** the rat race (passive income covers every monthly expense): first. Whoever got out earlier is placed higher.",
+            "**Still playing** when the game ends: placed by how close they are to escaping - passive income divided by all monthly expenses, loan payments included. A profession with high expenses, or a player who borrowed, is measured on the same scale as everyone else; the raw income does not decide. Equal progress: the higher passive income, then the higher monthly cashflow.",
+            "**Bankrupt** (a negative monthly cashflow): below everybody still playing. Whoever lasted longer is placed higher.",
+            "**Left** the game: last."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "2. Does the game count?"
+        },
+        {
+          "type": "p",
+          "text": "A finished game moves the ratings only when all of this holds. Otherwise it still adds to the statistics (games, wins, average place), but not to the rating:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "The host left **Ranked** switched on when the table was made.",
+            "The game **finished** - a table that was closed, or timed out, does not count.",
+            "At least **two seats and one person**: bots playing only against bots never move the board.",
+            "At least **8 rounds** were played, or somebody escaped earlier."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "The game-over panel says whether the game counted, and why not when it did not."
+        },
+        {
+          "type": "h3",
+          "text": "3. The rating"
+        },
+        {
+          "type": "p",
+          "text": "A table is a series of duels, everybody against everybody. In each duel the better place scores 1, the worse place 0, equal places half. Everyone has a rating (people start at **1500**) that says how a duel was expected to go. Only the **surprise** moves it: beating a stronger player earns a lot, beating a much weaker one almost nothing, losing to a weaker one costs a lot."
+        },
+        {
+          "type": "p",
+          "text": "The change is `K × field × (sum of the surprises of all duels) ÷ (players - 1)`. The parts:"
+        },
+        {
+          "type": "table",
+          "head": ["Part", "Value", "Why"],
+          "rows": [
+            [
+              "K - how fast a rating moves",
+              "40 for a person's first 20 rated games, then 24. Bots: 8",
+              "A new player finds their level quickly. A bot plays thousands of games and moves slowly."
+            ],
+            [
+              "Field - who sits at the table",
+              "`0.4 + 0.6 × (people - 1) ÷ (seats - 1)`: 0.4 for one person among bots, 1.0 for people only",
+              "A table of real players is worth more than one against bots. It applies to gains and losses alike."
+            ],
+            [
+              "Beating a beginner bot",
+              "counts 25%",
+              "Farming the easiest opponents earns almost nothing."
+            ],
+            [
+              "The same people again",
+              "within 24 hours the k-th repeat counts `1 ÷ (1 + k)`",
+              "Trading wins between friends does not pay."
+            ],
+            [
+              "Leaving",
+              "before round 3: nothing, and you are not an opponent for the others. Later: last place",
+              "Leaving a lobby or a doomed start is free. Walking away from a lost game is a loss."
+            ],
+            ["The lowest rating", "100", "A rating never goes below it."]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "example",
+          "title": "A worked example",
+          "text": "Four people, everybody at 1500, a new player wins. Three duels are won, each expected at one half, so the surprise is 1.5: 40 × 1.0 × 1.5 ÷ 3 = **+20**. The same win as the only person against three bots at 1500 is worth 40 × 0.4 × 1.5 ÷ 3 = **+8** - and less again when the bots are beginners."
+        },
+        {
+          "type": "h3",
+          "text": "4. The leaderboard"
+        },
+        {
+          "type": "list",
+          "items": [
+            "A rating is marked **provisional** until it has 5 rated games.",
+            "People are listed only after they switch **Show me on the leaderboard** on - their choice. Bots are listed once they have a rated game.",
+            "Bots start from a measured rating (how often each won in thousands of simulated tables) and then move slowly.",
+            "A player's card shows the rating, the record (played, won, lost, average place) and the last games with a rating chart."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Deliberately not scored",
+          "text": "**Profession:** players pick one or it is drawn, depending on the table, and the place compares progress to escaping, so a big-expense profession is not at a disadvantage. **Speed:** an earlier escape is a better place, but the number of rounds a win took adds no points - a win is a win. **Cash on hand:** the goal of the game is income, not savings. **Loans:** they count through their monthly payment. All of these can be refined once real games show a need."
+        }
+      ]
+    },
+    "agents": {
+      "nav": "Playing with an agent",
+      "title": "Playing with an agent",
+      "intro": "Let your AI assistant take a seat.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Give it a seat of its own",
+              "text": "The agent needs its own game account and a personal access token with the scopes `game:r` and `game:w`, with the MCP server connected."
+            },
+            {
+              "title": "Open a table",
+              "text": "You open a table (or the agent does) and seat a few bots if you like. Give the agent the invite code or the table id."
+            },
+            {
+              "title": "Let it play",
+              "text": "The agent joins, readies up, picks a profession, and then reads the table before every move and plays only the moves the table lists as legal - always with a command id, so a repeated call is applied once."
+            },
+            {
+              "title": "Ask for the story",
+              "text": "Ask it to say what it did and why, and when it is waiting for others. Do not let it rewind, kick or close a table unless you asked."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "The server decides",
+          "text": "The server enforces the turn, the rules and the clock, so an agent cannot cheat and cannot play for a seat that is not its own. Tell it its task is to be the first to escape: it plays within the rules, from the same information a person has."
         }
       ]
     }

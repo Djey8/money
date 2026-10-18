@@ -1,4 +1,4 @@
-import type { CashflowDealCard } from '../types';
+import type { CashflowDealCard, CashflowDoodadCard, CashflowMarketCard } from '../types';
 import type { DealChoice, HouseMove, Pile, Policy, PolicyParams, PolicyView } from './policy';
 
 /**
@@ -8,7 +8,7 @@ import type { DealChoice, HouseMove, Pile, Policy, PolicyParams, PolicyView } fr
  * points the knowledge base talks about.
  */
 
-const DEFAULTS: PolicyParams = {
+export const POLICY_DEFAULTS: PolicyParams = {
   buyProperties: true,
   minMonthlyReturn: 0,
   reserveMinor: 0,
@@ -21,7 +21,41 @@ const DEFAULTS: PolicyParams = {
   sellWhenProfitMonths: null,
   repayLoans: false,
   charityTwoDice: true,
+  skipDoodadsAboveMinor: null,
+  catchUp: null,
+  protectLead: null,
+  countShares: null,
+  pileByCount: false,
+  countReturnFactor: 0,
+  speculate: null,
 };
+
+/** The units of an apartment complex from its deck symbol (APH24 = 24 units). */
+const unitsOf = (symbol: string | undefined): number =>
+  Number((symbol ?? '').match(/(\d+)$/)?.[1] ?? 0);
+
+/** What a Market buyer card pays for a property above what it cost (price = deposit + mortgage); 0 when it is not for that property. */
+export function buyerGainMinor(buyer: CashflowMarketCard, card: CashflowDealCard): number {
+  const sells = buyer.sells;
+  if (!sells || !card.symbol) return 0;
+  if (!(sells.symbols ?? [sells.family]).includes(card.symbol)) return 0;
+  const price = (card.depositMinor ?? 0) + (card.mortgageMinor ?? 0);
+  if (sells.plusPercent !== undefined) return Math.round((price * sells.plusPercent) / 100);
+  if (sells.plusMinor !== undefined) return sells.plusMinor;
+  if (sells.priceMinor !== undefined) return sells.priceMinor - price;
+  if (sells.pricePerUnitMinor !== undefined)
+    return sells.pricePerUnitMinor * unitsOf(card.symbol) - price;
+  return 0;
+}
+
+/** The return on the deposit of a property card (monthly cashflow per deposit); null for a card that is not one. */
+const returnOf = (card: CashflowDealCard): number | null =>
+  card.assetKind === 'investment' && (card.depositMinor ?? 0) > 0
+    ? (card.cashflowMinor ?? 0) / (card.depositMinor as number)
+    : null;
+
+const meanOf = (values: number[]): number | null =>
+  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 
 /** Rounds `value` up to a whole number of `step`s. */
 function ceil(value: number, step: number): number {
@@ -34,29 +68,106 @@ export function paramPolicy(
   description: string,
   overrides: Partial<PolicyParams> = {},
 ): Policy {
-  const params: PolicyParams = { ...DEFAULTS, ...overrides };
+  const params: PolicyParams = { ...POLICY_DEFAULTS, ...overrides };
+
+  /** The knobs as they apply right now: loosened when a rival leads, tightened when this player does (a table only). */
+  function effective(view: PolicyView): {
+    minMonthlyReturn: number;
+    loanCoverage: number;
+    reserveMinor: number;
+  } {
+    let { minMonthlyReturn, loanCoverage, reserveMinor } = params;
+    // counting cards: pickier while the good cards are still to come, easier once they are gone
+    if (params.countReturnFactor !== 0 && view.deck?.offeredDeck) {
+      const deck = view.deck.offeredDeck;
+      if (deck === 'dealSmall' || deck === 'dealBig') {
+        const all = (view.books.gameSet?.decks?.[deck] ?? []) as CashflowDealCard[];
+        const rest = view.deck.remaining[deck];
+        const meanAll = meanOf(all.flatMap((c) => returnOf(c) ?? []));
+        const meanRest = meanOf(rest.flatMap((c) => returnOf(c) ?? []));
+        if (meanAll && meanRest) {
+          const richness = Math.min(1.5, Math.max(0.5, meanRest / meanAll));
+          minMonthlyReturn *= Math.pow(richness, params.countReturnFactor);
+        }
+      }
+    }
+    const table = view.table;
+    if (table) {
+      const behind = table.leaderCoverage - table.myCoverage;
+      const adjust =
+        params.catchUp && behind >= params.catchUp.gap
+          ? params.catchUp
+          : params.protectLead && -behind >= params.protectLead.gap
+            ? params.protectLead
+            : null;
+      if (adjust) {
+        minMonthlyReturn *= adjust.minMonthlyReturnFactor;
+        loanCoverage *= adjust.loanCoverageFactor;
+        reserveMinor = Math.round(reserveMinor * adjust.reserveFactor);
+      }
+    }
+    return { minMonthlyReturn, loanCoverage, reserveMinor };
+  }
 
   function dealInvestment(view: PolicyView, card: CashflowDealCard): DealChoice {
     if (!params.buyProperties) return { buy: false };
+    const { minMonthlyReturn, loanCoverage, reserveMinor } = effective(view);
     const deposit = card.depositMinor ?? 0;
+    if (params.speculate && view.deck && deposit > 0 && view.cashMinor - deposit >= reserveMinor) {
+      const buyers = view.deck.remaining.market.filter((m) => buyerGainMinor(m, card) > 0);
+      if (buyers.length > 0) {
+        const wait = view.deck.remaining.market.length / (buyers.length + 1);
+        const gain = buyers.reduce((sum, m) => sum + buyerGainMinor(m, card), 0) / buyers.length;
+        if (
+          wait <= params.speculate.maxWaitDraws &&
+          gain / deposit >= params.speculate.minEvRatio
+        ) {
+          return { buy: true };
+        }
+      }
+    }
     const cashflow = card.cashflowMinor ?? 0;
     if (cashflow <= 0 || deposit <= 0) {
       // a business bought outright (no deposit asked) or a card that pays nothing
       return cashflow > 0 && deposit === 0 ? { buy: true } : { buy: false };
     }
-    if (cashflow / deposit < params.minMonthlyReturn) return { buy: false };
-    if (view.cashMinor - deposit >= params.reserveMinor) return { buy: true };
+    if (cashflow / deposit < minMonthlyReturn) return { buy: false };
+    if (view.cashMinor - deposit >= reserveMinor) return { buy: true };
     if (params.loans === 'never') return { buy: false };
     // borrow the shortfall (rounded up to the loan step): worth it when the card pays well above the interest
-    const shortfall = deposit + params.reserveMinor - view.cashMinor;
+    const shortfall = deposit + reserveMinor - view.cashMinor;
     const loan = ceil(shortfall, view.loanStepMinor);
     const interest = ((view.bankLoanMinor + loan) * view.loanInterestPercent) / 100;
     const interestAlready = (view.bankLoanMinor * view.loanInterestPercent) / 100;
     const addedInterest = interest - interestAlready;
-    return cashflow >= params.loanCoverage * addedInterest ? { buy: true } : { buy: false };
+    return cashflow >= loanCoverage * addedInterest ? { buy: true } : { buy: false };
+  }
+
+  function doodad(_view: PolicyView, card: CashflowDoodadCard): 'pay' | 'pass' {
+    return params.skipDoodadsAboveMinor !== null && card.costMinor > params.skipDoodadsAboveMinor
+      ? 'pass'
+      : 'pay';
   }
 
   function dealShare(view: PolicyView, card: CashflowDealCard): DealChoice {
+    // counting cards: a share is bought for a sale that is already in the pile - a card of the same ticker at a much higher price
+    if (params.countShares && view.deck) {
+      const count = params.countShares;
+      const price = card.priceMinor ?? 0;
+      if (price <= 0) return { buy: false };
+      const pile = view.deck.remaining.dealSmall;
+      const better = pile.filter(
+        (c) =>
+          c.assetKind === 'share' &&
+          c.symbol === card.symbol &&
+          (c.priceMinor ?? 0) >= price * count.minGain,
+      );
+      if (better.length === 0) return { buy: false };
+      if (pile.length / (better.length + 1) > count.maxWaitDraws) return { buy: false };
+      const budget = Math.max(0, view.cashMinor - params.reserveMinor) * count.maxLotShare;
+      const quantity = Math.min(card.quantity ?? Infinity, Math.floor(budget / price));
+      return quantity >= 1 ? { buy: true, quantity } : { buy: false };
+    }
     if (!params.shares) return { buy: false };
     const price = card.priceMinor ?? 0;
     if (price <= 0 || price > params.shares.buyBelowMinor) return { buy: false };
@@ -72,32 +183,52 @@ export function paramPolicy(
     return params.buyGambles && affordable ? { buy: true } : { buy: false };
   }
 
+  function deal(view: PolicyView, card: CashflowDealCard): DealChoice {
+    if (card.assetKind === 'investment') return dealInvestment(view, card);
+    if (card.assetKind === 'share') return dealShare(view, card);
+    return dealAsset(view, card);
+  }
+
   return {
     id,
     label,
     description,
     params: params as unknown as Record<string, unknown>,
     dice: () => (params.charityTwoDice ? 2 : 1),
+    doodad,
     pile(view: PolicyView, random: () => number): Pile {
+      // counting cards: the pile whose remaining cards this strategy would buy most often (and can afford)
+      if (params.pileByCount && view.deck) {
+        const share = (pile: 'dealSmall' | 'dealBig'): number => {
+          const rest = view.deck!.remaining[pile];
+          if (rest.length === 0) return 0;
+          let good = 0;
+          for (const card of rest) {
+            const asked: PolicyView = { ...view, deck: { ...view.deck!, offeredDeck: pile } };
+            if (deal(asked, card).buy) good += 1;
+          }
+          return good / rest.length;
+        };
+        const small = share('dealSmall');
+        const big = share('dealBig');
+        if (Math.abs(big - small) >= 0.03) return big > small ? 'dealBig' : 'dealSmall';
+      }
       if (params.bigDealFromCashMinor === null) return 'dealSmall';
       if (params.bigDealFromCashMinor <= 0) return 'dealBig';
       // a little randomness would hide the rule; the pile follows the cash
       void random;
       return view.cashMinor >= params.bigDealFromCashMinor ? 'dealBig' : 'dealSmall';
     },
-    deal(view, card) {
-      if (card.assetKind === 'investment') return dealInvestment(view, card);
-      if (card.assetKind === 'share') return dealShare(view, card);
-      return dealAsset(view, card);
-    },
+    deal,
     maintain(view): HouseMove[] {
       const moves: HouseMove[] = [];
       const { books } = view;
 
       // stocks: sell what stands at or above the target
-      if (params.shares) {
+      const sellAbove = params.countShares?.sellAboveMinor ?? params.shares?.sellAboveMinor;
+      if (sellAbove !== undefined) {
         for (const share of books.shares) {
-          if (share.quantity > 0 && share.priceMinor >= params.shares.sellAboveMinor) {
+          if (share.quantity > 0 && share.priceMinor >= sellAbove) {
             moves.push({ kind: 'sell', input: { title: share.tag } });
           }
         }

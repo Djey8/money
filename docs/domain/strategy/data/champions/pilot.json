@@ -1,0 +1,448 @@
+{
+ "profession": {
+  "setId": "cashflow",
+  "id": "pilot",
+  "title": "Pilot/in"
+ },
+ "meta": {
+  "generatedAt": "2026-10-16T07:52:38.241Z",
+  "rulesDigest": "02d612c9ec287f",
+  "config": {
+   "candidates": 32,
+   "generations": 7,
+   "matches": 10,
+   "verify": 1500,
+   "seedBase": 410000,
+   "field": [
+    "champion-v1",
+    "all-rounder",
+    "best-found",
+    "big-deals-when-rich",
+    "mlm-then-properties",
+    "bridge-loans"
+   ]
+  },
+  "seconds": 260
+ },
+ "history": [
+  {
+   "generation": 0,
+   "tables": 30,
+   "best": [
+    {
+     "id": "champion-v2",
+     "known": true,
+     "winRate": 0.7
+    },
+    {
+     "id": "cand-pilot-371",
+     "known": false,
+     "winRate": 0.7
+    },
+    {
+     "id": "cand-pilot-373",
+     "known": false,
+     "winRate": 0.7
+    }
+   ]
+  },
+  {
+   "generation": 1,
+   "tables": 30,
+   "best": [
+    {
+     "id": "cand-pilot-422",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-pilot-421",
+     "known": false,
+     "winRate": 0.6
+    },
+    {
+     "id": "cand-pilot-406",
+     "known": false,
+     "winRate": 0.5666666666666667
+    }
+   ]
+  },
+  {
+   "generation": 2,
+   "tables": 60,
+   "best": [
+    {
+     "id": "cand-pilot-429",
+     "known": false,
+     "winRate": 0.65
+    },
+    {
+     "id": "cand-pilot-449",
+     "known": false,
+     "winRate": 0.65
+    },
+    {
+     "id": "cand-pilot-451",
+     "known": false,
+     "winRate": 0.65
+    }
+   ]
+  },
+  {
+   "generation": 3,
+   "tables": 60,
+   "best": [
+    {
+     "id": "cand-pilot-456",
+     "known": false,
+     "winRate": 0.6833333333333333
+    },
+    {
+     "id": "cand-pilot-438",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-pilot-467",
+     "known": false,
+     "winRate": 0.65
+    }
+   ]
+  },
+  {
+   "generation": 4,
+   "tables": 90,
+   "best": [
+    {
+     "id": "cand-pilot-488",
+     "known": false,
+     "winRate": 0.7111111111111111
+    },
+    {
+     "id": "cand-pilot-495",
+     "known": false,
+     "winRate": 0.6777777777777778
+    },
+    {
+     "id": "cand-pilot-479",
+     "known": false,
+     "winRate": 0.6666666666666666
+    }
+   ]
+  },
+  {
+   "generation": 5,
+   "tables": 90,
+   "best": [
+    {
+     "id": "cand-pilot-516",
+     "known": false,
+     "winRate": 0.7222222222222222
+    },
+    {
+     "id": "cand-pilot-519",
+     "known": false,
+     "winRate": 0.7111111111111111
+    },
+    {
+     "id": "cand-pilot-510",
+     "known": false,
+     "winRate": 0.6888888888888889
+    }
+   ]
+  },
+  {
+   "generation": 6,
+   "tables": 120,
+   "best": [
+    {
+     "id": "cand-pilot-535",
+     "known": false,
+     "winRate": 0.7333333333333333
+    },
+    {
+     "id": "cand-pilot-516",
+     "known": false,
+     "winRate": 0.725
+    },
+    {
+     "id": "cand-pilot-530",
+     "known": false,
+     "winRate": 0.725
+    }
+   ]
+  }
+ ],
+ "verdict": [
+  {
+   "id": "cand-pilot-516",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 5000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 500000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    },
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.6
+    },
+    "protectLead": null
+   },
+   "wins": 1061,
+   "tables": 1500,
+   "winRate": 0.7073333333333334,
+   "escapeRate": 0.71,
+   "bankruptRate": 0.0026666666666666666,
+   "interval": {
+    "low": 0.6838015218233723,
+    "high": 0.7298058687422299
+   }
+  },
+  {
+   "id": "cand-pilot-530",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 5000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 500000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.6
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 1061,
+   "tables": 1500,
+   "winRate": 0.7073333333333334,
+   "escapeRate": 0.71,
+   "bankruptRate": 0.0026666666666666666,
+   "interval": {
+    "low": 0.6838015218233723,
+    "high": 0.7298058687422299
+   }
+  },
+  {
+   "id": "cand-pilot-547",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 5000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 500000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.6
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 1061,
+   "tables": 1500,
+   "winRate": 0.7073333333333334,
+   "escapeRate": 0.71,
+   "bankruptRate": 0.0026666666666666666,
+   "interval": {
+    "low": 0.6838015218233723,
+    "high": 0.7298058687422299
+   }
+  },
+  {
+   "id": "champion-v2",
+   "known": true,
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   },
+   "wins": 1029,
+   "tables": 1500,
+   "winRate": 0.686,
+   "escapeRate": 0.692,
+   "bankruptRate": 0.0006666666666666666,
+   "interval": {
+    "low": 0.6620625370877415,
+    "high": 0.7089871798505318
+   }
+  },
+  {
+   "id": "cand-pilot-535",
+   "known": false,
+   "description": "properties paying at least 3.0% a month, 250 kept in reserve, borrows when covered 1x, Big Deals from 5000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 6 months of profit, takes more risk when 15+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.03,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1,
+    "bigDealFromCashMinor": 500000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 6,
+    "repayLoans": true,
+    "charityTwoDice": false,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.15,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0.6
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 978,
+   "tables": 1500,
+   "winRate": 0.652,
+   "escapeRate": 0.6533333333333333,
+   "bankruptRate": 0.006666666666666667,
+   "interval": {
+    "low": 0.6275334622278732,
+    "high": 0.6756899623668448
+   }
+  }
+ ],
+ "champion": {
+  "id": "champion-v2",
+  "source": "champion-v2",
+  "spec": {
+   "id": "champion-v2",
+   "label": "Champion",
+   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.01,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null
+   }
+  },
+  "winRate": 0.686,
+  "interval": {
+   "low": 0.6620625370877415,
+   "high": 0.7089871798505318
+  },
+  "tables": 1500,
+  "againstChampionV1": 0.686
+ },
+ "adopted": false
+}

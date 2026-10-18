@@ -1,4 +1,5 @@
-import { gameTradeStep } from '@money/domain';
+import { gameTradeStep, parseGrowComment } from '@money/domain';
+import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import { bucketCapacity } from 'src/app/shared/bucket.utils';
 import {
   Component,
@@ -244,6 +245,23 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
       this.prefilledDate = this.dateTextField;
     }
     this.wasOpen = open;
+    // a game account: the comment box shows all of its text (a pre-filled one too) without scrolling
+    if (open && this.isGame) this.growComment();
+  }
+
+  get isGame(): boolean {
+    return CashflowGameService.isCashflowGame();
+  }
+
+  /** Makes the comment box as tall as its text; only the Cashflow game does (JFK, 2026-10-17). */
+  growComment(event?: Event): void {
+    const box =
+      (event?.target as HTMLTextAreaElement | null) ??
+      (document.getElementById('comment') as HTMLTextAreaElement | null);
+    if (!box || !this.isGame) return;
+    if (!event && box.scrollHeight <= box.clientHeight + 1) return;
+    box.style.height = 'auto';
+    box.style.height = `${box.scrollHeight}px`;
   }
 
   // eslint-disable-next-line @angular-eslint/no-empty-lifecycle-method -- required by `implements AfterViewInit`; placeholder hook, no work needed currently
@@ -477,7 +495,57 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     this.onAmountChange(v);
   }
 
+  /**
+   * The solo game's Add dialog, at a table: a Buy, a Sell or a Doodad payment is read from what the dialog says (the domain's own
+   * typed Grow parser) and sent as the matching move; the server books it with the card's and the offer's numbers. Anything else
+   * a plain transaction would do is not a move of the game and is refused.
+   */
+  private async addAtTable(remote: RemoteGame): Promise<void> {
+    const comment = AddComponent.commentTextField;
+    const state = AppStateService.instance;
+    const statements = parseGrowComment(comment);
+    let outcome: { ok: boolean; message?: string } | null = null;
+    if (/#doodad\b/.test(comment)) {
+      const offered = state.cashflowGame.turn?.pending?.offered;
+      if (offered) outcome = await remote.payDoodad(offered.cardId);
+    } else if (/#market\b/.test(comment)) {
+      // the cost of the Market card in hand, paid by the player who drew it
+      const offered = state.cashflowGame.turn?.pending?.offered;
+      outcome = offered ? await remote.payMarket(offered.cardId) : { ok: true };
+    } else {
+      for (const statement of statements) {
+        if (statement.kind === 'buyShare') {
+          outcome = await remote.buyPlanned(statement.title, statement.quantity);
+        } else if (statement.kind === 'buyInvestment' || statement.kind === 'buyAsset') {
+          outcome = await remote.buyPlanned(statement.title);
+        } else if (statement.kind === 'sellShare') {
+          outcome = await remote.sellPosition(statement.title, statement.quantity);
+        } else if (statement.kind === 'sellInvestment' || statement.kind === 'sellAsset') {
+          outcome = await remote.sellPosition(statement.title);
+        } else {
+          continue;
+        }
+        break;
+      }
+    }
+    if (!outcome) {
+      this.toastService.show(
+        'This is not a move of the game: it is not booked at a table.',
+        'error',
+      );
+    } else if (!outcome.ok) {
+      this.toastService.show(outcome.message ?? 'The move did not go through.', 'error');
+    }
+    // a payment of the card in hand goes on in the game screen; a Grow trade stays where it was made (maybe there is another to sell)
+    if (/#(doodad|market)/.test(comment)) RemoteGameHook.reopen?.();
+  }
+
   addTransaction() {
+    // another player's books are on screen: they can be read, nothing can be added to them
+    if (RemoteGameHook.current?.viewOnly()) {
+      AddComponent.isAdd = false;
+      return;
+    }
     this.clearError();
     this.errorTextLable = '';
 
@@ -523,6 +591,13 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         this.showError(refusal);
         return;
       }
+    }
+
+    // In a game played with others this dialog books nothing itself: what it says is the table's move, and the table books it.
+    if (RemoteGameHook.current) {
+      AddComponent.isAdd = false;
+      void this.addAtTable(RemoteGameHook.current);
+      return;
     }
 
     AddComponent.returnToGame =

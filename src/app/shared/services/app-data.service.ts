@@ -502,6 +502,8 @@ export class AppDataService {
   }
 
   private applyBatchData(data: Record<string, any>): void {
+    // read-only (a shared table's books are on screen): the account's data must not replace them
+    if (DatabaseService.readOnly) return;
     for (const path in data) {
       if (path === 'meta') continue; // handled by loadTier1() before this runs, not a UI data path
       try {

@@ -228,7 +228,15 @@
         (click)="clickedCashflowGame()"
       >
         <span class="menu-icon">🎲</span>
-        <span>{{ 'Menu.cashflowGame' | translate }}</span>
+        <span>{{ (hasLoadedGame() ? 'Menu.cashflowGame' : 'Menu.cashflowSolo') | translate }}</span>
+      </button>
+      <button
+        class="menu-item menu-item--compact menu-item--full-row"
+        *ngFor="let entry of gameMenuEntries(); trackBy: trackEntry"
+        (click)="clickedGameMenuEntry(entry.path)"
+      >
+        <span class="menu-icon">{{ entry.icon }}</span>
+        <span>{{ entry.label }}</span>
       </button>
     </div>
   </div>

@@ -8,6 +8,13 @@ import { CrypticService } from './cryptic.service';
   providedIn: 'root',
 })
 export class LocalService {
+  /**
+   * Keys whose data the app is showing from somewhere else right now (a shared game table's books, held in memory): pages read
+   * their cached lists from here while they are built, so these keys answer with what is on screen instead of the account's own
+   * cache, and are never written - the account's cache must come out of it untouched. Null when nothing is shadowed.
+   */
+  static shadow: Record<string, () => unknown> | null = null;
+
   constructor(private cryptic: CrypticService) {}
 
   /**
@@ -16,6 +23,7 @@ export class LocalService {
    * @param value - The value to be stored.
    */
   public saveData(key: string, value: any) {
+    if (LocalService.shadow && key in LocalService.shadow) return;
     const encrypted = this.cryptic.encrypt(value, 'local');
     try {
       localStorage.setItem(key, encrypted);
@@ -37,6 +45,10 @@ export class LocalService {
    * @returns The retrieved data.
    */
   public getData(key: string) {
+    if (LocalService.shadow && key in LocalService.shadow) {
+      const shown = LocalService.shadow[key]();
+      return typeof shown === 'string' ? shown : JSON.stringify(shown ?? []);
+    }
     const data = localStorage.getItem(key) || '';
     return this.cryptic.decrypt(data, 'local');
   }
@@ -46,6 +58,7 @@ export class LocalService {
    * @param key - The key under which the data is stored.
    */
   public removeData(key: string) {
+    if (LocalService.shadow && key in LocalService.shadow) return;
     localStorage.removeItem(key);
   }
 
