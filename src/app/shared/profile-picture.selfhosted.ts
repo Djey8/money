@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   Injectable,
+  NgZone,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -78,6 +79,7 @@ const WORDS: Record<
 @Injectable({ providedIn: 'root' })
 export class ProfilePictureService {
   private readonly http = inject(HttpClient);
+  private readonly zone = inject(NgZone);
   private picture: string | null = null;
   private observer: MutationObserver | null = null;
 
@@ -98,9 +100,16 @@ export class ProfilePictureService {
   show(picture: string | null): void {
     this.picture = picture;
     if (picture && !this.observer && typeof MutationObserver !== 'undefined') {
-      // every page has its own toolbar image: one that appears later gets the picture too
-      this.observer = new MutationObserver(() => this.apply());
-      this.observer.observe(document.body, { childList: true, subtree: true });
+      // Every page has its own toolbar image: one that appears later gets the picture too. Watched OUTSIDE Angular's zone and only
+      // for a new toolbar image: inside the zone every callback runs a change detection, which redraws the game board's SVG, which
+      // is a DOM change, which calls back - a loop that froze the page (found 2026-10-19: a picture and a game board crashed the tab).
+      this.zone.runOutsideAngular(() => {
+        this.observer = new MutationObserver((records) => {
+          if (records.some((record) => Array.from(record.addedNodes).some(hasToolbarImage)))
+            this.apply();
+        });
+        this.observer.observe(document.body, { childList: true, subtree: true });
+      });
     }
     this.apply();
   }
@@ -124,6 +133,13 @@ export class ProfilePictureService {
       this.observer = null;
     }
   }
+}
+
+/** Whether a node that was added to the page is, or holds, a toolbar picture. */
+function hasToolbarImage(node: Node): boolean {
+  if (node.nodeType !== Node.ELEMENT_NODE) return false;
+  const element = node as Element;
+  return element.id === 'profile-pic' || element.querySelector('#profile-pic') !== null;
 }
 
 /** Cuts the middle square of an image file and shrinks it: what is sent is a few KB. */
