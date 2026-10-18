@@ -75,7 +75,8 @@ export const MANUAL_SECTIONS: ManualSectionRef[] = [
   { id: 'tabletrade', number: '26', level: 0 },
   { id: 'bots', number: '27', level: 0 },
   { id: 'tournament', number: '28', level: 0 },
-  { id: 'agents', number: '29', level: 0 },
+  { id: 'rating', number: '29', level: 0 },
+  { id: 'agents', number: '30', level: 0 },
 ];
 
 /** The languages the manual is written in - all six of the app's (ngx-translate codes: `cn` is Chinese). */

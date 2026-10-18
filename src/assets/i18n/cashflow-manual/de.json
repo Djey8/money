@@ -226,7 +226,10 @@
       "title": "Das Ziel: raus aus dem Hamsterrad",
       "intro": "Du startest mit einem Job, der dein Leben bezahlt und sonst wenig. Das Hamsterrad endet, wenn du den Job nicht mehr brauchst.",
       "blocks": [
-        { "type": "h3", "text": "Passives Einkommen" },
+        {
+          "type": "h3",
+          "text": "Passives Einkommen"
+        },
         {
           "type": "p",
           "text": "**Passives Einkommen** ist das Geld, das jeden Monat ohne deine Arbeit hereinkommt: der Cashflow der Immobilien und Geschäfte, die du besitzt. Deine **Ausgaben** sind alles, was jeden Monat hinausgeht - Steuern, Miete oder Hypothek, Kreditraten, Lebenshaltung, die Kosten deiner Kinder und die Zinsen eines Bankdarlehens. Dein Gehalt ist kein passives Einkommen."
@@ -237,7 +240,10 @@
           "title": "Du hast das Hamsterrad verlassen, wenn",
           "text": "**passives Einkommen ≥ monatliche Ausgaben**. Das Dashboard zeigt dann ein grünes Banner: „Du bist dem Hamsterrad entkommen!“ Du kannst beliebig weiterspielen - das Banner verschwindet einfach wieder, wenn deine Ausgaben über dein passives Einkommen steigen."
         },
-        { "type": "h3", "text": "Wie das Spiel schiefgehen kann" },
+        {
+          "type": "h3",
+          "text": "Wie das Spiel schiefgehen kann"
+        },
         {
           "type": "p",
           "text": "Ist dein **monatlicher Cashflow** (alle Einnahmen minus alle Ausgaben) negativ, nimmt dir jeder Zahltag Bargeld weg, statt welches zu bringen. Das Dashboard warnt dich in Rot. Es hält dich nicht auf: Verkaufe etwas, zahle ein Darlehen zurück oder finde einen besseren Deal vor dem nächsten Zahltag."
@@ -248,7 +254,10 @@
           "title": "Schulden sind kein Verlust - Ausbluten ist es",
           "text": "Geld zu schulden gehört zum Spiel; mit einer Hypothek wird fast jede Immobilie gekauft. Weh tut ein monatlicher Cashflow unter null, vor allem zusammen mit einem teuren Bankdarlehen (10 % des Darlehens jeden Monat)."
         },
-        { "type": "h3", "text": "Worum du spielst" },
+        {
+          "type": "h3",
+          "text": "Worum du spielst"
+        },
         {
           "type": "list",
           "items": [
@@ -303,7 +312,10 @@
             ]
           ]
         },
-        { "type": "h3", "text": "Die Berufskarte" },
+        {
+          "type": "h3",
+          "text": "Die Berufskarte"
+        },
         {
           "type": "p",
           "text": "Tippe auf den Info-Knopf neben deinem Beruf, um seine Karte zu öffnen. Sie hat zwei Ansichten: **Startszenario** (die gedruckte Karte, wie du begonnen hast) und **Live — Aktuelles Spiel** (dasselbe Layout mit den heutigen Zahlen: dein Einkommen und deine Ausgaben, die Immobilien, die du besitzt, deine Schulden)."
@@ -326,7 +338,10 @@
           "id": "professions",
           "caption": "Alle Berufe, bester monatlicher Cashflow zuerst"
         },
-        { "type": "h3", "text": "Worauf du bei der Wahl achtest" },
+        {
+          "type": "h3",
+          "text": "Worauf du bei der Wahl achtest"
+        },
         {
           "type": "list",
           "items": [
@@ -355,7 +370,10 @@
       "title": "Zahltag und der Spielkalender",
       "intro": "Der Zahltag ist der Herzschlag des Spiels. Ein Druck bucht einen Monat.",
       "blocks": [
-        { "type": "h3", "text": "Was der Zahltag tut" },
+        {
+          "type": "h3",
+          "text": "Was der Zahltag tut"
+        },
         {
           "type": "list",
           "items": [
@@ -370,7 +388,10 @@
           "type": "p",
           "text": "Der Zahltag wird nie übersprungen. Auch wenn eine Wohltätigkeits- oder Arbeitslos-Erinnerung angezeigt wird, drückst du jedes Mal Zahltag, wenn du ihn auf dem Brett passierst. Die Erinnerungen gelten deinen Runden auf dem echten Brett, die die App nicht sehen kann."
         },
-        { "type": "h3", "text": "Der Kalender" },
+        {
+          "type": "h3",
+          "text": "Der Kalender"
+        },
         {
           "type": "p",
           "text": "Das Spiel hat seinen eigenen Kalender, der pro Zahltag einen Monat weiterläuft. Für die Buchhaltung werden die Transaktionen im **aktuellen echten Monat** abgelegt, jede an dem Tag ihres Abonnements (Gehalt früh im Monat, Hypothek an ihrem Tag …). Käufe und Zahlungen zwischen zwei Zahltagen bekommen den nächsten freien Tag des Monats, damit die Kontoliste lesbar bleibt."
@@ -434,7 +455,10 @@
           "title": "Wohltätigkeit, Arbeitslos und Baby fragen erst nach",
           "text": "Sie zeigen, was sie tun werden - mit deinen echten Zahlen - und warten auf **Spielen** oder **Abbrechen**, damit ein Fehltipp nichts verändert."
         },
-        { "type": "h3", "text": "Die gezogene Karte finden" },
+        {
+          "type": "h3",
+          "text": "Die gezogene Karte finden"
+        },
         {
           "type": "p",
           "text": "Hast du einen Stapel gewählt, gibt es zwei Wege, eine Karte aufzurufen:"
@@ -486,7 +510,10 @@
           "title": "Ein Projekt pro Karte",
           "text": "Ein zweites Haus derselben Art wird ein zweites Projekt mit einer Zahl im Namen: `EFH`, `EFH-II`, `EFH-III`. Jedes lässt sich einzeln verkaufen."
         },
-        { "type": "h3", "text": "Nicht genug Bargeld?" },
+        {
+          "type": "h3",
+          "text": "Nicht genug Bargeld?"
+        },
         {
           "type": "p",
           "text": "Ist die Anzahlung größer als dein Bargeld, nimmt die App ein **Bankdarlehen** über genau den fehlenden Betrag - auf die nächsten 1.000 aufgerundet - und bucht es zuerst, als eigenen Schritt. Der Kauf folgt als zweiter Schritt. Rückgängig nimmt zuerst den Kauf zurück, mit dem nächsten Rückgängig das Darlehen. Was das kostet, steht unter „Bankdarlehen“."
@@ -496,7 +523,10 @@
           "cardId": "classic-small-efh-45k-2k",
           "caption": "Eine Karte aus dem Kleinen Deal: ein Einfamilienhaus für 45.000 mit 2.000 Anzahlung - es bringt 250 im Monat."
         },
-        { "type": "h3", "text": "Die Namen deiner Käufe" },
+        {
+          "type": "h3",
+          "text": "Die Namen deiner Käufe"
+        },
         {
           "type": "p",
           "text": "Jeder Kauf bekommt ein kurzes Kürzel in der Sprache deines Spiels, damit man sie in Listen und Diagrammen leicht unterscheidet:"
@@ -535,7 +565,10 @@
       "title": "Kleiner Deal",
       "intro": "Der Stapel Kleiner Deal ist für den Anfang: kleine Preise, kleine Anzahlungen. Er hat 38 Karten - 20 Aktien und Fonds, 11 Häuser und Wohnungen und 7 Spezialkarten (Gold, Würfel-Glücksspiele und Multi-Level-Marketing).",
       "blocks": [
-        { "type": "h3", "text": "Aktien und Fonds" },
+        {
+          "type": "h3",
+          "text": "Aktien und Fonds"
+        },
         {
           "type": "p",
           "text": "Es gibt vier Wertpapiere - drei Aktien und einen Fonds - mit je fünf Karten, eine pro Preis. Eine Aktie ist ein **Liquiditätswerkzeug, kein passives Einkommen**: Sie zahlt keinen monatlichen Cashflow. Du kaufst günstig, verkaufst teuer und nutzt das Geld für eine größere Anzahlung."
@@ -545,7 +578,11 @@
           "cardId": "classic-small-ok4u-20",
           "caption": "Eine Aktienkarte: Zu diesem Preis darfst du kaufen. Die Handelsspanne zeigt, wohin sich der Kurs bewegt."
         },
-        { "type": "data", "id": "shares", "caption": "Die vier Wertpapiere" },
+        {
+          "type": "data",
+          "id": "shares",
+          "caption": "Die vier Wertpapiere"
+        },
         {
           "type": "list",
           "items": [
@@ -554,20 +591,30 @@
             "**Aktiensplits** (Marktstapel, siehe „Marktkarten“) verdoppeln oder halbieren die Zahl deiner Aktien."
           ]
         },
-        { "type": "h3", "text": "Einfamilienhäuser und Eigentumswohnungen" },
+        {
+          "type": "h3",
+          "text": "Einfamilienhäuser und Eigentumswohnungen"
+        },
         {
           "type": "face",
           "cardId": "classic-small-etw-55k-5k",
           "caption": "Eine Wohnung mit großer Hypothek - schau vor dem Kauf, was ein Käufer dafür zahlen würde."
         },
-        { "type": "data", "id": "smallProperties", "caption": "Immobilien im Kleinen Deal" },
+        {
+          "type": "data",
+          "id": "smallProperties",
+          "caption": "Immobilien im Kleinen Deal"
+        },
         {
           "type": "callout",
           "kind": "warning",
           "title": "Zwei Karten zahlen nichts",
           "text": "Das Einfamilienhaus für 30.000 und die Wohnung für 40.000 mit 1.000 Anzahlung haben einen Cashflow von **0**. Sie sind Fallen: Sie fressen eine Anzahlung und geben nichts zurück, bis ein Käufer auftaucht. Die Tabelle oben zählt sie in der letzten Spalte."
         },
-        { "type": "h3", "text": "Gold, Glücksspiele und Multi-Level-Marketing" },
+        {
+          "type": "h3",
+          "text": "Gold, Glücksspiele und Multi-Level-Marketing"
+        },
         {
           "type": "list",
           "items": [
@@ -593,8 +640,15 @@
       "title": "Großer Deal",
       "intro": "Karten des Großen Deals brauchen echte Anzahlungen - von 10.000 bis 200.000 - und zahlen echten Cashflow. Es gibt 36 Karten: eine Pizzafranchise, zehn Mehrfamilienhäuser, acht Einfamilienhäuser, fünf Doppelhäuser, vier Appartementkomplexe und acht Geschäfte.",
       "blocks": [
-        { "type": "data", "id": "bigProperties", "caption": "Karten des Großen Deals nach Art" },
-        { "type": "h3", "text": "Immobilien" },
+        {
+          "type": "data",
+          "id": "bigProperties",
+          "caption": "Karten des Großen Deals nach Art"
+        },
+        {
+          "type": "h3",
+          "text": "Immobilien"
+        },
         {
           "type": "p",
           "text": "Häuser, Mehrfamilienhäuser und Komplexe kaufst du mit einer Hypothek. Du zahlst die Anzahlung; die Hypothek wird eine Verbindlichkeit in deiner Bilanz, und der **Cashflow auf der Karte ist das, was nach der Hypothekenrate übrig bleibt** - es ist also die Zahl, die an deinem Zahltag ankommt."
@@ -609,7 +663,10 @@
           "cardId": "classic-big-aph12-350k-50k",
           "caption": "Ein Appartementkomplex mit 12 Einheiten."
         },
-        { "type": "h3", "text": "Geschäfte" },
+        {
+          "type": "h3",
+          "text": "Geschäfte"
+        },
         {
           "type": "p",
           "text": "Die Pizzafranchise, die Geschäftspartner, die automatisierten Unternehmen und die Autowaschanlage funktionieren wie Immobilien: eine Anzahlung und ein monatlicher Cashflow. Partner kaufst du bar (ohne Hypothek), die anderen haben eine. Geschäfte zählen bei den Karten, die von „deiner Immobilie“ sprechen, **nicht** als Immobilien - Reparaturrechnungen treffen sie nicht."
@@ -632,7 +689,10 @@
       "title": "Würfelkarten",
       "intro": "Manche Karten entscheidet ein Würfel. Du zahlst zuerst, dann wird gewürfelt - mit dem Würfel der App oder mit deinem eigenen.",
       "blocks": [
-        { "type": "h3", "text": "So funktioniert ein Wurf" },
+        {
+          "type": "h3",
+          "text": "So funktioniert ein Wurf"
+        },
         {
           "type": "list",
           "items": [
@@ -716,7 +776,11 @@
           "type": "p",
           "text": "Die großen, träumerischen Anschaffungen (ein Boot, eine Küche, das erste Auto fürs Kind) schlägt die App auf deinem **Smile**-Konto vor; die kleinen auf **Splurge**. Keine nimmt Geld von deinem **Fire**- oder **Daily**-Konto. Jede Karte hat eine Kategorie wie Freizeit, Wohnen oder Feiern, damit deine Auswertungen zeigen, wohin ein Spiel voller Schnickschnack ging."
         },
-        { "type": "data", "id": "doodads", "caption": "Schnickschnack nach Kategorie" },
+        {
+          "type": "data",
+          "id": "doodads",
+          "caption": "Schnickschnack nach Kategorie"
+        },
         {
           "type": "callout",
           "kind": "tip",
@@ -730,8 +794,15 @@
       "title": "Marktkarten",
       "intro": "Blaue Karten sind Ereignisse für den ganzen Tisch. In der App zählen sie nur für dich: Hat eine Karte nichts mit dem zu tun, was du besitzt, sagt die App, dass sie nicht zutrifft, und das Spielen wird trotzdem in deinem Verlauf vermerkt.",
       "blocks": [
-        { "type": "data", "id": "marketKinds", "caption": "Was die 39 Marktkarten sind" },
-        { "type": "h3", "text": "Käufer für deine Immobilien" },
+        {
+          "type": "data",
+          "id": "marketKinds",
+          "caption": "Was die 39 Marktkarten sind"
+        },
+        {
+          "type": "h3",
+          "text": "Käufer für deine Immobilien"
+        },
         {
           "type": "p",
           "text": "Eine Käuferkarte macht ein **Angebot** für eine Art Immobilie. Spiele sie, und jede Immobilie dieser Art, die du besitzt, bekommt das Angebot, mit einer Notiz in ihrem Grow-Projekt; dann verkaufst du die, die du willst, mit dem normalen Knopf **verkaufen**, der schon ausgefüllt ist. Das Angebot gilt bis zum nächsten Zahltag, und du darfst so viele Immobilien zu diesem Preis verkaufen, wie du willst."
@@ -782,7 +853,10 @@
           "cardId": "classic-market-gold-central-2k",
           "caption": "Ein Goldkäufer: jede Münze zu 2.000."
         },
-        { "type": "h3", "text": "Reparaturkosten" },
+        {
+          "type": "h3",
+          "text": "Reparaturkosten"
+        },
         {
           "type": "p",
           "text": "„Mieter beschädigt deine Immobilie“ und „Abwasserrohr gebrochen“ kosten Immobilienbesitzer einmalig 500 bis 2.000. Besitzt du keine Immobilie, ignorierst du die Karte. Sonst öffnet sich der Dialog auf **Fire**, ausgefüllt mit den Kosten und dem Namen deiner ersten Immobilie als Kategorie. Geschäfte sind keine Immobilien."
@@ -792,7 +866,10 @@
           "cardId": "classic-market-cost-pipe-2k",
           "caption": "Nur für Immobilienbesitzer."
         },
-        { "type": "h3", "text": "Aktiensplits und Sternkarten" },
+        {
+          "type": "h3",
+          "text": "Aktiensplits und Sternkarten"
+        },
         {
           "type": "p",
           "text": "Eine **Aktiensplit**-Karte trägt den Namen einer Firma. Ohne ihre Aktien trifft sie nicht zu. Mit ihnen öffnet sich eine Würfelentscheidung: 1–3 verdoppelt deine Aktien, 4–6 halbiert sie (zu deinen Gunsten gerundet). Preis und deine Kosten bleiben gleich."
@@ -806,7 +883,11 @@
           "cardId": "classic-market-boost-small-250",
           "caption": "Eine Sternkarte: Dein passives Einkommen steigt für den Rest des Spiels."
         },
-        { "type": "data", "id": "marketOdds", "caption": "Wie oft dich eine Marktkarte betrifft" }
+        {
+          "type": "data",
+          "id": "marketOdds",
+          "caption": "Wie oft dich eine Marktkarte betrifft"
+        }
       ]
     },
     "life": {
@@ -936,7 +1017,10 @@
       "title": "Verlauf, Rückgängig und gespeicherte Spiele",
       "intro": "Jeder Schritt wird festgehalten, jeder Schritt lässt sich zurücknehmen, und ein Konto kann beliebig viele Spiele aufbewahren.",
       "blocks": [
-        { "type": "h3", "text": "Rückgängig und Verlauf" },
+        {
+          "type": "h3",
+          "text": "Rückgängig und Verlauf"
+        },
         {
           "type": "list",
           "items": [
@@ -946,7 +1030,10 @@
             "Ein gespeichertes Spiel behält seinen ganzen Verlauf: Nach dem Laden listet der Verlauf jeden Zug, und Rückgängig geht Schritt für Schritt zurück, sogar bis vor den Spielstart. Spiele, die vor dieser Funktion gespeichert wurden, laden mit leerem Verlauf."
           ]
         },
-        { "type": "h3", "text": "Meine Spiele" },
+        {
+          "type": "h3",
+          "text": "Meine Spiele"
+        },
         {
           "type": "p",
           "text": "Dein Konto enthält immer ein **aktuelles Spiel** - das, das du spielst. **Meine Spiele** bewahrt die anderen auf."
@@ -981,7 +1068,10 @@
           "type": "p",
           "text": "Jedes gespeicherte Spiel zeigt seinen Status - **Läuft**, **Aus dem Hamsterrad**, **Pleite** oder **Beendet** - mit Bargeld, passivem Einkommen gegen Ausgaben und der Runde, die Liste ist also auch eine Rangliste."
         },
-        { "type": "h3", "text": "Ein Spiel beenden" },
+        {
+          "type": "h3",
+          "text": "Ein Spiel beenden"
+        },
         {
           "type": "list",
           "items": [
@@ -1001,12 +1091,18 @@
       "title": "Strategie",
       "intro": "Das ist der Ansatz, den die Zahlen der Kartenstapel stützen. Er ist ein Leitfaden, kein Gesetz - Würfel und Zug entscheiden vieles.",
       "blocks": [
-        { "type": "h3", "text": "1 · Kenne deine Ziellinie" },
+        {
+          "type": "h3",
+          "text": "1 · Kenne deine Ziellinie"
+        },
         {
           "type": "p",
           "text": "Deine Ausgaben sind dein Ziel. Sieh dir vor dem ersten Zug die Tabelle „Nötiges passives Einkommen“ an und denke in Immobilien: eine Immobilie aus dem Großen Deal für den Hausmeister, fünf für den Arzt. Denke daran, dass jedes Baby und jedes Bankdarlehen die Linie verschiebt."
         },
-        { "type": "h3", "text": "2 · Baue die erste Anzahlung mit den kleinen Dingen auf" },
+        {
+          "type": "h3",
+          "text": "2 · Baue die erste Anzahlung mit den kleinen Dingen auf"
+        },
         {
           "type": "list",
           "items": [
@@ -1030,7 +1126,10 @@
           "title": "Erst die Anzahlung, dann der Cashflow",
           "text": "Zwei Karten können denselben Cashflow zahlen, mit sehr verschiedenen Anzahlungen. Frage: Wie viele Monate, bis die Anzahlung zurück ist? Die Tabelle der Großen Deals zeigt die Spanne. Eine Karte mit kleinerer Anzahlung und gleichem Cashflow ist die bessere Karte."
         },
-        { "type": "h3", "text": "4 · Nutze Darlehen als Brücke" },
+        {
+          "type": "h3",
+          "text": "4 · Nutze Darlehen als Brücke"
+        },
         {
           "type": "list",
           "items": [
@@ -1039,17 +1138,26 @@
             "Zahle das Darlehen mit dem ersten Geld zurück, das hereinkommt. Ein Darlehen von 5.000 kostet jeden Monat 500 - das ist das Einkommen von zwei Multi-Level-Marketing-Karten."
           ]
         },
-        { "type": "h3", "text": "5 · Halte ein Polster" },
+        {
+          "type": "h3",
+          "text": "5 · Halte ein Polster"
+        },
         {
           "type": "p",
           "text": "Schnickschnack kostet im Schnitt knapp unter 1.400, Reparaturrechnungen reichen bis 2.000, Arbeitslos kostet einen Monat Ausgaben. Ein Polster von 1.500–3.000 Bargeld verhindert, dass daraus Darlehen werden."
         },
-        { "type": "h3", "text": "6 · Streue gegen den Markt" },
+        {
+          "type": "h3",
+          "text": "6 · Streue gegen den Markt"
+        },
         {
           "type": "p",
           "text": "Wer Einfamilienhäuser und Mehrfamilienhäuser hält, hat mehr Marktkarten, die helfen. Wer nur Doppelhäuser hält, bei dem trifft nie eine Käuferkarte zu, Reparaturrechnungen aber schon. Die Tabelle „Wie oft dich eine Marktkarte betrifft“ zeigt es."
         },
-        { "type": "h3", "text": "7 · Verkaufe, wenn ein Käufer zu viel zahlt" },
+        {
+          "type": "h3",
+          "text": "7 · Verkaufe, wenn ein Käufer zu viel zahlt"
+        },
         {
           "type": "p",
           "text": "Ein Käufer, der 20 % obendrauf zahlt, oder ein fester Gewinn von 10.000–20.000, schlägt oft ein Jahr Cashflow der Immobilie. Verkaufen und eine bessere Karte kaufen kann dein passives Einkommen steigern - aber bedenke, dass ein Verkauf auch den Cashflow entfernt."
@@ -1160,7 +1268,10 @@
       "title": "Wahrscheinlichkeiten und Zahlen",
       "intro": "Alles Folgende ist aus den Kartenstapeln selbst gelesen, es ist also genau das, was das Spiel verwendet.",
       "blocks": [
-        { "type": "h3", "text": "Was ein zufälliges Ziehen bringt" },
+        {
+          "type": "h3",
+          "text": "Was ein zufälliges Ziehen bringt"
+        },
         {
           "type": "data",
           "id": "pileOdds",
@@ -1170,7 +1281,10 @@
           "type": "p",
           "text": "Im Stapel Kleiner Deal ist jede zweite Karte eine Aktienkarte; im Großen Deal sind fast zwei von fünf ein Mehrfamilienhaus oder ein Komplex. Schnickschnack ist immer ein Kostenpunkt und hat kein gutes Ergebnis - es gibt 42 davon, und der Durchschnitt liegt knapp unter 1.400."
         },
-        { "type": "h3", "text": "Glücksspiele - was sie im Schnitt wert sind" },
+        {
+          "type": "h3",
+          "text": "Glücksspiele - was sie im Schnitt wert sind"
+        },
         {
           "type": "table",
           "head": ["Karte", "Du zahlst", "Du bekommst", "Durchschnittliches Ergebnis"],
@@ -1206,18 +1320,28 @@
           "type": "p",
           "text": "Das einzige Glücksspiel, das für sich besser als fair ist, ist Multi-Level-Marketing. Aktiensplits helfen dem Halter (im Schnitt +25 % Aktien); das Darlehen der Schwägerin ist fair, nimm es also nur, wenn du 5.000 verlieren kannst."
         },
-        { "type": "h3", "text": "Wie oft der Markt dir hilft oder schadet" },
+        {
+          "type": "h3",
+          "text": "Wie oft der Markt dir hilft oder schadet"
+        },
         {
           "type": "data",
           "id": "marketOdds",
           "caption": "Marktkarten, die jede Art Vermögen betreffen"
         },
-        { "type": "h3", "text": "Das Hamsterrad in Zahlen" },
+        {
+          "type": "h3",
+          "text": "Das Hamsterrad in Zahlen"
+        },
         {
           "type": "p",
           "text": "Eine durchschnittliche Immobilie des Großen Deals zahlt etwa 1.800 im Monat; eine durchschnittliche zahlende des Kleinen Deals etwa 180. Um 1.000 Ausgaben zu decken, brauchst du eine Immobilie des Großen Deals oder sechs kleine. Allein die +600 im Monat des Hausmeisters bräuchten Jahre, um die Anzahlung von 32.000–40.000 zu sparen - deshalb zählen am Anfang die kleinen, schnellen Deals, die Glückskarten und die Aktiengeschäfte."
         },
-        { "type": "data", "id": "escape", "caption": "Nötiges passives Einkommen je Beruf" }
+        {
+          "type": "data",
+          "id": "escape",
+          "caption": "Nötiges passives Einkommen je Beruf"
+        }
       ]
     },
     "cards": {
@@ -1231,7 +1355,9 @@
           "title": "Warum die IDs wichtig sind",
           "text": "Jede Karte, die du wählst - zufällig gezogen oder unter deinen echten Karten gefunden - steht mit ihrer genauen ID im Verlauf. Bei der Analyse eines Spiels liest der Analyst diese IDs, sieht, welchen Deal du ausgelassen hast, und spielt beide Entscheidungen viele Male durch. **Öffne die Karte, bevor du sie auslässt**, dann kann der Analyst sagen, ob der Deal sich gelohnt hätte. Stöbern wird nicht erfasst, nur die Karte, die offen ist, wenn du sie nutzt oder ablehnst; ganz ohne Karte zu passen ist erlaubt, der Analyst vermerkt dann nur als kleinen Minuspunkt, dass du nicht hingeschaut hast."
         },
-        { "type": "cardbrowser" },
+        {
+          "type": "cardbrowser"
+        },
         {
           "type": "p",
           "text": "Ein Agent liest dieselbe Liste über `GET /api/v1/game/cards` (ohne laufendes Spiel: `gameSetId=cashflow` angeben) und in `docs/domain/CASHFLOW_CARDS.md`."
@@ -1249,19 +1375,36 @@
           "title": "So liest du die Tabellen",
           "text": "Plus hilft, Minus schadet. „Genommen“ heißt: ein Deal gekauft, ein Schnickschnack bezahlt oder eine Marktkarte gespielt; jedes Spiel danach spielt die ausgewogene Strategie des Strategielabors. **Aus Bargeld** zählt die Positionen, in denen die Anzahlung bar da war, **mit Kredit** die, in denen die Bank sie leihen musste. Der Messfehler liegt bei den Kleinen Deals und dem Schnickschnack bei etwa einem Punkt. Ein ausgebautes Spiel ist eines tief im Spiel mit schon gekauften Immobilien (die beste gefundene Strategie, Wurf 20 bis 60)."
         },
-        { "type": "h3", "text": "Kleine Deals" },
+        {
+          "type": "h3",
+          "text": "Kleine Deals"
+        },
         {
           "type": "p",
           "text": "Der beste Kleine Deal ist der **Multi-Level-Marketing**-Einstieg: **+6 Punkte** und etwa fünf gesparte Würfe, für 500 €. Danach kommen die **Einfamilienhäuser mit 2.000 € Anzahlung** (+3 Punkte aus Bargeld, etwa acht gesparte Würfe) - und die Überraschung: Muss die Bank diese Anzahlung leihen, sind sie **+10 bis +12 Punkte** wert, denn eine Immobilie, die für 2.000 € 200 bis 250 € im Monat zahlt, ist einen Kredit wert. Eigentumswohnungen und die teuren Häuser (4.000 bis 5.000 € Anzahlung) sind das Gegenteil: aus Bargeld tun sie ungefähr nichts, mit Kredit kosten sie 10 bis 19 Punkte. **Aktien** sind in beide Richtungen kleine Wetten (zwischen −2,5 und +1,5 Punkten): Wer die Hälfte seines Bargelds in Aktien steckt und sie hält, bindet es, und die billigen (5, 10 oder 20 €) kosten etwas mehr als die teuren."
         },
-        { "type": "data", "id": "cardLabSmall", "caption": "Jeder Kleine Deal, der beste zuerst" },
-        { "type": "h3", "text": "Große Deals" },
+        {
+          "type": "data",
+          "id": "cardLabSmall",
+          "caption": "Jeder Kleine Deal, der beste zuerst"
+        },
+        {
+          "type": "h3",
+          "text": "Große Deals"
+        },
         {
           "type": "p",
           "text": "Bei einem Großen Deal kommt es darauf an, **woher die Anzahlung kommt**. Aus Bargeld gekauft, sparen die guten 5 bis 12 Würfe (am meisten das Mehrfamilienhaus für 10.000 € und das Doppelhaus für 10.000 €). Mit Kredit gekauft sind sie das Gefährlichste im ganzen Spiel: **−9 bis −84 Punkte** (die meisten zwischen −20 und −65), weil Zinsen und Hypothek auffressen, was die Immobilie einbringt. Die Pizzakette und die großen Wohnanlagen stehen unten in der Tabelle (−77 bis −84 Punkte mit Kredit): Die Anzahlung ist viel mehr, als ein Spiel in dieser Phase hat. Die eine Ausnahme ist das **Doppelhaus für 10.000 €** (1.100 € im Monat): Es lohnt sich sogar mit Kredit (+3,6 Punkte)."
         },
-        { "type": "data", "id": "cardLabBig", "caption": "Jeder Große Deal" },
-        { "type": "h3", "text": "Schnickschnack: was er dich kostet" },
+        {
+          "type": "data",
+          "id": "cardLabBig",
+          "caption": "Jeder Große Deal"
+        },
+        {
+          "type": "h3",
+          "text": "Schnickschnack: was er dich kostet"
+        },
         {
           "type": "p",
           "text": "Schnickschnack wird bezahlt, was auch draufsteht - es geht nur darum, wie weh es tut. **Jede 1.000 € Schnickschnack kosten etwa 3,5 bis 4,5 Punkte** Ausstiegschance: Die Küche für 7.500 € nimmt 34 Punkte, das Auto oder Boot für 5.000 € 23, ein Schnickschnack für 1.000 € 3,5 und alles unter 300 € etwa einen. Derselbe Schnickschnack kostet **im frühen Spiel das Eineinhalb- bis Doppelte** wie im späten - und in einem ausgebauten Spiel etwa die Hälfte, weil die Immobilien ihn schneller zurückzahlen. Bei 6 von 10 Pleiten war das Letzte, was geschah, ein Schnickschnack (siehe unten)."
@@ -1271,13 +1414,23 @@
           "id": "cardLabDoodads",
           "caption": "Jeder Schnickschnack, der schlimmste zuerst"
         },
-        { "type": "h3", "text": "Marktkarten" },
+        {
+          "type": "h3",
+          "text": "Marktkarten"
+        },
         {
           "type": "p",
           "text": "Die meisten Marktkarten tun dir nichts. Ein **Käufer** für dein Einfamilienhaus ist am meisten wert, wenn er einen festen Betrag obendrauf bietet: +20.000 € sind **4,7 Punkte** wert (15 gesparte Würfe), +5.000 € nur 1 - und +10 % kaum mehr. Die beiden **Geschäfts-Boom**-Karten (+250 € und +400 € auf ein Geschäft) sind 2,6 und 3,2 Punkte wert, im ausgebauten Spiel etwa 12 und 17 Würfe. Die Kostenkarten (Mieter, Rohr) kosten 0,7 bis 3,5 Punkte, etwa so viel wie dasselbe Geld als Schnickschnack. Aktiensplits spielen keine Rolle."
         },
-        { "type": "data", "id": "cardLabMarket", "caption": "Die Marktkarten, die dich betreffen" },
-        { "type": "h3", "text": "Würfelkarten: was ein Glücksspiel kostet" },
+        {
+          "type": "data",
+          "id": "cardLabMarket",
+          "caption": "Die Marktkarten, die dich betreffen"
+        },
+        {
+          "type": "h3",
+          "text": "Würfelkarten: was ein Glücksspiel kostet"
+        },
         {
           "type": "p",
           "text": "Eine Würfelkarte gewinnt bei ihrer Zahl oder höher: Eine 4 gewinnt zur Hälfte, eine 6 einmal in sechs. **Der Multi-Level-Marketing-Einstieg gewinnt zur Hälfte und zahlt jeden Monat**: +6 Punkte. **Die Goldkisten** (eine 6 gewinnt, einmal in sechs) sind kleine Wetten, die meist verlieren: −0,6 und −1,7 Punkte - die Münzen sind wenig wert gegen das, was dasselbe Geld in einer Immobilie verdient. **Die Schwägerin** zahlt zur Hälfte 10.000 € für 5.000 € zurück: Im Schnitt ist das genau null, und trotzdem kostet es 7,6 Punkte - 0,6, wenn die 5.000 € bar da waren, 11,7, wenn die Bank sie leihen musste: ein faires Glücksspiel ist nicht umsonst, weil das Geld den Immobilien fehlt, die es hätte kaufen können."
@@ -1287,7 +1440,10 @@
           "id": "cardLabDice",
           "caption": "Die Karten, die ein Würfel entscheidet"
         },
-        { "type": "h3", "text": "Wo ein Spiel auf dem Weg steht" },
+        {
+          "type": "h3",
+          "text": "Wo ein Spiel auf dem Weg steht"
+        },
         {
           "type": "p",
           "text": "Das passive Einkommen als Anteil der Ausgaben zeigt, wie nah der Ausstieg ist. Die erste Tabelle zeigt je Beruf, wo die Spiele, die **ausgestiegen sind**, bei Wurf 10, 20, 30, 40 und 60 standen - das mittlere Spiel, in Klammern das schnellste und das langsamste Zehntel. Bei Wurf 20 hat ein Spiel, das aussteigt, meist 7 bis 24 % der Ausgaben gedeckt, bei Wurf 40 20 bis 60 %."
@@ -1306,7 +1462,10 @@
           "id": "cardLabBands",
           "caption": "Chance auf den Ausstieg / die Pleite, je nachdem wie weit ein Spiel ist"
         },
-        { "type": "h3", "text": "Was ein Spiel in die Pleite führt" },
+        {
+          "type": "h3",
+          "text": "Was ein Spiel in die Pleite führt"
+        },
         {
           "type": "p",
           "text": "Von 12.000 Spielen mit der ausgewogenen Strategie gingen 16 % pleite. Die Tabelle zeigt, was die letzte Entscheidung vor dem Ende war und welche Karten am häufigsten unter den letzten drei waren. Es ist **fast immer ein Schnickschnack** (61 %), ein ausgelassener Deal (26 %, das Spiel war schon verloren) oder eine Markt-Kostenkarte. Küche, erstes Auto, Zahnspange und Boot sind am häufigsten - die teuren Schnickschnack-Karten im Stapel. Der beste Schutz ist kein kluger Deal, sondern **Bargeld für den nächsten Schnickschnack** (siehe Abschnitt 17)."
@@ -1474,7 +1633,7 @@
           "items": [
             {
               "title": "Eröffnen oder beitreten",
-              "text": "Eröffne einen Tisch in der Lobby (Menü, \"Mit Freunden spielen\") mit Namen, Platzzahl, öffentlich oder privat, Uhr und Spielende - oder tritt einem offenen Tisch bei, oder nutze einen Einladungscode."
+              "text": "Eröffne einen Tisch in der Lobby (Menü, \"Mehrspieler\") mit Namen, Platzzahl, öffentlich oder privat, Uhr und Spielende - oder tritt einem offenen Tisch bei, oder nutze einen Einladungscode."
             },
             {
               "title": "Bereit machen",
@@ -1686,6 +1845,121 @@
           "kind": "warning",
           "title": "Kein Versprechen",
           "text": "Ein Gewinnanteil ist ein Durchschnitt über Tausende Tische. In einem einzelnen Spiel entscheiden die Würfel viel, und wer den Tisch gut liest, kann einen Champion schlagen. Die Zahlen werden neu gemessen, wenn sich die Regeln ändern."
+        }
+      ]
+    },
+    "rating": {
+      "nav": "Wertung und Rangliste",
+      "title": "So wird ein Spiel gewertet",
+      "intro": "Wer welchen Platz belegt und was das mit der Wertung macht.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Jedes beendete Spiel gibt jedem Spieler einen **Platz**. An einem Tisch, der zählt, bewegen die Plätze die **Wertungen** der Spieler, und die Rangliste ist nach Wertung sortiert. Alles sind feste Regeln - diese Seite nennt jede davon."
+        },
+        {
+          "type": "h3",
+          "text": "1. Der Platz"
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "**Entkommen** (das passive Einkommen deckt alle monatlichen Ausgaben): Platz eins. Wer früher draußen war, steht höher.",
+            "**Noch im Spiel**, wenn es endet: gewertet wird, wie nah man am Entkommen ist - passives Einkommen geteilt durch alle monatlichen Ausgaben, Kreditraten eingeschlossen. Ein Beruf mit hohen Ausgaben oder ein Spieler mit Krediten wird mit demselben Maßstab gemessen wie alle anderen; das rohe Einkommen entscheidet nicht. Gleicher Fortschritt: das höhere passive Einkommen, dann der höhere monatliche Cashflow.",
+            "**Bankrott** (negativer monatlicher Cashflow): unter allen, die noch spielen. Wer länger durchgehalten hat, steht höher.",
+            "**Das Spiel verlassen**: ganz hinten."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "2. Zählt das Spiel?"
+        },
+        {
+          "type": "p",
+          "text": "Ein beendetes Spiel bewegt die Wertungen nur, wenn alles Folgende gilt. Sonst fließt es nur in die Statistik ein (Spiele, Siege, durchschnittlicher Platz), nicht in die Wertung:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Der Gastgeber hat **Gewertet** beim Anlegen des Tisches eingeschaltet gelassen.",
+            "Das Spiel wurde **beendet** - ein geschlossener oder abgelaufener Tisch zählt nicht.",
+            "Mindestens **zwei Plätze und ein Mensch**: Bots nur gegen Bots bewegen die Rangliste nie.",
+            "Mindestens **8 Runden** wurden gespielt, oder jemand ist vorher entkommen."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Das Spielende-Fenster sagt, ob das Spiel gezählt hat, und warum nicht, wenn es nicht zählte."
+        },
+        {
+          "type": "h3",
+          "text": "3. Die Wertung"
+        },
+        {
+          "type": "p",
+          "text": "Ein Tisch ist eine Reihe von Duellen, jeder gegen jeden. In jedem Duell bekommt der bessere Platz 1, der schlechtere 0, gleiche Plätze je die Hälfte. Jeder hat eine Wertung (Menschen beginnen bei **1500**), die sagt, wie das Duell erwartet wurde. Nur die **Überraschung** bewegt sie: Einen stärkeren Spieler zu schlagen bringt viel, einen viel schwächeren fast nichts, gegen einen schwächeren zu verlieren kostet viel."
+        },
+        {
+          "type": "p",
+          "text": "Die Änderung ist `K × Feld × (Summe der Überraschungen aller Duelle) ÷ (Spieler - 1)`. Die Teile:"
+        },
+        {
+          "type": "table",
+          "head": ["Teil", "Wert", "Warum"],
+          "rows": [
+            [
+              "K - wie schnell sich die Wertung bewegt",
+              "40 in den ersten 20 gewerteten Spielen eines Menschen, danach 24. Bots: 8",
+              "Neue Spieler finden schnell ihr Niveau. Ein Bot spielt tausende Spiele und bewegt sich langsam."
+            ],
+            [
+              "Feld - wer am Tisch sitzt",
+              "`0,4 + 0,6 × (Menschen - 1) ÷ (Plätze - 1)`: 0,4 bei einem Menschen unter Bots, 1,0 bei nur Menschen",
+              "Ein Tisch echter Spieler ist mehr wert als einer gegen Bots. Gilt für Gewinne und Verluste."
+            ],
+            [
+              "Einen Anfänger-Bot schlagen",
+              "zählt 25 %",
+              "Die leichtesten Gegner abzugrasen bringt fast nichts."
+            ],
+            [
+              "Dieselben Leute noch einmal",
+              "innerhalb von 24 Stunden zählt die k-te Wiederholung `1 ÷ (1 + k)`",
+              "Siege unter Freunden zu tauschen lohnt sich nicht."
+            ],
+            [
+              "Verlassen",
+              "vor Runde 3: nichts, und du bist für die anderen kein Gegner. Später: letzter Platz",
+              "Eine Lobby oder einen aussichtslosen Start zu verlassen ist kostenlos. Aus einem verlorenen Spiel wegzulaufen ist eine Niederlage."
+            ],
+            ["Die niedrigste Wertung", "100", "Darunter fällt eine Wertung nie."]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "example",
+          "title": "Ein Rechenbeispiel",
+          "text": "Vier Menschen, alle bei 1500, ein neuer Spieler gewinnt. Drei Duelle sind gewonnen, jedes mit Erwartung 0,5, die Überraschung ist also 1,5: 40 × 1,0 × 1,5 ÷ 3 = **+20**. Derselbe Sieg als einziger Mensch gegen drei Bots bei 1500 ist 40 × 0,4 × 1,5 ÷ 3 = **+8** wert - und weniger, wenn die Bots Anfänger sind."
+        },
+        {
+          "type": "h3",
+          "text": "4. Die Rangliste"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Eine Wertung gilt als **vorläufig**, bis sie 5 gewertete Spiele hat.",
+            "Menschen erscheinen erst, wenn sie **Mich in der Rangliste zeigen** einschalten - ihre Entscheidung. Bots erscheinen, sobald sie ein gewertetes Spiel haben.",
+            "Bots starten mit einer gemessenen Wertung (wie oft jeder in tausenden simulierten Tischen gewann) und bewegen sich dann langsam.",
+            "Die Karte eines Spielers zeigt Wertung, Bilanz (gespielt, gewonnen, verloren, durchschnittlicher Platz) und die letzten Spiele mit einem Wertungsdiagramm."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Bewusst nicht gewertet",
+          "text": "**Beruf:** Spieler wählen ihn oder er wird gelost, je nach Tisch, und der Platz vergleicht den Fortschritt zum Entkommen, ein Beruf mit hohen Ausgaben ist also nicht im Nachteil. **Tempo:** Ein früheres Entkommen ist ein besserer Platz, aber wie viele Runden ein Sieg brauchte, bringt keine Punkte - Sieg ist Sieg. **Bargeld:** Ziel des Spiels ist Einkommen, nicht Erspartes. **Kredite:** Sie zählen über ihre Monatsrate. All das lässt sich verfeinern, wenn echte Spiele einen Bedarf zeigen."
         }
       ]
     },

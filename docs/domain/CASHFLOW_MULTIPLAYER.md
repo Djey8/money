@@ -29,7 +29,7 @@ transaction, a peeked-at pile or a self-named sale price would let one player ch
 
 ## 2. Opening and joining a table
 
-- **Open** from the lobby (menu, "Play with friends"): a name, the number of seats (2-12 in the screen, up to 24 through the API,
+- **Open** from the lobby (menu, "Multiplayer"): a name, the number of seats (2-12 in the screen, up to 24 through the API,
   6 by default), public (listed) or private (invite code only), the clock, how the game ends, how professions are chosen and
   whether spectators may watch.
 - **Join** from the open tables, or with the invite code. You choose a name for the table; your account is never shown to the
@@ -40,8 +40,8 @@ transaction, a peeked-at pile or a self-named sale price would let one player ch
 
 ## 3. A turn
 
-On your turn you roll; the token moves; what the space asks is settled (draw a Deal and buy or pass, pay a Doodad, a Market card is
-drawn for the whole table); the next player is up. Payday is paid when a token reaches or passes it. The ring shows one token per
+On your turn you roll; the token moves; what the space asks is settled (draw a Deal and buy or pass, pay a Doodad, open a Market card
+(it takes effect for the whole table) and tick it off); the next player is up. Payday is paid when a token reaches or passes it. The ring shows one token per
 player, each with its colour and its first letter.
 
 **The clock.** None, a time per move, a time bank per player (with an optional increment), or a daily clock for slow games. When
@@ -70,8 +70,10 @@ The game ends as the host set it: the **first player to escape the rat race** (t
 of rounds. The ranking puts escapees first (earliest first), then by passive income, then the bankrupt, then those who left. Each
 player can **save the game to their own saved games** (once), and from there it is an ordinary saved game: review it, compare it.
 
-The host can **rewind** the last turn if something went wrong (a repair, not a re-roll: the dice carry on, and everyone sees it in
-the log). This is an API / agent action for now.
+**Undoing the last turn is a vote.** Anyone at the table can ask to go back one turn (the History view of the game screen, or the
+Undo button in the online bar); it happens when more than half of the people say yes. Bots and players who are away do not vote.
+It is a repair, not a re-roll: the dice carry on, and everyone sees it in the history. The host can switch undoing off when the
+game is set up.
 
 ## 7. Playing with an agent
 
@@ -135,4 +137,4 @@ The champions are not frozen forever: they are what a search found on **these** 
 - The table and its record live on the server. You can close the browser and come back: "My tables" lists the tables you are in.
 - Everything that happens is in the log (`GET /game/rooms/{id}/log`) and in the live feed.
 - The clock shown on your screen runs on your device's time against the server's deadline; the server alone decides a timeout.
-- If a table misbehaves, tell the host; the host can pause, and rewind the last turn.
+- If a table misbehaves, tell the host; the host can pause, and the table can vote to undo the last turn.

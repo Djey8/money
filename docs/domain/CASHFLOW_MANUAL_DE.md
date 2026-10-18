@@ -602,7 +602,7 @@ Ein **Tisch** ist das Cashflow-Spiel mit mehreren Spielern gleichzeitig, auf dem
 
 ### Eröffnen, beitreten, starten
 
-1. **Eröffnen oder beitreten** - Eröffne einen Tisch in der Lobby (Menü, "Mit Freunden spielen") mit Namen, Platzzahl, öffentlich oder privat, Uhr und Spielende - oder tritt einem offenen Tisch bei, oder nutze einen Einladungscode.
+1. **Eröffnen oder beitreten** - Eröffne einen Tisch in der Lobby (Menü, "Mehrspieler") mit Namen, Platzzahl, öffentlich oder privat, Uhr und Spielende - oder tritt einem offenen Tisch bei, oder nutze einen Einladungscode.
 2. **Bereit machen** - Alle drücken auf "Bereit". Der Gastgeber startet das Spiel, sobald mindestens zwei Spieler bereit sind.
 3. **Beruf wählen** - Alle wählen gleichzeitig, und die Wahl bleibt verborgen, bis die letzte eingeht. Doppelte Berufe sind erlaubt, außer der Gastgeber hat Berufe einmalig oder zufällig gemacht.
 4. **Spielen** - Jeder bekommt seine eigenen Startbücher. Der Ring zeigt eine Figur pro Spieler, jede mit Farbe und Buchstabe.
@@ -683,7 +683,57 @@ _(Table: Der Champion jedes Berufs - the figures are in the topics cashflow_card
 
 > **Kein Versprechen** Ein Gewinnanteil ist ein Durchschnitt über Tausende Tische. In einem einzelnen Spiel entscheiden die Würfel viel, und wer den Tisch gut liest, kann einen Champion schlagen. Die Zahlen werden neu gemessen, wenn sich die Regeln ändern.
 
-## 29. Mit einem Agenten spielen
+## 29. So wird ein Spiel gewertet
+
+Wer welchen Platz belegt und was das mit der Wertung macht.
+
+Jedes beendete Spiel gibt jedem Spieler einen **Platz**. An einem Tisch, der zählt, bewegen die Plätze die **Wertungen** der Spieler, und die Rangliste ist nach Wertung sortiert. Alles sind feste Regeln - diese Seite nennt jede davon.
+
+### 1. Der Platz
+
+1. **Entkommen** (das passive Einkommen deckt alle monatlichen Ausgaben): Platz eins. Wer früher draußen war, steht höher.
+2. **Noch im Spiel**, wenn es endet: gewertet wird, wie nah man am Entkommen ist - passives Einkommen geteilt durch alle monatlichen Ausgaben, Kreditraten eingeschlossen. Ein Beruf mit hohen Ausgaben oder ein Spieler mit Krediten wird mit demselben Maßstab gemessen wie alle anderen; das rohe Einkommen entscheidet nicht. Gleicher Fortschritt: das höhere passive Einkommen, dann der höhere monatliche Cashflow.
+3. **Bankrott** (negativer monatlicher Cashflow): unter allen, die noch spielen. Wer länger durchgehalten hat, steht höher.
+4. **Das Spiel verlassen**: ganz hinten.
+
+### 2. Zählt das Spiel?
+
+Ein beendetes Spiel bewegt die Wertungen nur, wenn alles Folgende gilt. Sonst fließt es nur in die Statistik ein (Spiele, Siege, durchschnittlicher Platz), nicht in die Wertung:
+
+- Der Gastgeber hat **Gewertet** beim Anlegen des Tisches eingeschaltet gelassen.
+- Das Spiel wurde **beendet** - ein geschlossener oder abgelaufener Tisch zählt nicht.
+- Mindestens **zwei Plätze und ein Mensch**: Bots nur gegen Bots bewegen die Rangliste nie.
+- Mindestens **8 Runden** wurden gespielt, oder jemand ist vorher entkommen.
+
+Das Spielende-Fenster sagt, ob das Spiel gezählt hat, und warum nicht, wenn es nicht zählte.
+
+### 3. Die Wertung
+
+Ein Tisch ist eine Reihe von Duellen, jeder gegen jeden. In jedem Duell bekommt der bessere Platz 1, der schlechtere 0, gleiche Plätze je die Hälfte. Jeder hat eine Wertung (Menschen beginnen bei **1500**), die sagt, wie das Duell erwartet wurde. Nur die **Überraschung** bewegt sie: Einen stärkeren Spieler zu schlagen bringt viel, einen viel schwächeren fast nichts, gegen einen schwächeren zu verlieren kostet viel.
+
+Die Änderung ist `K × Feld × (Summe der Überraschungen aller Duelle) ÷ (Spieler - 1)`. Die Teile:
+
+| Teil | Wert | Warum |
+| --- | --- | --- |
+| K - wie schnell sich die Wertung bewegt | 40 in den ersten 20 gewerteten Spielen eines Menschen, danach 24. Bots: 8 | Neue Spieler finden schnell ihr Niveau. Ein Bot spielt tausende Spiele und bewegt sich langsam. |
+| Feld - wer am Tisch sitzt | `0,4 + 0,6 × (Menschen - 1) ÷ (Plätze - 1)`: 0,4 bei einem Menschen unter Bots, 1,0 bei nur Menschen | Ein Tisch echter Spieler ist mehr wert als einer gegen Bots. Gilt für Gewinne und Verluste. |
+| Einen Anfänger-Bot schlagen | zählt 25 % | Die leichtesten Gegner abzugrasen bringt fast nichts. |
+| Dieselben Leute noch einmal | innerhalb von 24 Stunden zählt die k-te Wiederholung `1 ÷ (1 + k)` | Siege unter Freunden zu tauschen lohnt sich nicht. |
+| Verlassen | vor Runde 3: nichts, und du bist für die anderen kein Gegner. Später: letzter Platz | Eine Lobby oder einen aussichtslosen Start zu verlassen ist kostenlos. Aus einem verlorenen Spiel wegzulaufen ist eine Niederlage. |
+| Die niedrigste Wertung | 100 | Darunter fällt eine Wertung nie. |
+
+> **Ein Rechenbeispiel** Vier Menschen, alle bei 1500, ein neuer Spieler gewinnt. Drei Duelle sind gewonnen, jedes mit Erwartung 0,5, die Überraschung ist also 1,5: 40 × 1,0 × 1,5 ÷ 3 = **+20**. Derselbe Sieg als einziger Mensch gegen drei Bots bei 1500 ist 40 × 0,4 × 1,5 ÷ 3 = **+8** wert - und weniger, wenn die Bots Anfänger sind.
+
+### 4. Die Rangliste
+
+- Eine Wertung gilt als **vorläufig**, bis sie 5 gewertete Spiele hat.
+- Menschen erscheinen erst, wenn sie **Mich in der Rangliste zeigen** einschalten - ihre Entscheidung. Bots erscheinen, sobald sie ein gewertetes Spiel haben.
+- Bots starten mit einer gemessenen Wertung (wie oft jeder in tausenden simulierten Tischen gewann) und bewegen sich dann langsam.
+- Die Karte eines Spielers zeigt Wertung, Bilanz (gespielt, gewonnen, verloren, durchschnittlicher Platz) und die letzten Spiele mit einem Wertungsdiagramm.
+
+> **Bewusst nicht gewertet** **Beruf:** Spieler wählen ihn oder er wird gelost, je nach Tisch, und der Platz vergleicht den Fortschritt zum Entkommen, ein Beruf mit hohen Ausgaben ist also nicht im Nachteil. **Tempo:** Ein früheres Entkommen ist ein besserer Platz, aber wie viele Runden ein Sieg brauchte, bringt keine Punkte - Sieg ist Sieg. **Bargeld:** Ziel des Spiels ist Einkommen, nicht Erspartes. **Kredite:** Sie zählen über ihre Monatsrate. All das lässt sich verfeinern, wenn echte Spiele einen Bedarf zeigen.
+
+## 30. Mit einem Agenten spielen
 
 Lass deinen KI-Assistenten Platz nehmen.
 

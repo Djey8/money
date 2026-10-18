@@ -602,7 +602,7 @@ Una **mesa** es el juego Cashflow jugado por varios jugadores a la vez, en el se
 
 ### Abrir, unirse, empezar
 
-1. **Abrir o unirse** - Abre una mesa desde la sala (menú, "Jugar con amigos") con un nombre, el número de plazas, pública o privada, el reloj y cómo termina la partida - o únete a una mesa abierta, o usa un código de invitación.
+1. **Abrir o unirse** - Abre una mesa desde la sala (menú, "Multijugador") con un nombre, el número de plazas, pública o privada, el reloj y cómo termina la partida - o únete a una mesa abierta, o usa un código de invitación.
 2. **Prepararse** - Todos pulsan "Listo". El anfitrión empieza la partida cuando al menos dos jugadores están listos.
 3. **Elegir profesión** - Todos eligen a la vez y las elecciones quedan ocultas hasta que entra la última. Se permiten repetidas, salvo que el anfitrión haya hecho las profesiones únicas o aleatorias.
 4. **Jugar** - Cada jugador recibe sus propios libros iniciales. El anillo muestra una ficha por jugador, cada una con su color y su letra.
@@ -683,7 +683,57 @@ _(Table: El campeón de cada profesión - the figures are in the topics cashflow
 
 > **No es una promesa** Una cuota de victorias es un promedio sobre miles de mesas. En una partida concreta los dados deciden mucho, y un jugador que lee bien la mesa puede ganar a un campeón. Las cifras se vuelven a medir cuando cambian las reglas.
 
-## 29. Jugar con un agente
+## 29. Cómo se puntúa una partida
+
+Quién queda en qué puesto y qué hace eso con una puntuación.
+
+Cada partida terminada da a cada jugador un **puesto**. En una mesa que cuenta, los puestos mueven las **puntuaciones** de los jugadores, y la clasificación se ordena por puntuación. Todo son reglas fijas: esta página las enumera todas.
+
+### 1. El puesto
+
+1. **Escapó** de la carrera de ratas (los ingresos pasivos cubren todos los gastos mensuales): primero. Quien salió antes queda más arriba.
+2. **Sigue jugando** cuando acaba la partida: se ordena por lo cerca que está de escapar - ingresos pasivos divididos entre todos los gastos mensuales, cuotas de préstamos incluidas. Una profesión con gastos altos, o un jugador con préstamos, se mide con la misma escala que los demás; el ingreso bruto no decide. A igual progreso: más ingresos pasivos, luego más flujo de caja mensual.
+3. **En quiebra** (flujo de caja mensual negativo): por debajo de todos los que siguen jugando. Quien aguantó más queda más arriba.
+4. **Abandonó** la partida: último.
+
+### 2. ¿Cuenta la partida?
+
+Una partida terminada mueve las puntuaciones solo si se cumple todo esto. Si no, suma a las estadísticas (partidas, victorias, puesto medio) pero no a la puntuación:
+
+- El anfitrión dejó activada la opción **Puntuada** al crear la mesa.
+- La partida **terminó**: una mesa cerrada o caducada no cuenta.
+- Al menos **dos plazas y una persona**: los bots que juegan solo contra bots nunca mueven la clasificación.
+- Se jugaron al menos **8 rondas**, o alguien escapó antes.
+
+El panel de fin de partida dice si la partida contó y por qué no, si no contó.
+
+### 3. La puntuación
+
+Una mesa es una serie de duelos, todos contra todos. En cada duelo el mejor puesto suma 1, el peor 0 y los puestos iguales la mitad. Cada jugador tiene una puntuación (las personas empiezan en **1500**) que dice cómo se esperaba el duelo. Solo la **sorpresa** la mueve: ganar a uno más fuerte da mucho, ganar a uno mucho más débil casi nada, perder con uno más débil cuesta mucho.
+
+El cambio es `K × campo × (suma de las sorpresas de todos los duelos) ÷ (jugadores - 1)`. Las partes:
+
+| Parte | Valor | Por qué |
+| --- | --- | --- |
+| K - lo rápido que se mueve | 40 en las primeras 20 partidas puntuadas de una persona, después 24. Bots: 8 | Un jugador nuevo encuentra pronto su nivel. Un bot juega miles de partidas y se mueve despacio. |
+| Campo - quién está en la mesa | `0,4 + 0,6 × (personas - 1) ÷ (plazas - 1)`: 0,4 con una persona entre bots, 1,0 solo con personas | Una mesa de jugadores reales vale más que una contra bots. Vale para ganancias y pérdidas. |
+| Ganar a un bot principiante | cuenta un 25 % | Aprovecharse de los rivales más fáciles casi no da nada. |
+| Las mismas personas otra vez | en 24 horas la repetición k cuenta `1 ÷ (1 + k)` | Intercambiar victorias entre amigos no compensa. |
+| Abandonar | antes de la ronda 3: nada, y no eres rival para los demás. Después: último puesto | Dejar un vestíbulo o un inicio perdido es gratis. Abandonar una partida perdida es una derrota. |
+| La puntuación mínima | 100 | Una puntuación nunca baja de ahí. |
+
+> **Un ejemplo** Cuatro personas, todas en 1500, gana un jugador nuevo. Gana tres duelos, cada uno esperado a la mitad, así que la sorpresa es 1,5: 40 × 1,0 × 1,5 ÷ 3 = **+20**. La misma victoria como única persona contra tres bots en 1500 vale 40 × 0,4 × 1,5 ÷ 3 = **+8**, y menos si los bots son principiantes.
+
+### 4. La clasificación
+
+- Una puntuación es **provisional** hasta tener 5 partidas puntuadas.
+- Las personas aparecen solo si activan **Mostrarme en la clasificación**: es su decisión. Los bots aparecen cuando tienen una partida puntuada.
+- Los bots empiezan con una puntuación medida (cuántas veces ganó cada uno en miles de mesas simuladas) y después se mueven despacio.
+- La ficha de un jugador muestra la puntuación, el historial (jugadas, ganadas, perdidas, puesto medio) y las últimas partidas con un gráfico.
+
+> **No se puntúa a propósito** **Profesión:** los jugadores la eligen o se sortea, según la mesa, y el puesto compara el progreso hacia escapar, así que una profesión con gastos altos no sale perjudicada. **Rapidez:** escapar antes es mejor puesto, pero cuántas rondas costó ganar no suma puntos: ganar es ganar. **Efectivo:** el objetivo es el ingreso, no el ahorro. **Préstamos:** cuentan por su cuota mensual. Todo esto puede afinarse cuando las partidas reales lo pidan.
+
+## 30. Jugar con un agente
 
 Deja que tu asistente de IA ocupe una plaza.
 

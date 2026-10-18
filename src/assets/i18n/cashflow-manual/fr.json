@@ -1629,7 +1629,7 @@
           "items": [
             {
               "title": "Ouvrir ou rejoindre",
-              "text": "Ouvrez une table depuis le salon (menu, \"Jouer entre amis\") avec un nom, le nombre de places, publique ou privée, l'horloge et la fin de partie - ou rejoignez une table ouverte, ou utilisez un code d'invitation."
+              "text": "Ouvrez une table depuis le salon (menu, \"Multijoueur\") avec un nom, le nombre de places, publique ou privée, l'horloge et la fin de partie - ou rejoignez une table ouverte, ou utilisez un code d'invitation."
             },
             {
               "title": "Se préparer",
@@ -1841,6 +1841,121 @@
           "kind": "warning",
           "title": "Pas une promesse",
           "text": "Une part de victoires est une moyenne sur des milliers de tables. Dans une partie donnée les dés décident beaucoup, et un joueur qui lit bien la table peut battre un champion. Les chiffres sont remesurés quand les règles changent."
+        }
+      ]
+    },
+    "rating": {
+      "nav": "Notation et classement",
+      "title": "Comment une partie est notée",
+      "intro": "Qui finit à quelle place, et ce que cela fait à une cote.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Chaque partie terminée donne à chaque joueur une **place**. À une table qui compte, les places font bouger les **cotes** des joueurs, et le classement est trié par cote. Tout cela, ce sont des règles fixes - cette page les donne toutes."
+        },
+        {
+          "type": "h3",
+          "text": "1. La place"
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "**Échappé** à la course de rats (le revenu passif couvre toutes les dépenses mensuelles) : premier. Celui qui est sorti plus tôt est mieux placé.",
+            "**Encore en jeu** à la fin : classé selon sa proximité de l'évasion - revenu passif divisé par toutes les dépenses mensuelles, mensualités de prêt comprises. Un métier aux grosses dépenses, ou un joueur qui a emprunté, est mesuré à la même échelle que les autres ; le revenu brut ne décide pas. À progression égale : le revenu passif le plus élevé, puis le cashflow mensuel le plus élevé.",
+            "**Failli** (cashflow mensuel négatif) : sous tous ceux qui jouent encore. Celui qui a tenu le plus longtemps est mieux placé.",
+            "**Parti** de la partie : dernier."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "2. La partie compte-t-elle ?"
+        },
+        {
+          "type": "p",
+          "text": "Une partie terminée ne fait bouger les cotes que si tout ceci est vrai. Sinon elle compte dans les statistiques (parties, victoires, place moyenne) mais pas dans la cote :"
+        },
+        {
+          "type": "list",
+          "items": [
+            "L'hôte a laissé **Classée** activée à la création de la table.",
+            "La partie est **terminée** : une table fermée ou expirée ne compte pas.",
+            "Au moins **deux places et une personne** : des bots qui ne jouent que contre des bots ne font jamais bouger le classement.",
+            "Au moins **8 tours** ont été joués, ou quelqu'un s'est échappé avant."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Le panneau de fin de partie dit si la partie a compté, et pourquoi non le cas échéant."
+        },
+        {
+          "type": "h3",
+          "text": "3. La cote"
+        },
+        {
+          "type": "p",
+          "text": "Une table est une série de duels, chacun contre chacun. Dans chaque duel la meilleure place marque 1, la moins bonne 0, des places égales un demi. Chacun a une cote (les personnes commencent à **1500**) qui dit comment le duel était attendu. Seule la **surprise** la déplace : battre plus fort rapporte beaucoup, battre bien plus faible presque rien, perdre contre plus faible coûte beaucoup."
+        },
+        {
+          "type": "p",
+          "text": "Le changement est `K × champ × (somme des surprises de tous les duels) ÷ (joueurs - 1)`. Les éléments :"
+        },
+        {
+          "type": "table",
+          "head": ["Élément", "Valeur", "Pourquoi"],
+          "rows": [
+            [
+              "K - la vitesse de la cote",
+              "40 pour les 20 premières parties cotées d'une personne, puis 24. Bots : 8",
+              "Un nouveau joueur trouve vite son niveau. Un bot joue des milliers de parties et bouge lentement."
+            ],
+            [
+              "Champ - qui est à la table",
+              "`0,4 + 0,6 × (personnes - 1) ÷ (places - 1)` : 0,4 avec une personne parmi des bots, 1,0 avec des personnes seulement",
+              "Une table de vrais joueurs vaut plus qu'une contre des bots. Pour les gains comme pour les pertes."
+            ],
+            [
+              "Battre un bot débutant",
+              "compte pour 25 %",
+              "Pomper les adversaires les plus faibles ne rapporte presque rien."
+            ],
+            [
+              "Les mêmes personnes à nouveau",
+              "sous 24 heures la k-ième répétition compte `1 ÷ (1 + k)`",
+              "S'échanger des victoires entre amis ne paie pas."
+            ],
+            [
+              "Partir",
+              "avant le tour 3 : rien, et vous n'êtes pas un adversaire pour les autres. Après : dernière place",
+              "Quitter un salon ou un départ perdu est gratuit. Abandonner une partie perdue est une défaite."
+            ],
+            ["La cote minimale", "100", "Une cote ne descend jamais plus bas."]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "example",
+          "title": "Un exemple chiffré",
+          "text": "Quatre personnes, toutes à 1500, un nouveau joueur gagne. Trois duels gagnés, chacun attendu à un demi, donc la surprise est 1,5 : 40 × 1,0 × 1,5 ÷ 3 = **+20**. La même victoire comme seule personne contre trois bots à 1500 vaut 40 × 0,4 × 1,5 ÷ 3 = **+8** - et moins encore si les bots sont débutants."
+        },
+        {
+          "type": "h3",
+          "text": "4. Le classement"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Une cote est **provisoire** jusqu'à 5 parties cotées.",
+            "Les personnes ne figurent qu'après avoir activé **Me montrer dans le classement** - leur choix. Les bots figurent dès qu'ils ont une partie cotée.",
+            "Les bots partent d'une cote mesurée (combien de fois chacun a gagné sur des milliers de tables simulées) puis bougent lentement.",
+            "La fiche d'un joueur montre la cote, le bilan (jouées, gagnées, perdues, place moyenne) et les dernières parties avec un graphique."
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Volontairement pas noté",
+          "text": "**Métier :** les joueurs le choisissent ou il est tiré, selon la table, et la place compare la progression vers l'évasion, donc un métier aux grosses dépenses n'est pas désavantagé. **Rapidité :** s'échapper plus tôt donne une meilleure place, mais le nombre de tours d'une victoire n'ajoute pas de points - une victoire est une victoire. **Argent liquide :** le but est le revenu, pas l'épargne. **Prêts :** ils comptent par leur mensualité. Tout cela peut être affiné quand de vraies parties en montreront le besoin."
         }
       ]
     },

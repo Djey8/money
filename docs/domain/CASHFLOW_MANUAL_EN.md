@@ -602,7 +602,7 @@ A **table** is the Cashflow game played by several players at once, on the serve
 
 ### Open, join, start
 
-1. **Open or join** - Open a table from the lobby (menu, "Play with friends") with a name, the number of seats, public or private, the clock and how the game ends - or join an open table, or use an invite code.
+1. **Open or join** - Open a table from the lobby (menu, "Multiplayer") with a name, the number of seats, public or private, the clock and how the game ends - or join an open table, or use an invite code.
 2. **Get ready** - Everyone presses ready. The host starts the game once at least two players are ready.
 3. **Pick a profession** - Everyone picks at the same time and the picks stay hidden until the last one is in. Duplicates are allowed unless the host made professions unique or random.
 4. **Play** - Each player gets their own starting books. The ring shows one token per player, each with its colour and letter.
@@ -683,7 +683,57 @@ _(Table: The champion of every profession - the figures are in the topics cashfl
 
 > **Not a promise** A win share is an average over thousands of tables. In any one game the dice decide a lot, and a player who reads the table well can beat a champion. The numbers are measured again whenever the rules change.
 
-## 29. Playing with an agent
+## 29. How a game is scored
+
+Who placed where, and what that does to a rating.
+
+Every finished game gives each player a **place**. At a table that counts, the places move the players' **ratings**, and the leaderboard is sorted by rating. All of it is fixed rules - this page lists every one of them.
+
+### 1. The place
+
+1. **Escaped** the rat race (passive income covers every monthly expense): first. Whoever got out earlier is placed higher.
+2. **Still playing** when the game ends: placed by how close they are to escaping - passive income divided by all monthly expenses, loan payments included. A profession with high expenses, or a player who borrowed, is measured on the same scale as everyone else; the raw income does not decide. Equal progress: the higher passive income, then the higher monthly cashflow.
+3. **Bankrupt** (a negative monthly cashflow): below everybody still playing. Whoever lasted longer is placed higher.
+4. **Left** the game: last.
+
+### 2. Does the game count?
+
+A finished game moves the ratings only when all of this holds. Otherwise it still adds to the statistics (games, wins, average place), but not to the rating:
+
+- The host left **Ranked** switched on when the table was made.
+- The game **finished** - a table that was closed, or timed out, does not count.
+- At least **two seats and one person**: bots playing only against bots never move the board.
+- At least **8 rounds** were played, or somebody escaped earlier.
+
+The game-over panel says whether the game counted, and why not when it did not.
+
+### 3. The rating
+
+A table is a series of duels, everybody against everybody. In each duel the better place scores 1, the worse place 0, equal places half. Everyone has a rating (people start at **1500**) that says how a duel was expected to go. Only the **surprise** moves it: beating a stronger player earns a lot, beating a much weaker one almost nothing, losing to a weaker one costs a lot.
+
+The change is `K × field × (sum of the surprises of all duels) ÷ (players - 1)`. The parts:
+
+| Part | Value | Why |
+| --- | --- | --- |
+| K - how fast a rating moves | 40 for a person's first 20 rated games, then 24. Bots: 8 | A new player finds their level quickly. A bot plays thousands of games and moves slowly. |
+| Field - who sits at the table | `0.4 + 0.6 × (people - 1) ÷ (seats - 1)`: 0.4 for one person among bots, 1.0 for people only | A table of real players is worth more than one against bots. It applies to gains and losses alike. |
+| Beating a beginner bot | counts 25% | Farming the easiest opponents earns almost nothing. |
+| The same people again | within 24 hours the k-th repeat counts `1 ÷ (1 + k)` | Trading wins between friends does not pay. |
+| Leaving | before round 3: nothing, and you are not an opponent for the others. Later: last place | Leaving a lobby or a doomed start is free. Walking away from a lost game is a loss. |
+| The lowest rating | 100 | A rating never goes below it. |
+
+> **A worked example** Four people, everybody at 1500, a new player wins. Three duels are won, each expected at one half, so the surprise is 1.5: 40 × 1.0 × 1.5 ÷ 3 = **+20**. The same win as the only person against three bots at 1500 is worth 40 × 0.4 × 1.5 ÷ 3 = **+8** - and less again when the bots are beginners.
+
+### 4. The leaderboard
+
+- A rating is marked **provisional** until it has 5 rated games.
+- People are listed only after they switch **Show me on the leaderboard** on - their choice. Bots are listed once they have a rated game.
+- Bots start from a measured rating (how often each won in thousands of simulated tables) and then move slowly.
+- A player's card shows the rating, the record (played, won, lost, average place) and the last games with a rating chart.
+
+> **Deliberately not scored** **Profession:** players pick one or it is drawn, depending on the table, and the place compares progress to escaping, so a big-expense profession is not at a disadvantage. **Speed:** an earlier escape is a better place, but the number of rounds a win took adds no points - a win is a win. **Cash on hand:** the goal of the game is income, not savings. **Loans:** they count through their monthly payment. All of these can be refined once real games show a need.
+
+## 30. Playing with an agent
 
 Let your AI assistant take a seat.
 
