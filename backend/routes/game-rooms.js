@@ -3,7 +3,13 @@
 const crypto = require('crypto');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { getGameRoomsDb, getUsersDb, getAuthDb, getGameSavesDb } = require('../config/db');
+const {
+  getGameRoomsDb,
+  getGameStatsDb,
+  getUsersDb,
+  getAuthDb,
+  getGameSavesDb,
+} = require('../config/db');
 const logger = require('../config/logger');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
@@ -15,6 +21,7 @@ const {
   splitBotId,
 } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
+const { createGameStats } = require('../services/game-stats');
 const { fileFinishedGame } = require('../repositories/game-saves');
 const { GameActionError } = require('../repositories/game-play');
 const { createGameRoomHub } = require('../services/game-room-hub');
@@ -47,6 +54,28 @@ const roomsLimiter = rateLimit({
 });
 
 let service = null;
+let statsService = null;
+/** The one name per account: its nickname (the users database keeps it unencrypted in the account's info). */
+async function nicknameOf(userId) {
+  try {
+    const doc = await getUsersDb().get(userId);
+    const name = doc?.data?.info?.username;
+    return typeof name === 'string' ? name.trim().slice(0, 24) : '';
+  } catch {
+    return '';
+  }
+}
+/** The leaderboard: profiles and the result of every finished table (services/game-stats.js). */
+function stats() {
+  if (!statsService) {
+    statsService = createGameStats({
+      db: getGameStatsDb(),
+      nicknameOf,
+      log: (message, meta) => logger.warn(message, meta),
+    });
+  }
+  return statsService;
+}
 const hub = createGameRoomHub();
 // One timer per table that is being played with a clock; when it rings the service decides (services/game-room-clocks.js).
 const clocks = createRoomClocks({
@@ -65,12 +94,15 @@ function rooms() {
       clocks,
       bots,
       // A finished game is filed in a player's own saved games through the saved-games store (slice S5).
-      filer: (userId, books, name) =>
+      filer: (userId, books, name, multiplayer) =>
         fileFinishedGame(
           { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
           userId,
-          { books, name },
+          { books, name, multiplayer },
         ),
+      // one name per account: the nickname of the account is the name at every table
+      nicknameOf,
+      stats: stats(),
       db: getGameRoomsDb(),
       log: (message, meta) => logger.warn(message, meta),
     });
@@ -137,7 +169,9 @@ router.post(
   handle(async (req, res) => {
     const body = req.body;
     if (!isObject(body)) return invalid(res, 'Send a JSON object.');
-    if (typeof body.nickname !== 'string') return invalid(res, 'nickname must be a string.');
+    if (body.nickname !== undefined && typeof body.nickname !== 'string') {
+      return invalid(res, 'nickname must be a string.');
+    }
     if (!isObject(body.settings))
       return invalid(res, 'settings must be an object with at least a name.');
     if (body.language !== undefined && typeof body.language !== 'string') {
@@ -145,6 +179,9 @@ router.post(
     }
     if (body.color !== undefined && typeof body.color !== 'string') {
       return invalid(res, 'color must be a string.');
+    }
+    if (body.initials !== undefined && typeof body.initials !== 'string') {
+      return invalid(res, 'initials must be a string.');
     }
     const room = await rooms().createRoom(req.userId, body);
     return res.status(201).json(room);
@@ -157,8 +194,10 @@ router.post(
   handle(async (req, res) => {
     const body = req.body;
     if (!isObject(body)) return invalid(res, 'Send a JSON object.');
-    if (typeof body.nickname !== 'string') return invalid(res, 'nickname must be a string.');
-    for (const field of ['code', 'roomId', 'color']) {
+    if (body.nickname !== undefined && typeof body.nickname !== 'string') {
+      return invalid(res, 'nickname must be a string.');
+    }
+    for (const field of ['code', 'roomId', 'color', 'initials']) {
       if (body[field] !== undefined && typeof body[field] !== 'string') {
         return invalid(res, `${field} must be a string.`);
       }
@@ -174,23 +213,134 @@ router.post(
 router.get(
   '/bots',
   ...guard('r'),
-  handle(async (req, res) =>
+  handle(async (req, res) => {
+    const profiles = botProfiles();
+    const levels = Object.keys(BOT_LEVELS);
+    const botIdOf = (id, level) => (level === 'master' ? id : `${id}--${level}`);
+    // what each bot is rated now at each level (the board's rating, or the measured start while it has none)
+    let ratings = {};
+    try {
+      ratings = await stats().currentBotRatings(
+        profiles.flatMap((p) => levels.map((level) => botIdOf(p.id, level))),
+      );
+    } catch (error) {
+      logger.warn('Bot ratings could not be read', { error: error.message });
+    }
     res.json({
-      items: botProfiles().map(({ id, name, difficulty, description }) => ({
+      items: profiles.map(({ id, name, difficulty, description }) => ({
         id,
         name,
         difficulty,
         description,
+        ratings: Object.fromEntries(
+          levels
+            .filter((level) => ratings[botIdOf(id, level)] !== undefined)
+            .map((level) => [level, ratings[botIdOf(id, level)]]),
+        ),
       })),
       levels: Object.entries(BOT_LEVELS).map(([id, mistakes]) => ({ id, mistakes })),
-    }),
-  ),
+    });
+  }),
 );
 
+const MAX_WAIT_SECONDS = () => Number(process.env.GAME_ROOMS_MAX_WAIT_SECONDS) || 30;
+
+/** A finished table also says whether it counted for the rating and what it did to each seat (once recorded). */
+async function withRating(view) {
+  if (view.table.phase !== 'finished') return view;
+  try {
+    const result = await require('../repositories/game-stats-store').getResult(
+      getGameStatsDb(),
+      view.id,
+    );
+    if (!result) return view;
+    return {
+      ...view,
+      rating: {
+        ranked: result.counted,
+        ...(result.counted ? {} : { why: result.rankedWhy }),
+        changes: result.participants.map((p) => ({
+          seat: p.seat,
+          before: Math.round(p.ratingBefore),
+          after: Math.round(p.ratingAfter),
+          delta: Math.round(p.delta * 10) / 10,
+        })),
+      },
+    };
+  } catch {
+    return view;
+  }
+}
+
+/** The table as an agent needs it to play: the seats without their books, and only the reader's own books. */
+function slimView(view) {
+  const { table } = view;
+  return {
+    id: view.id,
+    version: table.version,
+    phase: table.phase,
+    activeSeat: table.activeSeat,
+    youSeat: table.youSeat,
+    holdSeats: table.holdSeats,
+    paused: table.clock ? table.clock.pausedAt !== null : false,
+    legalActions: view.legalActions,
+    ...(view.rating ? { rating: view.rating } : {}),
+    players: table.players.map((p) => ({
+      seat: p.seat,
+      name: p.name,
+      bot: !!p.bot,
+      away: !!p.away,
+      ...(p.seat === table.youSeat ? { books: p.books } : {}),
+    })),
+  };
+}
+
+/** Does the reader have something to do (or has the game ended)? */
+function readerHasMove(view) {
+  const { table } = view;
+  if (table.phase !== 'playing') return table.phase !== 'lobby';
+  if (table.youSeat === null || table.youSeat === undefined) return false;
+  if (table.clock && table.clock.pausedAt !== null) return false;
+  return (
+    table.activeSeat === table.youSeat ||
+    (Array.isArray(table.holdSeats) && table.holdSeats.includes(table.youSeat)) ||
+    view.legalActions.some((a) => a.action === 'sell_position' || a.action === 'vote_undo')
+  );
+}
+
+/**
+ * `GET /game/rooms/{roomId}` - the table as the reader may see it. With `wait` the read is held open (up to `timeoutSeconds`,
+ * at most 30) until something happens, so an agent makes one cheap call per turn instead of polling:
+ * `wait=my_turn` returns as soon as the reader has a move (their turn, a seat in `holdSeats`, a position to sell, an undo vote)
+ * or the game is over; `wait=change` returns when `version` passes `since`. A timeout answers the current state with
+ * `waited: true, timedOut: true`. `slim=true` leaves other players' books out.
+ */
 router.get(
   '/:roomId',
   ...guard('r'),
-  handle(async (req, res) => res.json(await rooms().getRoom(req.userId, req.params.roomId))),
+  handle(async (req, res) => {
+    const { wait, since, timeoutSeconds, slim } = req.query;
+    const service = rooms();
+    const wanted = wait === 'my_turn' || wait === 'change' ? wait : null;
+    const seconds = Math.min(Math.max(Number(timeoutSeconds) || 25, 1), MAX_WAIT_SECONDS());
+    const deadline = Date.now() + seconds * 1000;
+    const shape = (view, extra) =>
+      slim === 'true' || slim === '1' ? { ...slimView(view), ...extra } : { ...view, ...extra };
+    let view = await withRating(await service.getRoom(req.userId, req.params.roomId));
+    if (!wanted) return res.json(shape(view, {}));
+    const sinceVersion = since === undefined ? null : Number(since);
+    const ready = (current) =>
+      wanted === 'my_turn'
+        ? readerHasMove(current)
+        : sinceVersion !== null && current.table.version > sinceVersion;
+    while (!ready(view)) {
+      const left = deadline - Date.now();
+      if (left <= 0) return res.json(shape(view, { waited: true, timedOut: true }));
+      await hub.waitForChange(req.params.roomId, left);
+      view = await withRating(await service.getRoom(req.userId, req.params.roomId));
+    }
+    return res.json(shape(view, { waited: true, timedOut: false }));
+  }),
 );
 
 // ── The live channel ───────────────────────────────────────────────────────────────────────────────
@@ -241,7 +391,11 @@ router.get(
     );
     for (const line of stream.log) res.write(frame('log', line.seq, line));
 
-    const beat = setInterval(() => res.write(': heartbeat\n\n'), heartbeatMs());
+    // a comment keeps proxies from closing an idle line; the named `ping` is what a client can see (a line that goes quiet is dead)
+    const beat = setInterval(() => {
+      res.write(': heartbeat\n\n');
+      res.write(frame('ping', undefined, { at: Date.now() }));
+    }, heartbeatMs());
     const finish = () => {
       clearInterval(beat);
       stream.close();
@@ -378,8 +532,9 @@ router.post(
 );
 
 /**
- * `POST /game/rooms/{roomId}/rewind?confirm=true` - the host puts the table back to the start of the previous turn (a repair for a
- * mishap; the dice carry on, everyone sees it in the log). Takes the same `clientCommandId` / `expectedVersion` as a move.
+ * `POST /game/rooms/{roomId}/rewind?confirm=true` - asks the table to go back to the start of the previous turn (a repair for a
+ * mishap; the dice carry on, everyone sees it in the log). It happens when more than half of the people agree: this is the
+ * `propose_undo` move, the others answer with `vote_undo`. Takes the same `clientCommandId` / `expectedVersion` as a move.
  */
 router.post(
   '/:roomId/rewind',
@@ -442,12 +597,23 @@ router.get(
   }),
 );
 
+/** `POST /game/rooms/{roomId}/forget` - takes the table off my lists (a table I left, or that is over). */
+router.post(
+  '/:roomId/forget',
+  ...guard('w'),
+  handle(async (req, res) => res.json(await rooms().forgetRoom(req.userId, req.params.roomId))),
+);
+
 router.delete(
   '/:roomId',
   ...guard('w'),
   handle(async (req, res) => {
     if (req.query.confirm !== 'true') {
       return invalid(res, 'Closing a table ends it for everyone: send ?confirm=true.');
+    }
+    // `?remove=true`: the host takes the table away altogether (it is closed for everyone first, then deleted)
+    if (req.query.remove === 'true') {
+      return res.json(await rooms().removeRoom(req.userId, req.params.roomId));
     }
     const closed = await rooms().runCommand(req.userId, req.params.roomId, { type: 'close' });
     return res.json(closed.view);
@@ -459,6 +625,44 @@ module.exports.resetServiceForTests = () => {
   service = null;
 };
 module.exports.hub = hub;
+module.exports.stats = stats;
+module.exports.nicknameOf = nicknameOf;
+/**
+ * The account changed its nickname (the profile page or the settings API): the one name follows everywhere - the leaderboard
+ * profile and the seat at every table. Never in the way of the change itself.
+ */
+/** The account was deleted: its leaderboard profile keeps the record but not the person. */
+module.exports.afterAccountDeleted = async (userId) => {
+  try {
+    await stats().forgetAccount(userId);
+  } catch (error) {
+    logger.warn('account_forget_failed', { message: error.message });
+  }
+};
+module.exports.afterNicknameChanged = async (userId, written) => {
+  try {
+    // the settings API keeps its own copy of the username; the nickname the app and the tables read is the account's info
+    if (typeof written === 'string' && written.trim()) {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const doc = await getUsersDb().get(userId);
+        doc.data = doc.data || {};
+        doc.data.info = { ...(doc.data.info || {}), username: written.trim().slice(0, 24) };
+        try {
+          await getUsersDb().insert(doc);
+          break;
+        } catch (error) {
+          if (error.statusCode !== 409) throw error;
+        }
+      }
+    }
+    const name = await nicknameOf(userId);
+    if (!name) return;
+    await stats().refreshName(userId);
+    await rooms().renamePlayer(userId, name);
+  } catch (error) {
+    logger.warn('nickname_sync_failed', { message: error.message });
+  }
+};
 module.exports.clocks = clocks;
 module.exports.bots = bots;
 /** After a restart: arm the clock of every table being played. */

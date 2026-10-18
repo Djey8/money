@@ -79,7 +79,7 @@ describe('what an agent sees in tools/list', () => {
     expect(play.description).toContain('clientCommandId');
     expect(play.description).toContain('expectedVersion');
     expect(play.description).toContain('Playing at a table');
-    expect(read.description).toContain('There is no stream for an agent');
+    expect(read.description).toContain('WAITING FOR YOUR TURN');
     expect(read.description).toContain('version');
   });
 
@@ -100,7 +100,7 @@ describe('what an agent sees in tools/list', () => {
         ).actions,
       ),
     ].filter(([name]) => name.startsWith('table'));
-    expect(actions.length).toBe(17);
+    expect(actions.length).toBe(18);
     for (const [, action] of actions) expect(OPERATIONS[action.operationId]).toBeDefined();
     expect(OPERATIONS.streamGameRoomEvents).toBeUndefined();
     expect(JSON.stringify(TOOLS)).not.toContain('streamGameRoomEvents');

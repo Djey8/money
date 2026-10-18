@@ -470,6 +470,10 @@ router.post('/write/*?', authenticateToken, async (req, res) => {
           operation: 'write',
           success: true,
         });
+        // one name per account: the nickname follows to the leaderboard and the tables (game accounts only have any)
+        if (path === 'info/username' || path === 'info') {
+          void require('./game-rooms').afterNicknameChanged(userId);
+        }
         res.json({
           success: true,
           id: response.id,

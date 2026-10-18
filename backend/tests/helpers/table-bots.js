@@ -274,6 +274,8 @@ class TableBot {
     if (this.can('accept_trade') && this.can('decline_trade')) {
       return this.rng() < 0.5 ? { type: 'accept_trade' } : { type: 'decline_trade' };
     }
+    // the turn is over and the table waits for the people who can still sell: a player says done
+    if (this.can('done')) return { type: 'done' };
     if (!this.isMyTurn()) return null;
     if (this.can('roll_decision')) return { type: 'roll_decision' };
     if (this.can('roll')) return { type: 'roll' };
@@ -296,6 +298,7 @@ class TableBot {
     }
     if (this.can('offer_trade') && this.rng() < 0.3)
       return { type: 'offer_trade', priceMinor: 50000 };
+    if (this.can('finish_card')) return { type: 'finish_card' };
     if (this.can('pass_card')) return { type: 'pass_card' };
     return null;
   }

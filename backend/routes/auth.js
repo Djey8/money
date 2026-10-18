@@ -550,6 +550,8 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
     logUserActivity(userId, 'account_deleted', { email: req.userEmail });
 
     clearAuthCookies(res);
+    // a game account's leaderboard profile keeps its record but not the person
+    void require('./game-rooms').afterAccountDeleted(userId);
     res.json({ success: true });
   } catch (error) {
     logger.logError(error, { context: 'delete_account', userId: req.userId });

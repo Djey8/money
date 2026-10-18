@@ -284,6 +284,7 @@ async function deleteRoom(db, id) {
 }
 
 module.exports = {
+  dropMarker,
   MAX_ROOM_BYTES,
   RoomConflictError,
   RoomTooLargeError,

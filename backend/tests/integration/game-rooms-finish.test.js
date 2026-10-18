@@ -18,11 +18,22 @@ let ben;
 let normal;
 const roomIds = [];
 
+/** The account's nickname is the name at a table: Host, Anna, Ben ... from the label. */
+const nameOf = (label) => {
+  const word = (label.match(/(host|anna|ben|cy|dan)$/) || [label])[0];
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};
+
 async function gameUser(label) {
   const email = `jest_${Date.now()}_${label}_cashflow@test.local`;
   const res = await request(app)
     .post('/api/auth/register')
-    .send({ email, password: 'TestPassword123!', gamePassword: GAME_PASSWORD });
+    .send({
+      email,
+      password: 'TestPassword123!',
+      gamePassword: GAME_PASSWORD,
+      username: nameOf(label),
+    });
   expect(res.status).toBe(201);
   const cookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('access_token='));
   return { token: cookie.split(';')[0].split('=')[1], userId: res.body.userId };
@@ -42,6 +53,7 @@ async function finishedTable(name = 'Short game') {
       name,
       professions: 'random',
       turnOrder: 'seat',
+      turnGate: false, // these tests move by raw commands; the gate has its own tests
       clock: { mode: 'none' },
       endCondition: 'round-limit',
       roundLimit: 1,
@@ -173,6 +185,14 @@ describe('filing the game', () => {
     const list = await api(host, 'get', '/game/saves');
     const entry = list.body.games.find((g) => g.id === filed.body.id);
     expect(entry).toMatchObject({ status: 'ended', gameSetId: 'cashflow' });
+    // it remembers it was played with others: which table, how many players, the place won (the list shows them apart)
+    expect(entry.multiplayer).toMatchObject({ table: 'Filed game', players: 2, roomId: id });
+    // a saved game keeps its table: the host can no longer remove it
+    const kept = await rooms(host, 'delete', `/${id}?confirm=true&remove=true`);
+    expect(kept.status).toBe(409);
+    expect(kept.body.code).toBe('room_kept');
+    expect([1, 2]).toContain(entry.multiplayer.rank);
+    expect(['escaped', 'playing', 'bankrupt', 'left']).toContain(entry.multiplayer.outcome);
     expect(entry.professionId).toBe(room.table.players[mySeat].professionId);
     const read = await api(host, 'get', `/game/saves/${filed.body.id}`);
     expect(read.status).toBe(200);

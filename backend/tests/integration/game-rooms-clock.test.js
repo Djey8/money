@@ -66,6 +66,7 @@ async function startedTable(service, settings = {}) {
       name: 'Clock table',
       professions: 'random',
       turnOrder: 'seat',
+      turnGate: false, // these tests move by raw commands; the gate has its own tests
       clock: { mode: 'per-move', secondsPerMove: 60 },
       ...settings,
     },
@@ -289,10 +290,12 @@ describe('rewinding the last turn', () => {
     // otherwise she is still in her turn and the previous one is the host's
     const expected = moved.activePlayerId === users.anna ? atHost : atAnna;
     now = T0 + 15 * SEC;
-    const rewound = await service.rewind(users.host, id, {});
+    // the host asks, Anna agrees: two of three people
+    await service.rewind(users.host, id, {});
+    const rewound = await service.runCommand(users.anna, id, { type: 'vote_undo', yes: true });
     expect(rewound.events.map((e) => e.type)).toEqual(expect.arrayContaining(['rewound']));
     const table = await stored(id);
-    expect(table.version).toBe(moved.version + 1);
+    expect(table.version).toBe(moved.version + 3);
     expect(table.activePlayerId).toBe(expected.activePlayerId);
     expect(table.turnRolled).toBe(false);
     for (let seat = 0; seat < 3; seat += 1) {
@@ -312,7 +315,7 @@ describe('rewinding the last turn', () => {
     expect((await stored(id)).activePlayerId).not.toBe(mover);
   });
 
-  it("is the host's alone, needs an earlier turn, and can be switched off", async () => {
+  it('can be asked by anyone, needs an earlier turn, and can be switched off', async () => {
     if (!dbAvailable) return;
     const { service } = build();
     const id = await startedTable(service);
@@ -321,8 +324,10 @@ describe('rewinding the last turn', () => {
       code: 'ILLEGAL_MOVE',
     });
     await quickTurn(service, id);
-    await expect(service.rewind(users.anna, id, {})).rejects.toMatchObject({ code: 'NOT_HOST' });
+    const asked = await service.rewind(users.anna, id, {});
+    expect(asked.events.map((e) => e.type)).toEqual(['undo_proposed']);
     expect((await stored(id)).activePlayerId).toBe(users.anna);
+    expect((await stored(id)).undoVote).toMatchObject({ proposerId: users.anna });
 
     const off = await startedTable(service, { allowRewind: false });
     await quickTurn(service, off);

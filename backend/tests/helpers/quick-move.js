@@ -15,6 +15,7 @@ function quickMove(current) {
       ? { type: 'pay_doodad', cardId: pending.offered.cardId }
       : { type: 'draw_card', deck: 'doodad' };
   }
+  if (legal.includes('finish_card')) return { type: 'finish_card' };
   if (legal.includes('pass_card')) return { type: 'pass_card' };
   if (legal.includes('roll_decision')) return { type: 'roll_decision' };
   return { type: 'roll' };

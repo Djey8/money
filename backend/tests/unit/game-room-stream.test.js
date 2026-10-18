@@ -5,6 +5,7 @@
 'use strict';
 
 const { applyCommand, createTable, systemClock } = require('@money/domain');
+const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 const {
   eventSeat,
   changedSeats,
@@ -14,6 +15,7 @@ const {
 const { createGameRoomHub } = require('../../services/game-room-hub');
 
 const ctx = {
+  gameSets: CASHFLOW_GAME_SETS,
   clock: systemClock,
   text: (key) => key,
   money: (minor) => `${minor / 100}`,

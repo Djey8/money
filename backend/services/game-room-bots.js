@@ -11,14 +11,17 @@
  * tables again. Timers do not keep the process alive.
  */
 
-const DEFAULT_DELAY_MS = 1200;
+const DEFAULT_DELAY_MS = 3500;
+const PACE_DELAY_MS = { fast: 1500, normal: 3500, slow: 6000 };
 const RETRY_MS = 5000;
 
 function createBotDriver({
   run,
-  delayMs = () => {
+  delayMs = (table) => {
     const configured = Number(process.env.GAME_BOT_DELAY_MS);
-    return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_DELAY_MS;
+    if (Number.isFinite(configured) && configured >= 0) return configured;
+    // the table's own pace: how long people have to follow what a bot does between two steps
+    return PACE_DELAY_MS[table && table.settings && table.settings.pace] ?? DEFAULT_DELAY_MS;
   },
   scheduler = { set: setTimeout, clear: clearTimeout },
   log = () => {},
@@ -51,7 +54,7 @@ function createBotDriver({
       clear(roomId);
       return;
     }
-    wake(roomId, delayMs());
+    wake(roomId, delayMs(table));
   }
 
   function clear(roomId) {

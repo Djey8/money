@@ -24,11 +24,22 @@ let ben;
 let normal;
 const roomIds = [];
 
+/** The account's nickname is the name at a table: Host, Anna, Ben ... from the label. */
+const nameOf = (label) => {
+  const word = (label.match(/(host|anna|ben|cy|dan)$/) || [label])[0];
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};
+
 async function gameUser(label) {
   const email = `jest_${Date.now()}_${label}_cashflow@test.local`;
   const res = await request(app)
     .post('/api/auth/register')
-    .send({ email, password: 'TestPassword123!', gamePassword: GAME_PASSWORD });
+    .send({
+      email,
+      password: 'TestPassword123!',
+      gamePassword: GAME_PASSWORD,
+      username: nameOf(label),
+    });
   expect(res.status).toBe(201);
   const cookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('access_token='));
   return { token: cookie.split(';')[0].split('=')[1], userId: res.body.userId, email };
@@ -188,11 +199,6 @@ describe('creating and finding tables', () => {
     expect(forced.body.detail).toMatch(/reportRolls/);
     const always = await createRoom(host, { rules: { sell: 'always' } });
     expect(always.status).toBe(400);
-    const nick = await createRoom(host, {}, { nickname: '   ' });
-    expect(nick.body.code).toBe('table_invalid_name');
-    expect((await call(host, 'post', '').send({ settings: { name: 'x' } })).body.code).toBe(
-      'validation_invalid',
-    );
     expect((await call(host, 'post', '').send({ nickname: 'x' })).body.code).toBe(
       'validation_invalid',
     );
@@ -261,11 +267,10 @@ describe('the lobby, before play', () => {
     expect(joined.body.inviteCode).toBe(made.body.inviteCode);
     expect(joined.body.table.version).toBe(2);
 
-    const taken = await call(ben, 'post', '/join').send({ roomId: id, nickname: ' anna ' });
-    expect(taken.status).toBe(409);
-    expect(taken.body.code).toBe('table_name_taken');
-    const joinedBen = await call(ben, 'post', '/join').send({ roomId: id, nickname: 'Ben' });
+    // one name per account: the nickname of the account is the name at the table, whatever the request says
+    const joinedBen = await call(ben, 'post', '/join').send({ roomId: id, nickname: ' anna ' });
     expect(joinedBen.body.table.players).toHaveLength(3);
+    expect(joinedBen.body.table.players.map((p) => p.name)).toEqual(['Host', 'Anna', 'Ben']);
 
     // not everyone is ready
     expect((await call(host, 'post', `/${id}/start`).send({})).body.code).toBe('table_not_ready');
@@ -354,6 +359,37 @@ describe('the lobby, before play', () => {
     const closed = await call(host, 'delete', `/${id}?confirm=true`);
     expect(closed.body.table.phase).toBe('abandoned');
     expect((await call(host, 'post', `/${id}/start`).send({})).status).toBe(409);
+  });
+
+  it('lets the host take a table away altogether, and nobody else; it says who opened it', async () => {
+    if (!dbAvailable) return;
+    const made = await createRoom(host);
+    const id = made.body.id;
+    await call(anna, 'post', '/join').send({ roomId: id, nickname: 'Anna' });
+    expect(
+      (await call(host, 'get', '?scope=mine')).body.items.find((i) => i.id === id),
+    ).toMatchObject({
+      hosting: true,
+    });
+    expect(
+      (await call(anna, 'get', '?scope=mine')).body.items.find((i) => i.id === id),
+    ).toMatchObject({
+      hosting: false,
+    });
+    const denied = await call(anna, 'delete', `/${id}?confirm=true&remove=true`);
+    expect(denied.status).toBe(403);
+    expect(denied.body.code).toBe('table_not_host');
+    expect((await call(host, 'delete', `/${id}?remove=true`)).status).toBe(400);
+    // with another person at the table it is not the host's to take away: that person leaves (or the host resigns) first
+    const crowded = await call(host, 'delete', `/${id}?confirm=true&remove=true`);
+    expect(crowded.status).toBe(409);
+    expect(crowded.body.code).toBe('room_has_players');
+    await call(anna, 'post', `/${id}/leave`).send({});
+    const gone = await call(host, 'delete', `/${id}?confirm=true&remove=true`);
+    expect(gone.status).toBe(200);
+    expect(gone.body).toEqual({ removed: true });
+    expect((await call(host, 'get', `/${id}`)).status).toBe(404);
+    expect((await call(anna, 'get', '?scope=mine')).body.items.map((i) => i.id)).not.toContain(id);
   });
 
   it('guards a change with the table version the caller last saw', async () => {

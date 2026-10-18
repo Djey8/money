@@ -6023,6 +6023,93 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/InsufficientScope'
+  /profile/picture:
+    get:
+      operationId: getProfilePicture
+      summary: Read the account's profile picture
+      description: >-
+        Self-hosted only; requires `settings:r`. The picture as a data URL, or `null` when none is set (the app then shows its default).
+      x-mcp-skip: true
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The picture
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [picture]
+                properties:
+                  picture:
+                    type: string
+                    nullable: true
+                    description: A `data:image/...;base64,...` URL, or null.
+                  updatedAt:
+                    type: integer
+                    nullable: true
+                    description: When it was set (epoch milliseconds).
+              example:
+                picture: null
+                updatedAt: null
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    put:
+      operationId: setProfilePicture
+      summary: Set the account's profile picture
+      description: >-
+        Self-hosted only; requires `settings:w`. A small square picture as a base64 data URL of a PNG, JPEG or WebP, at most 150 KB (the app cuts it square and shrinks it before sending). It replaces the toolbar picture of the app and, for a game account, shows on the leaderboard.
+      x-mcp-skip: true
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  description: A `data:image/png|jpeg|webp;base64,...` URL.
+            example:
+              image: 'data:image/jpeg;base64,/9j/4AAQSkZJRg=='
+      responses:
+        '200':
+          description: The picture as stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  picture:
+                    type: string
+                  updatedAt:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+    delete:
+      operationId: deleteProfilePicture
+      summary: Remove the account's profile picture
+      description: >-
+        Self-hosted only; requires `settings:w`. The app goes back to its default picture.
+      x-mcp-skip: true
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Removed (also when there was none)
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
   /settings:
     get:
       operationId: getSettings
@@ -6574,11 +6661,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [nickname, settings]
+              required: [settings]
               properties:
+                initials:
+                  type: string
+                  description: The letters on your token (up to two letters or digits, shown in capitals); the others see them on the board. Default - the first two letters of your nickname.
                 nickname:
                   type: string
-                  description: The name you go by at this table (1 to 24 characters). Never your email.
+                  description: Ignored. Your name at every table is the nickname of your account (one name per account; change it in your profile and it changes everywhere). Still accepted so older clients keep working.
                 color:
                   type: string
                   description: One of the table colours; the first free one when absent.
@@ -6647,7 +6737,7 @@ paths:
       operationId: joinGameRoom
       summary: Take a seat at a table
       description: >-
-        Game accounts only; requires `game:w`. Join a public table by `roomId`, or any table - private ones too - by its `inviteCode` (case does not matter). Only while the table is in its lobby. The nickname must be free at that table (409 `table_name_taken`); the colour is the first free one unless you name one. You may sit at a limited number of open tables (429 `room_limit`).
+        Game accounts only; requires `game:w`. Join a public table by `roomId`, or any table - private ones too - by its `inviteCode` (case does not matter). Only while the table is in its lobby. The name at the table is your account's nickname (a second one with the same name is shown as `Name (2)`); the colour is the first free one unless you name one. You may sit at a limited number of open tables (429 `room_limit`).
       security:
         - bearerAuth: []
       requestBody:
@@ -6656,10 +6746,13 @@ paths:
           application/json:
             schema:
               type: object
-              required: [nickname]
               properties:
+                initials:
+                  type: string
+                  description: The letters on your token (up to two letters or digits, shown in capitals); the others see them on the board. Default - the first two letters of your nickname.
                 nickname:
                   type: string
+                  description: Ignored. Your name at every table is the nickname of your account. Names may repeat between accounts; a second "Anna" at one table is shown as "Anna (2)".
                 roomId:
                   type: string
                 code:
@@ -6731,6 +6824,252 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/leaderboard:
+    get:
+      operationId: getGameLeaderboard
+      summary: The Cashflow leaderboard
+      description: >-
+        Game accounts only; requires `game:r`. Players by rating, best first: humans who switched "show me on the leaderboard" on (`setMyGamePlayer`) and the bots, each persona at each level as a player of its own. Only players with at least `minGames` rated games are listed (default 1, so a bot or a human shows once a game counted for them). A rating is `provisional` until the player has 5 rated games. A player is known by the public `playerId` of their profile - never by an account id. Scoring: a pairwise rating (Elo) per finished table that counts - ranked, finished, a human at the table, at least 8 rounds or an escape; winning against strong players earns more, against beginner bots very little, and a table of humans counts more than one human among bots (`todo/cashflow-leaderboard.md`).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, human, bot]
+        - name: minGames
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: after
+          in: query
+          required: false
+          description: The `next` of the previous page.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The board
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GamePlayer'
+                  next:
+                    type: string
+                    nullable: true
+              example:
+                items:
+                  - place: 1
+                    playerId: 3f2b8c0e-5d6a-4c1e-9a77-0b1f2d3c4e5f
+                    name: Champion Cleo II
+                    type: bot
+                    level: master
+                    rating: 1782
+                    peakRating: 1790
+                    ratedGames: 214
+                    provisional: false
+                    games: 230
+                    wins: 121
+                    losses: 109
+                    gaveUp: 0
+                    bankruptcies: 12
+                    escaped: 121
+                    winRate: 52.6
+                    avgPlace: 1.9
+                    bestPlace: 1
+                next: null
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/players/me:
+    get:
+      operationId: getMyGamePlayer
+      summary: My leaderboard profile
+      description: >-
+        Game accounts only; requires `game:r`. Your own profile on the leaderboard (made on first look): rating, counters, and whether you are listed. Your name on the board and at every table is the nickname of your account.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Your profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GamePlayer'
+              example:
+                playerId: 9a1c7f64-2b0d-4e83-a5c9-6d0e1f2a3b4c
+                name: Anna
+                type: human
+                visible: false
+                rating: 1512
+                peakRating: 1512
+                ratedGames: 2
+                provisional: true
+                games: 3
+                wins: 1
+                losses: 2
+                gaveUp: 0
+                bankruptcies: 0
+                escaped: 1
+                winRate: 33.3
+                avgPlace: 2
+                bestPlace: 1
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+    put:
+      operationId: setMyGamePlayer
+      summary: Show me on the leaderboard, or not
+      description: >-
+        Game accounts only; requires `game:w`. Humans are listed only when they say so (off by default). Your games are recorded either way.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [visible]
+              properties:
+                visible:
+                  type: boolean
+            example:
+              visible: true
+      responses:
+        '200':
+          description: Your profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GamePlayer'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/players/{playerId}:
+    parameters:
+      - name: playerId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGamePlayer
+      summary: One player of the leaderboard
+      description: >-
+        Game accounts only; requires `game:r`. A player's counters and their last 20 results (table, date, place, whether it counted, the rating change). A human who is not listed is not found (404), except to themselves.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The player
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/GamePlayer'
+                  - type: object
+                    properties:
+                      recent:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            table:
+                              type: string
+                            endedAt:
+                              type: string
+                              format: date-time
+                            players:
+                              type: integer
+                            place:
+                              type: integer
+                            outcome:
+                              type: string
+                            ranked:
+                              type: boolean
+                            notRankedBecause:
+                              type: string
+                              description: Why the game did not count (`not-ranked`, `no-human`, `too-short`, ...).
+                            ratingChange:
+                              type: number
+                            ratingAfter:
+                              type: integer
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /game/players/{playerId}/picture:
+    parameters:
+      - name: playerId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: v
+        in: query
+        required: false
+        description: The `pictureVersion` of the player, so a new picture is fetched and an unchanged one comes from the browser's cache.
+        schema:
+          type: integer
+    get:
+      operationId: getGamePlayerPicture
+      summary: The profile picture of a player
+      description: >-
+        Game accounts only; requires `game:r`. The picture of a person who set one and is listed on the leaderboard (or of the caller), as an image (PNG, JPEG or WebP). 404 when there is none. Bots have none. Binary: no tool is made of it.
+      x-mcp-skip: true
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The picture
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /game/rooms/{roomId}:
     parameters:
       - name: roomId
@@ -6743,6 +7082,36 @@ paths:
       summary: Look at a table
       description: >-
         Game accounts only; requires `game:r`. The table as you may see it: everything is open to everyone at the table - every player's profession, books and cards - except the dice and the order of the card piles, other players' profession picks while a duplicates table is still picking in secret, and account ids (players are `seat`, name and colour). `youSeat` is your seat, or null if you only look. A public table can be looked at by any game account; a private table does not exist for anyone who is not seated at it (404). `inviteCode` is shown to seated players only.
+      parameters:
+        - name: wait
+          in: query
+          required: false
+          description: >-
+            Hold the read open instead of answering at once, so an agent makes one cheap call per turn instead of polling. `my_turn` answers as soon as you have something to do (it is your turn, your seat is in `holdSeats`, you may sell into an offer, or you may vote on an undo) or the game is over; `change` answers when `version` passes `since` (required). Nothing happening for `timeoutSeconds` answers the current state with `waited: true, timedOut: true` - call again. The wait is not a live connection and shows nothing as present.
+          schema:
+            type: string
+            enum: [my_turn, change]
+        - name: since
+          in: query
+          required: false
+          description: The `version` you last saw (for `wait=change`).
+          schema:
+            type: integer
+        - name: timeoutSeconds
+          in: query
+          required: false
+          description: How long a wait may last, 1 to 30 (default 25).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+        - name: slim
+          in: query
+          required: false
+          description: >-
+            `true` answers a short form for playing: `id`, `version`, `phase`, `activeSeat`, `youSeat`, `holdSeats`, `paused`, `legalActions` and `players` (`seat`, `name`, `bot`, `away`, and `books` for your own seat only) instead of the whole table.
+          schema:
+            type: boolean
       security:
         - bearerAuth: []
       responses:
@@ -6762,13 +7131,18 @@ paths:
       operationId: closeGameRoom
       summary: Close a table (host only)
       description: >-
-        Game accounts only; requires `game:w`. Ends the table for everyone - destructive, so `confirm=true` is required. Only the host. A closed table stays readable for a while and is then deleted.
+        Game accounts only; requires `game:w`. Ends the table for everyone - destructive, so `confirm=true` is required. Only the host. A closed table stays readable for a while and is then deleted. With `remove=true` the host takes the table away at once: it is closed for everyone first, then deleted with its log (the answer is `{removed: true}`); meant for a table opened by mistake.
       security:
         - bearerAuth: []
       parameters:
         - name: confirm
           in: query
           required: true
+          schema:
+            type: boolean
+        - name: remove
+          in: query
+          required: false
           schema:
             type: boolean
       responses:
@@ -6788,6 +7162,36 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/TableRefused'
+  /game/rooms/{roomId}/forget:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: forgetGameRoom
+      summary: Take a table off my lists
+      description: >-
+        Game accounts only; requires `game:w`. Removes the table from your own "my tables" and "recent tables" - one you left, or one that is over. Nothing about the table changes for anybody else. Refused while you still play at an open table (409 `room_still_playing`: leave or resign first).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Taken off the list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forgotten:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '409':
+          $ref: '#/components/responses/TableRefused'
   /game/rooms/{roomId}/leave:
     parameters:
       - name: roomId
@@ -6799,7 +7203,7 @@ paths:
       operationId: leaveGameRoom
       summary: Leave a table
       description: >-
-        Game accounts only; requires `game:w`. In the lobby or while professions are picked your seat is given up (the host passes to the next player; the last one out closes the table). During play your seat stays and your books remain part of the game, but you are out; if it was your turn it moves on.
+        Game accounts only; requires `game:w`. In the lobby or while professions are picked your seat is given up (the host passes to the next *person* - a bot is never made the host - and when no person is left the table is closed). During play your seat stays and your books remain part of the game, but you are out; if it was your turn it moves on.
       security:
         - bearerAuth: []
       requestBody:
@@ -7171,7 +7575,7 @@ paths:
       operationId: playGameRoomCommand
       summary: Make a move at a running table
       description: >-
-        Game accounts only; requires `game:w`. One move of play by the caller: `{command, clientCommandId?, expectedVersion?}`. Whether it is allowed now - your turn, the card in your hand, the clock, a pause - is the table's rule, not the request's: a move that is not allowed is refused and changes nothing (409 `table_not_your_turn`, `table_paused`, `table_time_up`; 422 `table_illegal_move` with the rule's own words, for example "A card was already offered on this space"). Every response carries your `legalActions`, the commands the table would accept from you right now - **play only from that list**. The moves, by `command.type`: `roll` (`dice` 1 or 2, two only while Charity allows), `draw_card` (`deck`: `dealSmall`, `dealBig`, `market`, `doodad`; a Market card takes effect for every player at once, a Market space draws it for you), `buy_deal` (`cardId`, `quantity?`), `pay_doodad` (`cardId`), `roll_decision` (`title?`), `pass_card`, `bank_loan` (`amountMinor`, negative repays), `sell_position` (`input: {title, quantity?, priceMinor?, salePriceMinor?}` - only into a buyer's offer that is open for you, on or off your turn), `offer_trade` (`priceMinor`, `toSeat?`: the Deal card in your hand, a property or asset card, never a share), `counter_trade` (`priceMinor`), `accept_trade` (a buyer takes the asking price; the seller names `fromSeat` to take that buyer's price), `decline_trade`, `withdraw_trade`, and the host's `pause` / `resume`, and `back` for a player who was marked away. Joining, leaving, readiness and settings have their own routes; the clock's timeout is the server's. Players are named by `seat`, never by account. **`clientCommandId`** (1-64 letters, digits, `_.:-`) makes a retry safe: the move is applied at most once, and a repeat - after a lost response, or two identical requests at once - answers the table with `replayed: true` and `appliedVersion` of the first. **`expectedVersion`** refuses a move on a table that has moved on (409 `room_conflict`).
+        Game accounts only; requires `game:w`. One move of play by the caller: `{command, clientCommandId?, expectedVersion?}`. Whether it is allowed now - your turn, the card in your hand, the clock, a pause - is the table's rule, not the request's: a move that is not allowed is refused and changes nothing (409 `table_not_your_turn`, `table_paused`, `table_time_up`; 422 `table_illegal_move` with the rule's own words, for example "A card was already offered on this space"). Every response carries your `legalActions`, the commands the table would accept from you right now - **play only from that list**. The moves, by `command.type`: `roll` (`dice` 1 or 2, two only while Charity allows), `draw_card` (`deck`: `dealSmall`, `dealBig`, `market`, `doodad`; a Market card takes effect for every player at once, a Market space draws it for you), `buy_deal` (`cardId`, `quantity?`), `pay_doodad` (`cardId`), `pay_market` (`cardId`: a Market cost card - a sewer pipe, a roof - applies only to the player who drew it and who owns a property: nothing is booked when it is drawn, the table waits for this payment, which a clock that runs out also makes; without a property the card is ignored), `roll_decision` (`title?`), `pass_card`, `bank_loan` (`amountMinor`, negative repays), `sell_position` (`input: {title, quantity?, priceMinor?, salePriceMinor?}` - only into a buyer's offer that is open for you, on or off your turn), `offer_trade` (`priceMinor`, `toSeat?`: the Deal card in your hand, a property or asset card, never a share), `counter_trade` (`priceMinor`), `accept_trade` (a buyer takes the asking price; the seller names `fromSeat` to take that buyer's price), `decline_trade`, `withdraw_trade`, and the host's `pause` / `resume`, `back` for a player who was marked away, `away` to go away on purpose (your turns are then played passively at once - the most passive legal turn, the same a timeout plays: a Market card is opened, a Doodad paid, everything else passed - and the table never waits for you to say `done`; `back`, or any move of your own, returns you), and `done`: when a turn is over the table holds (`holdSeats` in the table lists who it waits for): the player who moved ends their turn with `done`, and anyone whom a Market card or a stock price card lets sell may sell first and says `done` too; bots and players who are away are not waited for. `done` is only in `legalActions` for those players (and not while a card of theirs still has a die to roll - `roll_decision` and `bank_loan` stay open meanwhile). `propose_undo` asks the table to go back one turn and `vote_undo` (`yes`) answers an open ask - more than half of the people must agree (see `rewindGameRoom`). Joining, leaving, readiness and settings have their own routes; the clock's timeout is the server's. Players are named by `seat`, never by account. **`clientCommandId`** (1-64 letters, digits, `_.:-`) makes a retry safe: the move is applied at most once, and a repeat - after a lost response, or two identical requests at once - answers the table with `replayed: true` and `appliedVersion` of the first. **`expectedVersion`** refuses a move on a table that has moved on (409 `room_conflict`).
       security:
         - bearerAuth: []
       requestBody:
@@ -7264,9 +7668,9 @@ paths:
           type: string
     post:
       operationId: rewindGameRoom
-      summary: Rewind the last turn (host only)
+      summary: Ask the table to undo the last turn (a vote)
       description: >-
-        Game accounts only; requires `game:w`. For a mishap - a connection that dropped while a move was due, the passive turn the clock played - not for second thoughts. The table goes back to the state at the **start of the previous turn**: whoever moved since, that player's moves included, is undone; everyone sees `rewound` in the log. The dice stream is not put back, so a replayed turn rolls different dice, and who is in the game stays as it is now (a player who left stays gone, an away player stays away). The player whose turn it is again gets a fresh turn's time. One step only: until another turn has begun there is nothing earlier to go back to (422 `table_illegal_move`). Only the host (403 `table_not_host`), only while playing, and only if the table allows it (`allowRewind`, on by default; 422 otherwise). Destructive, so `?confirm=true` is required. Takes the same `clientCommandId` and `expectedVersion` as a move.
+        Game accounts only; requires `game:w`. The same as the `propose_undo` move: any player who is here asks the table to go back to the state at the **start of the previous turn**. It happens when **more than half of the people at the table** say yes (bots and players who are away do not vote; the asker's yes counts, so a lone person is decided at once); the others answer with the `vote_undo` move (`yes`: true/false) and everyone sees the open vote as `undo` in the table. When it is approved whoever moved since, that player's moves included, is undone, everyone sees `rewound` in the log, and the dice stream is not put back (a replayed turn rolls different dice); who is in the game stays as it is now. A vote lives for the turn it was asked in. One step only: until another turn has begun there is nothing earlier to go back to (422 `table_illegal_move`), and a table whose host switched undoing off at the start (`allowRewind: false`) refuses it (422). Destructive, so `?confirm=true` is required. Takes the same `clientCommandId` and `expectedVersion` as a move.
       security:
         - bearerAuth: []
       parameters:
@@ -7345,7 +7749,7 @@ paths:
       operationId: fileGameRoomGame
       summary: File a finished game in your saved games
       description: >-
-        Game accounts only; requires `game:w`. Files **your own final books** of a finished (or closed) game as an ordinary saved game of your account - the same format a solo save is, encrypted with your key, marked as ended, without an undo history (a table has none to give); it then shows in `listGameSaves` and loads like any other. Nothing about the other players or the table goes into it. Only a player of the table (403 `room_forbidden`), only once the game is over (409 `room_not_over`), and only once: a repeat - or a second request at the same moment - answers with the game already filed (`alreadyFiled: true`), so a retry is always safe. The default name is the table's name and your profession; send `name` to choose one. The account's saved-game budget applies (409 `game_storage_full`).
+        Game accounts only; requires `game:w`. Files **your own final books** of a finished (or closed) game as an ordinary saved game of your account - the same format a solo save is, encrypted with your key, marked as ended, without an undo history (a table has none to give); it then shows in `listGameSaves` and loads like any other. The saved game remembers its table (`multiplayer.roomId`), and the table is then **kept** with its whole history and every player's books for as long as the game is saved: it is not deleted a week after it ends, and the host can no longer remove it (409 `room_kept`), so the saver can open it again read only with all the players. Only a player of the table (403 `room_forbidden`), only once the game is over (409 `room_not_over`), and only once: a repeat - or a second request at the same moment - answers with the game already filed (`alreadyFiled: true`), so a retry is always safe. The default name is the table's name and your profession; send `name` to choose one. The account's saved-game budget applies (409 `game_storage_full`).
       security:
         - bearerAuth: []
       requestBody:
@@ -10695,6 +11099,12 @@ components:
           enum: [easy, medium, hard, champion]
         description:
           type: string
+        ratings:
+          type: object
+          description: What the bot is rated now at each skill level (the leaderboard's rating, or the measured start rating while it has no rated game), so a host sees the strength they seat.
+          additionalProperties:
+            type: integer
+          example: { master: 1650, strong: 1590, casual: 1480, beginner: 1210 }
     GameRoomCommandBody:
       type: object
       description: Every table change takes an optional `expectedVersion`, the table version the caller last saw; if the table has moved on the change is refused with 409 `room_conflict` and nothing happens.
@@ -10715,6 +11125,7 @@ components:
             - draw_card
             - buy_deal
             - pay_doodad
+            - pay_market
             - roll_decision
             - pass_card
             - bank_loan
@@ -10727,6 +11138,13 @@ components:
             - pause
             - resume
             - back
+            - away
+            - done
+            - propose_undo
+            - vote_undo
+        yes:
+          type: boolean
+          description: With `vote_undo`, whether the voter agrees to go back one turn.
         dice:
           type: integer
           enum: [1, 2]
@@ -10823,7 +11241,28 @@ components:
         allowRewind:
           type: boolean
           default: true
-          description: Whether the host may rewind the last turn (`rewindGameRoom`). Frozen when play starts.
+          description: Whether the table may vote to undo the last turn (`rewindGameRoom`, the `propose_undo` / `vote_undo` moves). Frozen when play starts.
+        ranked:
+          type: boolean
+          default: true
+          description: >-
+            Whether the game may count for the leaderboard rating. Whether it really counts is decided when it ends (it must be finished, have a
+            human at the table and last at least 8 rounds or end with an escape). Frozen when play starts.
+        showProgress:
+          type: boolean
+          default: true
+          description: >-
+            Whether everybody's progress towards escaping (the percentage beside each player) is shown. This only changes what the screen
+            shows; the table's books stay open information. Frozen when play starts.
+        pace:
+          type: string
+          enum: [fast, normal, slow]
+          default: normal
+          description: How fast the table's bots play (a step every 1.5 / 3.5 / 6 seconds) and how long the game screen tells each move. Frozen when play starts.
+        turnGate:
+          type: boolean
+          default: true
+          description: After every turn the table waits until the player who moved has ended it (`done`) and everybody a Market card or a stock price card lets sell has said `done` too; nobody else has anything to confirm. Bots and players who are away are not waited for; a table with a clock waits at most as long as a move takes (45 s at most). Default true for a table people create. Frozen when play starts.
     GameRoomSummary:
       type: object
       description: One line of the lobby list. No account ids.
@@ -10867,6 +11306,13 @@ components:
         joined:
           type: boolean
           description: Whether you hold a seat.
+        hosting:
+          type: boolean
+          description: >-
+            Whether you opened this table (the host may close it, or remove it altogether with `remove=true`, only while nobody else is at it - 409 `room_has_players`).
+        humans:
+          type: integer
+          description: How many people (not bots) are still playing at the table.
         result:
           type: object
           nullable: true
@@ -10877,10 +11323,87 @@ components:
             winnerName:
               type: string
               nullable: true
+    GamePlayer:
+      type: object
+      description: A player of the leaderboard, human or bot.
+      properties:
+        place:
+          type: integer
+          description: Only on the board.
+        playerId:
+          type: string
+          description: The public id of the profile (a UUID) - never an account id.
+        pictureVersion:
+          type: integer
+          description: A person's profile picture is available at `/game/players/{playerId}/picture?v=<this>`; absent when there is none.
+        name:
+          type: string
+        type:
+          type: string
+          enum: [human, bot]
+        level:
+          type: string
+          enum: [master, strong, casual, beginner]
+          description: Bots only.
+        visible:
+          type: boolean
+          description: Your own profile only - whether you are listed.
+        rating:
+          type: integer
+        peakRating:
+          type: integer
+        ratedGames:
+          type: integer
+        provisional:
+          type: boolean
+          description: Fewer than 5 rated games.
+        games:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        gaveUp:
+          type: integer
+        bankruptcies:
+          type: integer
+        escaped:
+          type: integer
+        winRate:
+          type: number
+          description: Percent.
+        avgPlace:
+          type: number
+          nullable: true
+        bestPlace:
+          type: integer
+          nullable: true
     GameRoom:
       type: object
       description: A table as one account may see it.
       properties:
+        rating:
+          type: object
+          description: A finished table only, once recorded - whether the game counted for the rating and what it did to each seat.
+          properties:
+            ranked:
+              type: boolean
+            why:
+              type: string
+              description: Why it did not count (`not-ranked`, `not-finished`, `no-human`, `too-short`).
+            changes:
+              type: array
+              items:
+                type: object
+                properties:
+                  seat:
+                    type: integer
+                  before:
+                    type: integer
+                  after:
+                    type: integer
+                  delta:
+                    type: number
         id:
           type: string
         inviteCode:
@@ -10983,7 +11506,7 @@ components:
             code: game_action_not_allowed
     TableRefused:
       description: >-
-        The request was refused by the table's rules or the settings (the Problem `code` is `table_<rule>`, in lower case). 400: `table_invalid_settings`, `table_invalid_name`, `table_unknown_profession`. 403: `table_not_host`, `table_not_a_member`, `table_cannot_kick_host`. 404: `table_unknown_player`. 409: `table_wrong_phase`, `table_table_full`, `table_already_joined`, `table_name_taken`, `table_color_taken`, `table_not_ready`, `table_not_enough_players`, `table_profession_taken`, `table_not_your_turn`, `table_paused`, `table_time_up`, `room_conflict` (the table changed under you). 422: `table_illegal_move` (the game's own rule says no; the detail is the rule's words). A refused request changes nothing.
+        The request was refused by the table's rules or the settings (the Problem `code` is `table_<rule>`, in lower case). 400: `table_invalid_settings`, `table_invalid_name`, `table_unknown_profession`. 403: `table_not_host`, `table_not_a_member`, `table_cannot_kick_host`. 404: `table_unknown_player`. 409: `table_wrong_phase`, `table_table_full`, `table_already_joined`, `table_name_taken`, `table_bot_duplicate` (that bot at that level already sits at the table), `table_color_taken`, `table_not_ready`, `table_not_enough_players`, `table_profession_taken`, `table_not_your_turn`, `table_paused`, `table_time_up`, `room_conflict` (the table changed under you). 422: `table_illegal_move` (the game's own rule says no; the detail is the rule's words). A refused request changes nothing.
       content:
         application/problem+json:
           schema:

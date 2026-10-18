@@ -17,6 +17,7 @@ const {
 } = require('@money/domain');
 // the catalog of bots is data kept out of the domain package's barrel (the browser bundle must not carry it)
 const { botPolicy } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
+const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
 const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
@@ -129,6 +130,11 @@ function listingFields(table) {
 }
 
 /** The table and its events as the account `userId` may see them. */
+/** A finished table somebody saved is their record of the game (view, history, every player's books): it is kept. */
+function isKept(doc) {
+  return Object.values(doc.filed || {}).some((entry) => entry && (entry.id || entry.pending));
+}
+
 function roomView(doc, userId) {
   const member = doc.table.players.some((p) => p.id === userId);
   return {
@@ -154,6 +160,7 @@ function roomSummary(doc, userId) {
     maxSeats: doc.maxSeats,
     gameSetId: settings.gameSetId,
     rulesBase: settings.rulesBase,
+    ranked: settings.ranked,
     professions: settings.professions,
     turnOrder: settings.turnOrder,
     clock: settings.clock,
@@ -163,6 +170,8 @@ function roomSummary(doc, userId) {
     updatedAt: doc.updatedAt,
     result: doc.result ?? null,
     joined: doc.table.players.some((p) => p.id === userId),
+    hosting: doc.table.hostId === userId,
+    humans: doc.table.players.filter((p) => !p.bot && p.status === 'active').length,
   };
 }
 
@@ -191,6 +200,8 @@ function createGameRoomService({
   clock = systemClock,
   log = () => {},
   hub = null,
+  stats = null,
+  nicknameOf = async () => '',
   clocks = null,
   bots = null,
   filer = null,
@@ -208,6 +219,8 @@ function createGameRoomService({
         money,
         plainMoney: money,
         cards: createCardTextSource(language),
+        // the printed catalog is the server's: the domain package does not carry it
+        gameSets: CASHFLOW_GAME_SETS,
       });
     }
     return contexts.get(language);
@@ -256,6 +269,14 @@ function createGameRoomService({
         table,
         events: events.map((event, index) => ({ seq: firstSeq + index, event })),
       });
+    }
+    // a game that has just ended goes onto the leaderboard (never in the way of the game itself)
+    if (stats && table.phase === 'finished' && (!previous || previous.phase !== 'finished')) {
+      stats
+        .record(saved)
+        .catch((error) =>
+          log('game_stats_record_failed', { roomId: doc.roomId, message: error.message }),
+        );
     }
     if (clocks) clocks.arm(doc.roomId, nextDeadline(table));
     if (bots) bots.touch(doc.roomId, table);
@@ -308,9 +329,13 @@ function createGameRoomService({
       {
         id: roomId,
         hostId: userId,
-        hostName: input.nickname,
+        // one name per account: the nickname, whatever the request says
+        hostName: (await nicknameOf(userId)) || input.nickname || 'Player',
         hostColor: input.color,
-        settings: input.settings,
+        hostInitials: input.initials,
+        // a table people create waits for everybody to say Continue after each turn, unless the host switched that off
+        // the strict rules are the table's: nothing is added, changed or bought without a card (the solo game's strict mode)
+        settings: { turnGate: true, rulesBase: 'strict', ...input.settings },
         seed: crypto.randomInt(0, 2 ** 32),
       },
       contextFor(language),
@@ -416,35 +441,42 @@ function createGameRoomService({
     return execute(
       userId,
       roomId,
-      (doc) => {
+      async (doc) => {
         const next = typeof command === 'function' ? command(doc.table) : command;
-        return { result: applyCommand(doc.table, userId, next, contextFor(doc.language)) };
+        const ctx = contextFor(doc.language);
+        if (next.type === 'propose_undo') {
+          // asking is refused up front when there is no earlier turn to go back to
+          const turnSeq = doc.turnSeq || 0;
+          const snapshot = turnSeq >= 2 ? await store.getSnapshot(db, roomId, turnSeq - 1) : null;
+          if (!snapshot) {
+            throw new TableCommandError('ILLEGAL_MOVE', 'There is no earlier turn to go back to.');
+          }
+        }
+        const result = applyCommand(doc.table, userId, next, ctx);
+        if (!result.events.some((event) => event.type === 'undo_approved')) return { result };
+        // the table has voted to undo: go back to the start of the previous turn, in the same save
+        const turnSeq = doc.turnSeq || 0;
+        const snapshot = turnSeq >= 2 ? await store.getSnapshot(db, roomId, turnSeq - 1) : null;
+        if (!snapshot) {
+          throw new TableCommandError('ILLEGAL_MOVE', 'There is no earlier turn to go back to.');
+        }
+        const rewound = rewindTable(result.table, snapshot.table, result.table.hostId, ctx);
+        return {
+          result: { table: rewound.table, events: [...result.events, ...rewound.events] },
+          persistOptions: { turnSeq: turnSeq - 1 },
+        };
       },
       options,
     );
   }
 
   /**
-   * The host rewinds the last turn: the table goes back to the snapshot taken when the previous turn started (the server keeps
-   * the last two), the dice carry on. One step only - a second rewind finds nothing to go back to until another turn has begun.
+   * Asks the table to go back one turn (`POST .../rewind`): the same as the `propose_undo` command - it happens when more than
+   * half of the people at the table agree, at once when the asker is the only person (todo/cashflow-multiplayer-solo-ui.md).
+   * The dice carry on; one step only - until another turn has begun there is nothing earlier to go back to.
    */
   function rewind(userId, roomId, options) {
-    return execute(
-      userId,
-      roomId,
-      async (doc) => {
-        const turnSeq = doc.turnSeq || 0;
-        const snapshot = turnSeq >= 2 ? await store.getSnapshot(db, roomId, turnSeq - 1) : null;
-        if (!snapshot) {
-          throw new TableCommandError('ILLEGAL_MOVE', 'There is no earlier turn to go back to.');
-        }
-        return {
-          result: rewindTable(doc.table, snapshot.table, userId, contextFor(doc.language)),
-          persistOptions: { turnSeq: turnSeq - 1 },
-        };
-      },
-      options,
-    );
+    return runCommand(userId, roomId, { type: 'propose_undo' }, options);
   }
 
   /**
@@ -564,7 +596,12 @@ function createGameRoomService({
     const joined = await runCommand(
       userId,
       doc.roomId,
-      { type: 'join', name: input.nickname, color: input.color },
+      {
+        type: 'join',
+        name: (await nicknameOf(userId)) || input.nickname || 'Player',
+        color: input.color,
+        initials: input.initials,
+      },
       { joining: true },
     );
     return joined.view;
@@ -616,7 +653,19 @@ function createGameRoomService({
     try {
       const doc = await loadFor(userId, roomId);
       const after = Number.isInteger(lastEventId) && lastEventId > 0 ? lastEventId : 0;
-      const missed = after > 0 ? await store.readEvents(db, roomId, after, 200) : [];
+      // The room is saved before its events are appended: a connection that arrives in between would be given a table whose newest
+      // events it can never read (the update that carries them is skipped, being at or below the snapshot's version). So the log is
+      // read again, for a moment, until it reaches what the room says it holds.
+      let missed = [];
+      if (after > 0) {
+        const wanted = doc.eventSeq || 0;
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          missed = await store.readEvents(db, roomId, after, 200);
+          const have = missed.length ? missed[missed.length - 1].seq : after;
+          if (have >= wanted || missed.length >= 200) break;
+          await new Promise((resolve) => setTimeout(resolve, 75));
+        }
+      }
       return {
         snapshot: (() => {
           const { table, legalActions, ...room } = roomView(doc, userId);
@@ -677,10 +726,19 @@ function createGameRoomService({
       const label = `${doc.table.settings.name} · ${profession ? profession.title : 'Cashflow'}`;
       let result;
       try {
+        // the game remembers it was played with others: the table, how many, and the place won
+        const ranked = (doc.table.result?.ranking ?? []).find((entry) => entry.playerId === userId);
         result = await filer(
           userId,
           player.books,
           typeof name === 'string' && name.trim() ? name.trim() : label,
+          {
+            table: doc.table.settings.name,
+            roomId: doc.roomId,
+            players: doc.table.players.length,
+            rank: ranked ? ranked.rank : null,
+            outcome: ranked ? ranked.outcome : undefined,
+          },
         );
       } catch (error) {
         await release(roomId, userId);
@@ -722,6 +780,116 @@ function createGameRoomService({
     return { events, next: last, end: last >= (doc.eventSeq || 0) };
   }
 
+  /**
+   * The host takes the table away again (a table opened by mistake, a game that is not wanted any more): it is closed for
+   * everyone who is at it - they are told, like any close - and then removed with its log and its snapshots, so it is gone from
+   * every list. Only the host; whatever the phase. (Rules for what an owner may do come later: for now the owner may.)
+   */
+  async function removeRoom(userId, roomId) {
+    const doc = await loadFor(userId, roomId);
+    if (doc.table.hostId !== userId) {
+      throw new TableCommandError('NOT_HOST', 'Only the host can remove the table.');
+    }
+    // other people are at it: it is not the host's to take away - they leave the game instead (resign)
+    const others = doc.table.players.filter(
+      (p) => !p.bot && p.status === 'active' && p.id !== userId,
+    );
+    if (OPEN_PHASES.includes(doc.table.phase) && others.length > 0) {
+      throw new RoomError(
+        'room_has_players',
+        409,
+        'Other players are at this table: leave the game instead of removing it.',
+      );
+    }
+    if (isKept(doc)) {
+      throw new RoomError(
+        'room_kept',
+        409,
+        'Players saved this game: the table stays as their record and cannot be removed.',
+      );
+    }
+    if (OPEN_PHASES.includes(doc.table.phase)) {
+      const version = doc.table.version + 1;
+      const closed = {
+        ...doc.table,
+        version,
+        phase: 'abandoned',
+        activePlayerId: null,
+        hold: null,
+      };
+      await persist(doc, closed, [
+        {
+          version,
+          at: nowIso(),
+          type: 'table_closed',
+          playerId: userId,
+          data: { reason: 'host' },
+        },
+      ]).catch((error) => {
+        // someone moved at the same moment: the removal goes on all the same
+        if (!(error instanceof store.RoomConflictError)) throw error;
+      });
+    }
+    if (clocks) clocks.disarm(roomId);
+    if (bots) bots.clear(roomId);
+    await store.deleteRoom(db, roomId);
+    return { removed: true };
+  }
+
+  /**
+   * The account changed its nickname: its seat in every table it sits at (or sat at and somebody saved) shows the new name. The
+   * name stays unique at a table (a second "Anna" is "Anna (2)"). Nothing is added to the log; the next update carries the name.
+   */
+  async function renamePlayer(userId, name) {
+    const markers = await store.seatMarkers(db, userId);
+    let renamed = 0;
+    for (const marker of markers) {
+      for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
+        const doc = await store.getRoom(db, marker.roomId);
+        if (!doc) break;
+        const me = doc.table.players.find((p) => p.id === userId);
+        if (!me) break;
+        const others = new Set(
+          doc.table.players.filter((p) => p !== me).map((p) => p.name.toLowerCase()),
+        );
+        let next = name;
+        for (let n = 2; others.has(next.toLowerCase()); n += 1) next = `${name} (${n})`;
+        if (me.name === next) break;
+        const players = doc.table.players.map((p) => (p === me ? { ...p, name: next } : p));
+        try {
+          await store.saveRoom(db, {
+            ...doc,
+            table: { ...doc.table, players },
+            ...(doc.table.hostId === userId ? { hostName: next } : {}),
+          });
+          renamed += 1;
+          break;
+        } catch (error) {
+          if (!(error instanceof store.RoomConflictError)) throw error;
+        }
+      }
+    }
+    return { renamed };
+  }
+
+  /**
+   * Takes a table off the account's own lists (My tables, Recent tables) - nothing of the table itself changes. Not while the
+   * account still plays at an open table (it leaves, or resigns, first).
+   */
+  async function forgetRoom(userId, roomId) {
+    const doc = await store.getRoom(db, roomId);
+    const me = doc ? doc.table.players.find((p) => p.id === userId) : null;
+    if (doc && me && me.status === 'active' && OPEN_PHASES.includes(doc.table.phase)) {
+      throw new RoomError(
+        'room_still_playing',
+        409,
+        'You are still playing at this table: leave the game first.',
+      );
+    }
+    await store.dropMarker(db, userId, roomId);
+    return { forgotten: true };
+  }
+
   /** Closes tables nobody has touched for too long and deletes old finished ones. Returns what it did. */
   async function sweep() {
     const cap = limits();
@@ -750,7 +918,7 @@ function createGameRoomService({
         } catch (error) {
           if (!(error instanceof store.RoomConflictError)) throw error;
         }
-      } else if (age > cap.retentionMs) {
+      } else if (age > cap.retentionMs && !isKept(doc)) {
         if (clocks) clocks.disarm(doc.roomId);
         await store.deleteRoom(db, doc.roomId);
         done.deleted += 1;
@@ -763,6 +931,9 @@ function createGameRoomService({
     createRoom,
     getRoom,
     runCommand,
+    removeRoom,
+    forgetRoom,
+    renamePlayer,
     rewind,
     runTimeout,
     runBots,

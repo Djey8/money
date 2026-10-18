@@ -243,7 +243,9 @@ describe('two agents play a multiplayer table over MCP', () => {
         };
       } else if (legal.includes('pay_doodad') && pending?.offered)
         command = { type: 'pay_doodad', cardId: pending.offered.cardId };
+      else if (legal.includes('finish_card')) command = { type: 'finish_card' };
       else if (legal.includes('pass_card')) command = { type: 'pass_card' };
+      else if (legal.includes('done')) command = { type: 'done' };
       else throw new Error(`nothing to play from ${JSON.stringify(legal)}`);
 
       const args = {

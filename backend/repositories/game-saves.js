@@ -324,7 +324,7 @@ function requireRunning(state) {
  * like any other - as a game that has ended, without an undo history (a table has none to give). `books` are the player's
  * books at the table; nothing about the other players or the table goes into it.
  */
-async function fileFinishedGame(deps, userId, { books, name }) {
+async function fileFinishedGame(deps, userId, { books, name, multiplayer }) {
   return withSaves(deps, userId, async (context) => {
     const { session, settings, data } = context;
     const id = newGameId();
@@ -337,6 +337,7 @@ async function fileFinishedGame(deps, userId, { books, name }) {
       createdAt: now,
       updatedAt: now,
       endedAt: now,
+      ...(multiplayer ? { multiplayer } : {}),
     };
     const blob = {
       schema: SAVED_GAME_SCHEMA,

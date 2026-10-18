@@ -21,11 +21,22 @@ let normal;
 const roomIds = [];
 const open = [];
 
+/** The account's nickname is the name at a table: Host, Anna, Ben ... from the label. */
+const nameOf = (label) => {
+  const word = (label.match(/(host|anna|ben|cy|dan)$/) || [label])[0];
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};
+
 async function gameUser(label) {
   const email = `jest_${Date.now()}_${label}_cashflow@test.local`;
   const res = await request(app)
     .post('/api/auth/register')
-    .send({ email, password: 'TestPassword123!', gamePassword: GAME_PASSWORD });
+    .send({
+      email,
+      password: 'TestPassword123!',
+      gamePassword: GAME_PASSWORD,
+      username: nameOf(label),
+    });
   expect(res.status).toBe(201);
   const cookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('access_token='));
   return { token: cookie.split(';')[0].split('=')[1], userId: res.body.userId };
@@ -42,6 +53,7 @@ async function startedTable(settings = {}, third = false) {
       name: 'Play table',
       professions: 'random',
       turnOrder: 'seat',
+      turnGate: false, // these tests move by raw commands; the gate has its own tests
       clock: { mode: 'none' },
       ...settings,
     },
@@ -172,7 +184,11 @@ describe('who may play, and what they are told they may do', () => {
       expect.arrayContaining(['roll', 'pause']),
     );
     expect(asHost.table.activeSeat).toBe(0);
-    expect((await view(anna, id)).legalActions).toEqual([]);
+    // out of turn the only thing left is asking the table to undo (it is everybody's to ask)
+    expect((await view(anna, id)).legalActions.map((a) => a.action)).toEqual([
+      'away',
+      'propose_undo',
+    ]);
     expect((await view(ben, id)).legalActions).toEqual([]);
   });
 
@@ -364,7 +380,9 @@ describe('everyone watching is told', () => {
     expect(
       asHost.messages.find((m) => m.event === 'snapshot').data.legalActions.map((a) => a.action),
     ).toContain('roll');
-    expect(asAnna.messages.find((m) => m.event === 'snapshot').data.legalActions).toEqual([]);
+    expect(
+      asAnna.messages.find((m) => m.event === 'snapshot').data.legalActions.map((a) => a.action),
+    ).toEqual(['away', 'propose_undo']);
 
     const rolled = await command(host, id, { command: { type: 'roll' } });
     for (const stream of [asHost, asAnna]) {
@@ -381,8 +399,8 @@ describe('everyone watching is told', () => {
   });
 });
 
-describe('rewinding through the API', () => {
-  it('lets the host put the last turn back, only with confirmation, and never to nothing', async () => {
+describe('undoing the last turn through the API (a vote of the table)', () => {
+  it('is asked by anyone, needs more than half to agree, only with confirmation, and never to nothing', async () => {
     if (!dbAvailable) return;
     const id = await startedTable();
     const rewind = (user, query = '?confirm=true', body = {}) =>
@@ -403,34 +421,43 @@ describe('rewinding through the API', () => {
     const backToHost = afterRoll.table.activeSeat === 1;
 
     expect((await rewind(host, '')).status).toBe(400);
-    const notHost = await rewind(anna);
-    expect(notHost.status).toBe(403);
-    expect(notHost.body.code).toBe('table_not_host');
     expect((await rewind(normal)).body.code).toBe('not_a_game_account');
     expect((await rewind(host, '?confirm=true', { expectedVersion: before - 1 })).body.code).toBe(
       'room_conflict',
     );
 
-    const done = await rewind(host, '?confirm=true', {
+    // the host asks: one yes of three is not a majority, so nothing is undone yet and everybody sees the vote
+    const asked = await rewind(host, '?confirm=true', {
       clientCommandId: 'rw-api-1',
       expectedVersion: before,
     });
-    expect(done.status).toBe(200);
-    expect(done.body.events.map((e) => e.type)).toContain('rewound');
-    expect(done.body.table.version).toBe(before + 1);
-    expect(done.body.table.activeSeat).toBe(backToHost ? 0 : 1);
-    expect(done.body.table.turnRolled).toBe(false);
+    expect(asked.status).toBe(200);
+    expect(asked.body.events.map((e) => e.type)).toEqual(['undo_proposed']);
+    expect(asked.body.table.version).toBe(before + 1);
+    expect(asked.body.table.undo).toMatchObject({ proposerSeat: 0, yesSeats: [0], noSeats: [] });
+    expect(asked.body.table.turnRolled).toBe(afterRoll.table.turnRolled);
+
+    // Anna agrees: two of three - the table goes back, in the same save
+    const voted = await command(anna, id, { command: { type: 'vote_undo', yes: true } });
+    expect(voted.status).toBe(200);
+    expect(voted.body.events.map((e) => e.type)).toEqual(
+      expect.arrayContaining(['undo_voted', 'undo_approved', 'rewound']),
+    );
+    expect(voted.body.table.version).toBe(before + 3);
+    expect(voted.body.table.activeSeat).toBe(backToHost ? 0 : 1);
+    expect(voted.body.table.turnRolled).toBe(false);
+    expect(voted.body.table.undo).toBeNull();
     // everyone's books are back where they were at the start of that turn
-    done.body.table.players.forEach((player, seat) => {
+    voted.body.table.players.forEach((player, seat) => {
       if (backToHost) expect(player.books.state.boardPosition).toBeNull();
       else
         expect(player.books.state.boardPosition).toBe(
           atAnna.table.players[seat].books.state.boardPosition,
         );
     });
-    // the legal actions are the requester's (the host's): the roll is theirs only if the turn put back is theirs
-    expect(done.body.legalActions.map((a) => a.action).includes('roll')).toBe(backToHost);
-    // a retry of the same request is answered, not applied again
+    // the legal actions are the voter's (Anna's): the roll is hers only if the turn put back is hers
+    expect(voted.body.legalActions.map((a) => a.action).includes('roll')).toBe(!backToHost);
+    // a retry of the first request is answered, not applied again
     const again = await rewind(host, '?confirm=true', { clientCommandId: 'rw-api-1' });
     expect(again.body).toMatchObject({ replayed: true, appliedVersion: before + 1 });
     // and the table plays on
@@ -445,7 +472,7 @@ describe('rewinding through the API', () => {
     await quickTurn(id);
     const refused = await call(host, 'post', `/${id}/rewind?confirm=true`).send({});
     expect(refused.status).toBe(422);
-    expect(refused.body.detail).toMatch(/does not allow rewinding/);
+    expect(refused.body.detail).toMatch(/does not allow undoing/);
   });
 });
 
@@ -481,5 +508,102 @@ describe("the server's own clock", () => {
     const late = await command(host, id, { command: { type: 'roll' } });
     expect(late.status).toBe(409);
     expect(late.body.code).toBe('table_not_your_turn');
+  });
+});
+
+describe('waiting for a turn (a read that is held open)', () => {
+  it("answers at once when it is already the reader's turn, and slim leaves the other books out", async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const res = await call(host, 'get', `/${id}?wait=my_turn&timeoutSeconds=5&slim=true`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ waited: true, timedOut: false, activeSeat: 0, youSeat: 0 });
+    expect(res.body.legalActions.map((a) => a.action)).toContain('roll');
+    const books = res.body.players.filter((p) => p.books).map((p) => p.seat);
+    expect(books).toEqual([0]);
+    expect(res.body.table).toBeUndefined();
+  });
+
+  it('is held until the turn comes round, and times out with the current state when nothing happens', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const started = Date.now();
+    const timedOut = await call(anna, 'get', `/${id}?wait=my_turn&timeoutSeconds=1&slim=true`);
+    expect(timedOut.body).toMatchObject({
+      waited: true,
+      timedOut: true,
+      youSeat: 1,
+      activeSeat: 0,
+    });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+
+    const pending = call(anna, 'get', `/${id}?wait=my_turn&timeoutSeconds=15&slim=true`).then(
+      (r) => r,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await quickTurn(id);
+    const res = await pending;
+    expect(res.body).toMatchObject({ timedOut: false, activeSeat: 1, youSeat: 1 });
+  });
+
+  it('wait=change returns when the version moves past since', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const now = await view(host, id);
+    const pending = call(
+      anna,
+      'get',
+      `/${id}?wait=change&since=${now.table.version}&timeoutSeconds=15`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await command(host, id, { command: { type: 'roll' } });
+    const res = await pending;
+    expect(res.body.timedOut).toBe(false);
+    expect(res.body.table.version).toBeGreaterThan(now.table.version);
+  });
+});
+
+describe('away, remove and forget', () => {
+  it('going away plays the turn passively at once, and the player can come back', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const legal = (await view(host, id)).legalActions.map((a) => a.action);
+    expect(legal).toContain('away');
+    const gone = await command(host, id, { command: { type: 'away' } });
+    expect(gone.status).toBe(200);
+    const after = await view(anna, id);
+    expect(after.table.players[0].away).toBe(true);
+    // the host's turn was played for them: it is Anna's now
+    expect(after.table.activeSeat).toBe(1);
+    expect((await view(host, id)).legalActions.map((a) => a.action)).toContain('back');
+    const back = await command(host, id, { command: { type: 'back' } });
+    expect(back.status).toBe(200);
+    expect((await view(anna, id)).table.players[0].away).toBe(false);
+  });
+
+  it('the host cannot remove a table other people are at - they leave it; alone, the host can', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const refused = await call(host, 'delete', `/${id}?confirm=true&remove=true`);
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe('room_has_players');
+    const summary = (await call(host, 'get', '?scope=mine')).body.items.find((t) => t.id === id);
+    expect(summary.humans).toBe(2);
+    await call(anna, 'post', `/${id}/leave`).send({});
+    const gone = await call(host, 'delete', `/${id}?confirm=true&remove=true`);
+    expect([gone.status, gone.body.code]).toEqual([200, undefined]);
+  });
+
+  it('a table I left comes off my lists with forget, but not while I still play at it', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable({}, true);
+    const still = await call(anna, 'post', `/${id}/forget`).send({});
+    expect(still.status).toBe(409);
+    expect(still.body.code).toBe('room_still_playing');
+    await call(anna, 'post', `/${id}/leave`).send({});
+    const forgotten = await call(anna, 'post', `/${id}/forget`).send({});
+    expect(forgotten.status).toBe(200);
+    const mine = (await call(anna, 'get', '?scope=mine')).body.items.map((t) => t.id);
+    expect(mine).not.toContain(id);
   });
 });

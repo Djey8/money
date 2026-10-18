@@ -24,11 +24,22 @@ let guest;
 const roomIds = [];
 const baseUrl = () => `http://127.0.0.1:${port}`;
 
+/** The account's nickname is the name at a table: Host, Anna, Ben ... from the label. */
+const nameOf = (label) => {
+  const word = (label.match(/(host|anna|ben|cy|dan)$/) || [label])[0];
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};
+
 async function gameUser(label) {
   const email = `jest_${Date.now()}_${label}_cashflow@test.local`;
   const res = await request(app)
     .post('/api/auth/register')
-    .send({ email, password: 'TestPassword123!', gamePassword: GAME_PASSWORD });
+    .send({
+      email,
+      password: 'TestPassword123!',
+      gamePassword: GAME_PASSWORD,
+      username: nameOf(label),
+    });
   expect(res.status).toBe(201);
   const cookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('access_token='));
   return { token: cookie.split(';')[0].split('=')[1], userId: res.body.userId };
@@ -110,7 +121,13 @@ describe('the catalog and the lobby', () => {
     const ids = res.body.items.map((b) => b.id);
     expect(ids).toEqual(expect.arrayContaining(['all-rounder', 'never-buy', 'best-found']));
     for (const bot of res.body.items) {
-      expect(Object.keys(bot).sort()).toEqual(['description', 'difficulty', 'id', 'name']);
+      expect(Object.keys(bot).sort()).toEqual([
+        'description',
+        'difficulty',
+        'id',
+        'name',
+        'ratings',
+      ]);
     }
   });
 

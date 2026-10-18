@@ -47,6 +47,11 @@ const COMMANDS = {
       ...(c.quantity !== undefined ? { quantity: c.quantity } : {}),
     }),
   },
+  pay_market: {
+    fields: ['cardId'],
+    check: (c) => (typeof c.cardId === 'string' && c.cardId ? null : 'cardId must be a card id.'),
+    build: (c) => ({ type: 'pay_market', cardId: c.cardId }),
+  },
   pay_doodad: {
     fields: ['cardId'],
     check: (c) => (typeof c.cardId === 'string' && c.cardId ? null : 'cardId must be a card id.'),
@@ -58,6 +63,26 @@ const COMMANDS = {
       c.title === undefined || typeof c.title === 'string' ? null : 'title must be a string.',
     build: (c) => ({ type: 'roll_decision', ...(c.title !== undefined ? { title: c.title } : {}) }),
   },
+  plan_deal: {
+    fields: ['cardId'],
+    check: (c) => (typeof c.cardId === 'string' && c.cardId ? null : 'cardId must be a string.'),
+    build: (c) => ({ type: 'plan_deal', cardId: c.cardId }),
+  },
+  buy_planned: {
+    fields: ['title', 'quantity'],
+    check: (c) =>
+      typeof c.title !== 'string' || !c.title
+        ? 'title must be the title of the planned project.'
+        : c.quantity === undefined || (Number.isInteger(c.quantity) && c.quantity > 0)
+          ? null
+          : 'quantity must be a whole number above zero.',
+    build: (c) => ({
+      type: 'buy_planned',
+      title: c.title,
+      ...(c.quantity !== undefined ? { quantity: c.quantity } : {}),
+    }),
+  },
+  finish_card: { fields: [], check: () => null, build: () => ({ type: 'finish_card' }) },
   pass_card: { fields: [], check: () => null, build: () => ({ type: 'pass_card' }) },
   bank_loan: {
     fields: ['amountMinor'],
@@ -115,6 +140,14 @@ const COMMANDS = {
   pause: { fields: [], check: () => null, build: () => ({ type: 'pause' }) },
   resume: { fields: [], check: () => null, build: () => ({ type: 'resume' }) },
   back: { fields: [], check: () => null, build: () => ({ type: 'back' }) },
+  away: { fields: [], check: () => null, build: () => ({ type: 'away' }) },
+  done: { fields: [], check: () => null, build: () => ({ type: 'done' }) },
+  propose_undo: { fields: [], check: () => null, build: () => ({ type: 'propose_undo' }) },
+  vote_undo: {
+    fields: ['yes'],
+    check: (c) => (typeof c.yes === 'boolean' ? null : 'yes must be true or false.'),
+    build: (c) => ({ type: 'vote_undo', yes: c.yes }),
+  },
 };
 
 /** The account that sits at a seat; a seat nobody holds is a refusal like any other unknown player. */

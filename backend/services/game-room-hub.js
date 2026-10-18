@@ -122,11 +122,38 @@ function createGameRoomHub() {
     return { attach, close };
   }
 
+  /** roomId -> Set of functions to call when the table next changes (a read that waits for its turn, see `waitForChange`). */
+  const waiters = new Map();
+
+  function wake(roomId) {
+    const set = waiters.get(roomId);
+    if (!set) return;
+    waiters.delete(roomId);
+    for (const resolve of set) resolve(true);
+  }
+
+  /** Resolves true when the room changes, false after `ms` - no connection is registered, so nothing shows as present. */
+  function waitForChange(roomId, ms) {
+    return new Promise((resolve) => {
+      let set = waiters.get(roomId);
+      if (!set) waiters.set(roomId, (set = new Set()));
+      const done = (changed) => {
+        clearTimeout(timer);
+        set.delete(done);
+        if (set.size === 0 && waiters.get(roomId) === set) waiters.delete(roomId);
+        resolve(changed);
+      };
+      const timer = setTimeout(() => done(false), ms);
+      set.add(done);
+    });
+  }
+
   /**
    * A table changed: every connection to it gets the change as its own viewer may see it. `events` are `{ seq, event }`;
    * `previous` is the table before the change.
    */
   function publish(roomId, { previous, table, events }) {
+    wake(roomId);
     const subs = rooms.get(roomId);
     if (!subs) return 0;
     const lastSeq = events.length > 0 ? events[events.length - 1].seq : undefined;
@@ -162,6 +189,7 @@ function createGameRoomHub() {
     subscribe,
     publish,
     connectedUsers,
+    waitForChange,
     size: () => total,
     presence: (roomId) => presenceOf(rooms.get(roomId) || []),
     seatOf,
