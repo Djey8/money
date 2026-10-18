@@ -1,3 +1,44 @@
+## [1.27.0] - 2026-10-18
+
+### Features
+
+- feat(game): card shuffle, glowing token, Repay shows what is owed, Grow plan closes, Stats follow the table and the banner, Solo/Cashflow Game menu entry
+- feat(profile): a profile picture for self-hosted accounts
+- feat(tables): add-table panel, initials, open tables list, leaderboard player card and Latest line that waits for the story
+- feat(backend): leaderboard, bot ratings in the lobby, token initials and the profile picture
+- feat(domain): scoring v2, token initials, buying at a price card, closing a declined plan
+- feat(bots): champions, characters and tournament searched again on the new rules; manual and docs updated
+- feat(tables): a Doodad can no longer be passed at a table; counting-cards strategy knobs; the freshness fingerprint covers the forced rules
+- feat(tables): a skill menu for bots in the lobby, the manual's bot chapter updated, a link to the manual
+- feat(bots): skill levels, the champion book and the characters found by the long search
+- feat(docs): the multiplayer chapter of the in-app Cashflow manual, in six languages, with the tournament and champion tables
+- feat(bots): global champion search, characters by style, Doodad-passing knob, the champion book and the refresh loop
+- feat(tables): add and remove bots in the lobby, bot markers at the table
+- feat(mcp): table_bots and table_add_bot, and the bot endpoints in the OpenAPI spec
+- feat(api): server-played bots at a table - driver, bot routes and tests
+- feat(domain): tournament engine, race-aware strategies, bot seats and the bot catalog with a champion
+- feat(tables): results screen, save to my games, and a menu entry for game accounts
+- feat(tables): clock bar, time banks, turn alert and mobile layout; wire the inspector into the table screen
+- feat(tables): look at any player - income statement, balance sheet, standings, live feed
+- feat(tables): the table screen with live updates, tokens, turn and clock
+- feat(tables): the card flows of a table - draw, buy, pay, sell into offers, trades
+- feat(tables): a lobby for multiplayer Cashflow tables (self-hosted only)
+- feat(game): the rat-race board can draw a token per player
+- feat(mcp): an agent can hold a seat at a multiplayer Cashflow table
+- feat(api): finish and archive multiplayer tables
+- feat(api): server clocks, restart re-arming and rewind for multiplayer tables
+- feat(domain): the host can rewind the last turn at a table
+- feat(api): play a multiplayer table through the command endpoint
+- feat(domain): what a player may do at a table right now
+- feat(api): live channel for multiplayer tables
+- feat(api): multiplayer table lobby for the Cashflow game
+- feat(domain): trade the Deal card in hand between players at a table
+- feat(domain): multiplayer table engine for the Cashflow game
+
+### Bug Fixes
+
+- fix(api): do not announce a table change twice to a client that just connected
+
 ## [1.26.0] - 2026-10-14
 
 ### Features
