@@ -127,12 +127,13 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         *ngFor="let placed of placedTokens; trackBy: trackToken"
         class="rr-token rr-token--player"
         [class.rr-token--active]="placed.token.active"
+        [style.--tc]="placed.token.color"
         [attr.transform]="'translate(' + placed.x + ' ' + placed.y + ')'"
       >
         <circle
           [attr.r]="placed.token.active ? 11 : 9"
           class="rr-token-body"
-          [attr.fill]="placed.token.color"
+          [style.stroke]="placed.token.color"
         />
         <text class="rr-token-label">{{ placed.token.label }}</text>
       </g>
@@ -251,8 +252,24 @@ function onCircle(degrees: number, radius: number): { x: number; y: number } {
         stroke: rgba(0, 0, 0, 0.55);
         stroke-width: 2px;
       }
+      /* a player's token wears the player's own colour as its ring; on the move it turns orange */
+      .rr-token--player .rr-token-body {
+        stroke-width: 3.5;
+      }
+      /* on the move: the token's own colour glows */
       .rr-token--active .rr-token-body {
-        stroke: var(--color-warning, #f39c12);
+        filter: drop-shadow(0 0 3px var(--tc, #888)) drop-shadow(0 0 7px var(--tc, #888));
+        animation: rr-glow 1.4s ease-in-out infinite;
+      }
+      @keyframes rr-glow {
+        50% {
+          filter: drop-shadow(0 0 5px var(--tc, #888)) drop-shadow(0 0 12px var(--tc, #888));
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rr-token--active .rr-token-body {
+          animation: none;
+        }
       }
       .rr-token-dot {
         fill: var(--color-surface, #fff);
@@ -313,15 +330,27 @@ export class RatRaceBoardComponent {
     }
     const placed: { token: BoardToken; x: number; y: number }[] = [];
     for (const [position, group] of sharing) {
+      // several on one space sit in a small block on the inner side of its cell: two side by side, three as a triangle,
+      // four as a square, more in rows of three - never on top of each other
+      const cols = group.length <= 2 ? group.length : group.length <= 4 ? 2 : 3;
+      const rows = Math.ceil(group.length / cols);
       group.forEach((token, i) => {
-        const spread = (i - (group.length - 1) / 2) * 20;
-        if (position === null) placed.push({ token, x: CENTER + spread, y: -30 });
-        else {
-          const angle = spaceAngle(this.board, position);
-          // along the circle: a few degrees either side of the space's own angle, so they stay on the inner ring
-          const at = onCircle(angle + (spread / TOKEN_RING) * (180 / Math.PI), TOKEN_RING);
-          placed.push({ token, ...at });
+        const row = Math.floor(i / cols);
+        const inRow = Math.min(cols, group.length - row * cols);
+        const along = (i - row * cols - (inRow - 1) / 2) * 22;
+        if (position === null) {
+          placed.push({ token, x: CENTER + along, y: -30 + row * 22 });
+          return;
         }
+        // rows run from the outer side of the block inwards
+        const out = ((rows - 1) / 2 - row) * 22;
+        const angle = (spaceAngle(this.board, position) * Math.PI) / 180;
+        const radius = TOKEN_RING + out;
+        placed.push({
+          token,
+          x: CENTER + radius * Math.sin(angle) + along * Math.cos(angle),
+          y: CENTER - radius * Math.cos(angle) + along * Math.sin(angle),
+        });
       });
     }
     return placed;

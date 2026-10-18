@@ -6,6 +6,7 @@ import { CashflowGameService } from 'src/app/shared/services/cashflow-game.servi
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { RemoteGameHook } from 'src/app/shared/services/remote-game';
 
 /**
  * Represents the MenuComponent class.
@@ -395,9 +396,31 @@ export class MenuComponent {
       });
   }
 
+  /**
+   * The list is built afresh on every change detection; without a stable identity the buttons would be replaced between the press
+   * and the release of a click (a click on the entry did nothing).
+   */
+  trackEntry(_index: number, entry: { path: string }): string {
+    return entry.path;
+  }
+
   clickedGameMenuEntry(path: string) {
+    // a game played with others takes its own entry (it brings the game screen back instead of the lobby)
+    if (RemoteGameHook.onMenuEntry?.(path)) {
+      MenuComponent.isMenu = false;
+      return;
+    }
     this.router.navigate([path]);
     MenuComponent.isMenu = false;
+  }
+
+  /**
+   * Whether a game is loaded - a solo game in progress (or just ended), or a table's game that is on screen. The entry then says
+   * "Cashflow Game" and brings that game up; with nothing loaded it says "Solo" and opens the panel to start one (JFK, 2026-10-18).
+   * Leaving a table reloads the app on the account's own data, so a table's game never stays loaded behind the lobby.
+   */
+  hasLoadedGame(): boolean {
+    return AppStateService.instance.cashflowGame?.professionId != null;
   }
 
   clickedCashflowGame() {

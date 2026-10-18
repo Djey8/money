@@ -1266,6 +1266,8 @@
 
 .cf-payday-note {
   display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 2px 14px;
@@ -1597,7 +1599,7 @@
 }
 
 /* The ring is as large as the screen allows: wide, but never so tall that the controls fall off the bottom. */
-.cf-solo app-rat-race-board {
+.cf-solo .cf-ring {
   width: 100%;
   max-width: min(100%, 440px);
 }
@@ -1842,9 +1844,9 @@
   }
 
   /* The ring leaves room for the stats above it and the bar below it, on a 667 px high screen too. */
-  .cf-solo app-rat-race-board {
-    max-width: min(100%, max(200px, calc(100vh - 400px)));
-    max-width: min(100%, max(200px, calc(100dvh - 400px)));
+  .cf-solo .cf-ring {
+    max-width: min(100%, max(200px, calc(100vh - 345px)));
+    max-width: min(100%, max(200px, calc(100dvh - 345px)));
   }
 
   /* The roll button and the decision stay at the bottom of the screen while the ring is in view. */
@@ -1940,7 +1942,7 @@
     column-gap: 16px;
   }
 
-  .cf-solo app-rat-race-board {
+  .cf-solo .cf-ring {
     max-width: min(100%, max(160px, calc(100dvh - 150px)));
   }
 
@@ -2023,7 +2025,7 @@
     font-size: 1.5rem;
   }
 
-  .cf-solo app-rat-race-board {
+  .cf-solo .cf-ring {
     max-width: 560px;
   }
 
@@ -2089,7 +2091,7 @@
     padding: 10px;
   }
 
-  .cf-solo app-rat-race-board {
+  .cf-solo .cf-ring {
     max-width: min(100%, max(200px, calc(100vh - 370px)));
     max-width: min(100%, max(200px, calc(100dvh - 370px)));
   }
@@ -2127,7 +2129,7 @@
     font-size: 0.95rem;
   }
 
-  .cf-solo app-rat-race-board {
+  .cf-solo .cf-ring {
     /* never taller than the window leaves room for: the ring is in view with the stats above it */
     max-width: min(560px, max(300px, calc(100vh - 420px)));
   }
@@ -2168,11 +2170,13 @@
   align-items: start;
 }
 
-.cf-dashboard--main > .cf-card {
+.cf-dashboard--main > .cf-card,
+.cf-dashboard--main > .cf-dash-rest > .cf-card {
   grid-column: 1 / -1;
 }
 
-.cf-dashboard--main > .cf-row-btn {
+.cf-dashboard--main > .cf-row-btn,
+.cf-dashboard--main > .cf-dash-rest > .cf-row-btn {
   padding: 12px;
   font-size: 0.9rem;
 }
@@ -2278,7 +2282,8 @@
 }
 
 /* ═══ Rows under the game: Bank loan | Repay, History | My games, Menu | reset game ═══ */
-.cf-dashboard--main > .cf-row-btn--full {
+.cf-dashboard--main > .cf-row-btn--full,
+.cf-dashboard--main > .cf-dash-rest > .cf-row-btn--full {
   grid-column: 1 / -1;
 }
 
@@ -2287,7 +2292,7 @@
  * and on a very wide but low one (never below a size the cells can still be read at).
  */
 @media (min-height: 521px) {
-  .cf-solo app-rat-race-board {
+  .cf-solo .cf-ring {
     max-width: min(100%, 560px, max(190px, calc(100vh - 500px)));
     max-width: min(100%, 560px, max(190px, calc(100dvh - 500px)));
   }
@@ -2298,4 +2303,340 @@
 :host-context(.rtl-text) .cf-back-arrow {
   display: inline-block;
   transform: scaleX(-1);
+}
+
+/* Whose move a line of a shared game's history is: the player's colour as a bar, then the name. */
+.cf-history-who {
+  display: inline-block;
+  padding-inline-start: 6px;
+  margin-inline-end: 4px;
+  border-inline-start: 4px solid transparent;
+  font-weight: 700;
+}
+
+/* Somebody else is on the move: their name where the roll button would be. */
+.cf-turn-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 700;
+}
+.cf-turn-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* A card named in the History can be opened again. */
+.cf-history-card {
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+/*
+ * The messages that come and go (a Payday, a Market card, what another player did) float over the content instead of pushing it -
+ * a zero-height slot that stays at the top of the panel while it scrolls, with the message hanging from it. The panel is as tall
+ * as what it shows, up to the height of the window (JFK, 2026-10-18: it closes early when there is little to show).
+ */
+.cf-overlay-slot {
+  position: sticky;
+  top: 0;
+  height: 0;
+  margin-bottom: -16px;
+  z-index: 6;
+  overflow: visible;
+}
+.cf-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cf-overlay .cf-notice {
+  margin: 0;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+/* the roll row has the height of the dice whether they are there or not */
+.cf-solo-roll-row {
+  min-height: 72px;
+}
+
+.cf-solo-gate {
+  display: flex;
+  margin-top: 8px;
+}
+.cf-solo-gate .btn {
+  flex: 1 1 auto;
+}
+
+.cf-games-heading {
+  margin: 14px 0 6px;
+}
+
+.cf-over-ranking {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+}
+
+.cf-over-me {
+  font-weight: 700;
+}
+
+/*
+ * A big landscape screen (a computer, an iPad on its side): the dashboard is two columns so it fits without scrolling - the
+ * wheel with the dice and the roll button on the left, the stats and everything else on the right. The left column stays in
+ * view while the right one scrolls, so the dice are always there (JFK, 2026-10-18). Smaller or portrait screens keep the one
+ * column of the rules above.
+ */
+.cf-dash-rest {
+  display: contents;
+}
+
+@media (min-width: 900px) and (min-height: 521px) and (orientation: landscape) {
+  .cf-panel--dash {
+    top: 2vh;
+    width: min(97vw, 1240px);
+    max-height: 96vh;
+  }
+
+  .cf-dashboard--main.cf-dashboard--solo {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: 16px;
+    row-gap: 0;
+    align-items: start;
+  }
+
+  .cf-dashboard--main.cf-dashboard--solo > .cf-summary {
+    grid-column: 2;
+    grid-row: 1;
+    margin-bottom: 10px;
+  }
+
+  /* the game card - wheel, dice, roll button - stays in view while the right column scrolls */
+  .cf-dashboard--main.cf-dashboard--solo > .cf-solo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
+
+  /* the width is measured by the component (fitBoard): the wheel takes the height that is left, whatever else shows */
+  .cf-dashboard--main.cf-dashboard--solo .cf-solo .cf-ring {
+    max-width: min(100%, 600px, var(--cf-board-max, calc(100dvh - 345px)));
+  }
+
+  /* the roll bar is part of the sticky card now, not stuck to the panel's bottom */
+  .cf-dashboard--main.cf-dashboard--solo .cf-solo-controls {
+    position: static;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+  }
+
+  .cf-dashboard--main.cf-dashboard--solo > .cf-dash-rest {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-items: start;
+  }
+
+  .cf-dash-rest > .cf-card {
+    grid-column: 1 / -1;
+  }
+
+  .cf-dash-rest > .cf-row-btn {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .cf-dash-rest > .cf-row-btn--full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* the small switches of a game with others sit beside the close button */
+.cf-panel-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cf-panel-quick {
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  border-radius: 999px;
+  min-width: 34px;
+  height: 34px;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cf-panel-quick--off {
+  opacity: 0.6;
+}
+
+/*
+ * The wheel and the messages that lie on it: a Payday, a kept MLM card, a Market card that did not apply, and what the others do.
+ * They hang from the top of the wheel's card and use its whole width - not just the width of the ring - and cover none of the
+ * page; each has its x.
+ */
+.cf-solo-board {
+  position: relative;
+}
+
+.cf-ring {
+  width: 100%;
+}
+
+.cf-ring-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px 0;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.cf-ring-overlay > *,
+.cf-ring-overlay .cf-notice {
+  pointer-events: auto;
+}
+
+.cf-ring-overlay .cf-notice {
+  width: 100%;
+  max-width: 560px;
+  max-height: min(45vh, 360px);
+}
+
+.cf-ring-overlay .cf-notice {
+  overflow-y: auto;
+  margin: 0;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+/* the wheel fills the ring box, which is what the sizing rules above size */
+.cf-solo .cf-ring {
+  margin-inline: auto;
+}
+
+.cf-ring > app-rat-race-board {
+  max-width: none;
+}
+
+/* The Payday box: its title is a line of its own, and the monthly result starts the next line (JFK, 2026-10-18). */
+.cf-payday-note > strong {
+  flex: 0 0 100%;
+}
+
+.cf-payday-note-net {
+  margin-left: 0;
+}
+
+/* Drawing a card: the pile shuffles, then the card pops up. */
+.cf-shuffle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 0;
+  color: var(--color-text-secondary);
+}
+
+.cf-shuffle-deck {
+  position: relative;
+  width: 84px;
+  height: 116px;
+}
+
+.cf-shuffle-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 2px solid var(--color-primary);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 6px, rgba(255, 255, 255, 0.18) 6px 12px),
+    var(--color-primary);
+  box-shadow: var(--shadow-md);
+  animation: cf-shuffle 0.7s ease-in-out infinite;
+}
+
+.cf-shuffle-card:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.cf-shuffle-card:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+@keyframes cf-shuffle {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-34px) rotate(-9deg);
+  }
+  75% {
+    transform: translateX(34px) rotate(9deg);
+  }
+}
+
+.cf-card-reveal {
+  animation: cf-card-pop 0.28s ease-out;
+}
+
+@keyframes cf-card-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-shuffle-card,
+  .cf-card-reveal {
+    animation: none;
+  }
+}
+
+/* The Repay button says what is owed. */
+.cf-loan-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  text-align: start;
+}
+
+.cf-loan-btn-owed {
+  font-size: 0.78rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }

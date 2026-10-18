@@ -204,8 +204,12 @@
    ========================================= */
 @media (orientation: landscape) {
   .container {
-    height: calc(100vh - 70px - 52px - var(--demo-banner-height, 0px));
-    height: calc(100dvh - 70px - 52px - var(--demo-banner-height, 0px));
+    height: calc(
+      100vh - 70px - 52px - var(--demo-banner-height, 0px) - var(--table-banner-height, 0px)
+    );
+    height: calc(
+      100dvh - 70px - 52px - var(--demo-banner-height, 0px) - var(--table-banner-height, 0px)
+    );
     overflow: hidden;
     padding: 1vh 3vw;
   }
@@ -282,8 +286,8 @@
 /* Mobile landscape: taller bottom nav */
 @media (orientation: landscape) and (max-width: 768px) {
   .container {
-    height: calc(100vh - 70px - 56px);
-    height: calc(100dvh - 70px - 56px);
+    height: calc(100vh - 70px - 56px - var(--table-banner-height, 0px));
+    height: calc(100dvh - 70px - 56px - var(--table-banner-height, 0px));
   }
 }
 

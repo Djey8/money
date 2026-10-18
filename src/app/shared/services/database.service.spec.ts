@@ -137,6 +137,52 @@ describe('DatabaseService (selfhosted mode)', () => {
     expect(service.getMode()).toBe('selfhosted');
   });
 
+  describe('read-only (a shared tables books are on screen)', () => {
+    afterEach(() => {
+      DatabaseService.readOnly = false;
+    });
+
+    it('writes nothing while it is on: not a single object, dirty write or batch reaches the server', async () => {
+      DatabaseService.readOnly = true;
+      const results = await Promise.all([
+        lastValueFrom(service.writeObject('info/email', 'x')),
+        lastValueFrom(service.writeObjectIfDirty('allSubscriptions', [])),
+        lastValueFrom(service.batchWrite([{ tag: 'allTransactions', data: [] }], true)),
+      ]);
+      for (const result of results) expect(result).toMatchObject({ skipped: true, readOnly: true });
+      expect(selfhosted.writeObject).not.toHaveBeenCalled();
+      expect(selfhosted.writeBatch).not.toHaveBeenCalled();
+    });
+
+    it("lets the account's own plans through - budgets and locations are not what is on screen", async () => {
+      DatabaseService.readOnly = true;
+      await lastValueFrom(service.writeObject('budget', []));
+      expect(selfhosted.writeObject).toHaveBeenCalledTimes(1);
+      await lastValueFrom(
+        service.batchWrite(
+          [
+            { tag: 'allTransactions', data: [] },
+            { tag: 'locations', data: [] },
+          ],
+          true,
+        ),
+      );
+      // only the location went into the batch
+      const written = selfhosted.writeBatch.mock.calls.flatMap((call: unknown[]) =>
+        Object.keys((call[0] as Record<string, unknown>) ?? {}),
+      );
+      expect(JSON.stringify(selfhosted.writeBatch.mock.calls)).not.toContain('allTransactions');
+      expect(written.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('writes again as soon as it is off', async () => {
+      DatabaseService.readOnly = true;
+      DatabaseService.readOnly = false;
+      await lastValueFrom(service.writeObject('info/email', 'x'));
+      expect(selfhosted.writeObject).toHaveBeenCalled();
+    });
+  });
+
   // ── getBatchData ────────────────────────────────────────────────────────
 
   describe('getBatchData()', () => {

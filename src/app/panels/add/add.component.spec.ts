@@ -1,3 +1,10 @@
+import {
+  generateBuyInvestmentComment,
+  generateBuyShareComment,
+  generateSellAssetComment,
+  generateSellShareComment,
+} from '@money/domain';
+import { RemoteGameHook } from '../../shared/services/remote-game';
 import { AddComponent } from './add.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { AppComponent } from '../../app.component';
@@ -136,5 +143,95 @@ describe('AddComponent', () => {
       descriptor.set!.call({}, null);
       expect(read()).toBeNull();
     });
+  });
+});
+
+describe('AddComponent at a table (the dialog of the solo game, the table books)', () => {
+  const addAtTable = (
+    comment: string,
+    remote: Record<string, unknown>,
+    toast = { show: jest.fn() },
+  ) => {
+    AddComponent.commentTextField = comment;
+    return {
+      toast,
+      run: (AddComponent.prototype as any).addAtTable.call({ toastService: toast }, remote),
+    };
+  };
+  const ok = async () => ({ ok: true, events: [] });
+  beforeEach(() => {
+    (AppStateService as any)._instance = undefined;
+    RemoteGameHook.reopen = jest.fn();
+  });
+  afterEach(() => {
+    RemoteGameHook.reopen = null;
+  });
+
+  it('a Buy sends the planned project and its share count, and stays on the page it was made on', async () => {
+    const buyPlanned = jest.fn(ok);
+    await addAtTable(generateBuyShareComment('OK4U', 10, 3000), { buyPlanned }).run;
+    expect(buyPlanned).toHaveBeenCalledWith('OK4U', 10);
+    expect(RemoteGameHook.reopen).not.toHaveBeenCalled();
+    const bought = jest.fn(ok);
+    await addAtTable(generateBuyInvestmentComment('EFH', 500000, 4500000), { buyPlanned: bought })
+      .run;
+    expect(bought).toHaveBeenCalledWith('EFH');
+  });
+
+  it('a Sell sends the position to sell', async () => {
+    const sellPosition = jest.fn(ok);
+    await addAtTable(generateSellShareComment('OK4U', 4, 3500), { sellPosition }).run;
+    expect(sellPosition).toHaveBeenCalledWith('OK4U', 4);
+    const sellAsset = jest.fn(ok);
+    await addAtTable(generateSellAssetComment('GOLD', 100000, { quantity: 2, priceMinor: 50000 }), {
+      sellPosition: sellAsset,
+    }).run;
+    expect(sellAsset).toHaveBeenCalledWith('GOLD');
+  });
+
+  it('a Doodad payment pays the Doodad in hand', async () => {
+    AppStateService.instance.cashflowGame = {
+      ...AppStateService.instance.cashflowGame,
+      turn: {
+        phase: 'decide',
+        count: 1,
+        pending: { kind: 'doodad', offered: { deck: 'doodad', cardId: 'd-7' } },
+      },
+    } as any;
+    const payDoodad = jest.fn(ok);
+    await addAtTable('You buy a boat #doodad', { payDoodad }).run;
+    expect(payDoodad).toHaveBeenCalledWith('d-7');
+    // paying the card in hand goes on in the game screen
+    expect(RemoteGameHook.reopen).toHaveBeenCalled();
+  });
+
+  it('the cost of a Market card is paid through the Add dialog: it pays the card in hand', async () => {
+    AppStateService.instance.cashflowGame = {
+      ...AppStateService.instance.cashflowGame,
+      turn: {
+        phase: 'decide',
+        count: 1,
+        pending: {
+          kind: 'market',
+          paymentDue: true,
+          offered: { deck: 'market', cardId: 'm-3' },
+        },
+      },
+    } as any;
+    const payMarket = jest.fn(ok);
+    await addAtTable('Sewer pipe broken #market', { payMarket }).run;
+    expect(payMarket).toHaveBeenCalledWith('m-3');
+  });
+
+  it('shows why a refused move did not go through, and refuses what is no move of the game', async () => {
+    const refused = {
+      buyPlanned: async () => ({ ok: false, message: 'Not your turn.', events: [] }),
+    };
+    const first = addAtTable(generateBuyShareComment('X', 1, 100), refused);
+    await first.run;
+    expect(first.toast.show).toHaveBeenCalledWith('Not your turn.', 'error');
+    const plain = addAtTable('lunch', {});
+    await plain.run;
+    expect(plain.toast.show).toHaveBeenCalledWith(expect.stringContaining('not a move'), 'error');
   });
 });

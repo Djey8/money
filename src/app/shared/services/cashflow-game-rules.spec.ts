@@ -2,6 +2,7 @@ import { RULE_PRESETS, initialCashflowGameState, type GameRules } from '@money/d
 import { CashflowGameService } from './cashflow-game.service';
 import { AppStateService } from './app-state.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
+import { RemoteGameHook, type RemoteGame } from './remote-game';
 
 function startGame(rules?: GameRules, marketOffers: unknown[] = []) {
   AppStateService.instance.cashflowGame = {
@@ -50,6 +51,21 @@ describe('the game rules in the app', () => {
     // the offer was played at roll 4 and stays for 3 rolls: gone at roll 7
     AppStateService.instance.cashflowGame.turn = { phase: 'roll', count: 7 };
     expect(CashflowGameService.sellRefusalFor('OK4U')).toMatch(/No buyer/);
+  });
+
+  it('at a table a one-roll offer stays open between turns, so the Sell button is there when somebody else drew the card', () => {
+    // strict rules: an offer is open for one roll of the player. Off their own turn the phase is 'roll', which in a solo game
+    // means the offer is gone - at a table it is still theirs to sell into
+    startGame(RULE_PRESETS.strict, [
+      { title: 'GOLD', salePriceMinor: 1, cardId: 'm', label: '', offeredAtRoll: 4 },
+    ]);
+    expect(CashflowGameService.sellRefusalFor('GOLD')).toMatch(/No buyer/);
+    RemoteGameHook.current = {} as RemoteGame;
+    try {
+      expect(CashflowGameService.sellRefusalFor('GOLD')).toBeNull();
+    } finally {
+      RemoteGameHook.current = null;
+    }
   });
 
   it('a plain transaction in the Add dialog is a free amount: forbidden, or capped', () => {
@@ -127,7 +143,14 @@ describe('the game rules in the app', () => {
       pending: { kind: 'deal', spaceIndex: 2, played: true },
     };
     const onError = jest.fn();
-    (service as any).gameBooks = () => ({ subscriptions: [] });
+    (service as any).gameBooks = () => ({
+      state: AppStateService.instance.cashflowGame,
+      subscriptions: [],
+      growProjects: [],
+      shares: [],
+      investments: [],
+      assets: [],
+    });
     (service as any).persistAll = jest.fn();
     (service as any).settleSoloDecision('passed', { onSuccess: jest.fn(), onError });
     expect(onError.mock.calls[0][0]).toMatch(/cannot be passed/);

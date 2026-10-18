@@ -3,6 +3,7 @@
 <div
   class="cf-panel"
   [class.cf-panel--wide]="wideLayout"
+  [class.cf-panel--dash]="wideLayout && dashboardView === 'main'"
   role="dialog"
   aria-modal="true"
   appTrapFocus
@@ -12,14 +13,32 @@
 >
   <div class="cf-panel-header">
     <h2 class="cf-panel-title">{{ 'CashflowGame.title' | translate }}</h2>
-    <button
-      class="cf-panel-close"
-      [attr.aria-label]="'CashflowGame.close' | translate"
-      (click)="closeWindow()"
-    >
-      ✕
-    </button>
+    <span class="cf-panel-tools">
+      <!-- the small switches of a game with others (the messages bell): one tap, no trip into the settings -->
+      <button
+        *ngFor="let toggle of remote?.quickToggles() ?? []; trackBy: trackById"
+        class="cf-panel-quick"
+        [class.cf-panel-quick--off]="!toggle.on"
+        [attr.aria-label]="toggle.title"
+        [attr.aria-pressed]="toggle.on"
+        [title]="toggle.title"
+        (click)="remote?.runTableMenu(toggle.id)"
+      >
+        {{ toggle.icon }}
+      </button>
+      <button
+        class="cf-panel-close"
+        [attr.aria-label]="'CashflowGame.close' | translate"
+        (click)="closeWindow()"
+      >
+        ✕
+      </button>
+    </span>
   </div>
+
+  <ng-container *ngIf="onlineLayer as layer"
+    ><ng-container *ngComponentOutlet="layer"
+  /></ng-container>
 
   <div class="cashflow-game-page">
     <!-- Profession card detail — shown at selection time and reopenable during the game -->
@@ -449,7 +468,15 @@
       <p class="cf-card-none" *ngIf="!savedGames.games.length">
         {{ 'CashflowGame.gamesEmpty' | translate }}
       </p>
-      <ng-container *ngTemplateOutlet="savedGameList"></ng-container>
+      <ng-container
+        *ngTemplateOutlet="savedGameList; context: { $implicit: soloGames }"
+      ></ng-container>
+      <ng-container *ngIf="tableGames.length">
+        <h4 class="cf-games-heading">{{ 'CashflowGame.gamesMultiplayer' | translate }}</h4>
+        <ng-container
+          *ngTemplateOutlet="savedGameList; context: { $implicit: tableGames }"
+        ></ng-container>
+      </ng-container>
     </div>
 
     <div
@@ -501,10 +528,10 @@
     </div>
 
     <!-- One saved game per row, used by the games view and the start screen. -->
-    <ng-template #savedGameList>
+    <ng-template #savedGameList let-list>
       <div
         class="cf-saved-game"
-        *ngFor="let game of savedGames.games"
+        *ngFor="let game of list"
         [class.cf-saved-game--live]="isLiveGame(game)"
         [class.cf-saved-game--open]="isGameOpen(game)"
       >
@@ -534,6 +561,11 @@
           <span class="cf-saved-game-status cf-saved-game-status--{{ gameStatus(game) }}">{{
             'CashflowGame.status.' + gameStatus(game) | translate
           }}</span>
+          <span
+            class="cf-saved-game-status cf-saved-game-status--result"
+            *ngIf="game.multiplayer as mp"
+            >{{ tableResultLabel(mp) }}</span
+          >
           <button
             type="button"
             class="cf-saved-game-delete"
@@ -548,6 +580,13 @@
           <span *ngIf="isLiveGame(game)" class="cf-saved-game-live">{{
             'CashflowGame.playingNow' | translate
           }}</span>
+          <ng-container *ngIf="game.multiplayer as mp"
+            >{{
+              (mp.rank ? 'CashflowGame.tablePlace' : 'CashflowGame.tablePlayers')
+                | translate: { table: mp.table, rank: mp.rank, players: mp.players }
+            }}
+            ·
+          </ng-container>
           {{ gameProfession(game) }} · {{ 'CashflowGame.Round' | translate }} {{ game.round }} ·
           {{ game.updatedAt | date: 'dd.MM.yyyy HH:mm' }}
         </div>
@@ -573,7 +612,9 @@
                 [disabled]="isBusy"
                 (click)="continueGame(game)"
               >
-                {{ 'CashflowGame.continueGame' | translate }}
+                {{
+                  (game.endedAt ? 'CashflowGame.viewGame' : 'CashflowGame.continueGame') | translate
+                }}
               </button>
               <button
                 class="btn btn--sm cf-btn-outlined"
@@ -618,73 +659,8 @@
       *ngIf="hasActiveGame && !viewedProfession"
     >
       <ng-container *ngIf="dashboardView === 'main'">
-        <!-- What a Payday paid: an info box like the one below, goes with the next action or the X (JFK, 2026-10-06). -->
-        <div
-          class="cf-card cf-notice cf-notice--payday"
-          *ngIf="paydayBanner as payday"
-          role="status"
-        >
-          <span class="cf-payday-note">
-            <strong>💰 {{ 'CashflowGame.solo.passedPayday' | translate }}</strong>
-            <span *ngIf="payday.count > 1">{{
-              'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
-            }}</span>
-            <span
-              class="cf-payday-note-line cf-payday-note-net"
-              [class.cf-negative]="payday.netMinor < 0"
-            >
-              {{ 'CashflowGame.monthlyCashflow' | translate }}
-              <b>{{ signedCardAmount(payday.netMinor) }}</b>
-            </span>
-            <span class="cf-payday-note-line">
-              {{ 'CashflowGame.solo.paydayIncome' | translate }}
-              <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
-            </span>
-            <span class="cf-payday-note-line">
-              {{ 'CashflowGame.solo.sumExpenses' | translate }}
-              <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
-            </span>
-          </span>
-          <button
-            type="button"
-            class="cf-friend-sale-close"
-            [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
-            (click)="paydayBanner = null"
-          >
-            ✕
-          </button>
-        </div>
-        <!-- The bonus roll of a kept Multi-Level-Marketing card: same game turn as the Payday above, so both show. -->
-        <div
-          class="cf-card cf-notice cf-notice--mlm"
-          [class.cf-notice--won]="mlmBanner.won"
-          *ngIf="mlmBanner"
-          role="status"
-        >
-          <span class="cf-payday-note">
-            <strong>🎲 {{ mlmBanner.text }}</strong>
-          </span>
-          <button
-            type="button"
-            class="cf-friend-sale-close"
-            [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
-            (click)="mlmBanner = null"
-          >
-            ✕
-          </button>
-        </div>
-        <!-- A market card that does not apply to the player. -->
-        <div class="cf-card cf-notice" *ngIf="marketNotice" role="status">
-          <span>{{ marketNotice }}</span>
-          <button
-            type="button"
-            class="cf-friend-sale-close"
-            [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
-            (click)="marketNotice = null"
-          >
-            ✕
-          </button>
-        </div>
+        <!-- The messages (Payday, a kept MLM card, a Market card that did not apply) float over the dashboard instead of pushing it down: -->
+        <!-- nothing below them moves when one comes or goes (JFK, 2026-10-17: the jumping screen is bad for the eyes). -->
         <div class="cf-card cf-summary">
           <div class="cf-profession-card-header">
             <h3>{{ currentProfession ? professionTitle(currentProfession) : '' }}</h3>
@@ -734,7 +710,7 @@
               </button>
               <button
                 class="btn btn--sm"
-                [disabled]="isBusy || !canUndo"
+                [disabled]="isBusy || (remote ? !remote.canAskUndo() : !canUndo)"
                 (click)="undoLastAction()"
               >
                 {{ 'CashflowGame.undo' | translate }}
@@ -816,7 +792,7 @@
             <div
               class="cf-die"
               *ngFor="let face of shownDice; trackBy: trackByIndex"
-              [class.cf-die--tumbling]="diceTumbling"
+              [class.cf-die--tumbling]="dieTumbling"
               [class.cf-die--landed]="diceLanded"
               role="img"
               [attr.aria-label]="'CashflowGame.diceRolled' | translate: { roll: face }"
@@ -827,7 +803,87 @@
         </ng-template>
         <div class="cf-card cf-solo" *ngIf="isSolo">
           <div class="cf-solo-board">
-            <app-rat-race-board [board]="board" [position]="tokenPosition"></app-rat-race-board>
+            <div class="cf-ring">
+              <app-rat-race-board
+                [board]="board"
+                [position]="tokenPosition"
+                [tokens]="boardTokens"
+              ></app-rat-race-board>
+              <!-- The messages (a Payday, a kept MLM card, a Market card that did not apply, what the others do) are laid in the -->
+              <!-- middle of the wheel: they cover nothing that matters, and each can be closed with its x (JFK, 2026-10-18). -->
+              <div class="cf-ring-overlay">
+                <!-- What a Payday paid: an info box like the one below, goes with the next action or the X (JFK, 2026-10-06). -->
+                <div
+                  class="cf-card cf-notice cf-notice--payday"
+                  *ngIf="paydayBanner as payday"
+                  role="status"
+                >
+                  <span class="cf-payday-note">
+                    <strong>💰 {{ 'CashflowGame.solo.passedPayday' | translate }}</strong>
+                    <span *ngIf="payday.count > 1">{{
+                      'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
+                    }}</span>
+                    <span
+                      class="cf-payday-note-line cf-payday-note-net"
+                      [class.cf-negative]="payday.netMinor < 0"
+                    >
+                      {{ 'CashflowGame.monthlyCashflow' | translate }}
+                      <b>{{ signedCardAmount(payday.netMinor) }}</b>
+                    </span>
+                    <span class="cf-payday-note-line">
+                      {{ 'CashflowGame.solo.paydayIncome' | translate }}
+                      <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
+                    </span>
+                    <span class="cf-payday-note-line">
+                      {{ 'CashflowGame.solo.sumExpenses' | translate }}
+                      <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    class="cf-friend-sale-close"
+                    [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
+                    (click)="paydayBanner = null"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <!-- The bonus roll of a kept Multi-Level-Marketing card: same game turn as the Payday above, so both show. -->
+                <div
+                  class="cf-card cf-notice cf-notice--mlm"
+                  [class.cf-notice--won]="mlmBanner.won"
+                  *ngIf="mlmBanner"
+                  role="status"
+                >
+                  <span class="cf-payday-note">
+                    <strong>🎲 {{ mlmBanner.text }}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    class="cf-friend-sale-close"
+                    [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
+                    (click)="mlmBanner = null"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <!-- A market card that does not apply to the player. -->
+                <div class="cf-card cf-notice" *ngIf="marketNotice" role="status">
+                  <span>{{ marketNotice }}</span>
+                  <button
+                    type="button"
+                    class="cf-friend-sale-close"
+                    [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
+                    (click)="marketNotice = null"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ng-container *ngIf="stageBox as stage"
+                  ><ng-container *ngComponentOutlet="stage"
+                /></ng-container>
+              </div>
+            </div>
             <ul class="cf-solo-hud" *ngIf="!gameOver">
               <li>{{ positionText }}</li>
               <li>{{ paydayText }}</li>
@@ -844,7 +900,7 @@
             </ul>
           </div>
 
-          <div class="cf-solo-controls">
+          <div class="cf-solo-controls" *ngIf="!viewOnly">
             <ng-container *ngIf="!gameOver">
               <!-- A dice action of a card (MLM, a sister's loan ...) is open: its die takes the place of the roll panel until it is rolled. -->
               <div
@@ -938,14 +994,33 @@
                   </label>
                 </fieldset>
                 <div class="cf-solo-roll-row">
+                  <!-- the dice stay as they are, also beside End turn / Continue; none in somebody else's turn unless their roll is told -->
                   <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <!-- somebody else is on the move: who it is, where the roll button would be -->
+                  <p
+                    class="cf-turn-banner"
+                    *ngIf="!remoteGate && turnBanner as banner"
+                    role="status"
+                  >
+                    <span class="cf-turn-swatch" [style.background]="banner.color"></span>
+                    {{ banner.text }}
+                  </p>
                   <button
                     class="btn btn--primary"
-                    *ngIf="!hasOpenDiceAction"
+                    *ngIf="!hasOpenDiceAction && !remoteGate && !turnBanner"
                     [disabled]="!canRoll"
                     (click)="rollSolo()"
                   >
                     🎲 {{ 'CashflowGame.solo.roll' | translate }}
+                  </button>
+                  <!-- A game with others: the turn is ended (or let go on, after selling) where the roll button is, once everything has been shown -->
+                  <button
+                    class="btn btn--primary"
+                    *ngIf="!hasOpenDiceAction && !diceActionOpen && remoteGate as gate"
+                    [disabled]="gate.disabled || isBusy"
+                    (click)="proceedGate()"
+                  >
+                    {{ gate.label }}
                   </button>
                   <p class="cf-solo-hint" *ngIf="hasOpenDiceAction" role="status">
                     {{ 'CashflowGame.solo.finishDiceFirst' | translate }}
@@ -954,7 +1029,7 @@
                     {{ 'CashflowGame.solo.skipAnimation' | translate }}
                   </button>
                 </div>
-                <p class="cf-solo-last" *ngIf="lastDice.length">
+                <p class="cf-solo-last" *ngIf="lastDice.length && (!remote || !turnBanner)">
                   {{ 'CashflowGame.solo.lastRoll' | translate: { dice: lastDice.join(' + ') } }}
                 </p>
               </ng-container>
@@ -1021,10 +1096,13 @@
             <div
               class="cf-solo-over"
               *ngIf="gameOver"
-              [class.cf-solo-over--won]="soloTurn.outcome === 'escaped'"
+              [class.cf-solo-over--won]="
+                remoteOver ? remoteOver.won : soloTurn.outcome === 'escaped'
+              "
               role="status"
             >
-              <h3>
+              <h3 *ngIf="remoteOver as over">{{ over.headline }}</h3>
+              <h3 *ngIf="!remoteOver">
                 {{
                   (soloTurn.outcome === 'escaped'
                     ? 'CashflowGame.solo.overEscaped'
@@ -1032,7 +1110,16 @@
                   ) | translate
                 }}
               </h3>
-              <p>{{ 'CashflowGame.solo.overHint' | translate }}</p>
+              <p *ngIf="!remoteOver">{{ 'CashflowGame.solo.overHint' | translate }}</p>
+              <ng-container *ngIf="remoteOver as over">
+                <p *ngIf="over.hint">{{ over.hint }}</p>
+                <p class="cf-over-note" *ngIf="over.note">{{ over.note }}</p>
+                <ol class="cf-over-ranking">
+                  <li *ngFor="let entry of over.ranking" [class.cf-over-me]="entry.me">
+                    #{{ entry.rank }} {{ entry.name }}
+                  </li>
+                </ol>
+              </ng-container>
               <dl class="cf-solo-summary">
                 <div>
                   <dt>{{ 'CashflowGame.solo.sumRounds' | translate }}</dt>
@@ -1064,196 +1151,274 @@
                 </div>
               </dl>
               <div class="cf-actions">
-                <button class="btn btn--primary" [disabled]="isBusy" (click)="saveGameNow()">
-                  {{ 'CashflowGame.saveGame' | translate }}
+                <button
+                  class="btn btn--primary"
+                  [disabled]="isBusy || !!remoteOver?.saved"
+                  (click)="saveGameNow()"
+                >
+                  {{
+                    remoteOver
+                      ? remoteOver.saved
+                        ? remoteOver.savedLabel
+                        : remoteOver.saveLabel
+                      : ('CashflowGame.saveGame' | translate)
+                  }}
                 </button>
-                <button class="btn btn--sm cf-btn-outlined" [disabled]="isBusy" (click)="newGame()">
+                <button
+                  class="btn btn--sm cf-btn-outlined"
+                  *ngIf="!remote"
+                  [disabled]="isBusy"
+                  (click)="newGame()"
+                >
                   {{ 'CashflowGame.newGame' | translate }}
+                </button>
+                <button
+                  class="btn btn--sm cf-btn-outlined"
+                  *ngIf="remote as game"
+                  [disabled]="isBusy"
+                  (click)="backToLobby()"
+                >
+                  {{ game.resignWords().lobby }}
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- What the app's die showed: big and steady until Continue (the toast is too small to read). -->
-        <div
-          class="cf-card cf-roll-result"
-          *ngIf="rollResult as result"
-          [class.cf-roll-result--won]="result.won"
-        >
-          <button
-            type="button"
-            class="cf-roll-result-close"
-            [attr.aria-label]="'CashflowGame.diceContinue' | translate"
-            (click)="dismissRollResult()"
-          >
-            ✕
-          </button>
+        <!-- Everything under the game card: on a wide landscape screen it is the right-hand column (display: contents elsewhere). -->
+        <div class="cf-dash-rest">
+          <!-- What the app's die showed: big and steady until Continue (the toast is too small to read). -->
           <div
-            class="cf-die"
-            [attr.aria-label]="'CashflowGame.diceRolled' | translate: { roll: result.roll }"
-            role="img"
+            class="cf-card cf-roll-result"
+            *ngIf="rollResult as result"
+            [class.cf-roll-result--won]="result.won"
           >
-            <span
-              class="cf-pip"
-              *ngFor="let on of dieCells(result.roll)"
-              [class.cf-pip--on]="on"
-            ></span>
-          </div>
-          <p class="cf-roll-result-rolled">
-            {{ 'CashflowGame.diceRolled' | translate: { roll: result.roll } }}
-          </p>
-          <h3 class="cf-roll-result-headline">{{ result.headline }}</h3>
-          <p class="cf-roll-result-text" *ngIf="result.text">{{ result.text }}</p>
-          <div class="cf-actions">
-            <button class="btn btn--primary" (click)="dismissRollResult()">
-              {{ 'CashflowGame.diceContinue' | translate }}
+            <button
+              type="button"
+              class="cf-roll-result-close"
+              [attr.aria-label]="'CashflowGame.diceContinue' | translate"
+              (click)="dismissRollResult()"
+            >
+              ✕
             </button>
+            <div
+              class="cf-die"
+              [attr.aria-label]="'CashflowGame.diceRolled' | translate: { roll: result.roll }"
+              role="img"
+            >
+              <span
+                class="cf-pip"
+                *ngFor="let on of dieCells(result.roll)"
+                [class.cf-pip--on]="on"
+              ></span>
+            </div>
+            <p class="cf-roll-result-rolled">
+              {{ 'CashflowGame.diceRolled' | translate: { roll: result.roll } }}
+            </p>
+            <h3 class="cf-roll-result-headline">{{ result.headline }}</h3>
+            <p class="cf-roll-result-text" *ngIf="result.text">{{ result.text }}</p>
+            <div class="cf-actions">
+              <button class="btn btn--primary" (click)="dismissRollResult()">
+                {{ 'CashflowGame.diceContinue' | translate }}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- Open decisions: a paid dice card (gold coins) waits here until the roll is decided, in the -->
-        <!-- app or from a real die (JFK, 2026-10-03). -->
-        <div class="cf-card cf-decision" *ngFor="let deal of decisionCards">
-          <h3>
-            {{ 'CashflowGame.diceOpenTitle' | translate }}: {{ deal.split?.shareTag ?? deal.title }}
-          </h3>
-          <p>
-            {{ decisionText(deal) }}
-          </p>
-          <div class="cf-actions">
-            <button class="btn btn--primary" [disabled]="isBusy" (click)="rollDice(deal)">
-              🎲 {{ 'CashflowGame.diceRollButton' | translate }}
-            </button>
+          <!-- Open decisions: a paid dice card (gold coins) waits here until the roll is decided, in the -->
+          <!-- app or from a real die (JFK, 2026-10-03). -->
+          <div class="cf-card cf-decision" *ngFor="let deal of decisionCards">
+            <h3>
+              {{ 'CashflowGame.diceOpenTitle' | translate }}:
+              {{ deal.split?.shareTag ?? deal.title }}
+            </h3>
+            <p>
+              {{ decisionText(deal) }}
+            </p>
+            <div class="cf-actions">
+              <button class="btn btn--primary" [disabled]="isBusy" (click)="rollDice(deal)">
+                🎲 {{ 'CashflowGame.diceRollButton' | translate }}
+              </button>
+            </div>
+            <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">
+              <button
+                class="btn btn--sm cf-btn-outlined"
+                [disabled]="isBusy"
+                (click)="reportRoll(deal, true)"
+              >
+                {{
+                  (deal.split ? 'CashflowGame.diceSplitDouble' : 'CashflowGame.diceGotIt')
+                    | translate
+                }}
+              </button>
+              <button
+                class="btn btn--sm cf-btn-outlined"
+                [disabled]="isBusy"
+                (click)="reportRoll(deal, false)"
+              >
+                {{
+                  (deal.split ? 'CashflowGame.diceSplitHalve' : 'CashflowGame.diceNoLuck')
+                    | translate
+                }}
+              </button>
+            </div>
           </div>
-          <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">
-            <button
-              class="btn btn--sm cf-btn-outlined"
-              [disabled]="isBusy"
-              (click)="reportRoll(deal, true)"
-            >
-              {{
-                (deal.split ? 'CashflowGame.diceSplitDouble' : 'CashflowGame.diceGotIt') | translate
-              }}
-            </button>
-            <button
-              class="btn btn--sm cf-btn-outlined"
-              [disabled]="isBusy"
-              (click)="reportRoll(deal, false)"
-            >
-              {{
-                (deal.split ? 'CashflowGame.diceSplitHalve' : 'CashflowGame.diceNoLuck') | translate
-              }}
-            </button>
-          </div>
-        </div>
 
-        <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
-        <!-- physical board, this simulates the consequence (todo/cashflow-game.md decision 8). -->
-        <!-- Colors match the physical board (JFK, 2026-09-26). -->
-        <div class="cf-card" *ngIf="!isSolo">
-          <h3>{{ 'CashflowGame.landedOn' | translate }}</h3>
-          <div class="cf-space-grid">
-            <button
-              class="cf-space-btn cf-space-btn--deals"
-              [disabled]="isBusy"
-              (click)="landOnDeals()"
-            >
-              {{ 'CashflowGame.spaceDeals' | translate }}
+          <!-- "Which space did you land on?" — companion mode: you moved your own token on the -->
+          <!-- physical board, this simulates the consequence (todo/cashflow-game.md decision 8). -->
+          <!-- Colors match the physical board (JFK, 2026-09-26). -->
+          <div class="cf-card" *ngIf="!isSolo">
+            <h3>{{ 'CashflowGame.landedOn' | translate }}</h3>
+            <div class="cf-space-grid">
+              <button
+                class="cf-space-btn cf-space-btn--deals"
+                [disabled]="isBusy"
+                (click)="landOnDeals()"
+              >
+                {{ 'CashflowGame.spaceDeals' | translate }}
+              </button>
+              <button
+                class="cf-space-btn cf-space-btn--doodad"
+                [disabled]="isBusy"
+                (click)="landOnDoodad()"
+              >
+                {{ 'CashflowGame.deckDoodad' | translate }}
+              </button>
+              <button
+                class="cf-space-btn cf-space-btn--market"
+                [disabled]="isBusy"
+                (click)="landOnMarket()"
+              >
+                {{ 'CashflowGame.deckMarket' | translate }}
+              </button>
+              <button
+                class="cf-space-btn cf-space-btn--charity"
+                [disabled]="isBusy"
+                (click)="landOnCharity()"
+              >
+                <span class="cf-space-btn-label">{{ 'CashflowGame.charity' | translate }}</span>
+                <span class="cf-space-btn-hint">{{ 'CashflowGame.charityHint' | translate }}</span>
+              </button>
+              <button
+                class="cf-space-btn cf-space-btn--downsized"
+                [disabled]="isBusy"
+                (click)="landOnDownsized()"
+              >
+                <span class="cf-space-btn-label">{{ 'CashflowGame.downsized' | translate }}</span>
+                <span class="cf-space-btn-hint">{{
+                  'CashflowGame.downsizedHint' | translate
+                }}</span>
+              </button>
+              <button
+                class="cf-space-btn cf-space-btn--baby"
+                [disabled]="isBusy || !canLandOnBaby"
+                (click)="landOnBaby()"
+              >
+                <span class="cf-space-btn-label">{{ 'CashflowGame.baby' | translate }}</span>
+                <span class="cf-space-btn-hint">{{ 'CashflowGame.babyHint' | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bank Loan / Payback Loan: each hidden behind its own trigger — Payback only once there's -->
+          <!-- actually a loan to pay back (JFK, 2026-09-29). Dedicated button styling, not the global -->
+          <!-- .btn (its 80%-width/10%-margin-left box model is meant for one standalone button, not two -->
+          <!-- side by side — JFK, 2026-09-29: "can you design better the Bank loan button"). -->
+          <div class="cf-card cf-loan-triggers" *ngIf="currentGameSet && !viewOnly">
+            <button class="cf-loan-btn" [disabled]="isBusy" (click)="openBankLoan()">
+              <span class="cf-loan-btn-icon">🏦</span>
+              <span>{{ 'CashflowGame.bankLoan' | translate }}</span>
             </button>
             <button
-              class="cf-space-btn cf-space-btn--doodad"
+              class="cf-loan-btn"
+              *ngIf="currentLoanPrincipal > 0"
               [disabled]="isBusy"
-              (click)="landOnDoodad()"
+              (click)="openPayLoan()"
             >
-              {{ 'CashflowGame.deckDoodad' | translate }}
-            </button>
-            <button
-              class="cf-space-btn cf-space-btn--market"
-              [disabled]="isBusy"
-              (click)="landOnMarket()"
-            >
-              {{ 'CashflowGame.deckMarket' | translate }}
-            </button>
-            <button
-              class="cf-space-btn cf-space-btn--charity"
-              [disabled]="isBusy"
-              (click)="landOnCharity()"
-            >
-              <span class="cf-space-btn-label">{{ 'CashflowGame.charity' | translate }}</span>
-              <span class="cf-space-btn-hint">{{ 'CashflowGame.charityHint' | translate }}</span>
-            </button>
-            <button
-              class="cf-space-btn cf-space-btn--downsized"
-              [disabled]="isBusy"
-              (click)="landOnDownsized()"
-            >
-              <span class="cf-space-btn-label">{{ 'CashflowGame.downsized' | translate }}</span>
-              <span class="cf-space-btn-hint">{{ 'CashflowGame.downsizedHint' | translate }}</span>
-            </button>
-            <button
-              class="cf-space-btn cf-space-btn--baby"
-              [disabled]="isBusy || !canLandOnBaby"
-              (click)="landOnBaby()"
-            >
-              <span class="cf-space-btn-label">{{ 'CashflowGame.baby' | translate }}</span>
-              <span class="cf-space-btn-hint">{{ 'CashflowGame.babyHint' | translate }}</span>
+              <span class="cf-loan-btn-icon">💳</span>
+              <span class="cf-loan-btn-text">
+                {{ 'CashflowGame.loanRepay' | translate }}
+                <!-- what is owed, so Repay is never pressed blind (JFK, 2026-10-18) -->
+                <small class="cf-loan-btn-owed"
+                  >{{ 'CashflowGame.loanOutstanding' | translate }}:
+                  {{ currentLoanPrincipal | appNumber }} {{ appState.currency }}</small
+                >
+              </span>
             </button>
           </div>
-        </div>
 
-        <!-- Bank Loan / Payback Loan: each hidden behind its own trigger — Payback only once there's -->
-        <!-- actually a loan to pay back (JFK, 2026-09-29). Dedicated button styling, not the global -->
-        <!-- .btn (its 80%-width/10%-margin-left box model is meant for one standalone button, not two -->
-        <!-- side by side — JFK, 2026-09-29: "can you design better the Bank loan button"). -->
-        <div class="cf-card cf-loan-triggers" *ngIf="currentGameSet">
-          <button class="cf-loan-btn" [disabled]="isBusy" (click)="openBankLoan()">
-            <span class="cf-loan-btn-icon">🏦</span>
-            <span>{{ 'CashflowGame.bankLoan' | translate }}</span>
+          <!-- History and Menu: both "go see more elsewhere" rows, same treatment (JFK, 2026-09-29: -->
+          <!-- "can you hide the history behind a button" / "the menu button... a real button"). -->
+          <button class="cf-row-btn" *ngIf="hasHistory" (click)="openHistory()">
+            <span>{{ 'CashflowGame.history' | translate }}</span>
+            <span class="cf-row-btn-chevron">›</span>
           </button>
+
           <button
-            class="cf-loan-btn"
-            *ngIf="currentLoanPrincipal > 0"
-            [disabled]="isBusy"
-            (click)="openPayLoan()"
+            class="cf-row-btn"
+            *ngIf="!remote"
+            [class.cf-row-btn--full]="!hasHistory"
+            (click)="openGames()"
           >
-            <span class="cf-loan-btn-icon">💳</span>
-            <span>{{ 'CashflowGame.loanRepay' | translate }}</span>
+            <span>{{ 'CashflowGame.myGames' | translate }}</span>
+            <span class="cf-row-btn-chevron">›</span>
+          </button>
+
+          <button
+            class="cf-row-btn"
+            *ngIf="remote?.tableMenu() as tm"
+            (click)="dashboardView = 'table'"
+          >
+            <span>{{ tm.title }}</span>
+            <span class="cf-row-btn-chevron">›</span>
+          </button>
+
+          <button class="cf-row-btn" (click)="openMenu()">
+            <span>{{ 'Menu.title' | translate }}</span>
+            <span class="cf-row-btn-chevron">›</span>
+          </button>
+
+          <!-- Last, and red: wipes this game without saving it, back to the start panel (JFK, 2026-10-06). -->
+          <button
+            class="cf-row-btn cf-row-btn--danger"
+            *ngIf="!viewOnly"
+            [disabled]="isBusy"
+            (click)="resetCurrentGame()"
+          >
+            <span>{{
+              remoteOver
+                ? remoteOver.leaveLabel
+                : remote
+                  ? remote.resignWords().label
+                  : ('CashflowGame.resetGame' | translate)
+            }}</span>
+            <span class="cf-row-btn-chevron">›</span>
           </button>
         </div>
-
-        <!-- History and Menu: both "go see more elsewhere" rows, same treatment (JFK, 2026-09-29: -->
-        <!-- "can you hide the history behind a button" / "the menu button... a real button"). -->
-        <button class="cf-row-btn" *ngIf="hasHistory" (click)="openHistory()">
-          <span>{{ 'CashflowGame.history' | translate }}</span>
-          <span class="cf-row-btn-chevron">›</span>
-        </button>
-
-        <button class="cf-row-btn" [class.cf-row-btn--full]="!hasHistory" (click)="openGames()">
-          <span>{{ 'CashflowGame.myGames' | translate }}</span>
-          <span class="cf-row-btn-chevron">›</span>
-        </button>
-
-        <button class="cf-row-btn" (click)="openMenu()">
-          <span>{{ 'Menu.title' | translate }}</span>
-          <span class="cf-row-btn-chevron">›</span>
-        </button>
-
-        <!-- Last, and red: wipes this game without saving it, back to the start panel (JFK, 2026-10-06). -->
-        <button
-          class="cf-row-btn cf-row-btn--danger"
-          [disabled]="isBusy"
-          (click)="resetCurrentGame()"
-        >
-          <span>{{ 'CashflowGame.resetGame' | translate }}</span>
-          <span class="cf-row-btn-chevron">›</span>
-        </button>
       </ng-container>
 
       <!-- Small/Big Deal share the same green space — say which pile you drew from, then move on to -->
       <!-- the Cards step below. A focused sub-view: everything else in the dashboard hides while this -->
       <!-- shows (JFK, 2026-09-26: "the panel cleans from the current view and only shows this"). -->
       <!-- My games: the game being played and every saved one (JFK, 2026-10-04). -->
+      <!-- The table's own menu: what the owner may do with the table (JFK, 2026-10-17). -->
+      <div class="cf-card" *ngIf="dashboardView === 'table' && remote?.tableMenu() as tm">
+        <button class="cf-back-btn" (click)="backToMain()">
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
+        </button>
+        <h3>{{ tm.title }}</h3>
+        <div class="cf-actions cf-table-menu">
+          <button
+            *ngFor="let item of tm.items; trackBy: trackById"
+            class="btn btn--sm"
+            [class.cf-btn-outlined]="!item.danger"
+            [class.btn--danger]="item.danger"
+            (click)="runTableMenuItem(item)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+      </div>
+
       <div class="cf-card" *ngIf="dashboardView === 'games'">
         <button class="cf-back-btn" (click)="backToMain()">
           <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
@@ -1279,7 +1444,18 @@
         <p class="cf-card-none" *ngIf="!savedGames.games.length">
           {{ 'CashflowGame.gamesEmpty' | translate }}
         </p>
-        <ng-container *ngTemplateOutlet="savedGameList"></ng-container>
+        <h4 class="cf-games-heading" *ngIf="tableGames.length">
+          {{ 'CashflowGame.gamesSolo' | translate }}
+        </h4>
+        <ng-container
+          *ngTemplateOutlet="savedGameList; context: { $implicit: soloGames }"
+        ></ng-container>
+        <ng-container *ngIf="tableGames.length">
+          <h4 class="cf-games-heading">{{ 'CashflowGame.gamesMultiplayer' | translate }}</h4>
+          <ng-container
+            *ngTemplateOutlet="savedGameList; context: { $implicit: tableGames }"
+          ></ng-container>
+        </ng-container>
       </div>
 
       <!-- Baby / Charity / Downsized: what it does, then Play or Cancel (JFK, 2026-10-03). -->
@@ -1414,13 +1590,57 @@
           <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
         <h3>{{ 'CashflowGame.history' | translate }}</h3>
+        <!-- A game played with others: the history of everybody's moves; undoing is the table's vote. -->
+        <ng-container *ngIf="remote">
+          <p class="cf-history-empty" *ngIf="!remoteHistory.length">
+            {{ 'CashflowGame.historyEmpty' | translate }}
+          </p>
+          <ul class="cf-history" *ngIf="remoteHistory.length">
+            <li class="cf-history-step" *ngFor="let line of remoteHistory; trackBy: trackLine">
+              <div class="cf-history-row">
+                <span class="cf-history-toggle">
+                  <span class="cf-history-number">{{ line.number }}.</span>
+                  <span class="cf-history-title"
+                    ><span class="cf-history-who" [style.border-color]="line.color">{{
+                      line.who
+                    }}</span>
+                    {{ line.title }}</span
+                  >
+                  <span class="cf-history-detail" *ngIf="line.detail">{{ line.detail }}</span>
+                  <span
+                    class="cf-history-detail cf-history-card"
+                    *ngIf="line.cardId"
+                    role="link"
+                    tabindex="0"
+                    [attr.title]="'CashflowGame.historyShowCard' | translate"
+                    (click)="showHistoryCard(line.cardId); $event.stopPropagation()"
+                    (keydown.enter)="showHistoryCard(line.cardId); $event.stopPropagation()"
+                    >🃏</span
+                  >
+                </span>
+              </div>
+              <span class="cf-history-date" *ngIf="line.at">{{
+                line.at | date: 'dd.MM.yyyy HH:mm'
+              }}</span>
+            </li>
+          </ul>
+          <button
+            type="button"
+            class="btn btn--sm"
+            *ngIf="remote.canAskUndo()"
+            [disabled]="isBusy"
+            (click)="undoLastAction()"
+          >
+            {{ 'CashflowGame.undo' | translate }}
+          </button>
+        </ng-container>
         <p
           class="cf-history-empty"
-          *ngIf="!historySteps.length && !appState.cashflowGame.history.length"
+          *ngIf="!remote && !historySteps.length && !appState.cashflowGame.history.length"
         >
           {{ 'CashflowGame.historyEmpty' | translate }}
         </p>
-        <ul class="cf-history" *ngIf="historySteps.length">
+        <ul class="cf-history" *ngIf="!remote && historySteps.length">
           <li
             class="cf-history-step"
             *ngFor="let step of historySteps; let index = index; let first = first"
@@ -1443,9 +1663,16 @@
                 <span class="cf-history-detail" *ngIf="step.detail && step.kind !== 'cardPicked'">{{
                   step.detail
                 }}</span>
-                <span class="cf-history-detail" *ngIf="step.cardId">{{
-                  cardLabelOf(step.cardId)
-                }}</span>
+                <span
+                  class="cf-history-detail cf-history-card"
+                  *ngIf="step.cardId"
+                  role="link"
+                  tabindex="0"
+                  [attr.title]="'CashflowGame.historyShowCard' | translate"
+                  (click)="showHistoryCard(step.cardId); $event.stopPropagation()"
+                  (keydown.enter)="showHistoryCard(step.cardId); $event.stopPropagation()"
+                  >🃏 {{ cardLabelOf(step.cardId) }}</span
+                >
               </button>
               <button
                 type="button"
@@ -1469,7 +1696,10 @@
           </li>
         </ul>
         <!-- Rounds saved before steps were tracked. -->
-        <ul class="cf-history" *ngIf="!historySteps.length && appState.cashflowGame.history.length">
+        <ul
+          class="cf-history"
+          *ngIf="!remote && !historySteps.length && appState.cashflowGame.history.length"
+        >
           <li *ngFor="let entry of appState.cashflowGame.history">
             <span class="cf-history-round"
               >{{ 'CashflowGame.Round' | translate }} {{ entry.round }} ·
@@ -1714,7 +1944,16 @@
           </ng-template>
         </ng-container>
 
-        <div class="cf-card-active" *ngIf="activeCard">
+        <!-- The pile is shuffled in view, then the card pops up (JFK, 2026-10-18). -->
+        <div class="cf-shuffle" *ngIf="drawing && !activeCard" role="status" aria-live="polite">
+          <div class="cf-shuffle-deck" aria-hidden="true">
+            <span class="cf-shuffle-card"></span>
+            <span class="cf-shuffle-card"></span>
+            <span class="cf-shuffle-card"></span>
+          </div>
+          <p>{{ 'CashflowGame.shuffling' | translate }}</p>
+        </div>
+        <div class="cf-card-active cf-card-reveal" *ngIf="activeCard">
           <span class="cf-card-kind" *ngIf="isShareCard">{{
             ($any(activeCard).securityKind === 'fund'
               ? 'CashflowGame.cardFund'
@@ -1945,8 +2184,21 @@
             {{ 'CashflowGame.cardPlannedAs' | translate: { title: activeCardProject.title } }}
           </p>
           <p class="cf-solo-hint" *ngIf="activeCardReadOnly && !activeCardProject" role="status">
-            {{ 'CashflowGame.cardPlayedReadOnly' | translate }}
+            {{
+              (historyCardView ? 'CashflowGame.cardFromHistory' : 'CashflowGame.cardPlayedReadOnly')
+                | translate
+            }}
           </p>
+          <!-- A card of a game with others that took effect as it was opened: ticked off here, as in the solo game -->
+          <div class="cf-actions" *ngIf="cardInHandPlayed">
+            <button
+              class="btn btn--primary"
+              [disabled]="isBusy"
+              (click)="finishSoloDecision('done')"
+            >
+              {{ 'CashflowGame.solo.done' | translate }}
+            </button>
+          </div>
           <div class="cf-actions" *ngIf="!activeCardReadOnly">
             <button
               class="btn btn--sm btn--primary"
@@ -2043,7 +2295,10 @@
               [disabled]="isBusy"
               (click)="showFriendSale = !showFriendSale"
             >
-              {{ 'CashflowGame.cardSellToFriend' | translate }}
+              {{
+                (remote ? 'CashflowGame.cardOfferToTable' : 'CashflowGame.cardSellToFriend')
+                  | translate
+              }}
             </button>
             <button
               class="btn btn--sm cf-btn-outlined"
@@ -2068,7 +2323,7 @@
           >
             <div class="cf-friend-sale-head">
               <span class="cf-friend-sale-label">{{
-                'CashflowGame.cardFriendPays' | translate
+                (remote ? 'CashflowGame.cardTablePays' : 'CashflowGame.cardFriendPays') | translate
               }}</span>
               <button
                 type="button"
@@ -2097,7 +2352,10 @@
               (click)="sellActiveCardToFriend()"
             >
               <span>🤝</span>
-              <span>{{ 'CashflowGame.cardSellConfirm' | translate }}</span>
+              <span>{{
+                (remote ? 'CashflowGame.cardOfferConfirm' : 'CashflowGame.cardSellConfirm')
+                  | translate
+              }}</span>
             </button>
           </div>
         </div>

@@ -31,3 +31,13 @@
   margin-top: 10px;
   margin-bottom: 1%;
 }
+
+/*
+ * A phone on its side has little height: the dialog is taller than the window, and its Add button must still be reachable. The extra
+ * room under the dialog is scrollable space, so the page can be scrolled until the button is clear of the bottom menu (JFK, 2026-10-18).
+ */
+@media (max-height: 560px) {
+  #addTransaction-Container {
+    padding-bottom: 110px;
+  }
+}

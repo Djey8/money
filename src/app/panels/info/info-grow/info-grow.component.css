@@ -1315,6 +1315,9 @@
   /* Room above, so the row doesn't crowd the Add buttons over it; little below, Edit follows straight on. */
   margin-top: 28px;
   margin-bottom: 6px;
+  /* not as wide as the panel: centred, with a limit */
+  max-width: 360px;
+  margin-inline: auto;
 }
 
 .card-btn {
