@@ -1,4 +1,5 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { ProfilePictureService } from 'src/app/shared/profile-picture';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { DatabaseService } from 'src/app/shared/services/database.service';
@@ -105,6 +106,7 @@ export class ProfileComponent implements OnInit {
     private http: HttpClient,
     private cryptic: CrypticService,
     private cashflowGameService: CashflowGameService,
+    private profilePicture: ProfilePictureService,
   ) {
     ProfileComponent.isProfile = false;
     ProfileComponent.isImport = false;
@@ -289,6 +291,7 @@ export class ProfileComponent implements OnInit {
     // unless reset explicitly — a different login must never see it (JFK, 2026-09-29+: "when we
     // logout we remove also this part for the localStorage").
     this.cashflowGameService.clearPersistedUndoStack();
+    this.profilePicture.clear();
 
     const savedTheme = localStorage.getItem('theme');
     const savedLang = ['isEng', 'isDe', 'isEs', 'isFr', 'isCn', 'isAr'].find(

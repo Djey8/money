@@ -149,6 +149,10 @@
                 {
                   "replace": "src/app/docs/docs.topics.ts",
                   "with": "src/app/docs/docs.topics.selfhosted.ts"
+                },
+                {
+                  "replace": "src/app/shared/profile-picture.ts",
+                  "with": "src/app/shared/profile-picture.selfhosted.ts"
                 }
               ],
               "budgets": [
@@ -187,6 +191,10 @@
                 {
                   "replace": "src/app/docs/docs.topics.ts",
                   "with": "src/app/docs/docs.topics.selfhosted.ts"
+                },
+                {
+                  "replace": "src/app/shared/profile-picture.ts",
+                  "with": "src/app/shared/profile-picture.selfhosted.ts"
                 }
               ],
               "optimization": false,
