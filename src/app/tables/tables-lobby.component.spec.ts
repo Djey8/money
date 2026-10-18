@@ -44,6 +44,7 @@ describe('TablesLobbyComponent', () => {
   const answer = (open: unknown[], mine: unknown[]) => {
     http.expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=open')).flush({ items: open });
     http.expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=mine')).flush({ items: mine });
+    http.expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=recent')).flush({ items: [] });
     fixture.detectChanges();
   };
 
@@ -55,7 +56,10 @@ describe('TablesLobbyComponent', () => {
     const text = element.textContent!;
     expect(text).toContain('Open one');
     expect(text).toContain('2/6 seats');
-    expect(element.querySelectorAll('.tl-list')).toHaveLength(2);
+    const lists = Array.from(element.querySelectorAll('.tl-list')).filter(
+      (list) => !list.closest('app-tables-leaderboard'),
+    );
+    expect(lists).toHaveLength(2);
     // the joined table shows under My tables only, not again under Open tables
     expect(text.match(/Mine/g)!.length).toBe(1);
   });
@@ -65,29 +69,46 @@ describe('TablesLobbyComponent', () => {
     expect(element.textContent).toContain(tablesTexts('en').noOpen);
   });
 
-  it('opens a table with the form and goes to it', () => {
+  it('opens the add-table panel with the plus button, and goes to the table it opened', () => {
     answer([], []);
     const router = TestBed.inject(Router);
     const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
-    const component = fixture.componentInstance;
-    component.nickname = 'Ann';
-    component.form.name = 'Friday';
-    component.form.clock = 'per-move';
-    component.form.seconds = 45;
-    component.form.endCondition = 'round-limit';
-    component.form.roundLimit = 8;
-    component.create();
-    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/v1/game/rooms'));
-    expect(req.request.body.nickname).toBe('Ann');
-    expect(req.request.body.settings).toMatchObject({
-      name: 'Friday',
-      maxSeats: 6,
-      clock: { mode: 'per-move', secondsPerMove: 45 },
-      endCondition: 'round-limit',
-      roundLimit: 8,
-    });
-    req.flush({ id: 'new1' });
+    expect(element.querySelector('app-add-table')).toBeNull();
+    (element.querySelector('#addbtn') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-add-table')).not.toBeNull();
+    fixture.componentInstance.onCreated('new1');
+    fixture.detectChanges();
+    expect(element.querySelector('app-add-table')).toBeNull();
     expect(navigate).toHaveBeenCalledWith(['/tables', 'new1']);
+  });
+
+  it('shows when a table was opened, the newest open table first', () => {
+    answer(
+      [
+        row({ id: 'old', name: 'Older', createdAt: '2026-10-01T10:00:00.000Z' }),
+        row({ id: 'new', name: 'Newer', createdAt: '2026-10-02T10:00:00.000Z' }),
+      ],
+      [],
+    );
+    const names = Array.from(element.querySelectorAll('.tl-list--scroll .tl-row strong')).map((e) =>
+      e.textContent!.trim(),
+    );
+    expect(names).toEqual(['Newer', 'Older']);
+    expect(element.textContent).toContain(tablesTexts('en').openedAt);
+  });
+
+  it('keeps the initials on this device and sends them with a join', () => {
+    answer([], []);
+    const component = fixture.componentInstance;
+    component.nickname = 'Bob';
+    component.initials = 'x1y';
+    component.initialsChanged();
+    expect(component.initials).toBe('X1');
+    expect(localStorage.getItem('mm.tables.initials')).toBe('X1');
+    component.join({ roomId: 'r9' });
+    const req = http.expectOne((r) => r.url.endsWith('/v1/game/rooms/join'));
+    expect(req.request.body).toEqual({ roomId: 'r9', nickname: 'Bob', initials: 'X1' });
   });
 
   it('joins by invite code, upper-cased, and shows a refusal for a normal account', () => {

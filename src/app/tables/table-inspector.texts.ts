@@ -53,6 +53,13 @@ const en = {
     paused: 'the game was paused',
     resumed: 'the game went on',
     rewound: 'the table was rewound',
+    turn_held: 'waits for the others to finish selling',
+    undo_proposed: 'asked to go back one turn',
+    undo_voted: 'voted on going back',
+    undo_approved: 'the table went back one turn',
+    undo_rejected: 'the table kept the turn',
+    hold_done: 'is done',
+    turn_released: 'the next turn begins',
   } as Record<string, string>,
 };
 export type TableInspectorTexts = typeof en;
@@ -105,6 +112,13 @@ const de: TableInspectorTexts = {
     paused: 'das Spiel wurde pausiert',
     resumed: 'das Spiel geht weiter',
     rewound: 'der Tisch wurde zurückgesetzt',
+    turn_held: 'wartet, bis die anderen mit dem Verkaufen fertig sind',
+    undo_proposed: 'möchte einen Zug zurück',
+    undo_voted: 'hat über den Zug zurück abgestimmt',
+    undo_approved: 'der Tisch geht einen Zug zurück',
+    undo_rejected: 'der Tisch behält den Zug',
+    hold_done: 'ist fertig',
+    turn_released: 'der nächste Zug beginnt',
   },
 };
 
@@ -156,6 +170,13 @@ const es: TableInspectorTexts = {
     paused: 'la partida se pausó',
     resumed: 'la partida continuó',
     rewound: 'se retrocedió la mesa',
+    turn_held: 'espera a que los demás terminen de vender',
+    undo_proposed: 'pidió volver un turno',
+    undo_voted: 'votó sobre volver atrás',
+    undo_approved: 'la mesa volvió un turno',
+    undo_rejected: 'la mesa mantiene el turno',
+    hold_done: 'ha terminado',
+    turn_released: 'empieza el siguiente turno',
   },
 };
 
@@ -207,6 +228,13 @@ const fr: TableInspectorTexts = {
     paused: 'la partie a été mise en pause',
     resumed: 'la partie a repris',
     rewound: 'la table a été remise en arrière',
+    turn_held: 'attend que les autres aient fini de vendre',
+    undo_proposed: "a demandé de revenir d'un tour",
+    undo_voted: 'a voté sur le retour en arrière',
+    undo_approved: "la table est revenue d'un tour",
+    undo_rejected: 'la table garde le tour',
+    hold_done: 'a terminé',
+    turn_released: 'le tour suivant commence',
   },
 };
 
@@ -258,6 +286,13 @@ const cn: TableInspectorTexts = {
     paused: '游戏已暂停',
     resumed: '游戏继续',
     rewound: '牌桌已回退',
+    turn_held: '等待其他人完成出售',
+    undo_proposed: '请求回到上一回合',
+    undo_voted: '对回退投了票',
+    undo_approved: '牌桌回到了上一回合',
+    undo_rejected: '牌桌保持当前回合',
+    hold_done: '完成',
+    turn_released: '下一回合开始',
   },
 };
 
@@ -309,6 +344,13 @@ const ar: TableInspectorTexts = {
     paused: 'أُوقفت اللعبة مؤقتًا',
     resumed: 'استمرت اللعبة',
     rewound: 'أُعيدت الطاولة إلى الوراء',
+    turn_held: 'ينتظر أن ينهي الآخرون البيع',
+    undo_proposed: 'طلب الرجوع دورًا واحدًا',
+    undo_voted: 'صوّت على الرجوع',
+    undo_approved: 'عادت الطاولة دورًا واحدًا',
+    undo_rejected: 'أبقت الطاولة على الدور',
+    hold_done: 'أنهى',
+    turn_released: 'يبدأ الدور التالي',
   },
 };
 

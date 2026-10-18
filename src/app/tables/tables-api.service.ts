@@ -19,6 +19,50 @@ export interface TableSummary {
   endCondition: 'first-escape' | 'all-done' | 'round-limit';
   language: string;
   joined: boolean;
+  /** The game may count for the leaderboard rating. */
+  ranked?: boolean;
+  /** People (not bots) still playing at the table. */
+  humans?: number;
+  /** The viewer opened this table. */
+  hosting?: boolean;
+  /** When the table was opened (ISO time). */
+  createdAt?: string;
+}
+
+/** A player of the leaderboard (GET /v1/game/leaderboard): a human who opted in, or a bot persona at a level. */
+export interface GamePlayer {
+  place?: number;
+  playerId: string;
+  name: string;
+  type: 'human' | 'bot';
+  level?: BotLevel;
+  visible?: boolean;
+  /** A person's profile picture is at `pictureUrl(player)`; absent when there is none. */
+  pictureVersion?: number;
+  rating: number;
+  peakRating: number;
+  ratedGames: number;
+  provisional: boolean;
+  games: number;
+  wins: number;
+  losses: number;
+  gaveUp: number;
+  bankruptcies: number;
+  escaped: number;
+  winRate: number;
+  avgPlace: number | null;
+  bestPlace: number | null;
+  recent?: {
+    table: string;
+    endedAt: string;
+    players: number;
+    place: number;
+    outcome: string;
+    ranked: boolean;
+    notRankedBecause?: string;
+    ratingChange: number;
+    ratingAfter: number;
+  }[];
 }
 
 export type BotLevel = 'master' | 'strong' | 'casual' | 'beginner';
@@ -29,10 +73,14 @@ export interface BotInfo {
   name: string;
   difficulty: 'easy' | 'medium' | 'hard' | 'champion';
   description: string;
+  /** What the bot is rated now at each skill level (the leaderboard's rating, or the measured start). */
+  ratings?: Partial<Record<BotLevel, number>>;
 }
 
 export interface CreateTableInput {
   nickname: string;
+  /** The letters on the player's token (up to two); absent: the first two letters of the name. */
+  initials?: string;
   settings: {
     name: string;
     visibility: 'public' | 'private';
@@ -49,6 +97,18 @@ export interface CreateTableInput {
     endCondition: 'first-escape' | 'all-done' | 'round-limit';
     roundLimit?: number;
     spectators: boolean;
+    /** Whether the table may vote to undo the last turn (more than half must agree). */
+    allowRewind?: boolean;
+    /** Whether the table waits for everybody to say Continue after each turn. */
+    turnGate?: boolean;
+    /** How fast the bots play and how long each move is told. */
+    pace?: 'fast' | 'normal' | 'slow';
+    /** Whether everybody's progress towards escaping (a percentage) is shown. */
+    showProgress?: boolean;
+    /** The game may count for the leaderboard rating (default on; fixed once it starts). */
+    ranked?: boolean;
+    /** Rule overrides: how many of a player's turns a buyer's offer stays open. */
+    rules?: { sellOfferRolls?: number };
   };
   language?: string;
 }
@@ -64,6 +124,13 @@ export class TablesApiService {
 
   constructor(private http: HttpClient) {}
 
+  /** The profile picture of a person on the leaderboard (the browser keeps it until the picture changes), or null. */
+  pictureUrl(player: { playerId: string; pictureVersion?: number }): string | null {
+    return player.pictureVersion
+      ? `${environment.selfhosted.apiUrl}/v1/game/players/${encodeURIComponent(player.playerId)}/picture?v=${player.pictureVersion}`
+      : null;
+  }
+
   list(scope: 'open' | 'mine' | 'recent' = 'open'): Observable<{ items: TableSummary[] }> {
     return this.http.get<{ items: TableSummary[] }>(`${this.base}?scope=${scope}`);
   }
@@ -78,7 +145,60 @@ export class TablesApiService {
     return this.http.post<{ id: string; inviteCode?: string }>(this.base, input);
   }
 
-  join(target: { roomId?: string; code?: string }, nickname: string): Observable<{ id?: string }> {
-    return this.http.post<{ id?: string }>(`${this.base}/join`, { ...target, nickname });
+  /** The host removes the table altogether: it is closed for everyone, then deleted. */
+  remove(roomId: string): Observable<{ removed: boolean }> {
+    return this.http.delete<{ removed: boolean }>(
+      `${this.base}/${encodeURIComponent(roomId)}?confirm=true&remove=true`,
+    );
+  }
+
+  /** Leaves the game (a seat in the lobby, or a resign in a running game). */
+  leave(roomId: string): Observable<unknown> {
+    return this.http.post(`${this.base}/${encodeURIComponent(roomId)}/leave`, {
+      clientCommandId: `leave-${Date.now()}`,
+    });
+  }
+
+  /** Takes a table off my lists (one I left, or that is over). */
+  forget(roomId: string): Observable<unknown> {
+    return this.http.post(`${this.base}/${encodeURIComponent(roomId)}/forget`, {});
+  }
+
+  leaderboard(
+    type: 'all' | 'human' | 'bot',
+    after?: string,
+  ): Observable<{ items: GamePlayer[]; next: string | null }> {
+    const query = `type=${type}&limit=25${after ? `&after=${encodeURIComponent(after)}` : ''}`;
+    return this.http.get<{ items: GamePlayer[]; next: string | null }>(
+      `${environment.selfhosted.apiUrl}/v1/game/leaderboard?${query}`,
+    );
+  }
+
+  player(playerId: string): Observable<GamePlayer> {
+    return this.http.get<GamePlayer>(
+      `${environment.selfhosted.apiUrl}/v1/game/players/${encodeURIComponent(playerId)}`,
+    );
+  }
+
+  me(): Observable<GamePlayer> {
+    return this.http.get<GamePlayer>(`${environment.selfhosted.apiUrl}/v1/game/players/me`);
+  }
+
+  setVisible(visible: boolean): Observable<GamePlayer> {
+    return this.http.put<GamePlayer>(`${environment.selfhosted.apiUrl}/v1/game/players/me`, {
+      visible,
+    });
+  }
+
+  join(
+    target: { roomId?: string; code?: string },
+    nickname: string,
+    initials = '',
+  ): Observable<{ id?: string; language?: string }> {
+    return this.http.post<{ id?: string; language?: string }>(`${this.base}/join`, {
+      ...target,
+      nickname,
+      ...(initials ? { initials } : {}),
+    });
   }
 }

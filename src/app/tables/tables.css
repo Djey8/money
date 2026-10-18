@@ -1,0 +1,126 @@
+/*
+ * The look of the multiplayer tables, shared by the lobby, the table screen, the card panel and the inspector. It follows the rest of
+ * the app (the settings pages): cards with the border and surface tokens, labels above full-width fields, a filled blue primary
+ * button and an outlined plain one. The global `.btn` class is made for full-width form buttons (80% wide, centred), which breaks
+ * inside a row, so these screens use their own `.tx-btn`.
+ */
+
+/* ── fields ── */
+:host input[type='text'],
+:host input[type='number'],
+:host select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--color-input-bg, var(--color-surface));
+  color: var(--color-text);
+}
+:host input[type='text']:focus,
+:host input[type='number']:focus,
+:host select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+:host input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  accent-color: var(--color-primary);
+}
+:host .tx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+:host .tx-field > span,
+:host .tx-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── buttons ── */
+:host .tx-btn {
+  display: inline-block;
+  flex: none;
+  width: auto;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+:host .tx-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+}
+:host .tx-btn:active:not(:disabled) {
+  opacity: 0.8;
+}
+:host .tx-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+:host .tx-btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  border-radius: var(--radius-lg, 8px);
+  color: #fff;
+  font-weight: 700;
+}
+:host .tx-btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+:host .tx-btn--small {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+/* ── cards and lists ── */
+:host .tx-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 8px);
+  padding: 1.25rem;
+}
+:host .tx-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+:host .tx-muted {
+  color: var(--color-text-secondary, #666);
+  font-size: 0.9em;
+}
+
+/* a row of controls that wraps instead of squeezing */
+:host .tx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  :host .tx-card {
+    padding: 0.9rem;
+  }
+  :host .tx-btn {
+    min-height: 40px;
+  }
+}

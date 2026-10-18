@@ -72,6 +72,7 @@ const money = (minor: number | undefined): string =>
   standalone: true,
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './tables.css',
   template: `
     <section class="tc-card" *ngIf="onTable as shown">
       <h3>{{ t.onTable }} · {{ deckName(shown.deck) }}</h3>
@@ -117,7 +118,7 @@ const money = (minor: number | undefined): string =>
         </label>
         <button
           *ngIf="allow('buy_deal')"
-          class="btn btn--primary"
+          class="tx-btn tx-btn--primary"
           type="button"
           [disabled]="busy"
           (click)="buy(shown)"
@@ -126,7 +127,7 @@ const money = (minor: number | undefined): string =>
         </button>
         <button
           *ngIf="allow('pay_doodad')"
-          class="btn btn--primary"
+          class="tx-btn tx-btn--primary"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'pay_doodad', cardId: shown.card.id })"
@@ -135,7 +136,7 @@ const money = (minor: number | undefined): string =>
         </button>
         <button
           *ngIf="allow('roll_decision')"
-          class="btn btn--primary"
+          class="tx-btn tx-btn--primary"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'roll_decision' })"
@@ -144,7 +145,7 @@ const money = (minor: number | undefined): string =>
         </button>
         <button
           *ngIf="allow('pass_card')"
-          class="btn"
+          class="tx-btn"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'pass_card' })"
@@ -160,7 +161,7 @@ const money = (minor: number | undefined): string =>
       <div class="tc-actions">
         <button
           *ngFor="let deck of drawable()"
-          class="btn btn--primary"
+          class="tx-btn tx-btn--primary"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'draw_card', deck: deck })"
@@ -179,7 +180,7 @@ const money = (minor: number | undefined): string =>
           <input type="number" min="1" [(ngModel)]="loanAmount" />
         </label>
         <button
-          class="btn"
+          class="tx-btn"
           type="button"
           [disabled]="busy || !(loanAmount > 0)"
           (click)="move.emit({ type: 'bank_loan', amountMinor: minor(loanAmount) })"
@@ -200,7 +201,7 @@ const money = (minor: number | undefined): string =>
             <small>({{ offer.label }})</small></span
           >
           <button
-            class="btn btn--primary"
+            class="tx-btn tx-btn--primary"
             type="button"
             [disabled]="busy"
             (click)="move.emit({ type: 'sell_position', input: { title: offer.title } })"
@@ -224,7 +225,7 @@ const money = (minor: number | undefined): string =>
           <span>{{ nameOf(counter.seat) }}: {{ fmt(counter.priceMinor) }}</span>
           <button
             *ngIf="allow('accept_trade') && view.youSeat === trade.sellerSeat"
-            class="btn"
+            class="tx-btn"
             type="button"
             [disabled]="busy"
             (click)="move.emit({ type: 'accept_trade', fromSeat: counter.seat })"
@@ -236,7 +237,7 @@ const money = (minor: number | undefined): string =>
       <div class="tc-actions">
         <button
           *ngIf="allow('accept_trade') && view.youSeat !== trade.sellerSeat"
-          class="btn btn--primary"
+          class="tx-btn tx-btn--primary"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'accept_trade' })"
@@ -249,7 +250,7 @@ const money = (minor: number | undefined): string =>
             <input type="number" min="1" [(ngModel)]="counterPrice" />
           </label>
           <button
-            class="btn"
+            class="tx-btn"
             type="button"
             [disabled]="busy || !(counterPrice > 0)"
             (click)="move.emit({ type: 'counter_trade', priceMinor: minor(counterPrice) })"
@@ -259,7 +260,7 @@ const money = (minor: number | undefined): string =>
         </ng-container>
         <button
           *ngIf="allow('decline_trade')"
-          class="btn"
+          class="tx-btn"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'decline_trade' })"
@@ -268,7 +269,7 @@ const money = (minor: number | undefined): string =>
         </button>
         <button
           *ngIf="allow('withdraw_trade')"
-          class="btn"
+          class="tx-btn"
           type="button"
           [disabled]="busy"
           (click)="move.emit({ type: 'withdraw_trade' })"
@@ -286,7 +287,7 @@ const money = (minor: number | undefined): string =>
             <input type="number" min="1" [(ngModel)]="tradePrice" />
           </label>
           <button
-            class="btn"
+            class="tx-btn"
             type="button"
             [disabled]="busy || !(tradePrice > 0)"
             (click)="move.emit({ type: 'offer_trade', priceMinor: minor(tradePrice) })"

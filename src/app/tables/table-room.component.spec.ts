@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TableRoomComponent } from './table-room.component';
+import { TableModeService } from './table-mode.service';
 import { TableSessionService } from './table-session.service';
 
 const books = (position: number | null) => ({
@@ -72,14 +73,23 @@ const players = (over: Record<string, unknown>[] = []) =>
     },
   ].map((p, i) => ({ ...p, ...(over[i] ?? {}) }));
 
-async function render(session: ReturnType<typeof fakeSession>) {
+async function render(session: ReturnType<typeof fakeSession>, query = '1') {
   await TestBed.configureTestingModule({
     imports: [TableRoomComponent, TranslateModule.forRoot()],
     providers: [
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([]),
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'r1' } } } },
+      {
+        provide: ActivatedRoute,
+        useValue: {
+          snapshot: {
+            paramMap: { get: () => 'r1' },
+            // `?lobby=1` keeps the page (the game screen is not opened by itself) - these tests are about the page
+            queryParamMap: { get: (key: string) => (key === 'lobby' ? query || null : null) },
+          },
+        },
+      },
     ],
   })
     .overrideComponent(TableRoomComponent, {
@@ -448,5 +458,45 @@ describe('TableRoomComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('🤖 bot');
       expect(button(fixture, 'Remove')).toBeUndefined();
     });
+  });
+});
+
+describe('TableRoomComponent opens the game by itself', () => {
+  afterEach(() => {
+    TestBed.inject(TableModeService).leave(() => undefined);
+    jest.useRealTimers();
+  });
+
+  const playing = {
+    id: 'r1',
+    version: 4,
+    phase: 'playing',
+    settings,
+    hostSeat: 0,
+    youSeat: 1,
+    activeSeat: 0,
+    tableRound: 1,
+    holdSeats: [],
+    players: players(),
+    decks: {},
+    clock: { deadlineAt: null, pausedAt: null, banksMs: [], timeouts: [] },
+  };
+
+  it('puts the table into the game screen once it is being played and I am seated', async () => {
+    const session = fakeSession(playing);
+    await render(session, '');
+    const mode = TestBed.inject(TableModeService);
+    expect(mode.active()).toBe(true);
+    expect(mode.session()).toBe(session);
+  });
+
+  it('stays on the page when asked to (coming back from the game)', async () => {
+    await render(fakeSession(playing), '1');
+    expect(TestBed.inject(TableModeService).active()).toBe(false);
+  });
+
+  it('does not take a spectator in', async () => {
+    await render(fakeSession({ ...playing, youSeat: null }), '');
+    expect(TestBed.inject(TableModeService).active()).toBe(false);
   });
 });

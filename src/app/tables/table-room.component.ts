@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   effect,
   OnDestroy,
@@ -11,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import { finalSummary, type GameBooks, type PlayerView } from '@money/domain';
+import { finalSummary, type GameBooks, type PlayerView, type TableView } from '@money/domain';
 import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import {
@@ -20,7 +21,16 @@ import {
 } from '../main/cashflow-game/rat-race-board.component';
 import { TableCardsComponent } from './table-cards.component';
 import { TableInspectorComponent } from './table-inspector.component';
+import { AppComponent } from '../app.component';
+import { ConfirmService } from '../shared/services/confirm.service';
+import {
+  APP_LANGUAGES,
+  LanguageService,
+  type AppLanguage,
+} from '../shared/services/language.service';
+import { tablesTexts } from './tables.texts';
 import { TableSessionService } from './table-session.service';
+import { TableModeService } from './table-mode.service';
 import { TablesApiService, type BotInfo, type BotLevel } from './tables-api.service';
 import { bankSeconds, clockReading, formatClock } from './table-clock';
 import { TurnAlert } from './table-turn-alert';
@@ -62,10 +72,34 @@ const money = (minor: number | null): string =>
   ],
   providers: [TableSessionService],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrls: ['./tables.css', '../app.component.css'],
   template: `
+    <!-- the app's own toolbar, as every page has it -->
+    <div class="toolbar" role="banner">
+      <img
+        id="profile-pic"
+        width="40"
+        alt="Profile Logo"
+        src="../assets/profile-blank.jpg"
+        role="button"
+        tabindex="0"
+        aria-label="Open profile"
+        (keydown.enter)="app.clickProfile()"
+        (click)="app.clickProfile()"
+      />
+      <div
+        id="heading"
+        role="button"
+        tabindex="0"
+        (click)="app.openNavBar()"
+        (keydown.enter)="app.openNavBar()"
+      >
+        {{ heading }}
+      </div>
+    </div>
     <div class="tr-page" [attr.dir]="rtl ? 'rtl' : 'ltr'" *ngIf="view() as table">
       <header class="tr-head">
-        <a class="btn" routerLink="/tables">‹ {{ t.back }}</a>
+        <a class="tx-btn" routerLink="/tables">‹ {{ t.back }}</a>
         <h2>{{ table.settings.name }}</h2>
         <span class="tr-code" *ngIf="session.room()?.inviteCode as code"
           >{{ t.inviteCode }}: <strong>{{ code }}</strong></span
@@ -102,7 +136,7 @@ const money = (minor: number | null): string =>
               >
               <button
                 *ngIf="row.player.bot && isHost() && table.phase === 'lobby'"
-                class="btn"
+                class="tx-btn tx-btn--small"
                 type="button"
                 [disabled]="session.busy()"
                 (click)="session.lobby('kick', { seat: row.player.seat })"
@@ -118,19 +152,24 @@ const money = (minor: number | null): string =>
             </li>
           </ul>
           <div class="tr-actions" *ngIf="table.phase === 'lobby'">
-            <button class="btn" type="button" [disabled]="session.busy()" (click)="toggleReady()">
+            <button
+              class="tx-btn"
+              type="button"
+              [disabled]="session.busy()"
+              (click)="toggleReady()"
+            >
               {{ myPlayer()?.ready ? t.notReady : t.ready }}
             </button>
             <button
               *ngIf="isHost()"
-              class="btn btn--primary"
+              class="tx-btn tx-btn--primary"
               type="button"
               [disabled]="session.busy() || !canStart()"
               (click)="session.lobby('start')"
             >
               {{ t.start }}
             </button>
-            <button class="btn" type="button" (click)="leave()">{{ t.leave }}</button>
+            <button class="tx-btn" type="button" (click)="leave()">{{ t.leave }}</button>
           </div>
           <div class="tr-bots" *ngIf="table.phase === 'lobby' && isHost() && botCatalog().length">
             <h4>🤖 {{ t.addBot }}</h4>
@@ -143,7 +182,7 @@ const money = (minor: number | null): string =>
                 [attr.aria-label]="t.addBot"
               >
                 <option *ngFor="let bot of botCatalog()" [value]="bot.id">
-                  {{ bot.name }} - {{ level(bot) }}
+                  {{ bot.name }} - {{ level(bot) }}{{ ratingTag(bot) }}
                 </option>
               </select>
               <select
@@ -155,9 +194,13 @@ const money = (minor: number | null): string =>
                 <option *ngFor="let level of botLevels" [value]="level">{{ skill(level) }}</option>
               </select>
               <button
-                class="btn"
+                class="tx-btn"
                 type="button"
-                [disabled]="session.busy() || table.players.length >= table.settings.maxSeats"
+                [disabled]="
+                  session.busy() ||
+                  table.players.length >= table.settings.maxSeats ||
+                  botSeated(table)
+                "
                 (click)="addBot()"
               >
                 {{ t.addBot }}
@@ -175,18 +218,18 @@ const money = (minor: number | null): string =>
           <div class="tr-professions">
             <button
               *ngFor="let profession of professions()"
-              class="btn"
+              class="tx-btn"
               type="button"
-              [class.btn--primary]="me.pick === profession.id"
+              [class.tx-btn--primary]="me.pick === profession.id"
               [disabled]="session.busy()"
               (click)="session.lobby('profession', { professionId: profession.id })"
             >
               {{ profession.title }}
             </button>
             <button
-              class="btn"
+              class="tx-btn"
               type="button"
-              [class.btn--primary]="me.pick === 'random'"
+              [class.tx-btn--primary]="me.pick === 'random'"
               [disabled]="session.busy()"
               (click)="session.lobby('profession', { professionId: 'random' })"
             >
@@ -226,16 +269,19 @@ const money = (minor: number | null): string =>
               [style.width.%]="reading().fraction! * 100"
             ></div>
           </div>
-          <button *ngIf="alert.canAsk" class="btn tr-notify" type="button" (click)="alert.ask()">
-            🔔 {{ t.notifyMe }}
+          <button *ngIf="alert.canAsk" class="tx-btn tr-notify" type="button" (click)="alert.ask()">
+            {{ t.notifyMe }}
           </button>
           <p class="tr-banner tr-banner--warn" *ngIf="table.clock.pausedAt !== null">
             {{ t.paused }}
           </p>
           <div class="tr-actions">
+            <button class="tx-btn tx-btn--primary" type="button" (click)="openGameScreen()">
+              🎲 {{ t.openGameScreen }}
+            </button>
             <button
               *ngIf="session.can('roll')"
-              class="btn btn--primary"
+              class="tx-btn tx-btn--primary"
               type="button"
               [disabled]="session.busy()"
               (click)="session.play({ type: 'roll' })"
@@ -244,7 +290,7 @@ const money = (minor: number | null): string =>
             </button>
             <button
               *ngIf="session.can('roll') && canRollTwo()"
-              class="btn"
+              class="tx-btn"
               type="button"
               [disabled]="session.busy()"
               (click)="session.play({ type: 'roll', dice: 2 })"
@@ -253,7 +299,7 @@ const money = (minor: number | null): string =>
             </button>
             <button
               *ngIf="session.can('back')"
-              class="btn"
+              class="tx-btn"
               type="button"
               (click)="session.play({ type: 'back' })"
             >
@@ -261,7 +307,7 @@ const money = (minor: number | null): string =>
             </button>
             <button
               *ngIf="session.can('pause')"
-              class="btn"
+              class="tx-btn"
               type="button"
               (click)="session.play({ type: 'pause' })"
             >
@@ -269,7 +315,7 @@ const money = (minor: number | null): string =>
             </button>
             <button
               *ngIf="session.can('resume')"
-              class="btn btn--primary"
+              class="tx-btn tx-btn--primary"
               type="button"
               (click)="session.play({ type: 'resume' })"
             >
@@ -292,7 +338,7 @@ const money = (minor: number | null): string =>
           class="tr-card tr-result"
           *ngIf="table.phase === 'finished' && table.result as result"
         >
-          <h3>🏁 {{ t.finished }}</h3>
+          <h3>{{ t.finished }}</h3>
           <p class="tr-hint">{{ reasonText(result.reason) }}</p>
           <ol class="tr-ranking">
             <li *ngFor="let standing of result.ranking" class="tr-rank">
@@ -307,14 +353,14 @@ const money = (minor: number | null): string =>
           </ol>
           <div class="tr-actions" *ngIf="table.youSeat !== null">
             <button
-              class="btn btn--primary"
+              class="tx-btn tx-btn--primary"
               type="button"
               [disabled]="session.busy() || saved()"
               (click)="saveGame()"
             >
               {{ saved() ? t.savedGame : t.saveGame }}
             </button>
-            <a class="btn" routerLink="/tables">‹ {{ t.back }}</a>
+            <a class="tx-btn" routerLink="/tables">‹ {{ t.back }}</a>
           </div>
         </section>
 
@@ -362,8 +408,8 @@ const money = (minor: number | null): string =>
                   <dd>{{ fmt(row.cashflow) }}</dd>
                 </div>
               </dl>
-              <small *ngIf="row.standing === 'escaped'">🏆 {{ t.escaped }}</small>
-              <small *ngIf="row.standing === 'bankrupt'">💥 {{ t.bankrupt }}</small>
+              <small *ngIf="row.standing === 'escaped'">{{ t.escaped }}</small>
+              <small *ngIf="row.standing === 'bankrupt'">{{ t.bankrupt }}</small>
             </li>
           </ul>
         </section>
@@ -382,7 +428,7 @@ const money = (minor: number | null): string =>
       .tr-page {
         max-width: 760px;
         margin: 0 auto;
-        padding: 16px;
+        padding: 16px 16px calc(var(--page-bottom-spacer, 72px) + 28px);
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -426,8 +472,9 @@ const money = (minor: number | null): string =>
       }
       .tr-player {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
+        gap: 4px 8px;
       }
       .tr-player--books {
         flex-direction: column;
@@ -453,7 +500,7 @@ const money = (minor: number | null): string =>
         flex: none;
       }
       .tr-name {
-        flex: 1;
+        flex: 1 1 8rem;
         min-width: 0;
         overflow-wrap: anywhere;
       }
@@ -568,7 +615,11 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private translate = inject(TranslateService);
+  private languages = inject(LanguageService);
+  private cdr = inject(ChangeDetectorRef);
+  private confirmService = inject(ConfirmService);
   private tablesApi = inject(TablesApiService);
+  readonly tableMode = inject(TableModeService);
 
   t: TableRoomTexts = tableRoomTexts('en');
   rtl = false;
@@ -666,10 +717,29 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     }
   });
 
+  /** The app speaks the language the table is played in, whoever opens it. */
+  private readonly tableLanguage = effect(() => {
+    const code = this.session.room()?.language as AppLanguage['code'] | undefined;
+    if (
+      code &&
+      APP_LANGUAGES.some((lang) => lang.code === code) &&
+      code !== this.languages.current
+    ) {
+      void this.languages.use(code).then(() => {
+        this.t = tableRoomTexts(code);
+        this.lang = code;
+        this.heading = tablesTexts(code).title;
+        this.rtl = code === 'ar';
+        this.cdr.markForCheck();
+      });
+    }
+  });
+
   ngOnInit(): void {
     const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
     this.t = tableRoomTexts(lang);
     this.lang = lang;
+    this.heading = tablesTexts(lang).title;
     this.rtl = lang.toLowerCase().startsWith('ar');
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.session.open(id);
@@ -678,15 +748,45 @@ export class TableRoomComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.botFetch.destroy();
+    this.entering.destroy();
+    this.tableLanguage.destroy();
     if (this.timer) clearInterval(this.timer);
     this.alerting.destroy();
     this.alert.turnEnded();
-    this.session.close();
+    // a table that is being played in the game screen goes on after this page is left
+    if (this.tableMode.session() !== this.session) this.session.close();
   }
+
+  readonly app = AppComponent;
+  heading = '';
 
   fmt = money;
 
   readonly saved = signal(false);
+
+  private enteredOnce = false;
+
+  /**
+   * Once the game is on and I am seated, the game is played in the solo game's own screen (todo/cashflow-multiplayer-solo-ui.md):
+   * it opens by itself, no button to press. `?lobby=1` (coming back from the game) stays on this page.
+   */
+  private readonly entering = effect(() => {
+    const view = this.view();
+    const over = view?.phase === 'finished' || view?.phase === 'abandoned';
+    if (!view || (view.phase !== 'playing' && !over) || view.youSeat === null || this.enteredOnce) {
+      return;
+    }
+    this.enteredOnce = true;
+    if (this.route.snapshot.queryParamMap.get('lobby') === '1') return;
+    this.openGameScreen();
+  });
+
+  /** The solo game's own screen over my table character's books. */
+  openGameScreen(): void {
+    const view = this.view();
+    if (!view || view.youSeat === null) return;
+    this.tableMode.begin(this.session, this.lang);
+  }
 
   /** The bots the host can seat, fetched once when the host sits in a lobby. */
   readonly botCatalog = signal<BotInfo[]>([]);
@@ -721,6 +821,12 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** " · 1650": what the bot is rated at the chosen skill level, so the host sees what they seat. */
+  ratingTag(bot: BotInfo): string {
+    const rating = bot.ratings?.[this.botLevel];
+    return rating === undefined ? '' : ` · ${rating}`;
+  }
+
   botDescription(): string {
     return this.botCatalog().find((bot) => bot.id === this.botChoice)?.description ?? '';
   }
@@ -736,6 +842,12 @@ export class TableRoomComponent implements OnInit, OnDestroy {
       default:
         return this.t.skillBeginner;
     }
+  }
+
+  /** The chosen strategy at the chosen level already sits at the table (it sits once: the leaderboard knows it as one player). */
+  botSeated(table: TableView): boolean {
+    const id = this.botLevel === 'master' ? this.botChoice : `${this.botChoice}--${this.botLevel}`;
+    return table.players.some((player) => player.bot?.policyId === id);
   }
 
   addBot(): void {
@@ -817,6 +929,23 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   }
 
   async leave(): Promise<void> {
+    // the only person at a table with bots: leaving closes it (a bot is never made the host)
+    const table = this.view();
+    const people = table ? table.players.filter((player) => !player.bot).length : 0;
+    if (table?.phase === 'lobby' && people <= 1) {
+      // asked in the app's own dialog, not the browser's
+      this.confirmService.confirm(
+        this.t.leaveCloses,
+        () => void this.leaveNow(),
+        this.t.leave,
+        'delete',
+      );
+      return;
+    }
+    await this.leaveNow();
+  }
+
+  private async leaveNow(): Promise<void> {
     if (await this.session.lobby('leave')) void this.router.navigate(['/tables']);
   }
 }

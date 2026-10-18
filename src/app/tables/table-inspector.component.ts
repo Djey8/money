@@ -25,6 +25,7 @@ const money = (minor: number): string =>
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './tables.css',
   template: `
     <section class="ti-card" *ngIf="ranking.length">
       <h3>{{ t.leaderboard }}</h3>
@@ -44,9 +45,9 @@ const money = (minor: number): string =>
         <button
           *ngFor="let player of view.players"
           type="button"
-          class="btn"
+          class="tx-btn"
           role="tab"
-          [class.btn--primary]="player.seat === who.seat"
+          [class.tx-btn--primary]="player.seat === who.seat"
           [attr.aria-selected]="player.seat === who.seat"
           (click)="look(player.seat)"
         >
