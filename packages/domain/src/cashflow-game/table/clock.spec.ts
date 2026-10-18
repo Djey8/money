@@ -104,7 +104,7 @@ function quickTurn(table: Table, offsetMs: number): CommandResult {
   for (let seed = 1; seed <= 4000; seed += 1) {
     const result = applyCommand({ ...table, rngState: seed }, who, { type: 'roll' }, at(offsetMs));
     const landed = rolled(result.events)!.landed;
-    if (landed === 'downsized' || landed === 'doodad') continue; // a Doodad cannot be passed at a table
+    if (landed === 'downsized' || landed === 'doodad' || landed === 'market') continue; // a Doodad cannot be passed at a table; a Market card takes more moves
     const pending = booksOf(result.table, who).state.turn?.pending;
     if (!pending || result.table.activePlayerId !== who) return result;
     const passed = applyCommand(result.table, who, { type: 'pass_card' }, at(offsetMs));
@@ -199,23 +199,31 @@ describe('a timeout plays the most passive turn', () => {
     }
   });
 
-  it('a Market space is drawn for the table by the roll itself - nobody can pass it', () => {
+  it('a Market card is drawn by the player on its space, takes effect for the table, and is ticked off', () => {
     let table = playingTable({ clock: { mode: 'none' } });
     // host stands 4 before the Market space (7) and has started
     table = editBooks(table, 'host', (books) => ({
       ...books,
       state: { ...books.state, boardPosition: 3, turn: { phase: 'roll', count: 1 } },
     }));
-    let result: CommandResult | null = null;
-    for (let seed = 1; seed <= 4000 && !result; seed += 1) {
+    let landed: CommandResult | null = null;
+    for (let seed = 1; seed <= 4000 && !landed; seed += 1) {
       const attempt = applyCommand({ ...table, rngState: seed }, 'host', { type: 'roll' }, at(0));
-      if (rolled(attempt.events)?.landed === 'market') result = attempt;
+      if (rolled(attempt.events)?.landed === 'market') landed = attempt;
     }
-    expect(types(result!.events)).toEqual(
-      expect.arrayContaining(['rolled', 'card_drawn', 'market_card_played', 'turn_started']),
+    // landing does not draw: the card waits for the player to open it
+    expect(types(landed!.events)).not.toContain('card_drawn');
+    expect(landed!.table.activePlayerId).toBe('host');
+    expect(landed!.table.drawnCardIds.market).toHaveLength(0);
+    const drawn = applyCommand(landed!.table, 'host', { type: 'draw_card', deck: 'market' }, at(1));
+    expect(types(drawn.events)).toEqual(
+      expect.arrayContaining(['card_drawn', 'market_card_played']),
     );
-    expect(result!.table.activePlayerId).toBe('p1');
-    expect(result!.table.drawnCardIds.market).toHaveLength(1);
+    expect(drawn.table.drawnCardIds.market).toHaveLength(1);
+    expect(drawn.table.activePlayerId).toBe('host');
+    const done = applyCommand(drawn.table, 'host', { type: 'finish_card' }, at(2));
+    expect(types(done.events)).toContain('turn_started');
+    expect(done.table.activePlayerId).toBe('p1');
   });
 
   it('the passive policy only ever rolls, passes, or pays a forced Doodad', () => {
@@ -333,7 +341,46 @@ describe('away players', () => {
     const hostRolls = hand.events.filter((e) => e.type === 'rolled' && e.playerId === 'host');
     expect(hostRolls).toHaveLength(1);
     expect(hand.table.activePlayerId).toBe('p1');
-    expect(hand.table.version).toBe(second.table.version + 1);
+    // p1's own moves (a roll, and a card passed when they land on one) - the away host's turn rides on the last one
+    expect(hand.table.version).toBeGreaterThan(second.table.version);
+    expect(hand.table.version).toBeLessThanOrEqual(second.table.version + 2);
+  });
+
+  it('going away on purpose plays the turn passively at once, and "back" returns', () => {
+    const table = playingTable({}, 2);
+    expect(table.activePlayerId).toBe('host');
+    const result = applyCommand(table, 'host', { type: 'away' }, at(1000));
+    expect(types(result.events)).toContain('player_away');
+    expect(result.events.find((e) => e.type === 'player_away')).toMatchObject({
+      data: { reason: 'self' },
+    });
+    expect(player(result.table, 'host').away).toBe(true);
+    // the host's turn was played for them: it is p1's turn now
+    expect(result.events.filter((e) => e.type === 'rolled' && e.playerId === 'host')).toHaveLength(
+      1,
+    );
+    expect(result.table.activePlayerId).toBe('p1');
+    expectError(
+      () => applyCommand(result.table, 'host', { type: 'away' }, at(2000)),
+      'WRONG_PHASE',
+    );
+    const back = applyCommand(result.table, 'host', { type: 'back' }, at(2000));
+    expect(player(back.table, 'host').away).toBe(false);
+  });
+
+  it('a passive turn opens a Market card (what it costs is paid) and ticks it off - it never leaves it shut', () => {
+    let table = playingTable({ clock: { mode: 'none' } });
+    table = editBooks(table, 'host', (books) => ({
+      ...books,
+      state: {
+        ...books.state,
+        turn: { phase: 'decide', count: 2, pending: { kind: 'market', spaceIndex: 7 } },
+      },
+    }));
+    expect(nextPassiveCommand({ ...table, turnRolled: true }, 'host')).toEqual({
+      type: 'draw_card',
+      deck: 'market',
+    });
   });
 
   it('"back" returns an away player to their own turns', () => {

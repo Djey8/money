@@ -41,7 +41,7 @@ export function nextBotCommand(
     return wants ? { type: 'accept_trade' } : { type: 'decline_trade' };
   }
 
-  if (table.activePlayerId !== botId) return null;
+  if (table.activePlayerId !== botId || table.hold) return null;
   if (currentTurn(me.books.state).phase === 'roll') {
     for (const move of policy.maintain(view)) {
       if (move.kind === 'sell') {

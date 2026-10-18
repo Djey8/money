@@ -29,6 +29,8 @@ const os = require('os');
 const path = require('path');
 
 const domain = require('@money/domain');
+// the domain package does not carry the printed catalog: the tables it plays use this one
+domain.setDefaultTableGameSets(require('@money/domain/dist/cashflow-content').CASHFLOW_GAME_SETS);
 const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 
 const root = path.resolve(__dirname, '..');

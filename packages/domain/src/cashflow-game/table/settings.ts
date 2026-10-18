@@ -1,4 +1,4 @@
-import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
+import { defaultTableGameSets } from './default-game-sets';
 import { normalizeRules, type GameRules } from '../rules';
 import type { CashflowGameSet } from '../types';
 import {
@@ -39,6 +39,12 @@ function whole(value: unknown, label: string, min: number, max: number): number 
     return invalid(`${label} must be a whole number from ${min} to ${max}.`);
   }
   return value;
+}
+
+function normalizePace(pace: unknown): 'fast' | 'normal' | 'slow' {
+  if (pace === undefined) return 'normal';
+  if (pace === 'fast' || pace === 'normal' || pace === 'slow') return pace;
+  return invalid("pace must be 'fast', 'normal' or 'slow'.");
 }
 
 export function normalizeClock(input: ClockSettings | undefined): ClockSettings {
@@ -102,7 +108,7 @@ export function whyGameSetNotForTables(gameSet: CashflowGameSet): string | null 
 /** Complete, valid settings from a host's input. Throws `TableCommandError('INVALID_SETTINGS')`. */
 export function normalizeTableSettings(
   input: TableSettingsInput,
-  gameSets: CashflowGameSet[] = CASHFLOW_GAME_SETS,
+  gameSets: CashflowGameSet[] = defaultTableGameSets(),
 ): TableSettings {
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (name.length < 1 || name.length > TABLE_NAME_MAX) {
@@ -168,5 +174,9 @@ export function normalizeTableSettings(
     ...(roundLimit !== undefined ? { roundLimit } : {}),
     spectators: input.spectators ?? false,
     allowRewind: input.allowRewind ?? true,
+    turnGate: input.turnGate ?? false,
+    pace: normalizePace(input.pace),
+    showProgress: input.showProgress ?? true,
+    ranked: input.ranked ?? true,
   };
 }

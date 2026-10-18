@@ -1,7 +1,11 @@
 import {
   buyDealAction,
+  buyPlannedAction,
   drawCardAction,
+  finishCardAction,
+  planDealAction,
   payDoodadAction,
+  payMarketCostAction,
   rollDecisionAction,
   sellPositionAction,
   type ActionDeps,
@@ -9,6 +13,7 @@ import {
 } from '../actions';
 import { CLASSIC_RAT_RACE_BOARD } from '../board';
 import { applyEffectsToBooks, type GameBooks } from '../books';
+import { closePlanOfSettledCard } from '../deals';
 import { emptyEffects } from '../effects';
 import { endIfOver } from '../game-end';
 import { playBankLoan } from '../loan';
@@ -35,7 +40,11 @@ export type MoveCommand = Extract<
       | 'roll'
       | 'draw_card'
       | 'buy_deal'
+      | 'plan_deal'
+      | 'buy_planned'
+      | 'finish_card'
       | 'pay_doodad'
+      | 'pay_market'
       | 'roll_decision'
       | 'pass_card'
       | 'bank_loan'
@@ -47,7 +56,11 @@ const MOVE_TYPES = new Set([
   'roll',
   'draw_card',
   'buy_deal',
+  'plan_deal',
+  'buy_planned',
+  'finish_card',
   'pay_doodad',
+  'pay_market',
   'roll_decision',
   'pass_card',
   'bank_loan',
@@ -62,6 +75,9 @@ export function isMoveCommand(command: TableCommand): command is MoveCommand {
 export function applyPlan(books: GameBooks, plan: ActionPlan): GameBooks {
   let next = plan.effects.reduce(applyEffectsToBooks, books);
   if (plan.settle && currentTurn(next.state).phase === 'decide') {
+    // the card's chance to be bought is over: an unbought plan leaves the plan phase
+    const closing = closePlanOfSettledCard(next);
+    if (closing) next = applyEffectsToBooks(next, closing);
     next = {
       ...next,
       state: settleDecision(next.state, 'done', next.subscriptions).state,
@@ -84,10 +100,22 @@ export function planMove(
         { ...deps, board: CLASSIC_RAT_RACE_BOARD, profession, rng: deps.rng },
         { dice: command.dice },
       );
+      // what the Paydays of this roll paid: the Payday effects come first, in order, then whatever the landing space did
+      const paydayCount = (turn.openingPayday ? 1 : 0) + turn.move.paydays;
+      let paydayIncomeMinor = 0;
+      let paydayExpensesMinor = 0;
+      for (const effects of turn.effects.slice(0, paydayCount)) {
+        for (const transaction of effects.appendedTransactions) {
+          if (transaction.amountMinor > 0) paydayIncomeMinor += transaction.amountMinor;
+          else paydayExpensesMinor -= transaction.amountMinor;
+        }
+      }
       return {
         effects: turn.effects,
         step: turn.step,
         result: {
+          paydayIncomeMinor,
+          paydayExpensesMinor,
           dice: turn.roll.dice,
           total: turn.roll.total,
           from: books.state.boardPosition,
@@ -107,10 +135,18 @@ export function planMove(
     }
     case 'draw_card':
       return drawCardAction(books, { deck: command.deck }, deps);
+    case 'plan_deal':
+      return planDealAction(books, { cardId: command.cardId }, deps);
+    case 'buy_planned':
+      return buyPlannedAction(books, { title: command.title, quantity: command.quantity }, deps);
+    case 'finish_card':
+      return finishCardAction(books);
     case 'buy_deal':
       return buyDealAction(books, { cardId: command.cardId, quantity: command.quantity }, deps);
     case 'pay_doodad':
       return payDoodadAction(books, { cardId: command.cardId }, deps);
+    case 'pay_market':
+      return payMarketCostAction(books, { cardId: command.cardId }, deps);
     case 'roll_decision':
       return rollDecisionAction(books, { title: command.title }, deps);
     case 'sell_position':

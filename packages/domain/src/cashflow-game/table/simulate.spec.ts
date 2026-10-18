@@ -242,7 +242,7 @@ describe('the golden game', () => {
   });
   const fixture = path.join(__dirname, 'fixtures', 'golden-4p.json');
   // The digest of the table this script ends in. When the rules change on purpose, regenerate with UPDATE_GOLDEN=1.
-  const GOLDEN_DIGEST = '43169c57';
+  const GOLDEN_DIGEST = 'fd9895d9';
 
   it('replays from the committed script to the pinned table', () => {
     const run = simulateTable(config);

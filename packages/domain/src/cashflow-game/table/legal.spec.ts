@@ -39,7 +39,11 @@ function playingTable(settings: object = {}, players = 3): Table {
   return table;
 }
 
-const ids = (table: Table, who: string) => tableLegalActions(table, who).map((a) => a.action);
+// asking for / voting on an undo is listed to everyone at all times: it has its own spec (undo-vote.spec.ts)
+const ids = (table: Table, who: string) =>
+  tableLegalActions(table, who)
+    .map((a) => a.action)
+    .filter((action) => action !== 'propose_undo' && action !== 'vote_undo' && action !== 'away');
 const booksOf = (table: Table, id: string) => table.players.find((p) => p.id === id)!.books!;
 
 /** The active player stands on a Deals space holding `cardId` (drawn). */
@@ -180,10 +184,26 @@ describe('what a player may do', () => {
     expect(ids(drawn, 'p1')).toContain('sell_position');
     expect(ids(drawn, 'p2')).toContain('sell_position');
     expect(ids(drawn, 'host')).not.toContain('sell_position');
-    // p1 is the player on the move now, p2 is waiting: both may sell
-    expect(drawn.activePlayerId).toBe('p1');
-    expect(ids(drawn, 'p1')).toEqual(expect.arrayContaining(['sell_position', 'roll']));
-    expect(ids(drawn, 'p2')).toEqual(['sell_position']);
+    // the host ticks the card off; p1 is the player on the move then, p2 is waiting: both may sell
+    expect(ids(drawn, 'host')).toContain('finish_card');
+    const over = applyCommand(drawn, 'host', { type: 'finish_card' }, ctx).table;
+    expect(over.activePlayerId).toBe('p1');
+    expect(ids(over, 'p1')).toEqual(expect.arrayContaining(['sell_position', 'roll']));
+    expect(ids(over, 'p2')).toEqual(['sell_position']);
+  });
+
+  it('going away is offered to anyone playing, and back to the one who is away', () => {
+    const table = playingTable();
+    const all = (who: string) => tableLegalActions(table, who).map((a) => a.action);
+    expect(all('host')).toContain('away');
+    expect(all('p1')).toContain('away');
+    const away = {
+      ...table,
+      players: table.players.map((p) => (p.id === 'p1' ? { ...p, away: true } : p)),
+    };
+    const mine = tableLegalActions(away, 'p1').map((a) => a.action);
+    expect(mine).toContain('back');
+    expect(mine).not.toContain('away');
   });
 
   it('a paused game offers only the resume; an away player is offered "back"', () => {

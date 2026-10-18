@@ -47,6 +47,15 @@ export interface SavedGameSummary {
   transactionCount: number;
   escapedRatRace: boolean;
   bankrupt: boolean;
+  /** Set when the game was played at a table with others (filed from it at the end): which table, how many, and the place won. */
+  multiplayer?: {
+    table: string;
+    players: number;
+    rank: number | null;
+    roomId?: string;
+    /** How the player's game ended: escaped, bankrupt, left (gave up) or playing (nobody escaped). */
+    outcome?: string;
+  };
 }
 
 /** The small, always-loaded list of a user's saved games. */

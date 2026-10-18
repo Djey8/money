@@ -224,10 +224,9 @@ describe('the lobby', () => {
     );
     expectError(() => applyCommand(table, 'p2', { type: 'join', name: 'Ben' }, ctx), 'TABLE_FULL');
     const roomy = run(newTable(), [join('p1', 'Ben')]).table;
-    expectError(
-      () => applyCommand(roomy, 'p2', { type: 'join', name: ' ben ' }, ctx),
-      'NAME_TAKEN',
-    );
+    // names may repeat between accounts: the second Ben is shown as "Ben (2)"
+    const twin = applyCommand(roomy, 'p2', { type: 'join', name: ' ben ' }, ctx).table;
+    expect(twin.players.map((p) => p.name)).toEqual(['Host', 'Ben', 'ben (2)']);
     expectError(
       () => applyCommand(roomy, 'p2', { type: 'join', name: 'Cy', color: TABLE_COLORS[0] }, ctx),
       'COLOR_TAKEN',

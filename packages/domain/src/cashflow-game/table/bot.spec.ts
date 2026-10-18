@@ -53,6 +53,23 @@ describe('seating a bot', () => {
     expect(JSON.stringify(view)).not.toContain('bot:'); // the bot's id is no business of the viewer
   });
 
+  it('a strategy at a level sits at a table once, another level of it may join', () => {
+    const table = run(lobby(), HOST, { type: 'add_bot', name: 'Rob', policyId: 'all-rounder' });
+    expect(refusal(table, HOST, { type: 'add_bot', name: 'Rob2', policyId: 'all-rounder' })).toBe(
+      'BOT_DUPLICATE',
+    );
+    const both = run(table, HOST, {
+      type: 'add_bot',
+      name: 'Rob Jr',
+      policyId: 'all-rounder--casual',
+    });
+    expect(both.players.map((p) => p.bot?.policyId)).toEqual([
+      undefined,
+      'all-rounder',
+      'all-rounder--casual',
+    ]);
+  });
+
   it('only the host, only in the lobby, not past the seats, not under a taken name', () => {
     let table = lobby();
     table = run(table, 'acct-2', { type: 'join', name: 'Guest' });
@@ -80,6 +97,17 @@ describe('seating a bot', () => {
     expect(refusal(small, HOST, { type: 'add_bot', name: 'Rob', policyId: 'all-rounder' })).toBe(
       'TABLE_FULL',
     );
+  });
+
+  it('a host who leaves the lobby hands the table to a person - and when only bots are left it is closed', () => {
+    let table = run(lobby(), HOST, { type: 'add_bot', name: 'Rob', policyId: 'all-rounder' });
+    const alone = applyCommand(table, HOST, { type: 'leave' }, ctx);
+    // nobody left to play the table: it closes, a bot is never made its host
+    expect(alone.table.phase).toBe('abandoned');
+    table = run(table, 'acct-2', { type: 'join', name: 'Guest' });
+    const handed = applyCommand(table, HOST, { type: 'leave' }, ctx).table;
+    expect(handed.phase).toBe('lobby');
+    expect(handed.hostId).toBe('acct-2');
   });
 
   it('the host can remove a bot like any player', () => {
@@ -150,6 +178,13 @@ describe('a table of people and bots, played to the end through the bots own doo
         problems.push(...tableInvariantProblems(table, null));
         moved = true;
         break;
+      }
+      // the turn is over and waits for the people who can still sell: the host's seat (a person) says done
+      if (!moved && table.hold) {
+        for (const id of [...table.hold.playerIds]) {
+          table = applyCommand(table, id, { type: 'done' }, ctx).table;
+        }
+        moved = true;
       }
       if (!moved) break;
     }

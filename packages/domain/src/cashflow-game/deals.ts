@@ -7,6 +7,7 @@ import { textOrFallback, type GameText } from './game-text';
 import { playBankLoan } from './loan';
 import type { CardDeps } from './market-cards';
 import { placeOneOffTransactions, upsertBookSubscription } from './rounds';
+import { rulesOf } from './rules';
 import type {
   CashflowAssetDeal,
   CashflowDealCard,
@@ -474,7 +475,14 @@ export function executeDeal(
     };
     buy.shareUpserts = [position];
     buy.growUpdates = [
-      { title, amountMinor: result.newGrowAmountMinor, share: position, updatedAt: now },
+      // bought = execute: the project moves on from its plan, as the solo game's Buy does (setPhaseAfterTrade)
+      {
+        title,
+        amountMinor: result.newGrowAmountMinor,
+        share: position,
+        phase: 'execute',
+        updatedAt: now,
+      },
     ];
   } else {
     const result = calculateBuyInvestment({
@@ -514,7 +522,13 @@ export function executeDeal(
       },
     ];
     buy.growUpdates = [
-      { title, amountMinor: result.newGrowAmountMinor, investment: position, updatedAt: now },
+      {
+        title,
+        amountMinor: result.newGrowAmountMinor,
+        investment: position,
+        phase: 'execute',
+        updatedAt: now,
+      },
     ];
     // Its monthly cashflow starts paying at the next Payday.
     const income = registerInvestmentIncome(working, title, deps);
@@ -671,6 +685,32 @@ export function setPhaseAfterTrade(
     null,
   );
   effects.growUpdates = [{ title, phase: sold ? 'completed' : 'execute' }];
+  effects.persist.grow = true;
+  return effects;
+}
+
+/**
+ * The card's chance is over (JFK, 2026-10-18): under the rule `buy: 'with-card'` a planned Grow project can only be bought while the
+ * card of the space is in hand. When that space is settled and the project was not bought, its phase leaves **plan** - it is
+ * **completed**, or back in **execute** when shares of it were bought earlier (a plan for more). The same card drawn again plans it
+ * again (`planDeal` puts it back to **plan**). Null when there is nothing to move: other rules (the plan stays buyable), no
+ * planned card on the space, or the card was bought.
+ */
+export function closePlanOfSettledCard(
+  books: Pick<GameBooks, 'state' | 'growProjects' | 'shares' | 'investments' | 'assets'>,
+): GameEffects | null {
+  const pending = books.state.turn?.pending;
+  const title = pending?.offered?.title;
+  if (!pending || !title || pending.purchased) return null;
+  if (rulesOf(books.state).buy !== 'with-card') return null;
+  const project = books.growProjects.find((candidate) => candidate.title === title);
+  if (!project || project.phase !== 'plan') return null;
+  const held =
+    books.shares.some((share) => share.tag === title) ||
+    books.investments.some((investment) => investment.tag === title) ||
+    books.assets.some((asset) => asset.tag === title);
+  const effects = emptyEffects(books.state, null);
+  effects.growUpdates = [{ title, phase: held ? 'execute' : 'completed' }];
   effects.persist.grow = true;
   return effects;
 }

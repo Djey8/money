@@ -81,6 +81,24 @@ export interface TableSettings {
   spectators: boolean;
   /** The host may rewind the last turn to repair a mishap (a dropped connection, a mis-click); everyone sees that it happened. */
   allowRewind: boolean;
+  /**
+   * After every turn the table waits until each person at it has said Continue (`done`), the one who played included, so everybody
+   * has seen what happened and could still sell. The domain's own default is off (a table of strategies has nobody to wait for);
+   * the server turns it on for tables people create. Bots and away players are not waited for.
+   */
+  turnGate: boolean;
+  /**
+   * How fast the table's bots play and how long the screen tells each move: `fast` for people who know the game, `slow` to follow
+   * every step. A setting of the table, chosen by the host.
+   */
+  pace: TablePace;
+  /** Whether everybody's progress towards escaping (the percentage next to each player) is shown. The host decides when the table is opened. */
+  showProgress: boolean;
+  /**
+   * Whether the game may count for the leaderboard rating. Fixed once the game starts; whether it really counts is decided by the
+   * ranked rules when it ends (a finished game, a human at the table, a minimum length).
+   */
+  ranked: boolean;
 }
 
 /** What a host may send: everything optional except the name; a few rule settings are the host's to tune. */
@@ -97,12 +115,18 @@ export interface TablePlayer {
   id: string;
   name: string;
   color: string;
+  /** The letters on the player's token (up to two), chosen by the player; absent: the first two letters of the name. */
+  initials?: string;
   ready: boolean;
   /** The profession asked for while picking; `random` until the reveal resolves it. Hidden from others until then (T2's projection). */
   pick: string | null;
   /** Set when play starts. */
   professionId: string | null;
   status: PlayerStatus;
+  /** The table round in which the player left a game that was running (the leaderboard counts a late leaver as a loss). */
+  leftRound?: number;
+  /** The buyers' offers (by card) the player has already said Continue to: a held turn does not ask them again for the same card. */
+  seenOffers?: string[];
   /** Timed out too often: their turns are played for them at once, until they come back. */
   away: boolean;
   /** Set when play starts: this player's own books, never an account's. */
@@ -150,6 +174,19 @@ export interface TradeOffer {
   declined: string[];
 }
 
+/** An open vote to undo the last turn: who asked, and who said what so far. */
+export interface UndoVote {
+  proposerId: string;
+  yes: string[];
+  no: string[];
+}
+
+export type TablePace = 'fast' | 'normal' | 'slow';
+
+export interface TableHold {
+  playerIds: string[];
+}
+
 export interface Table {
   id: string;
   /** Counts accepted commands; the server's optimistic-concurrency token. */
@@ -170,6 +207,13 @@ export interface Table {
   /** Set when the game is over. */
   result: TableResult | null;
   clock: TableClock;
+  /**
+   * The turn is over but not passed on: these players can still sell into the offers it left open, and the next turn waits until
+   * each has said `done` (or can sell no more, or the hold's short time is up). Absent or null when nothing is waited for.
+   */
+  hold?: TableHold | null;
+  /** The open vote to undo the last turn, if any. Dropped when the turn changes. */
+  undoVote?: UndoVote | null;
   /** The Deal card on offer to the other players, if any - at most one, since only the player on the move holds a card. */
   trade: TradeOffer | null;
   /**
@@ -191,6 +235,11 @@ export interface TableStanding {
   outcome: 'escaped' | 'playing' | 'bankrupt' | 'left';
   passiveIncomeMinor: number;
   monthlyCashflowMinor: number;
+  /**
+   * Every monthly expense, loan payments included (minor units). Passive income over this is how far the player is from escaping,
+   * which is what places those still playing - fair across professions and across players who borrowed. Absent in older results.
+   */
+  expensesMinor?: number;
 }
 
 /** How a finished game ended and how everyone placed: escapees first (earliest first), then by passive income, then the bankrupt, then those who left. */
@@ -201,7 +250,7 @@ export interface TableResult {
 }
 
 export type TableCommand =
-  | { type: 'join'; name: string; color?: string }
+  | { type: 'join'; name: string; color?: string; initials?: string }
   | { type: 'leave' }
   /** The host seats a bot (a strategy) at the table, in the lobby. Remove it with `kick`. */
   | { type: 'add_bot'; name: string; policyId: string; professionId?: string; color?: string }
@@ -215,11 +264,26 @@ export type TableCommand =
   | { type: 'resume' }
   /** An away player is back and plays their own turns again. */
   | { type: 'back' }
+  /** The player goes away on purpose: their turns are played passively at once (like a timeout), so nobody waits for them. */
+  | { type: 'away' }
+  /** Says the player has seen what happened and has nothing more to sell: the held turn goes on once everyone has. */
+  | { type: 'done' }
+  /** Asks the table to go back one turn; it happens when more than half of the people say yes (undo-vote.ts). */
+  | { type: 'propose_undo' }
+  | { type: 'vote_undo'; yes: boolean }
   // Play (T3): the active player's turn, in the solo game's own moves.
   | { type: 'roll'; dice?: 1 | 2 }
   | { type: 'draw_card'; deck: CashflowDeckKind }
   | { type: 'buy_deal'; cardId: string; quantity?: number }
+  /** The solo game's two steps: plan the Deal card in hand as a Grow project ... */
+  | { type: 'plan_deal'; cardId: string }
+  /** ... buy the planned project (Grow's Buy) ... */
+  | { type: 'buy_planned'; title: string; quantity?: number }
+  /** ... or tick the card off without buying. */
+  | { type: 'finish_card' }
   | { type: 'pay_doodad'; cardId: string }
+  /** Pays the cost of the Market card in hand (a cost card applies only to its drawer). */
+  | { type: 'pay_market'; cardId: string }
   | { type: 'roll_decision'; title?: string }
   | { type: 'pass_card' }
   | { type: 'bank_loan'; amountMinor: number }
@@ -249,6 +313,13 @@ export type TableEventType =
   | 'table_closed'
   | 'turn_started'
   | 'turn_skipped'
+  | 'turn_held'
+  | 'undo_proposed'
+  | 'undo_voted'
+  | 'undo_approved'
+  | 'undo_rejected'
+  | 'turn_released'
+  | 'hold_done'
   | 'round_started'
   | 'rolled'
   | 'card_drawn'
@@ -293,6 +364,7 @@ export type TableErrorCode =
   | 'ALREADY_JOINED'
   | 'INVALID_NAME'
   | 'NAME_TAKEN'
+  | 'BOT_DUPLICATE'
   | 'COLOR_TAKEN'
   | 'INVALID_SETTINGS'
   | 'NOT_ENOUGH_PLAYERS'

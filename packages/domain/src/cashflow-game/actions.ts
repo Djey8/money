@@ -26,7 +26,10 @@ import { rollDie, type Rng } from './rng';
 import { cardPickedStep, type GameStep } from './steps';
 import {
   normalizeRules,
+  offerIsOpen,
   whyCannotBuyCard,
+  whyCardAlreadyBought,
+  whyCardAlreadyPlayed,
   whyCannotDraw,
   whyCannotUseCard,
   whyPaymentPending,
@@ -38,6 +41,7 @@ import type {
   CashflowDoodadCard,
   CashflowGameSet,
   CashflowMarketCard,
+  CashflowMarketOffer,
 } from './types';
 
 /**
@@ -215,6 +219,163 @@ export function buyDealAction(
   };
 }
 
+/** The open space's card is in play: `played`, and `title` names the Grow project it became (the Buy button looks for it). */
+function withCardInPlay(
+  effects: GameEffects,
+  title: string,
+  more: { purchased?: boolean } = {},
+): GameEffects {
+  const pending = effects.state.turn?.pending;
+  if (!effects.state.turn || !pending) return effects;
+  return {
+    ...effects,
+    state: {
+      ...effects.state,
+      turn: {
+        ...effects.state.turn,
+        pending: {
+          ...pending,
+          played: true,
+          ...(more.purchased ? { purchased: true } : {}),
+          ...(pending.offered ? { offered: { ...pending.offered, title } } : {}),
+        },
+      },
+    },
+  };
+}
+
+/**
+ * "Plan this" of the solo game: the Deal card in hand becomes a planned Grow project and stays there to be looked at, edited
+ * (the share count) and bought with Grow's own Buy. Nothing is paid yet and the card is not settled. A share already held takes
+ * the card's price instead (the market moved), which does settle the card.
+ */
+export function planDealAction(
+  books: GameBooks,
+  input: { cardId: string },
+  deps: ActionDeps,
+): ActionPlan {
+  const gameSet = books.gameSet;
+  const cards: CashflowDealCard[] = [
+    ...findDeck(gameSet, 'dealSmall'),
+    ...(gameSet?.decks?.dealBig ?? []),
+  ];
+  const card = cards.find((candidate) => candidate.id === input.cardId);
+  if (!card) throw new Error(`No Deal card with the id '${input.cardId}'.`);
+  const refused =
+    whyPaymentPending(books.state) ??
+    whyDiceFirst(books.state) ??
+    whyCardAlreadyPlayed(books.state, input.cardId) ??
+    whyCannotUseCard(books.state, input.cardId) ??
+    whyCannotBuyCard(books.state, input.cardId);
+  if (refused) throw new Error(refused);
+  const symbol = card.symbol ?? card.title;
+  if (card.assetKind === 'share' && books.shares.some((s) => s.tag === symbol && s.quantity > 0)) {
+    const priced = updateSharePrice(
+      books,
+      card,
+      { description: deps.cards.textFor(card.id).description },
+      deps,
+    );
+    return {
+      effects: [withCardInPlay(priced.effects, priced.title)],
+      settle: true,
+      result: { card: describeCard(card, deps), title: priced.title, kind: 'priceUpdate' },
+    };
+  }
+  const dealInput = dealInputFromCard(
+    card,
+    dealPlanText(card, textDeps(deps)),
+    takenDealLabels(books),
+  );
+  const plan = withCardInPlay(planDeal(books, dealInput, deps), dealInput.title);
+  return {
+    effects: [plan],
+    result: { card: describeCard(card, deps), title: dealInput.title, kind: 'planned' },
+  };
+}
+
+/**
+ * Grow's Buy for the project the card in hand became: shares (`quantity`), a property or a special asset. A card buys once;
+ * the bank loan is taken first when cash is short. Settles the card.
+ */
+/**
+ * The open stock price card for a share the player holds, or undefined (JFK, 2026-10-18). A drawn stock card sets the price for
+ * everyone who holds the share: they may sell at it - and buy more at it - while the offer is open. The question is asked as if
+ * the player were still deciding, because at a table the offer comes from somebody else's card and stays until their next roll.
+ */
+export function openPriceCardFor(
+  books: Pick<GameBooks, 'state' | 'shares'>,
+  title: string,
+): CashflowMarketOffer | undefined {
+  const state = books.state;
+  const turn = state.turn;
+  const asking =
+    turn?.phase === 'roll' ? { ...state, turn: { ...turn, phase: 'decide' as const } } : state;
+  if (!books.shares.some((share) => share.tag === title && share.quantity > 0)) return undefined;
+  return (state.marketOffers ?? []).find(
+    (offer) =>
+      offer.title === title && offer.pricePerShareMinor !== undefined && offerIsOpen(asking, offer),
+  );
+}
+
+export function buyPlannedAction(
+  books: GameBooks,
+  input: { title: string; quantity?: number },
+  deps: ActionDeps,
+): ActionPlan {
+  const pending = books.state.turn?.pending;
+  const offered = pending?.offered;
+  // More of a share the player holds, at the price of a stock card somebody drew: no plan, no card of their own is needed.
+  if (!(offered && pending?.played && offered.title === input.title)) {
+    const priceCard = openPriceCardFor(books, input.title);
+    if (priceCard) {
+      const waiting = whyPaymentPending(books.state);
+      if (waiting) throw new Error(waiting);
+      const executed = executeDeal(books, input.title, input.quantity, deps);
+      return {
+        effects: executed.steps,
+        result: { title: input.title, kind: executed.kind, atPriceCard: priceCard.cardId },
+      };
+    }
+  }
+  const refused =
+    whyPaymentPending(books.state) ??
+    whyDiceFirst(books.state) ??
+    whyCardAlreadyBought(books.state) ??
+    (offered && pending?.played && offered.title === input.title
+      ? null
+      : 'Plan the card in hand first: only the project it became can be bought.');
+  if (refused || !offered) throw new Error(refused ?? 'There is no card in hand.');
+  const cards: CashflowDealCard[] = [
+    ...(books.gameSet?.decks?.dealSmall ?? []),
+    ...(books.gameSet?.decks?.dealBig ?? []),
+  ];
+  const card = cards.find((candidate) => candidate.id === offered.cardId);
+  if (!card) throw new Error('The card in hand is not a Deal card.');
+  const executed =
+    card.assetKind === 'asset'
+      ? buyAssetDeal(books, input.title, deps)
+      : executeDeal(books, input.title, input.quantity, deps);
+  const steps = executed.steps.map((step, index) =>
+    index === executed.steps.length - 1
+      ? withCardInPlay(step, input.title, { purchased: true })
+      : step,
+  );
+  return {
+    effects: steps,
+    settle: true,
+    result: { card: describeCard(card, deps), title: input.title, kind: executed.kind },
+  };
+}
+
+/** "Done" of the solo game: the card in hand was dealt with (planned and looked at, or sold to a friend) - the space is settled. */
+export function finishCardAction(books: GameBooks): ActionPlan {
+  const pending = books.state.turn?.pending;
+  if (!pending?.played)
+    throw new Error('Play the card first: only a card that was played is ticked off.');
+  return { effects: [], settle: true, result: { kind: 'finished' } };
+}
+
 export function payDoodadAction(
   books: GameBooks,
   input: { cardId: string },
@@ -244,6 +405,28 @@ export function payDoodadAction(
     settle: true,
     result: { card: describeCard(card, deps), costMinor: card.costMinor },
   };
+}
+
+/**
+ * Pays the cost of a Market card the player drew (a sewer pipe, a roof): the same payment the solo game books through the Add
+ * dialog - from Fire, on the first property, a Bank loan taken first when the cash is short. Only the card in hand, only once.
+ */
+export function payMarketCostAction(
+  books: GameBooks,
+  input: { cardId: string },
+  deps: ActionDeps,
+): ActionPlan {
+  const card = (findDeck(books.gameSet, 'market') as CashflowMarketCard[]).find(
+    (candidate) => candidate.id === input.cardId,
+  );
+  if (!card?.pays) throw new Error(`No Market card with a cost and the id '${input.cardId}'.`);
+  const pending = books.state.turn?.pending;
+  if (!pending || pending.offered?.cardId !== input.cardId || !pending.paymentDue) {
+    throw new Error('There is no cost of this card waiting to be paid.');
+  }
+  const refused = whyDiceFirst(books.state);
+  if (refused) throw new Error(refused);
+  return marketCardPlan(books, card, deps);
 }
 
 /** A Market card's heading in the game's language (a star card is the jackpot of the pile). */

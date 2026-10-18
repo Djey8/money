@@ -1,5 +1,5 @@
-import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
-import { drawCardAction, rollDecisionAction, startGameAction } from '../actions';
+import { defaultTableGameSets } from './default-game-sets';
+import { startGameAction } from '../actions';
 import { openDecisions } from '../asset-deals';
 import { applyEffectsToBooks, type GameBooks } from '../books';
 import { pickOne } from '../rng';
@@ -28,7 +28,10 @@ import {
 } from './clock';
 import { nextPassiveCommand } from './passive';
 import { applyTradeCommand, isTradeCommand } from './trade';
-import { isAlive, settleTable } from './turns';
+import { canBuyAtPriceCard } from './sell-check';
+import { markOffersSeen } from './sell-check';
+import { isAlive, releaseHold, settleTable } from './turns';
+import { proposeUndo, voteUndo } from './undo-vote';
 import {
   PLAYER_NAME_MAX,
   TABLE_COLORS,
@@ -61,7 +64,7 @@ export interface CommandResult {
   events: TableEvent[];
 }
 
-const gameSetsOf = (ctx: TableContext) => ctx.gameSets ?? CASHFLOW_GAME_SETS;
+const gameSetsOf = (ctx: TableContext) => ctx.gameSets ?? defaultTableGameSets();
 
 /** The server's current time in epoch milliseconds, from the context's clock. */
 const nowOf = (ctx: TableContext) => Date.parse(ctx.clock.nowIso());
@@ -77,6 +80,7 @@ export interface CreateTableInput {
   hostId: string;
   hostName: string;
   hostColor?: string;
+  hostInitials?: string;
   settings: TableSettingsInput;
   /** The server's secret seed; the dice and card stream starts here. */
   seed: number;
@@ -90,6 +94,7 @@ export function createTable(input: CreateTableInput, ctx: TableContext): Command
     id: input.hostId,
     name,
     color: pickColor([], input.hostColor),
+    ...initialsField(input.hostInitials),
     ready: true,
     pick: null,
     professionId: null,
@@ -175,6 +180,21 @@ export function applyCommand(
       return pauseOrResume(table, playerId, command.type, version, emit, ctx);
     case 'back':
       return back(table, playerId, version, emit);
+    case 'away':
+      return goAway(table, playerId, version, ctx);
+    case 'done':
+      return done(table, playerId, version, emit, ctx);
+    case 'propose_undo':
+    case 'vote_undo': {
+      const events: TableEvent[] = [];
+      const push = (type: TableEventType, who: string | null, data?: Record<string, unknown>) =>
+        events.push(emit(type, who, data));
+      const outcome =
+        command.type === 'propose_undo'
+          ? proposeUndo(table, playerId, version, push)
+          : voteUndo(table, playerId, command.yes === true, version, push);
+      return { table: outcome.table, events };
+    }
     default:
       return fail('UNKNOWN_COMMAND', 'Unknown table command.');
   }
@@ -195,6 +215,22 @@ function event(
 ): TableEvent {
   return { version, at: ctx.clock.nowIso(), type, playerId, ...(data ? { data } : {}) };
 }
+
+/** The letters on a token: up to two letters or digits, upper case. Anything else is left out; nothing left means the default. */
+export function cleanInitials(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const letters = Array.from(raw)
+    .filter((char) => /[\p{L}\p{N}]/u.test(char))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  return letters || undefined;
+}
+
+const initialsField = (raw: unknown): { initials?: string } => {
+  const initials = cleanInitials(raw);
+  return initials ? { initials } : {};
+};
 
 function cleanName(raw: unknown): string {
   const name = typeof raw === 'string' ? raw.trim().replace(/\s+/g, ' ') : '';
@@ -231,14 +267,13 @@ function join(
   if (existing) fail('ALREADY_JOINED', 'You are already at this table.');
   if (table.phase !== 'lobby') fail('WRONG_PHASE', 'The game has already started.');
   if (table.players.length >= table.settings.maxSeats) fail('TABLE_FULL', 'The table is full.');
-  const name = cleanName(command.name);
-  if (table.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
-    fail('NAME_TAKEN', 'Another player at this table has that name.');
-  }
+  // names may repeat between accounts: at one table a second "Anna" is shown as "Anna (2)"
+  const name = uniqueName(table, cleanName(command.name));
   const player: TablePlayer = {
     id: playerId,
     name,
     color: pickColor(table.players, command.color),
+    ...initialsField(command.initials),
     ready: false,
     pick: null,
     professionId: null,
@@ -253,6 +288,16 @@ function join(
 }
 
 /** Seats a bot: host only, lobby only. It is ready from the start; the server's driver plays its turns (the domain only seats it). */
+/** `name`, or `name (2)`, `name (3)` ... when another seat at the table already has it. */
+function uniqueName(table: Table, name: string): string {
+  const taken = new Set(table.players.map((p) => p.name.toLowerCase()));
+  if (!taken.has(name.toLowerCase())) return name;
+  for (let n = 2; ; n += 1) {
+    const candidate = `${name} (${n})`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
+
 function addBot(
   table: Table,
   playerId: string,
@@ -274,6 +319,10 @@ function addBot(
     !gameSetOf(table, ctx).professions.some((p) => p.id === command.professionId)
   ) {
     fail('UNKNOWN_PROFESSION', `Unknown profession '${command.professionId}'.`);
+  }
+  // a strategy at a level sits at a table once: the leaderboard knows it as one player
+  if (table.players.some((p) => p.bot?.policyId === command.policyId)) {
+    fail('BOT_DUPLICATE', 'That bot (this strategy at this level) already sits at the table.');
   }
   const name = cleanName(command.name);
   if (table.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
@@ -331,14 +380,16 @@ function removeSeat(
 ): CommandResult {
   const events: TableEvent[] = [emit(eventType, targetId)];
   const players = table.players.filter((p) => p.id !== targetId);
-  if (players.length === 0) {
+  const humans = players.filter((p) => !p.bot);
+  // a table with nobody left to play it - bots alone cannot be hosted - is closed, not handed to a bot
+  if (humans.length === 0) {
     events.push(emit('table_closed', targetId, { reason: 'empty' }));
     return { table: { ...table, version, phase: 'abandoned', players }, events };
   }
   let next: Table = { ...table, version, players };
   if (table.hostId === targetId) {
-    next = { ...next, hostId: players[0].id };
-    events.push(emit('host_changed', players[0].id));
+    next = { ...next, hostId: humans[0].id };
+    events.push(emit('host_changed', humans[0].id));
   }
   if (next.phase === 'picking') {
     if (players.length < TABLE_MIN_SEATS) {
@@ -368,17 +419,17 @@ function leave(
   if (table.phase !== 'playing') fail('WRONG_PHASE', 'The game is over.');
   // Mid-game the seat stays (its books are part of the game); the player is simply out, and if it was their turn it moves on.
   const players = table.players.map((p) =>
-    p.id === playerId ? { ...p, status: 'left' as const } : p,
+    p.id === playerId ? { ...p, status: 'left' as const, leftRound: table.tableRound } : p,
   );
   const events: TableEvent[] = [emit('player_left', playerId)];
   let next: Table = { ...table, version, players };
-  if (activePlayers(next).length === 0) {
+  if (activePlayers(next).filter((p) => !p.bot).length === 0) {
     next = { ...next, phase: 'abandoned', activePlayerId: null };
     events.push(emit('table_closed', playerId, { reason: 'everyone_left' }));
     return { table: next, events };
   }
   if (table.hostId === playerId) {
-    const heir = activePlayers(next)[0];
+    const heir = activePlayers(next).filter((p) => !p.bot)[0];
     next = { ...next, hostId: heir.id };
     events.push(emit('host_changed', heir.id));
   }
@@ -535,7 +586,11 @@ const EVENT_FOR_MOVE: Record<MoveCommand['type'], TableEventType> = {
   draw_card: 'card_drawn',
   pass_card: 'card_passed',
   buy_deal: 'card_played',
+  plan_deal: 'card_played',
+  buy_planned: 'card_played',
+  finish_card: 'card_passed',
   pay_doodad: 'card_played',
+  pay_market: 'card_played',
   roll_decision: 'dice_decided',
   sell_position: 'position_sold',
   bank_loan: 'loan_changed',
@@ -564,16 +619,23 @@ function play(
     fail('ILLEGAL_MOVE', 'You are out of the game.');
   }
   const now = nowOf(ctx);
+  // Selling is open to everyone while an offer is open; so is buying more of a share at the price of a stock card somebody drew.
+  const anytime =
+    command.type === 'sell_position' ||
+    (command.type === 'buy_planned' && canBuyAtPriceCard(table, playerId, command.title));
   if (!options.internal) {
     // A paused game accepts no move; the active player's own moves must come in time (the server plays for them otherwise).
     const blocked = whyClockBlocks(table, now);
     if (blocked?.code === 'PAUSED') fail('PAUSED', blocked.message);
-    if (blocked && command.type !== 'sell_position' && table.activePlayerId === playerId) {
+    if (blocked && !anytime && table.activePlayerId === playerId) {
       fail(blocked.code, blocked.message);
     }
   }
-  if (command.type !== 'sell_position' && table.activePlayerId !== playerId) {
+  if (!anytime && table.activePlayerId !== playerId) {
     fail('NOT_YOUR_TURN', 'It is not your turn.');
+  }
+  if (!anytime && command.type !== 'bank_loan' && command.type !== 'roll_decision' && table.hold) {
+    fail('ILLEGAL_MOVE', 'The turn is over: the table waits for the others to finish selling.');
   }
   const profession = gameSetOf(table, ctx).professions.find((p) => p.id === me.professionId);
   if (!profession) fail('UNKNOWN_PROFESSION', 'This player has no profession.');
@@ -582,11 +644,16 @@ function play(
     table,
     playerId,
     (books, rng) => planMove(command, books, { ...ctx, rng }, profession as CashflowProfession),
-    { openOfferWindow: command.type === 'sell_position' },
+    { openOfferWindow: anytime },
   );
   const events: TableEvent[] = [
     event(ctx, version, EVENT_FOR_MOVE[command.type], playerId, {
-      ...(command.type === 'buy_deal' || command.type === 'pay_doodad'
+      ...(command.type === 'buy_deal' ||
+      command.type === 'plan_deal' ||
+      command.type === 'buy_planned' ||
+      command.type === 'finish_card' ||
+      command.type === 'pay_doodad' ||
+      command.type === 'pay_market'
         ? { action: command.type }
         : {}),
       ...(played.plan.result ?? {}),
@@ -599,28 +666,6 @@ function play(
     events.push(...wide.events.map((e) => event(ctx, version, e.type, e.playerId, e.data)));
   };
   if (command.type === 'draw_card') spread(playerId);
-  // A Market space is not a choice: its card is drawn and read out at once, for the whole table.
-  const pending = current.players.find((p) => p.id === playerId)?.books?.state.turn?.pending;
-  if (command.type === 'roll' && pending?.kind === 'market' && !pending.offered) {
-    // The dice-first rule: a dice decision the roll opened (a kept card's Payday roll) is rolled before the card of the space.
-    for (let guard = 0; guard < 8; guard += 1) {
-      const open = current.players.find((p) => p.id === playerId)?.books?.state;
-      if (!open || openDecisions(open).length === 0) break;
-      const decided = runPlan(current, playerId, (books, rng) =>
-        rollDecisionAction(books, {}, { ...ctx, rng }),
-      );
-      current = decided.table;
-      events.push(
-        event(ctx, version, 'dice_decided', playerId, { ...(decided.plan.result ?? {}) }),
-      );
-    }
-    const drawn = runPlan(current, playerId, (books, rng) =>
-      drawCardAction(books, { deck: 'market' }, { ...ctx, rng }),
-    );
-    current = drawn.table;
-    events.push(event(ctx, version, 'card_drawn', playerId, { ...(drawn.plan.result ?? {}) }));
-    spread(playerId);
-  }
   // Doing anything on their own turn shows the player is here.
   if (!options.internal && table.activePlayerId === playerId) {
     current = resetTimeouts(current, playerId);
@@ -690,6 +735,17 @@ export function applyTimeout(table: Table, ctx: TableContext): CommandResult {
   if (!isDue(table, nowOf(ctx))) fail('NOT_DUE', 'Nobody is out of time.');
   const who = table.activePlayerId as string;
   const version = table.version + 1;
+  // The turn was already over and only waited for the others to read and sell: the time being up lets it go on, no one is penalised.
+  if (table.hold) {
+    const events: TableEvent[] = [];
+    const released = releaseHold(
+      { ...table, version },
+      (type, w, data) => events.push(event(ctx, version, type, w, data)),
+      nowOf(ctx),
+      'timeout',
+    );
+    return runAwayTurns({ table: released, events }, version, ctx);
+  }
   const counted = countTimeout(table, who);
   const events: TableEvent[] = [event(ctx, version, 'turn_timeout', who, { count: counted.count })];
   const turn = passiveTurn(counted.table, who, version, ctx);
@@ -719,6 +775,64 @@ function pauseOrResume(
     table: { ...next, version },
     events: [emit(kind === 'pause' ? 'paused' : 'resumed', playerId)],
   };
+}
+
+/** A player says they have seen it and have nothing more to sell: the held turn goes on once everyone has. */
+function done(
+  table: Table,
+  playerId: string,
+  version: number,
+  emit: Emit,
+  ctx: TableContext,
+): CommandResult {
+  if (table.phase !== 'playing') fail('WRONG_PHASE', 'The game is not being played now.');
+  if (table.clock.pausedAt !== null) fail('PAUSED', 'The game is paused.');
+  const hold = table.hold;
+  if (!hold || !hold.playerIds.includes(playerId)) {
+    fail('WRONG_PHASE', 'Nothing is waiting for you.');
+  }
+  const mine = table.players.find((p) => p.id === playerId);
+  if (
+    playerId === table.activePlayerId &&
+    mine?.books &&
+    openDecisions(mine.books.state).length > 0
+  ) {
+    fail('ILLEGAL_MOVE', 'Roll the die of your card first: the turn ends once it has been rolled.');
+  }
+  const events: TableEvent[] = [emit('hold_done', playerId)];
+  const rest = hold.playerIds.filter((id) => id !== playerId);
+  if (rest.length > 0) {
+    // saying Continue once is enough for the cards that are open for the player now
+    const seen = markOffersSeen(table, [playerId]);
+    return { table: { ...seen, version, hold: { playerIds: rest } }, events };
+  }
+  const next = releaseHold(
+    { ...table, version },
+    (type, who, data) => events.push(event(ctx, version, type, who, data)),
+    nowOf(ctx),
+    'done',
+  );
+  return runAwayTurns({ table: next, events }, version, ctx);
+}
+
+/**
+ * The player says they are going away: from now on their turns are played passively at once (the same most-passive turn a timeout
+ * plays), and the table does not wait for them to say Continue. `back` - or any move of their own - returns them.
+ */
+function goAway(table: Table, playerId: string, version: number, ctx: TableContext): CommandResult {
+  if (table.phase !== 'playing') fail('WRONG_PHASE', 'The game is not being played now.');
+  const me = table.players.find((p) => p.id === playerId);
+  if (!me || me.status !== 'active') fail('NOT_A_MEMBER', 'You are not playing at this table.');
+  if (me.away) fail('WRONG_PHASE', 'You are away already.');
+  const events: TableEvent[] = [event(ctx, version, 'player_away', playerId, { reason: 'self' })];
+  const away = mapPlayerIn(table, playerId, (p) => ({ ...p, away: true }));
+  // a held turn stops waiting for them, and their own turn - if it is on - is played now
+  const settled = settleTable(
+    { ...away, version },
+    (type, who, data) => events.push(event(ctx, version, type, who, data)),
+    nowOf(ctx),
+  );
+  return runAwayTurns({ table: settled, events }, version, ctx);
 }
 
 /** An away player says they are here again: from their next turn on they play for themselves. */

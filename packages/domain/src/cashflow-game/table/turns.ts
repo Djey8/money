@@ -1,6 +1,7 @@
 import { summarizeGameFinances } from '../saved-games';
 import { currentTurn } from '../turn';
 import { endTurnClock, startTurnClock, stopClock } from './clock';
+import { canSellNow, markOffersSeen, mustConfirmOffer } from './sell-check';
 import type {
   Table,
   TableEndReason,
@@ -33,7 +34,7 @@ function standingOf(table: Table, player: TablePlayer): TableStanding {
   const finisher = table.finishers.find((f) => f.playerId === player.id);
   const finances = player.books
     ? summarizeGameFinances(player.books.state, player.books.subscriptions)
-    : { passiveIncomeMinor: 0, monthlyCashflowMinor: 0 };
+    : { passiveIncomeMinor: 0, monthlyCashflowMinor: 0, expensesMinor: 0 };
   const outcome: TableStanding['outcome'] = finisher
     ? finisher.outcome
     : player.status === 'left'
@@ -45,7 +46,22 @@ function standingOf(table: Table, player: TablePlayer): TableStanding {
     outcome,
     passiveIncomeMinor: finances.passiveIncomeMinor,
     monthlyCashflowMinor: finances.monthlyCashflowMinor,
+    expensesMinor: finances.expensesMinor,
   };
+}
+
+/**
+ * How far a player still in the game is from escaping: passive income against every monthly expense (1 = out). Compared as a
+ * cross product so no division is needed; no expenses at all counts as no progress (nothing to escape from yet).
+ */
+function closerToEscape(a: TableStanding, b: TableStanding): number {
+  const ea = a.expensesMinor ?? 0;
+  const eb = b.expensesMinor ?? 0;
+  if (ea <= 0 && eb <= 0) return 0;
+  if (ea <= 0) return b.passiveIncomeMinor > 0 ? 1 : 0;
+  if (eb <= 0) return a.passiveIncomeMinor > 0 ? -1 : 0;
+  // a is ahead when a.passive / ea > b.passive / eb: negative sorts a first
+  return b.passiveIncomeMinor * ea - a.passiveIncomeMinor * eb;
 }
 
 const GROUP: Record<TableStanding['outcome'], number> = {
@@ -56,7 +72,9 @@ const GROUP: Record<TableStanding['outcome'], number> = {
 };
 
 /**
- * Escapees first (the earliest out wins), then those still playing by passive income and monthly cashflow, then the bankrupt
+ * Escapees first (the earliest out wins), then those still playing by how close they are to escaping (passive income over all
+ * monthly expenses, so a profession with big expenses or a player with loans is not judged on the raw income), then passive
+ * income and monthly cashflow, then the bankrupt
  * (whoever lasted longest ranks higher), then those who left.
  */
 export function rankPlayers(table: Table): TableStanding[] {
@@ -68,6 +86,7 @@ export function rankPlayers(table: Table): TableStanding[] {
       GROUP[a.outcome] - GROUP[b.outcome] ||
       (a.outcome === 'escaped' ? escapeIndex(a.playerId) - escapeIndex(b.playerId) : 0) ||
       (a.outcome === 'bankrupt' ? escapeIndex(b.playerId) - escapeIndex(a.playerId) : 0) ||
+      (a.outcome === 'playing' ? closerToEscape(a, b) : 0) ||
       b.passiveIncomeMinor - a.passiveIncomeMinor ||
       b.monthlyCashflowMinor - a.monthlyCashflowMinor,
   );
@@ -138,7 +157,8 @@ function mapPlayer(table: Table, playerId: string, fn: (p: TablePlayer) => Table
 function advance(table: Table, emit: EmitEvent, now: number): Table {
   const order = table.order;
   const ended = table.activePlayerId ? endTurnClock(table, table.activePlayerId, now) : table;
-  let next: Table = { ...ended, turnRolled: false };
+  // a vote to undo is about the turn it was asked in
+  let next: Table = { ...ended, turnRolled: false, undoVote: null };
   let index = Math.max(0, order.indexOf(table.activePlayerId ?? ''));
   for (let guard = 0; guard < order.length * 4; guard += 1) {
     index = (index + 1) % order.length;
@@ -172,7 +192,76 @@ function advance(table: Table, emit: EmitEvent, now: number): Table {
  * After any change to the table's books or seats: note who is out, end the game if it is over, pass the turn on if the active
  * player is finished. Pure; events go to `emit`.
  */
-function settleCore(table: Table, emit: EmitEvent, now: number): Table {
+/** How long a held turn waits for the players who can still sell, on a table with a clock that runs in seconds or minutes. */
+export const HOLD_MS = 45_000;
+
+/**
+ * The turn is over, but not passed on: the player who moved ends it with `done` ("End turn"), and every other person whom what
+ * happened lets sell - a Market card or a stock price card that fits what they own - may sell first and says `done` too
+ * ("Continue"). Everybody else has nothing to confirm (JFK, 2026-10-17). Bots and away players are not waited for. Returns the
+ * table held, or null when there is no person to wait for (a bot's turn that touches nobody, a table of bots).
+ */
+function startHold(table: Table, emit: EmitEvent, now: number): Table | null {
+  // the player who moved ends their turn; the others only come in when what happened lets them sell (a Market card or a stock price
+  // card that fits what they own) - nobody else has anything to confirm
+  const waiting = table.players
+    .filter(
+      (p) =>
+        !p.bot &&
+        !p.away &&
+        !outOf(p) &&
+        (p.id === table.activePlayerId || mustConfirmOffer(table, p.id)),
+    )
+    .map((p) => p.id);
+  if (waiting.length === 0) return null;
+  const active = table.activePlayerId;
+  const stopped = active ? endTurnClock(table, active, now) : table;
+  // ending the turn (and, for the others, deciding whether to sell) has the same time a move has; a bank clock gives a fixed minute
+  const mode = table.settings.clock;
+  const holdMs =
+    mode.mode === 'per-move'
+      ? mode.secondsPerMove * 1000
+      : mode.mode === 'daily'
+        ? mode.hoursPerMove * 3_600_000
+        : mode.mode === 'bank'
+          ? HOLD_MS
+          : null;
+  emit('turn_held', null, { count: waiting.length });
+  return {
+    ...stopped,
+    hold: { playerIds: waiting },
+    clock: {
+      ...stopped.clock,
+      turnStartedAt: now,
+      deadlineAt: holdMs === null ? null : now + holdMs,
+    },
+  };
+}
+
+/** The players a held turn still waits for: those who are still here. Releases the hold when none is left. */
+function pruneHold(table: Table, emit: EmitEvent): Table {
+  const hold = table.hold;
+  if (!hold) return table;
+  const still = hold.playerIds.filter((id) => {
+    const p = table.players.find((q) => q.id === id);
+    return !!p && !p.away && !outOf(p) && (id === table.activePlayerId || canSellNow(table, id));
+  });
+  if (still.length === hold.playerIds.length) return table;
+  if (still.length > 0) return { ...table, hold: { playerIds: still } };
+  emit('turn_released', null, { reason: 'nobody_left' });
+  return { ...table, hold: null, clock: { ...table.clock, deadlineAt: null } };
+}
+
+/** The held turn goes on now: used when the time is up and by the last `done`. */
+export function releaseHold(table: Table, emit: EmitEvent, now: number, reason: string): Table {
+  emit('turn_released', null, { reason });
+  // whoever was waited for has seen what is open for them: the next turn does not ask about the same cards again
+  const seen = markOffersSeen(table, table.hold?.playerIds ?? []);
+  const open: Table = { ...seen, hold: null, clock: { ...table.clock, deadlineAt: null } };
+  return settleTable(open, emit, now, { noHold: true });
+}
+
+function settleCore(table: Table, emit: EmitEvent, now: number, noHold = false): Table {
   let next = noteFinishers(table, emit);
   let ended = checkEnd(next, emit);
   if (ended) return ended;
@@ -183,6 +272,13 @@ function settleCore(table: Table, emit: EmitEvent, now: number): Table {
     outOf(active) ||
     (next.turnRolled && currentTurn(active.books!.state).phase === 'roll');
   if (turnDone) {
+    if (next.hold) {
+      next = pruneHold(next, emit);
+      if (next.hold) return next;
+    } else if (!noHold && next.settings.turnGate && active && !outOf(active)) {
+      const held = startHold(next, emit, now);
+      if (held) return held;
+    }
     next = advance(next, emit, now);
     if (next.phase === 'finished') return next;
     ended = checkEnd(next, emit);
@@ -214,6 +310,11 @@ export function expireTrade(table: Table, emit: EmitEvent): Table {
  * After any change to the table's books or seats: note who is out, end the game if it is over, pass the turn on if the active
  * player is finished, and drop a trade offer whose card has left the seller's hand. Pure; events go to `emit`.
  */
-export function settleTable(table: Table, emit: EmitEvent, now: number): Table {
-  return expireTrade(settleCore(table, emit, now), emit);
+export function settleTable(
+  table: Table,
+  emit: EmitEvent,
+  now: number,
+  options: { noHold?: boolean } = {},
+): Table {
+  return expireTrade(settleCore(table, emit, now, options.noHold === true), emit);
 }

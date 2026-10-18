@@ -1,6 +1,7 @@
 import type { GameBooks } from '../books';
 import type { CashflowDeckKind, CashflowGameState } from '../types';
 import { nextDeadline } from './clock';
+import { undoVoters } from './undo-vote';
 import { cardsLeft } from './deck';
 import type {
   PlayerStatus,
@@ -35,6 +36,8 @@ export interface PlayerView {
   seat: number;
   name: string;
   color: string;
+  /** The letters on the token, as the player chose them (absent: the first two letters of the name). */
+  initials?: string;
   ready: boolean;
   status: PlayerStatus;
   /** Timed out too often: their turns are played for them until they are back. */
@@ -73,6 +76,15 @@ export interface TableView {
   turnRolled: boolean;
   clock: ClockView;
   trade: TradeView | null;
+  /** The seats the table waits for before the next turn: they can still sell and have not said done. Empty when it waits for no one. */
+  holdSeats: number[];
+  /** The open vote to undo the last turn, by seat; null when none. */
+  undo: {
+    proposerSeat: number;
+    yesSeats: number[];
+    noSeats: number[];
+    voterSeats: number[];
+  } | null;
   result: ResultView | null;
   decks: Record<CashflowDeckKind, DeckView>;
   createdAt: string;
@@ -146,6 +158,7 @@ export function projectFor(table: Table, viewerId: string | null): TableView {
       seat,
       name: player.name,
       color: player.color,
+      ...(player.initials ? { initials: player.initials } : {}),
       ready: player.ready,
       status: player.status,
       away: player.away,
@@ -159,6 +172,15 @@ export function projectFor(table: Table, viewerId: string | null): TableView {
     activeSeat: table.activePlayerId === null ? null : seatOf(table.activePlayerId),
     tableRound: table.tableRound,
     turnRolled: table.turnRolled,
+    holdSeats: (table.hold?.playerIds ?? []).map(seatOf),
+    undo: table.undoVote
+      ? {
+          proposerSeat: seatOf(table.undoVote.proposerId),
+          yesSeats: table.undoVote.yes.map(seatOf),
+          noSeats: table.undoVote.no.map(seatOf),
+          voterSeats: undoVoters(table).map(seatOf),
+        }
+      : null,
     trade: table.trade
       ? {
           sellerSeat: seatOf(table.trade.sellerId),

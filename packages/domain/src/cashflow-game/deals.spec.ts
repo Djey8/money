@@ -4,6 +4,7 @@ import { fixedClock } from './clock';
 import type { BookSubscription } from './effects';
 import { pickCashflowProfession } from './engine';
 import { identityText, type GameText } from './game-text';
+import { RULE_PRESETS } from './rules';
 import {
   dealInputFromCard,
   doodadLoanNote,
@@ -17,6 +18,7 @@ import {
   removeExpenseForPaidLiability,
   sellCardToFriend,
   setPhaseAfterTrade,
+  closePlanOfSettledCard,
   syncPlanNote,
   takenDealLabels,
   type DealDeps,
@@ -755,5 +757,52 @@ describe('doodadLoanNote', () => {
     expect(note).toContain('"cash":"1000P"');
     expect(note).toContain('"cost":"2500P"');
     expect(note).toContain(`"loan":"${(2 * STEP) / 100}P"`);
+  });
+});
+
+describe('closePlanOfSettledCard', () => {
+  const settled = (rules: 'guided' | 'free', extra: Partial<GameBooks['state']> = {}) => ({
+    state: {
+      ...books().state,
+      rules: { ...RULE_PRESETS[rules] },
+      turn: {
+        phase: 'decide' as const,
+        count: 1,
+        pending: {
+          kind: 'deal' as const,
+          spaceIndex: 1,
+          played: true,
+          offered: { deck: 'dealSmall' as const, cardId: 'c1', title: 'OK4U' },
+        },
+      },
+      ...extra,
+    },
+    growProjects: [project({ phase: 'plan' })],
+    shares: [],
+    investments: [],
+    assets: [],
+  });
+
+  it('an unbought plan is completed when the card is settled (the chance is over)', () => {
+    const effects = closePlanOfSettledCard(deepFreeze(settled('guided')))!;
+    expect(effects.growUpdates).toEqual([{ title: 'OK4U', phase: 'completed' }]);
+  });
+
+  it('a plan for shares already held goes back to execute', () => {
+    const b = {
+      ...settled('guided'),
+      shares: [{ tag: 'OK4U', quantity: 5, priceMinor: 100 }],
+    };
+    expect(closePlanOfSettledCard(b)!.growUpdates).toEqual([{ title: 'OK4U', phase: 'execute' }]);
+  });
+
+  it('leaves the plan alone when the rules let it be bought later, or it was bought', () => {
+    expect(closePlanOfSettledCard(settled('free'))).toBeNull();
+    expect(
+      closePlanOfSettledCard({
+        ...settled('guided'),
+        growProjects: [project({ phase: 'execute' })],
+      }),
+    ).toBeNull();
   });
 });

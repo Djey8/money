@@ -4,7 +4,10 @@ import { cashOnHandMinor } from '../cash';
 import { seededRng } from '../rng';
 import type { CashflowDealCard, CashflowDeckKind, CashflowMarketCard } from '../types';
 import { applyPlan } from './play';
-import { applyCommand, createTable } from './reducer';
+import { applyCommand, applyTimeout, createTable } from './reducer';
+import { tableLegalActions } from './legal';
+import { nextPassiveCommand } from './passive';
+import { canSellNow, mustConfirmOffer } from './sell-check';
 import { deepFreeze, testContext } from './testing';
 import {
   TableCommandError,
@@ -130,10 +133,19 @@ function onCardSpace(table: Table, kind: 'deal' | 'market'): Table {
   };
 }
 
-/** Draws `cardId` from `deck` as the active player. */
-function draw(table: Table, deck: 'market' | 'dealSmall' | 'dealBig', cardId: string) {
+/** Opens `cardId` from `deck` as the active player: a Market card takes effect for everybody, and waits in hand to be ticked off. */
+function open(table: Table, deck: 'market' | 'dealSmall' | 'dealBig', cardId: string) {
   const ready = onCardSpace(stack(table, deck, cardId), deck === 'market' ? 'market' : 'deal');
   return applyCommand(ready, ready.activePlayerId!, { type: 'draw_card', deck }, ctx);
+}
+
+/** Draws `cardId` and - for a Market card - ticks it off, as the player does: the drawer's turn is then over. */
+function draw(table: Table, deck: 'market' | 'dealSmall' | 'dealBig', cardId: string) {
+  const opened = open(table, deck, cardId);
+  if (deck !== 'market') return opened;
+  const who = table.activePlayerId!;
+  const done = applyCommand(opened.table, who, { type: 'finish_card' }, ctx);
+  return { table: done.table, events: [...opened.events, ...done.events] };
 }
 
 const effectsOf = (events: TableEvent[]) => events.filter((e) => e.type === 'market_effect');
@@ -175,7 +187,14 @@ describe('a buyer card is for the whole table', () => {
     expect(offersOf(drawn.table, 'host')).toEqual([]);
   });
 
-  it("the drawer's turn ends with the card: it cannot be passed on", () => {
+  it('the card waits in hand once opened: it is played already, cannot be passed, and ticking it off ends the turn', () => {
+    const opened = open(playingTable(), 'market', card.id);
+    expect(opened.table.activePlayerId).toBe('host');
+    expect(booksOf(opened.table, 'host').state.turn?.pending).toMatchObject({ played: true });
+    expectError(
+      () => applyCommand(opened.table, 'host', { type: 'pass_card' }, ctx),
+      'ILLEGAL_MOVE',
+    );
     const drawn = draw(playingTable(), 'market', card.id);
     expect(drawn.table.activePlayerId).toBe('p1');
     expect(booksOf(drawn.table, 'host').state.turn?.phase).toBe('roll');
@@ -275,19 +294,42 @@ describe('a buyer card is for the whole table', () => {
 });
 
 describe('the other Market cards', () => {
-  it('a cost card charges every player who owns a property', () => {
+  it('a cost card applies only to its drawer, who pays it with a move of their own - the game waits for the payment', () => {
     const card = marketCard('classic-market-cost-pipe-1k');
-    const table = owns(owns(playingTable(), 'p1', efh), 'p2', efh);
-    const drawn = draw(table, 'market', card.id);
-    // the payment is booked on the property; a short purse takes the Bank loan first, as for any forced payment
+    const table = owns(owns(playingTable(), 'host', efh), 'p1', efh);
     const payments = (t: Table, id: string) =>
       booksOf(t, id).transactions.filter((tx) => tx.amountMinor === -100000);
-    expect(payments(drawn.table, 'p1')).toHaveLength(payments(table, 'p1').length + 1);
-    expect(payments(drawn.table, 'p2')).toHaveLength(payments(table, 'p2').length + 1);
-    expect(payments(drawn.table, 'host')).toHaveLength(payments(table, 'host').length);
-    const effects = effectsOf(drawn.events);
-    expect(effects.map((e) => e.playerId)).toEqual(['host', 'p1', 'p2']);
-    expect(effects[1].data).toMatchObject({ kind: 'cost', property: 'EFH', costMinor: 100000 });
+    const opened = open(table, 'market', card.id);
+    // nothing is booked by opening the card, for the drawer or for anybody else
+    expect(payments(opened.table, 'host')).toHaveLength(payments(table, 'host').length);
+    expect(payments(opened.table, 'p1')).toHaveLength(payments(table, 'p1').length);
+    expect(booksOf(opened.table, 'host').state.turn?.pending).toMatchObject({
+      paymentDue: true,
+      played: false,
+    });
+    expect(effectsOf(opened.events).map((e) => e.playerId)).toEqual(['host']);
+    // the table waits: the payment is the move, a pass is not
+    const moves = tableLegalActions(opened.table, 'host').map((a) => a.action);
+    expect(moves).toContain('pay_market');
+    expect(moves).not.toContain('finish_card');
+    expect(nextPassiveCommand(opened.table, 'host')).toEqual({
+      type: 'pay_market',
+      cardId: card.id,
+    });
+    // paying books it on the property (a short purse takes the Bank loan first), and settles the space
+    const paid = applyCommand(opened.table, 'host', { type: 'pay_market', cardId: card.id }, ctx);
+    expect(payments(paid.table, 'host')).toHaveLength(payments(table, 'host').length + 1);
+    expect(payments(paid.table, 'p1')).toHaveLength(payments(table, 'p1').length);
+    expect(paid.table.activePlayerId).toBe('p1');
+  });
+
+  it('a cost card for a drawer without a property is ignored and ticked off, as the card says', () => {
+    const card = marketCard('classic-market-cost-pipe-1k');
+    const opened = open(playingTable(), 'market', card.id);
+    expect(booksOf(opened.table, 'host').state.turn?.pending).toMatchObject({ played: true });
+    expect(tableLegalActions(opened.table, 'host').map((a) => a.action)).not.toContain(
+      'pay_market',
+    );
   });
 
   it('a stock split is decided by ONE roll for every holder', () => {
@@ -373,6 +415,42 @@ describe('the other Market cards', () => {
     expect(booksOf(sold.table, 'p1').shares.find((s) => s.tag === 'OK4U')!.quantity).toBe(10);
   });
 
+  it('a holder may also buy more at the price of a stock card somebody else drew - off their turn too', () => {
+    const [cheap, dear] = shareCards('OK4U');
+    const table = owns(owns(playingTable(), 'p1', cheap, 10), 'p2', cheap, 10);
+    const drawn = draw(table, 'dealSmall', dear.id);
+    expect(drawn.table.activePlayerId).toBe('host');
+    expect(tableLegalActions(drawn.table, 'p2').map((a) => a.action)).toContain('buy_planned');
+    expect(tableLegalActions(drawn.table, 'host').map((a) => a.action)).not.toContain(
+      'buy_planned',
+    );
+    const cashBefore = cashOnHandMinor(
+      booksOf(drawn.table, 'p2').transactions,
+      booksOf(drawn.table, 'p2').allocation,
+    );
+    const bought = applyCommand(
+      drawn.table,
+      'p2',
+      { type: 'buy_planned', title: 'OK4U', quantity: 2 },
+      ctx,
+    );
+    expect(booksOf(bought.table, 'p2').shares.find((s) => s.tag === 'OK4U')!.quantity).toBe(12);
+    expect(
+      cashOnHandMinor(
+        booksOf(bought.table, 'p2').transactions,
+        booksOf(bought.table, 'p2').allocation,
+      ),
+    ).toBeLessThan(cashBefore);
+    // it is still the drawer's turn; the buyer's own turn is untouched
+    expect(bought.table.activePlayerId).toBe('host');
+    // someone who holds nothing of it cannot buy at that price
+    expectError(
+      () =>
+        applyCommand(drawn.table, 'host', { type: 'buy_planned', title: 'OK4U', quantity: 1 }, ctx),
+      'ILLEGAL_MOVE',
+    );
+  });
+
   it('a share nobody else holds moves no price', () => {
     const [cheap, dear] = shareCards('OK4U');
     const drawn = draw(owns(playingTable(), 'host', cheap, 10), 'dealSmall', dear.id);
@@ -400,5 +478,167 @@ describe('purity and replay', () => {
     const b = draw(table, 'market', 'classic-market-split-ok4u');
     expect(b.table).toEqual(a.table);
     expect(b.events).toEqual(a.events);
+  });
+});
+
+describe('the held turn (the table waits until everybody has said Continue)', () => {
+  const card = marketCard('classic-market-efh-pct20-a');
+  const heldTable = (settings: object = {}) =>
+    draw(
+      owns(owns(playingTable({ turnGate: true, ...settings }), 'p1', efh), 'p2', efh),
+      'market',
+      card.id,
+    );
+
+  it('holds the next turn until each person has said done, the one who played too, and nobody rolls meanwhile', () => {
+    const held = heldTable().table;
+    expect(held.hold?.playerIds).toEqual(['host', 'p1', 'p2']);
+    expect(held.activePlayerId).toBe('host');
+    expectError(() => applyCommand(held, 'host', { type: 'roll' }, ctx), 'ILLEGAL_MOVE');
+    const one = applyCommand(held, 'p2', { type: 'done' }, ctx);
+    expect(one.table.hold?.playerIds).toEqual(['host', 'p1']);
+    expectError(() => applyCommand(one.table, 'p2', { type: 'done' }, ctx), 'WRONG_PHASE');
+    const two = applyCommand(one.table, 'host', { type: 'done' }, ctx);
+    expect(two.table.activePlayerId).toBe('host');
+    const all = applyCommand(two.table, 'p1', { type: 'done' }, ctx);
+    expect(all.table.hold).toBeNull();
+    expect(all.table.activePlayerId).toBe('p1');
+    expect(types(all.events)).toEqual(
+      expect.arrayContaining(['hold_done', 'turn_released', 'turn_started']),
+    );
+  });
+
+  it('asks about a card once: an offer that stays open does not hold the next turn again', () => {
+    const held = heldTable({ rules: { sellOfferRolls: 3 } }).table;
+    expect(held.hold?.playerIds).toEqual(['host', 'p1', 'p2']);
+    const one = applyCommand(held, 'p2', { type: 'done' }, ctx);
+    const two = applyCommand(one.table, 'host', { type: 'done' }, ctx);
+    const all = applyCommand(two.table, 'p1', { type: 'done' }, ctx).table;
+    expect(all.activePlayerId).toBe('p1');
+    // p2 still could sell into the offer, but has said Continue to this card
+    expect(canSellNow(all, 'p2')).toBe(true);
+    expect(mustConfirmOffer(all, 'p2')).toBe(false);
+  });
+
+  it('gives the end of the turn - and the decision to sell - the time a move has', () => {
+    const held = heldTable({ clock: { mode: 'per-move', secondsPerMove: 90 } }).table;
+    expect(held.clock.deadlineAt! - held.clock.turnStartedAt!).toBe(90_000);
+  });
+
+  it('lets the people sell while it waits; whoever has sold what there was to sell has nothing more to confirm', () => {
+    const held = heldTable().table;
+    const sold = applyCommand(held, 'p2', { type: 'sell_position', input: { title: 'EFH' } }, ctx);
+    // p2 sold: nothing is left for p2 to do, the table waits for the mover and for p1
+    expect(sold.table.hold?.playerIds).toEqual(['host', 'p1']);
+    expect(sold.table.activePlayerId).toBe('host');
+  });
+
+  it("asks only the mover when a card touches nobody, and nobody at all when a bot's turn does", () => {
+    const quiet = draw(playingTable({ turnGate: true }), 'market', card.id).table;
+    expect(quiet.hold?.playerIds).toEqual(['host']);
+    const asBot = {
+      ...playingTable({ turnGate: true }),
+    };
+    const botsTurn: Table = {
+      ...asBot,
+      players: asBot.players.map((p) =>
+        p.id === 'host' ? { ...p, bot: { policyId: 'all-rounder' } } : p,
+      ),
+    };
+    expect(draw(botsTurn, 'market', card.id).table.hold ?? null).toBeNull();
+  });
+
+  it('is released by the clock without anyone being marked as having timed out', () => {
+    const held = heldTable({ clock: { mode: 'per-move', secondsPerMove: 60 } }).table;
+    expect(held.clock.deadlineAt).not.toBeNull();
+    const late = {
+      ...ctx,
+      clock: { ...ctx.clock, nowIso: () => new Date(held.clock.deadlineAt! + 1).toISOString() },
+    };
+    const result = applyTimeout(held, late);
+    expect(result.table.hold).toBeNull();
+    expect(result.table.activePlayerId).toBe('p1');
+    expect(types(result.events)).not.toContain('turn_timeout');
+    expect(result.table.clock.timeouts['host'] ?? 0).toBe(0);
+  });
+
+  it('does not wait for bots or for players who are away, and a table of bots is never held', () => {
+    let table = owns(owns(playingTable({ turnGate: true }), 'p1', efh), 'p2', efh);
+    table = {
+      ...table,
+      players: table.players.map((p) =>
+        p.id === 'p1'
+          ? { ...p, bot: { policyId: 'all-rounder' } }
+          : p.id === 'p2'
+            ? { ...p, away: true }
+            : p,
+      ),
+    };
+    const drawn = draw(table, 'market', card.id);
+    // only the host is here and a person: the host has to say Continue
+    expect(drawn.table.hold?.playerIds).toEqual(['host']);
+    const bots = {
+      ...table,
+      players: table.players.map((p) =>
+        p.id === 'host' ? { ...p, bot: { policyId: 'all-rounder' } } : p,
+      ),
+    };
+    expect(draw(bots, 'market', card.id).table.hold ?? null).toBeNull();
+  });
+
+  it('is off unless the table asked for it', () => {
+    const table = draw(owns(owns(playingTable(), 'p1', efh), 'p2', efh), 'market', card.id).table;
+    expect(table.hold ?? null).toBeNull();
+    expect(table.activePlayerId).toBe('p1');
+  });
+
+  it('keeps the bank open for the one who moved while the turn waits, as between two rolls of the solo game', () => {
+    const held = heldTable().table;
+    const asking = tableLegalActions(held, 'host').map((a) => a.action);
+    expect(asking).toEqual(expect.arrayContaining(['done', 'bank_loan']));
+    expect(asking).not.toContain('roll');
+    const borrowed = applyCommand(held, 'host', { type: 'bank_loan', amountMinor: 1_000_000 }, ctx);
+    expect(borrowed.table.hold?.playerIds).toEqual(['host', 'p1', 'p2']);
+    expect(borrowed.table.activePlayerId).toBe('host');
+    // the others cannot borrow on somebody else's turn
+    expect(tableLegalActions(held, 'p1').map((a) => a.action)).not.toContain('bank_loan');
+  });
+
+  it('a card with a die to roll (MLM) is rolled before the turn can end, even while the table waits', () => {
+    const held = heldTable().table;
+    const withDie: Table = {
+      ...held,
+      players: held.players.map((p) =>
+        p.id === 'host'
+          ? {
+              ...p,
+              books: {
+                ...p.books!,
+                state: {
+                  ...p.books!.state,
+                  assetDeals: [
+                    {
+                      title: 'MLM',
+                      coins: 0,
+                      costMinor: 100000,
+                      successOn: 4,
+                      payoutMinor: 50000,
+                      recurring: true,
+                      stage: 'awaitingRoll',
+                    },
+                  ],
+                } as never,
+              },
+            }
+          : p,
+      ),
+    };
+    const asking = tableLegalActions(withDie, 'host').map((a) => a.action);
+    expect(asking).toContain('roll_decision');
+    expect(asking).not.toContain('done');
+    expectError(() => applyCommand(withDie, 'host', { type: 'done' }, ctx), 'ILLEGAL_MOVE');
+    const rolled = applyCommand(withDie, 'host', { type: 'roll_decision', title: 'MLM' }, ctx);
+    expect(types(rolled.events)).toContain('dice_decided');
+    expect(tableLegalActions(rolled.table, 'host').map((a) => a.action)).toContain('done');
   });
 });

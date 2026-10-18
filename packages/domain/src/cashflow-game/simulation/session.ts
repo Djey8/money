@@ -1,4 +1,5 @@
 import { applyEffectsToBooks, type GameBooks } from '../books';
+import { closePlanOfSettledCard } from '../deals';
 import {
   buyDealAction,
   drawCardAction,
@@ -212,6 +213,8 @@ export class SimGame {
     let books = this.books;
     for (const effects of plan.effects) books = applyEffectsToBooks(books, effects);
     if (plan.settle && currentTurn(books.state).phase === 'decide') {
+      const closing = closePlanOfSettledCard(books);
+      if (closing) books = applyEffectsToBooks(books, closing);
       books = {
         ...books,
         state: settleDecision(books.state, 'done', books.subscriptions).state,

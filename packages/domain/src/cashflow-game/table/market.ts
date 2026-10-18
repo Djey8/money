@@ -4,7 +4,7 @@ import { applyEffectsToBooks, type GameBooks } from '../books';
 import { endIfOver } from '../game-end';
 import { marketCardKind, updateSharePrice, type MarketCardKind } from '../market-cards';
 import { rollDie } from '../rng';
-import { currentTurn, settleDecision } from '../turn';
+import { currentTurn } from '../turn';
 import type { CashflowDealCard, CashflowMarketCard } from '../types';
 import type { PlayDeps } from './play';
 import { tableRng } from './table-rng';
@@ -103,8 +103,34 @@ export function playMarketForTable(
 
   for (const player of table.players.filter(inGame)) {
     const plan = marketCardPlan(player.books, card, withRng);
-    let books = plan.effects.reduce(applyEffectsToBooks, player.books);
     const result = { ...(plan.result ?? {}) } as Record<string, unknown>;
+
+    // A cost card applies only to the person who drew it - and they pay it with a move of their own (the Add dialog's payment, as
+    // a Doodad is paid): nothing is booked now, the game waits for the payment (a clock that runs out pays it for them).
+    if (kind === 'cost') {
+      if (player.id !== drawerId) continue;
+      if (result.property) {
+        const open = player.books.state.turn?.pending;
+        const waiting =
+          open && player.books.state.turn
+            ? {
+                ...player.books,
+                state: {
+                  ...player.books.state,
+                  turn: {
+                    ...player.books.state.turn,
+                    pending: { ...open, paymentDue: true, played: false },
+                  },
+                },
+              }
+            : player.books;
+        next = replaceBooks(next, player.id, waiting);
+        effects.push({ playerId: player.id, kind, detail: detailOf(kind, result) });
+        continue;
+      }
+    }
+
+    let books = plan.effects.reduce(applyEffectsToBooks, player.books);
 
     if (kind === 'split' && result.share) {
       splitRoll ??= rollDie(stream.rng);
@@ -118,9 +144,17 @@ export function playMarketForTable(
       result.roll = splitRoll;
       result.won = splitRoll <= 3;
     }
-    // The drawer's space is settled by the card; everyone else is not on a space.
-    if (player.id === drawerId && currentTurn(books.state).phase === 'decide') {
-      books = { ...books, state: settleDecision(books.state, 'done', books.subscriptions).state };
+    // The card took effect for everybody as it was opened. For the drawer it is played and stays in hand until they tick it off
+    // (a cost is paid by it); everyone else is not on a space.
+    const pending = books.state.turn?.pending;
+    if (player.id === drawerId && currentTurn(books.state).phase === 'decide' && pending) {
+      books = {
+        ...books,
+        state: {
+          ...books.state,
+          turn: { ...books.state.turn!, pending: { ...pending, played: true, paymentDue: false } },
+        },
+      };
     }
     books = { ...books, state: endIfOver(books.state, books.subscriptions) };
     next = replaceBooks(next, player.id, books);

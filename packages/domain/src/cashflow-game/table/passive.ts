@@ -25,7 +25,23 @@ export function nextPassiveCommand(table: Table, playerId: string): TableCommand
 
   const pending = turn.pending;
   if (!pending) return null;
+  // A Market card takes effect for the whole table when it is opened - a passive turn opens it (what it costs is paid) and ticks it
+  // off; leaving it shut would let the player escape a cost and keep the others from a buyer (after any dice decision, first).
+  if (pending.kind === 'market') {
+    const open = openDecisions(books.state);
+    if (whyDiceFirst(books.state) && open.length > 0) {
+      return { type: 'roll_decision', title: open[0].title };
+    }
+    if (pending.played) return { type: 'finish_card' };
+    // a cost the player drew is paid (the game waits for it): what a clock that runs out does for them
+    if (pending.offered && pending.paymentDue) {
+      return { type: 'pay_market', cardId: pending.offered.cardId };
+    }
+    return { type: 'draw_card', deck: 'market' };
+  }
   if (whyCannotSkipCard(books.state) === null) return { type: 'pass_card' };
+  // a card that was planned (or sold) cannot be passed any more, only ticked off
+  if (pending.played && pending.kind !== 'doodad') return { type: 'finish_card' };
   // A payment that cannot be passed comes after any dice decision that is open (the dice-first rule); the server rolls it.
   const waiting = openDecisions(books.state);
   if (whyDiceFirst(books.state) && waiting.length > 0) {

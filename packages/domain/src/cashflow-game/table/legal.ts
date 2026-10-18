@@ -1,5 +1,9 @@
 import { legalActions as soloLegalActions } from '../legal-actions';
+import { openDecisions } from '../asset-deals';
 import { currentTurn } from '../turn';
+import { whyPaymentPending } from '../rules';
+import { canBuyAtPriceCard, canSellNow } from './sell-check';
+import { undoVoters } from './undo-vote';
 import { canAnswerTrade, whyCannotOfferTrade } from './trade';
 import type { Table, TableCommand } from './types';
 
@@ -26,10 +30,13 @@ const MOVES = new Set([
   'draw_card',
   'buy_deal',
   'pay_doodad',
+  'pay_market',
   'roll_decision',
   'pass_card',
   'bank_loan',
 ]);
+
+const canVoteOnUndo = (table: Table, playerId: string) => undoVoters(table).includes(playerId);
 
 export function tableLegalActions(table: Table, playerId: string): TableLegalAction[] {
   if (table.phase !== 'playing') return [];
@@ -45,6 +52,12 @@ export function tableLegalActions(table: Table, playerId: string): TableLegalAct
     return actions;
   }
   if (me.away) add('back', 'Say you are here again: you play your own turns from now on.');
+  else if (me.status === 'active' && table.phase === 'playing') {
+    add(
+      'away',
+      'Go away: your turns are played passively (like running out of the clock) so the others never wait for you.',
+    );
+  }
   if (me.status !== 'active' || !me.books || currentTurn(me.books.state).phase === 'over')
     return actions;
 
@@ -52,21 +65,89 @@ export function tableLegalActions(table: Table, playerId: string): TableLegalAct
   const myTurn = table.activePlayerId === playerId;
   const solo = soloLegalActions(state);
 
-  if (myTurn) {
-    for (const entry of solo) {
-      if (MOVES.has(entry.action)) add(entry.action as TableActionId, entry.description);
+  // The turn is over and the table waits for the players who can still sell: they say "done" (turns.ts, the hold).
+  const hold = table.hold ?? null;
+  // a card with a die to roll (Multi-Level-Marketing ...) is rolled before the turn can end
+  const dieWaiting = myTurn && openDecisions(state).length > 0;
+  if (hold?.playerIds.includes(playerId) && !dieWaiting) {
+    add('done', 'Say you are done: the next turn waits for everyone who can still sell.');
+  }
+
+  // Undoing the last turn is the table's vote: anyone here may ask, and everyone here may answer.
+  if (table.settings.allowRewind && canVoteOnUndo(table, playerId)) {
+    if (!table.undoVote)
+      add(
+        'propose_undo',
+        'Ask the table to go back one turn: it happens when more than half of the people say yes.',
+      );
+    else if (!table.undoVote.yes.includes(playerId) && !table.undoVote.no.includes(playerId)) {
+      add('vote_undo', 'Vote yes or no (yes: true / false) on going back one turn.');
     }
   }
 
-  // Selling, for anyone with an offer open to them. A one-roll offer is closed by the solo rule once the player's own space is
-  // settled; at a table it stays until their next roll, so the question is asked as if they were still deciding.
-  const turn = currentTurn(state);
-  const asking =
-    turn.phase === 'roll' ? { ...state, turn: { ...turn, phase: 'decide' as const } } : state;
-  if (soloLegalActions(asking).some((entry) => entry.action === 'sell_position')) {
+  // the bank stays open while the turn waits for everybody to continue, as it does between two rolls of the solo game
+  if (myTurn && hold) {
+    for (const entry of solo) {
+      if (entry.action === 'bank_loan' || entry.action === 'roll_decision') {
+        add(entry.action, entry.description);
+      }
+    }
+  }
+
+  if (myTurn && !hold) {
+    const inPlay = !!currentTurn(state).pending?.played;
+    for (const entry of solo) {
+      // a card that was played (planned, sold to a friend) is only bought through its plan or ticked off
+      if (inPlay && entry.action === 'buy_deal') continue;
+      if (MOVES.has(entry.action)) add(entry.action as TableActionId, entry.description);
+      // The solo game's two steps for a Deal card: plan it (Grow), then buy the plan - or tick it off.
+      if (entry.action === 'buy_deal') {
+        add(
+          'plan_deal',
+          'Plan the Deal card in hand as a Grow project (nothing is paid yet), as the solo game does.',
+        );
+      }
+    }
+    const pending = currentTurn(state).pending;
+    if (
+      pending?.kind === 'deal' &&
+      pending.played &&
+      pending.offered?.title &&
+      !pending.purchased
+    ) {
+      add(
+        'buy_planned',
+        'Buy the project the card in hand became (the Grow Buy button): shares with their quantity, a property or an asset.',
+      );
+    }
+    // a cost card the player drew: it is paid before anything else (the table waits for it, like a Doodad)
+    if (pending?.kind === 'market' && pending.paymentDue && pending.offered && !pending.played) {
+      add(
+        'pay_market',
+        'Pay the cost of the Market card in hand (from Fire, on your first property; a Bank loan is taken first when cash is short).',
+      );
+    }
+    if (pending?.played && !whyPaymentPending(state)) {
+      add(
+        'finish_card',
+        'Tick off the card you played: the space is settled and the next roll is open.',
+      );
+    }
+  }
+
+  // Selling, for anyone with an offer open to them (see canSellNow).
+  if (canSellNow(table, playerId)) {
     add(
       'sell_position',
       "Sell a position you hold into a buyer's offer that is open for you (a Market card or a stock price card someone drew).",
+    );
+  }
+
+  // More of a share they hold, at the price of a stock card somebody drew - open to anyone with the share, like selling.
+  if (canBuyAtPriceCard(table, playerId) && !actions.some((a) => a.action === 'buy_planned')) {
+    add(
+      'buy_planned',
+      'Buy more of a share you hold at the price of a stock card somebody drew (title, quantity), while that card is open.',
     );
   }
 

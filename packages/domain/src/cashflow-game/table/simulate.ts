@@ -306,6 +306,13 @@ export function decide(
       ? { type: 'buy_deal', cardId: card.id, quantity: choice.quantity }
       : { type: 'pass_card' };
   }
+  if (pending.kind === 'market') {
+    if (pending.played) return { type: 'finish_card' };
+    if (pending.offered && pending.paymentDue) {
+      return { type: 'pay_market', cardId: pending.offered.cardId };
+    }
+    return { type: 'draw_card', deck: 'market' };
+  }
   if (pending.kind === 'doodad') {
     if (!pending.offered) return { type: 'draw_card', deck: 'doodad' };
     // where the rules let a Doodad be passed, the strategy may take that freedom (guided rules); under strict it always pays
@@ -434,6 +441,16 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
 
   while (table.phase === 'playing' && commands < maxCommands) {
     const current = table;
+    // The turn is over and the table waits for the people who can still sell: they sell what their policy wants, then say done.
+    if (current.hold) {
+      sellIntoOffers();
+      for (const id of [...(table.hold?.playerIds ?? [])]) send(id, { type: 'done' });
+      if (table === current) {
+        problems.push(`v${current.version}: the held turn could not be released`);
+        break;
+      }
+      continue;
+    }
     const who = current.activePlayerId as string;
     const seat = ids.indexOf(who);
     const policy = policies[seat % policies.length];
