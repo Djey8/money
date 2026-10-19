@@ -3,7 +3,12 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const express = require('express');
-const { normalizeRules, rulesOf, whyCannotAddFreeAmount } = require('@money/domain');
+const {
+  normalizeRules,
+  rulesOf,
+  whyCannotAddFreeAmount,
+  isGameBankLocation,
+} = require('@money/domain');
 const { getAuditDb } = require('../config/db');
 const { recordAuditEntry, findAuditEntryByIdempotencyKey } = require('../config/audit');
 const { createToken, listTokens, revokeToken, deleteToken } = require('../cli/commands/token');
@@ -2815,6 +2820,15 @@ router.patch('/locations/:locationId', requireScope('locations:w'), async (req, 
 
 router.delete('/locations/:locationId', requireScope('locations:w'), async (req, res, next) => {
   try {
+    if (isGameBankLocation(req.params.locationId)) {
+      return problem(
+        res,
+        409,
+        'conflict_protected',
+        'The default location cannot be deleted',
+        'The game location can be renamed, but not deleted.',
+      );
+    }
     const deleted = await deleteLocation(
       { usersDb: getUsersDb(), authDb: getAuthDb() },
       req.userId,

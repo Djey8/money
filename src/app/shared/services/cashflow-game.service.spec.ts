@@ -202,6 +202,24 @@ describe('CashflowGameService', () => {
       expect(subscriptionsSpy).not.toHaveBeenCalled();
     });
 
+    it('every booking of the game is on the default location, whose balance follows, and undo takes it back', () => {
+      started();
+      const state = AppStateService.instance;
+      const bank = () => state.allLocations.find((l) => l.id === 'game-bank')!;
+      expect(bank()).toMatchObject({ kind: 'bank' });
+      expect(state.allSubscriptions.every((s) => s.locationId === 'game-bank')).toBe(true);
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allTransactions.every((tx) => tx.locationId === 'game-bank')).toBe(true);
+      const sum = state.allTransactions.reduce((s, tx) => s + tx.amount, 0);
+      expect(bank().amount).toBeCloseTo(sum, 2);
+      expect(sum).not.toBe(0);
+      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(bank().amount).toBeCloseTo(
+        state.allTransactions.reduce((s, tx) => s + tx.amount, 0),
+        2,
+      );
+    });
+
     it('reports an error rather than throwing when there is nothing to undo', () => {
       started();
       service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() }); // undoes Start Game itself

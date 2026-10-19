@@ -1,4 +1,6 @@
 import { RemoteGameHook } from './remote-game';
+import { MoneyLocation } from '../../interfaces/location';
+import { reconcileLocationBooking } from '../location-balance';
 import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
@@ -24,6 +26,7 @@ import {
   cashOnHandMinor,
   blankGameData,
   captureGameSnapshot as captureSnapshot,
+  GAME_BANK_LOCATION_ID,
   coinsOwnedOf,
   accountHistoryIsNewer,
   buildLiveHistory,
@@ -356,6 +359,8 @@ export interface CashflowGameSnapshot {
   allFireEmergencies: Fire[];
   mojo: Mojo;
   cashflowGame: CashflowGameState;
+  /** The locations (their balances move with the game's bookings); absent on a snapshot from before the game had a location. */
+  allLocations?: MoneyLocation[];
 }
 
 function deepClone<T>(value: T): T {
@@ -548,19 +553,22 @@ export class CashflowGameService {
    */
   captureGameSnapshot(): CashflowGameSnapshot {
     const state = AppStateService.instance;
-    return captureSnapshot({
-      allTransactions: state.allTransactions,
-      allSubscriptions: state.allSubscriptions,
-      allGrowProjects: state.allGrowProjects,
-      allShares: state.allShares,
-      allInvestments: state.allInvestments,
-      allAssets: state.allAssets,
-      liabilities: state.liabilities,
-      allSmileProjects: state.allSmileProjects,
-      allFireEmergencies: state.allFireEmergencies,
-      mojo: state.mojo,
-      cashflowGame: state.cashflowGame,
-    });
+    return {
+      ...captureSnapshot({
+        allTransactions: state.allTransactions,
+        allSubscriptions: state.allSubscriptions,
+        allGrowProjects: state.allGrowProjects,
+        allShares: state.allShares,
+        allInvestments: state.allInvestments,
+        allAssets: state.allAssets,
+        liabilities: state.liabilities,
+        allSmileProjects: state.allSmileProjects,
+        allFireEmergencies: state.allFireEmergencies,
+        mojo: state.mojo,
+        cashflowGame: state.cashflowGame,
+      }),
+      allLocations: deepClone(state.allLocations ?? []),
+    };
   }
 
   /** Whether a loaded snapshot has the shape of a game (a corrupt or foreign file must never replace a live game). */
@@ -672,6 +680,7 @@ export class CashflowGameService {
     state.allFireEmergencies = snapshot.allFireEmergencies;
     state.mojo = snapshot.mojo;
     state.cashflowGame = snapshot.cashflowGame;
+    if (snapshot.allLocations) state.allLocations = snapshot.allLocations;
   }
 
   /**
@@ -889,17 +898,18 @@ export class CashflowGameService {
         : this.translateExpenseLineTitle(result.profession, nonZeroExpenses[index - 1]),
     );
 
-    result.startingTransactions.forEach((record) =>
-      state.allTransactions.push(
-        toFloatTransaction({
-          ...record,
-          category: `@${savingsWord}`,
-          comment: `${this.translate.instant('CashflowGame.savingsTransactionComment', {
-            profession: professionTitle,
-          })}\n#cashflow`,
-        }),
-      ),
-    );
+    this.ensureGameLocation();
+    result.startingTransactions.forEach((record) => {
+      const transaction = toFloatTransaction({
+        ...record,
+        category: `@${savingsWord}`,
+        comment: `${this.translate.instant('CashflowGame.savingsTransactionComment', {
+          profession: professionTitle,
+        })}\n#cashflow`,
+      });
+      this.bookOnGameLocation(transaction);
+      state.allTransactions.push(transaction);
+    });
 
     const usedDays = this.currentMonthGameSubscriptionDays();
     result.subscriptions.forEach((sub, index) => {
@@ -913,6 +923,7 @@ export class CashflowGameService {
         category: index === 0 ? `@${salaryWord}` : `@${translatedTitle}`,
         comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
         frequency: sub.frequency,
+        locationId: GAME_BANK_LOCATION_ID,
       };
       state.allSubscriptions.push(subscription);
     });
@@ -1041,6 +1052,35 @@ export class CashflowGameService {
     return { clock: this.clock, text: (key, params) => this.translate.instant(key, params) };
   }
 
+  /**
+   * The game's default location (Bank - Main, JFK 2026-10-19): created in the language of the game when it is not there yet; a
+   * rename by the player is kept. Returns whether it had to be created.
+   */
+  private ensureGameLocation(): boolean {
+    const state = AppStateService.instance;
+    if (!Array.isArray(state.allLocations)) state.allLocations = [];
+    if (state.allLocations.some((location) => location.id === GAME_BANK_LOCATION_ID)) return false;
+    state.allLocations.push({
+      id: GAME_BANK_LOCATION_ID,
+      name: this.translate.instant('CashflowGame.bankLocationName'),
+      subName: this.translate.instant('CashflowGame.bankLocationSub'),
+      amount: 0,
+      kind: 'bank',
+    });
+    return true;
+  }
+
+  /** A booking of the game lands on the default location, whose balance moves with it. */
+  private bookOnGameLocation(transaction: Transaction): void {
+    const state = AppStateService.instance;
+    if (!transaction.locationId) transaction.locationId = GAME_BANK_LOCATION_ID;
+    reconcileLocationBooking(state.allLocations, null, {
+      locationId: transaction.locationId,
+      amount: transaction.amount,
+      locationSplits: transaction.locationSplits,
+    });
+  }
+
   /** Creates or edits subscriptions to read as the rule says, keeping everything else on an existing one (its change history). */
   private applySubscriptionUpserts(upserts: BookSubscription[]): void {
     const subscriptions = AppStateService.instance.allSubscriptions;
@@ -1062,6 +1102,7 @@ export class CashflowGameService {
           category: upsert.category,
           comment: upsert.comment,
           frequency: upsert.frequency,
+          locationId: GAME_BANK_LOCATION_ID,
         });
       }
     }
@@ -1116,9 +1157,12 @@ export class CashflowGameService {
     for (const { index, date } of effects.transactionDates) {
       state.allTransactions[index].date = date;
     }
-    effects.appendedTransactions.forEach((record) =>
-      state.allTransactions.push(toFloatTransaction(record)),
-    );
+    this.ensureGameLocation();
+    effects.appendedTransactions.forEach((record) => {
+      const transaction = toFloatTransaction(record);
+      this.bookOnGameLocation(transaction);
+      state.allTransactions.push(transaction);
+    });
     this.applySubscriptionUpserts(effects.subscriptionUpserts);
     for (const title of effects.subscriptionRemovals) this.removeSubscriptionByTitle(title);
     for (const liability of effects.liabilityUpserts) {
@@ -2138,6 +2182,9 @@ export class CashflowGameService {
     state.allFireEmergencies = blank.allFireEmergencies as Fire[];
     state.mojo = blank.mojo as Mojo;
     state.cashflowGame = blank.cashflowGame;
+    // the game's money is gone with its bookings; the location stays (the player's own ones are untouched)
+    const bank = state.allLocations?.find((location) => location.id === GAME_BANK_LOCATION_ID);
+    if (bank) bank.amount = 0;
 
     this.persistAll('cashflow_reset', {}, callbacks, {
       includeSubscriptions: true,
@@ -2751,6 +2798,7 @@ export class CashflowGameService {
     const writes: { tag: string; data: unknown }[] = [
       { tag: 'transactions', data: state.allTransactions },
       { tag: 'cashflowGame', data: state.cashflowGame },
+      { tag: 'locations', data: state.allLocations },
       ...this.incomeStatement.getWrites(),
       ...(options.includeSubscriptions
         ? [{ tag: 'subscriptions', data: state.allSubscriptions }]
@@ -2768,6 +2816,7 @@ export class CashflowGameService {
     const localStorageSaves: { key: string; data: unknown }[] = [
       { key: 'transactions', data: state.allTransactions },
       { key: 'cashflowGame', data: state.cashflowGame },
+      { key: 'locations', data: state.allLocations },
       ...(options.includeSubscriptions
         ? [{ key: 'subscriptions', data: state.allSubscriptions }]
         : []),

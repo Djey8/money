@@ -1313,6 +1313,8 @@
   "CashflowGame.loanOutstanding": "Pendiente",
   "CashflowGame.loanBorrow": "Pedir",
   "CashflowGame.loanRepay": "Devolver",
+  "CashflowGame.bankLocationName": "Banco",
+  "CashflowGame.bankLocationSub": "Principal",
   "CashflowGame.payoffTitle": "Liquidar",
   "CashflowGame.payoffConfirm": "¿Liquidar {{tag}} ({{amount}}) en un solo pago? Su gasto mensual de {{expense}} termina: tu flujo de caja mensual pasa de {{before}} a {{after}}.",
   "CashflowGame.payoffBorrow": "Tienes {{cash}}, así que primero hay que pedir {{borrow}} al banco (su cuota baja tu flujo de caja). Pedir prestado para pagar rara vez compensa, pero puedes.",

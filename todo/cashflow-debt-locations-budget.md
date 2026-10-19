@@ -52,7 +52,9 @@ start must be measured again - but the games already played (since the release y
 - Open: should a change of base also move humans' ratings? No (their base stays 1500). A **second option** is to re-score all
   results from scratch with the new bases (`rebuild`): different numbers, because every opponent rating changes - see question 5.
 
-## D. A default bank location
+## D. A default bank location (DONE 2026-10-19)
+
+Built as: the location "Bank" - "Main" (translated `CashflowGame.bankLocationName/Sub`), found by the stable id `GAME_BANK_LOCATION_ID = 'game-bank'` (domain `game-location.ts`), not by name or flag. Solo: created at game start, stamped on every effect (`applyGameEffects`), its balance moves with the bookings, Undo restores locations (snapshot `allLocations`). Table: `applyBooksToApp` shows every booking on it (balance = sum). Delete: no button in the Info panel, `DELETE /locations/game-bank` answers 409 `conflict_protected`.
 
 - Every game (solo and table) starts with the locations feature **on** and one location **"Bank account"** (language of the game),
   flagged `isDefault`. Every booking the game makes (Payday, subscriptions it generates, Doodads, Market costs, deals, loans, payoffs)

@@ -34,6 +34,7 @@ export * from './cashflow-game/game-sets';
 export * from './cashflow-game/symbols';
 export * from './cashflow-game/saved-games';
 export * from './cashflow-game/engine';
+export * from './cashflow-game/game-location';
 export * from './cashflow-game/cards';
 export * from './cashflow-game/cash';
 export * from './cashflow-game/clock';

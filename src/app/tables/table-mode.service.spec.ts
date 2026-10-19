@@ -71,6 +71,16 @@ describe('applyBooksToApp', () => {
     expect([state.daily, state.splurge, state.smile, state.fire]).toEqual([50, 20, 10, 20]);
   });
 
+  it('shows every booking on the default location, whose balance is what they add up to', () => {
+    const state = new AppStateService();
+    applyBooksToApp(state, books(), discards, { name: 'Banco', subName: 'Principal' });
+    expect(state.allLocations).toEqual([
+      { id: 'game-bank', name: 'Banco', subName: 'Principal', amount: 3300, kind: 'bank' },
+    ]);
+    expect((state.allTransactions[0] as { locationId?: string }).locationId).toBe('game-bank');
+    expect((state.allSubscriptions[0] as { locationId?: string }).locationId).toBe('game-bank');
+  });
+
   it('marks every data tier as loaded, so nothing is read from the account over the books', () => {
     const state = new AppStateService();
     state.tier2Loaded = false;

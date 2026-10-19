@@ -1,3 +1,4 @@
+import { isGameBankLocation } from '@money/domain';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -350,7 +351,13 @@ export class InfoLocationComponent extends BaseInfoComponent {
     );
   }
 
+  /** The game's default location can be renamed, never deleted. */
+  get isDefaultLocation(): boolean {
+    return isGameBankLocation(AppStateService.instance.allLocations[this.classReference.index]?.id);
+  }
+
   deleteLocation(index: number) {
+    if (isGameBankLocation(AppStateService.instance.allLocations[index]?.id)) return;
     this.confirmService.confirm(this.translate.instant('Confirm.deleteLocation'), () => {
       const deleted = AppStateService.instance.allLocations[index];
       try {

@@ -5,7 +5,13 @@ import { TablesApiService } from './tables-api.service';
 import { leaderboardTexts } from './leaderboard.texts';
 import { problemText } from './problem.texts';
 import { TableStageComponent } from './table-stage.component';
-import { snapshotFromBooks, type GameBooks, type TableView } from '@money/domain';
+import {
+  GAME_BANK_LOCATION_ID,
+  snapshotFromBooks,
+  type GameBooks,
+  type TableView,
+} from '@money/domain';
+import { TranslateService } from '@ngx-translate/core';
 import { AppStateService } from '../shared/services/app-state.service';
 import { DatabaseService } from '../shared/services/database.service';
 import { IncomeStatementService } from '../shared/services/income-statement.service';
@@ -502,6 +508,21 @@ export class TableModeService {
     };
   }
 
+  /** The default location's name and sub name, in the language of the app. */
+  private bankLocationNames(): { name: string; subName: string } {
+    try {
+      const translate = this.injector.get(TranslateService);
+      const name = translate.instant('CashflowGame.bankLocationName');
+      const subName = translate.instant('CashflowGame.bankLocationSub');
+      return {
+        name: name === 'CashflowGame.bankLocationName' ? 'Bank' : name,
+        subName: subName === 'CashflowGame.bankLocationSub' ? 'Main' : subName,
+      };
+    } catch {
+      return { name: 'Bank', subName: 'Main' };
+    }
+  }
+
   /**
    * Shows one player's books: the app's in-memory state becomes theirs. Called on every table update, so the panel always shows
    * the table as the server has it.
@@ -511,7 +532,7 @@ export class TableModeService {
     const books = player?.books as unknown as GameBooks | null | undefined;
     if (!books) return;
     this.seat.set(seat);
-    applyBooksToApp(AppStateService.instance, books, discardsOf(view));
+    applyBooksToApp(AppStateService.instance, books, discardsOf(view), this.bankLocationNames());
     // the income statement, the Cashflow page and the funds are rebuilt from the transactions, exactly as the solo game does after a move
     try {
       this.injector.get(IncomeStatementService).recalculate();
@@ -535,6 +556,7 @@ function shownData(): Record<string, () => unknown> {
   const state = () => AppStateService.instance;
   return {
     transactions: () => state().allTransactions,
+    locations: () => state().allLocations,
     grow: () => state().allGrowProjects,
     shares: () => state().allShares,
     investments: () => state().allInvestments,
@@ -578,10 +600,33 @@ export function applyBooksToApp(
   state: AppStateService,
   books: GameBooks,
   discards: Record<'dealSmall' | 'dealBig' | 'market' | 'doodad', string[]>,
+  bankNames: { name: string; subName: string } = { name: 'Bank', subName: 'Main' },
 ): void {
   const snapshot = snapshotFromBooks(books);
   state.allTransactions = snapshot.allTransactions as any;
   state.allSubscriptions = snapshot.allSubscriptions as any;
+  // Every booking of the game is on its one location, "Bank" - "Main" (JFK, 2026-10-19); its balance is what the bookings add up to.
+  const bankId = GAME_BANK_LOCATION_ID;
+  for (const record of [...state.allTransactions, ...state.allSubscriptions] as {
+    locationId?: string;
+  }[]) {
+    record.locationId = bankId;
+  }
+  state.allLocations = [
+    {
+      id: bankId,
+      name: bankNames.name,
+      subName: bankNames.subName,
+      amount:
+        Math.round(
+          (state.allTransactions as { amount: number }[]).reduce(
+            (sum, tx) => sum + Number(tx.amount || 0),
+            0,
+          ) * 100,
+        ) / 100,
+      kind: 'bank',
+    },
+  ];
   // The share count of a planned project is set on the Grow page before it is bought: a table update in between (somebody else's
   // move) must not put the card's count back.
   const editing = new Map(

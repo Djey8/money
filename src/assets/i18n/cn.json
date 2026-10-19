@@ -1369,6 +1369,8 @@
   "CashflowGame.loanOutstanding": "未偿还",
   "CashflowGame.loanBorrow": "借款",
   "CashflowGame.loanRepay": "还款",
+  "CashflowGame.bankLocationName": "银行",
+  "CashflowGame.bankLocationSub": "主账户",
   "CashflowGame.payoffTitle": "还清",
   "CashflowGame.payoffConfirm": "一次性还清 {{tag}}（{{amount}}）？它每月 {{expense}} 的支出将结束：你的每月现金流从 {{before}} 变为 {{after}}。",
   "CashflowGame.payoffBorrow": "你有 {{cash}}，所以需要先向银行借 {{borrow}}（其还款会降低你的现金流）。借钱还债很少划算，但你可以这样做。",

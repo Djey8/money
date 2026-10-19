@@ -1344,6 +1344,8 @@
   "CashflowGame.loanOutstanding": "Outstanding",
   "CashflowGame.loanBorrow": "Borrow",
   "CashflowGame.loanRepay": "Repay",
+  "CashflowGame.bankLocationName": "Bank",
+  "CashflowGame.bankLocationSub": "Main",
   "CashflowGame.payoffTitle": "Pay off",
   "CashflowGame.payoffConfirm": "Pay off {{tag}} ({{amount}}) in one payment? Its monthly expense of {{expense}} ends: your monthly cashflow goes from {{before}} to {{after}}.",
   "CashflowGame.payoffBorrow": "You have {{cash}}, so {{borrow}} has to be borrowed from the bank first (its payment lowers your cashflow). Borrowing to pay back rarely makes sense, but you can.",

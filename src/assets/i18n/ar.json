@@ -1344,6 +1344,8 @@
   "CashflowGame.loanOutstanding": "المتبقي",
   "CashflowGame.loanBorrow": "اقتراض",
   "CashflowGame.loanRepay": "سداد",
+  "CashflowGame.bankLocationName": "بنك",
+  "CashflowGame.bankLocationSub": "الرئيسي",
   "CashflowGame.payoffTitle": "سداد",
   "CashflowGame.payoffConfirm": "سداد {{tag}} ({{amount}}) بدفعة واحدة؟ ينتهي مصروفه الشهري البالغ {{expense}}: يرتفع تدفقك النقدي الشهري من {{before}} إلى {{after}}.",
   "CashflowGame.payoffBorrow": "لديك {{cash}}، لذا يجب اقتراض {{borrow}} من البنك أولاً (قسطه يخفض تدفقك النقدي). الاقتراض للسداد نادراً ما يجدي، لكن يمكنك ذلك.",
