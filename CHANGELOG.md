@@ -1,3 +1,15 @@
+## [1.28.0] - 2026-10-19
+
+### Features
+
+- feat(game): the roll button says Rolling... then Moving...; one or two dice only in your own turn
+
+### Bug Fixes
+
+- fix(game): a price card of another player lets you sell, never buy; the player card fits a phone
+- fix(tables): equal buttons, one scrolling row of players, bots by rating, no "What happened" list
+- fix(profile): a picture froze the page wherever the game board is drawn
+
 ## [1.27.0] - 2026-10-18
 
 ### Features
