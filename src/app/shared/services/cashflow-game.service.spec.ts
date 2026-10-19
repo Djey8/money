@@ -3453,6 +3453,26 @@ describe('CashflowGameService', () => {
       expect(state.allBudgets).toEqual([]);
     });
 
+    it('a new game starts with a clean plan: stale rows of its categories (an earlier game or version) never add up', () => {
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      const month = new Date().toISOString().slice(0, 7);
+      const last = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 15)
+        .toISOString()
+        .slice(0, 7);
+      state.allBudgets = [
+        { date: month, tag: '@Placeholder Expenses', amount: 5100 },
+        { date: last, tag: '@Placeholder Expenses', amount: 5100 },
+        { date: month, tag: '@Mine', amount: 7 },
+      ];
+      startSolo();
+      service.rng = die(1);
+      service.rollTurn(1, callbacks());
+      const expenses = state.allBudgets.filter((b) => b.tag === '@Placeholder Expenses');
+      expect(expenses.map((b) => b.amount)).toEqual([1800]);
+      expect(state.allBudgets.some((b) => b.tag === '@Mine')).toBe(true);
+    });
+
     it('the opening Payday of the very first roll already plans the budget', () => {
       startSolo();
       const state = AppStateService.instance;

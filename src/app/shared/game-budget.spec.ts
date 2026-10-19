@@ -37,19 +37,29 @@ describe('the budget a game plans', () => {
     expect(plan.map((m) => m.month)).toEqual(['2026-12', '2027-01']);
   });
 
-  it('puts the plan into the budget, and takes back exactly what the game put there when the plan changes', () => {
+  it('sets the plan into the budget (never added onto what was there), and takes back what the game planned when it changes', () => {
     const before = withPayday([], '2026-10', rows(['@Taxes', 90000]));
-    const mine = { date: '2026-10', tag: '@Taxes', amount: 100 }; // the player planned 100 on the same cell
-    const withPlan = applyPlanChange([mine], [], before);
-    expect(withPlan).toEqual([{ date: '2026-10', tag: '@Taxes', amount: 1000 }]);
-    // the next Payday moves the game's 900 back a month; the player's 100 stays where it is
+    const stale = [
+      { date: '2026-10', tag: '@Taxes', amount: 4100 }, // left by an earlier version or game
+      { date: '2026-10', tag: '@Mine', amount: 5 },
+    ];
+    const withPlan = applyPlanChange(stale, [], before);
+    expect(withPlan.find((b) => b.tag === '@Taxes')?.amount).toBe(900);
+    // the next Payday moves the month back: both months are set
     const after = withPayday(before, '2026-10', rows(['@Taxes', 90000]));
     const next = applyPlanChange(withPlan, before, after);
-    expect(next.find((b) => b.date === '2026-09')?.amount).toBe(900);
-    expect(next.find((b) => b.date === '2026-10')?.amount).toBe(1000);
-    // everything goes with the plan
+    expect(
+      next
+        .filter((b) => b.tag === '@Taxes')
+        .map((b) => [b.date, b.amount])
+        .sort(),
+    ).toEqual([
+      ['2026-09', 900],
+      ['2026-10', 900],
+    ]);
+    // everything the game planned goes with the plan; the player's own cell stays
     expect(applyPlanChange(next, after, [])).toEqual([
-      { date: '2026-10', tag: '@Taxes', amount: 100 },
+      { date: '2026-10', tag: '@Mine', amount: 5 },
     ]);
   });
 

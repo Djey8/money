@@ -5,13 +5,13 @@
   "title": "Krankenpfleger/in"
  },
  "meta": {
-  "generatedAt": "2026-10-16T08:23:50.691Z",
+  "generatedAt": "2026-10-19T18:06:22.441Z",
   "rulesDigest": "02d612c9ec287f",
   "config": {
-   "candidates": 32,
-   "generations": 7,
-   "matches": 10,
-   "verify": 1500,
+   "candidates": 48,
+   "generations": 10,
+   "matches": 12,
+   "verify": 2000,
    "seedBase": 410000,
    "field": [
     "champion-v1",
@@ -22,25 +22,25 @@
     "bridge-loans"
    ]
   },
-  "seconds": 272
+  "seconds": 734
  },
  "history": [
   {
    "generation": 0,
-   "tables": 30,
+   "tables": 36,
    "best": [
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.5
+     "id": "cand-krankenpfleger-3578",
+     "known": false,
+     "winRate": 0.6666666666666666
     },
     {
-     "id": "cand-krankenpfleger-1666",
+     "id": "cand-krankenpfleger-3573",
      "known": false,
      "winRate": 0.5
     },
     {
-     "id": "cand-krankenpfleger-1667",
+     "id": "cand-krankenpfleger-3603",
      "known": false,
      "winRate": 0.5
     }
@@ -48,139 +48,202 @@
   },
   {
    "generation": 1,
-   "tables": 30,
+   "tables": 36,
    "best": [
     {
-     "id": "cand-krankenpfleger-1714",
-     "known": false,
-     "winRate": 0.5666666666666667
-    },
-    {
-     "id": "champion-v2",
+     "id": "champion-v1",
      "known": true,
-     "winRate": 0.5333333333333333
+     "winRate": 0.6111111111111112
     },
     {
-     "id": "cand-krankenpfleger-1666",
+     "id": "cand-krankenpfleger-3563",
      "known": false,
-     "winRate": 0.5333333333333333
+     "winRate": 0.6111111111111112
+    },
+    {
+     "id": "cand-krankenpfleger-3564",
+     "known": false,
+     "winRate": 0.6111111111111112
     }
    ]
   },
   {
    "generation": 2,
-   "tables": 60,
+   "tables": 72,
    "best": [
     {
-     "id": "champion-v2",
+     "id": "cand-krankenpfleger-3650",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "cand-krankenpfleger-3665",
+     "known": false,
+     "winRate": 0.6666666666666666
+    },
+    {
+     "id": "champion-v1",
      "known": true,
-     "winRate": 0.6666666666666666
-    },
-    {
-     "id": "cand-krankenpfleger-1666",
-     "known": false,
-     "winRate": 0.6666666666666666
-    },
-    {
-     "id": "cand-krankenpfleger-1667",
-     "known": false,
-     "winRate": 0.6666666666666666
+     "winRate": 0.6527777777777778
     }
    ]
   },
   {
    "generation": 3,
-   "tables": 60,
+   "tables": 72,
    "best": [
     {
-     "id": "cand-krankenpfleger-1754",
+     "id": "cand-krankenpfleger-3687",
      "known": false,
-     "winRate": 0.6
+     "winRate": 0.5694444444444444
     },
     {
-     "id": "cand-krankenpfleger-1764",
+     "id": "cand-krankenpfleger-3650",
      "known": false,
-     "winRate": 0.6
+     "winRate": 0.5555555555555556
     },
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.5166666666666667
+     "id": "cand-krankenpfleger-3665",
+     "known": false,
+     "winRate": 0.5555555555555556
     }
    ]
   },
   {
    "generation": 4,
-   "tables": 90,
+   "tables": 108,
    "best": [
     {
-     "id": "cand-krankenpfleger-1754",
+     "id": "cand-krankenpfleger-3650",
      "known": false,
-     "winRate": 0.6
+     "winRate": 0.6481481481481481
     },
     {
-     "id": "cand-krankenpfleger-1764",
+     "id": "cand-krankenpfleger-3693",
      "known": false,
-     "winRate": 0.6
+     "winRate": 0.6481481481481481
     },
     {
-     "id": "cand-krankenpfleger-1775",
+     "id": "cand-krankenpfleger-3702",
      "known": false,
-     "winRate": 0.6
+     "winRate": 0.6481481481481481
     }
    ]
   },
   {
    "generation": 5,
-   "tables": 90,
+   "tables": 108,
    "best": [
     {
-     "id": "cand-krankenpfleger-1807",
+     "id": "cand-krankenpfleger-3772",
      "known": false,
-     "winRate": 0.5444444444444444
+     "winRate": 0.5925925925925926
     },
     {
-     "id": "cand-krankenpfleger-1822",
+     "id": "cand-krankenpfleger-3773",
      "known": false,
-     "winRate": 0.5444444444444444
+     "winRate": 0.5925925925925926
     },
     {
-     "id": "cand-krankenpfleger-1754",
+     "id": "cand-krankenpfleger-3777",
      "known": false,
-     "winRate": 0.5333333333333333
+     "winRate": 0.5833333333333334
     }
    ]
   },
   {
    "generation": 6,
-   "tables": 120,
+   "tables": 144,
    "best": [
     {
-     "id": "cand-krankenpfleger-1807",
+     "id": "cand-krankenpfleger-3798",
      "known": false,
      "winRate": 0.625
     },
     {
-     "id": "cand-krankenpfleger-1829",
+     "id": "cand-krankenpfleger-3650",
      "known": false,
      "winRate": 0.625
     },
     {
-     "id": "cand-krankenpfleger-1830",
+     "id": "cand-krankenpfleger-3693",
      "known": false,
      "winRate": 0.625
+    }
+   ]
+  },
+  {
+   "generation": 7,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-krankenpfleger-3864",
+     "known": false,
+     "winRate": 0.6875
+    },
+    {
+     "id": "cand-krankenpfleger-3862",
+     "known": false,
+     "winRate": 0.6805555555555556
+    },
+    {
+     "id": "cand-krankenpfleger-3798",
+     "known": false,
+     "winRate": 0.6736111111111112
+    }
+   ]
+  },
+  {
+   "generation": 8,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-krankenpfleger-3864",
+     "known": false,
+     "winRate": 0.6722222222222223
+    },
+    {
+     "id": "cand-krankenpfleger-3886",
+     "known": false,
+     "winRate": 0.6722222222222223
+    },
+    {
+     "id": "cand-krankenpfleger-3891",
+     "known": false,
+     "winRate": 0.6722222222222223
+    }
+   ]
+  },
+  {
+   "generation": 9,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-krankenpfleger-3944",
+     "known": false,
+     "winRate": 0.6333333333333333
+    },
+    {
+     "id": "cand-krankenpfleger-3956",
+     "known": false,
+     "winRate": 0.6277777777777778
+    },
+    {
+     "id": "cand-krankenpfleger-3939",
+     "known": false,
+     "winRate": 0.6222222222222222
     }
    ]
   }
  ],
  "verdict": [
   {
-   "id": "champion-v2",
-   "known": true,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "id": "cand-krankenpfleger-3944",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -193,46 +256,6 @@
      "maxLotShare": 0.4
     },
     "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 915,
-   "tables": 1500,
-   "winRate": 0.61,
-   "escapeRate": 0.6146666666666667,
-   "bankruptRate": 0.038,
-   "interval": {
-    "low": 0.5850653959956961,
-    "high": 0.6343726086452182
-   }
-  },
-  {
-   "id": "cand-krankenpfleger-1807",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 36 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1500,
-     "sellAboveMinor": 2000,
-     "maxLotShare": 0.3
-    },
-    "sellWhenProfitMonths": 36,
     "repayLoans": true,
     "charityTwoDice": true,
     "skipDoodadsAboveMinor": null,
@@ -246,24 +269,168 @@
     "countShares": null,
     "pileByCount": false,
     "countReturnFactor": 0,
-    "speculate": null
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
    },
-   "wins": 854,
-   "tables": 1500,
-   "winRate": 0.5693333333333334,
-   "escapeRate": 0.5773333333333334,
-   "bankruptRate": 0.03,
+   "wins": 1285,
+   "tables": 2001,
+   "winRate": 0.6421789105447276,
+   "escapeRate": 0.6446776611694153,
+   "bankruptRate": 0.033483258370814596,
    "interval": {
-    "low": 0.5441285833857283,
-    "high": 0.5941838559030904
+    "low": 0.620921247978866,
+    "high": 0.6628916976423741
    }
   },
   {
-   "id": "cand-krankenpfleger-1829",
+   "id": "cand-krankenpfleger-3939",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 36 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
-    "minMonthlyReturn": 0.01,
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 1272,
+   "tables": 2001,
+   "winRate": 0.6356821589205397,
+   "escapeRate": 0.6381809095452274,
+   "bankruptRate": 0.04097951024487756,
+   "interval": {
+    "low": 0.6143548475227663,
+    "high": 0.6564894924989092
+   }
+  },
+  {
+   "id": "cand-krankenpfleger-3864",
+   "known": false,
+   "description": "properties paying at least 1.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.015,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.3,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 1264,
+   "tables": 2001,
+   "winRate": 0.6316841579210395,
+   "escapeRate": 0.6341829085457271,
+   "bankruptRate": 0.04097951024487756,
+   "interval": {
+    "low": 0.6103160443579871,
+    "high": 0.6525476152947256
+   }
+  },
+  {
+   "id": "cand-krankenpfleger-3956",
+   "known": false,
+   "description": "properties paying at least 2.5% a month, 250 kept in reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.025,
+    "reserveMinor": 25000,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.3,
+     "loanCoverageFactor": 0.75,
+     "reserveFactor": 0
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 1243,
+   "tables": 2001,
+   "winRate": 0.6211894052973513,
+   "escapeRate": 0.623688155922039,
+   "bankruptRate": 0.0399800099950025,
+   "interval": {
+    "low": 0.5997215599837659,
+    "high": 0.6421928137004195
+   }
+  },
+  {
+   "id": "champion-v1",
+   "known": true,
+   "description": "The best strategy the tournament search found: any 2% property with no reserve, loans when covered 1.5x, Big Deals from 10,000 cash, marketing, stock trading, selling at 12 months of profit - and it takes more risk when a rival pulls ahead.",
+   "overrides": {
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -271,18 +438,12 @@
     "buyMlm": true,
     "buyGambles": false,
     "shares": {
-     "buyBelowMinor": 1500,
-     "sellAboveMinor": 2000,
-     "maxLotShare": 0.3
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
     },
-    "sellWhenProfitMonths": 36,
+    "sellWhenProfitMonths": 12,
     "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "countShares": null,
-    "pileByCount": false,
-    "countReturnFactor": 0,
-    "speculate": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -291,113 +452,27 @@
     },
     "protectLead": null
    },
-   "wins": 854,
-   "tables": 1500,
-   "winRate": 0.5693333333333334,
-   "escapeRate": 0.5773333333333334,
-   "bankruptRate": 0.03,
+   "wins": 1225,
+   "tables": 2001,
+   "winRate": 0.6121939030484758,
+   "escapeRate": 0.6156921539230384,
+   "bankruptRate": 0.035982008995502246,
    "interval": {
-    "low": 0.5441285833857283,
-    "high": 0.5941838559030904
-   }
-  },
-  {
-   "id": "cand-krankenpfleger-1830",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 36 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1500,
-     "sellAboveMinor": 2000,
-     "maxLotShare": 0.3
-    },
-    "sellWhenProfitMonths": 36,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "countShares": null,
-    "pileByCount": false,
-    "countReturnFactor": 0,
-    "speculate": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 854,
-   "tables": 1500,
-   "winRate": 0.5693333333333334,
-   "escapeRate": 0.5773333333333334,
-   "bankruptRate": 0.03,
-   "interval": {
-    "low": 0.5441285833857283,
-    "high": 0.5941838559030904
-   }
-  },
-  {
-   "id": "cand-krankenpfleger-1839",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 36 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1500,
-     "sellAboveMinor": 2000,
-     "maxLotShare": 0.3
-    },
-    "sellWhenProfitMonths": 36,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "countShares": null,
-    "pileByCount": false,
-    "countReturnFactor": 0,
-    "speculate": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null
-   },
-   "wins": 854,
-   "tables": 1500,
-   "winRate": 0.5693333333333334,
-   "escapeRate": 0.5773333333333334,
-   "bankruptRate": 0.03,
-   "interval": {
-    "low": 0.5441285833857283,
-    "high": 0.5941838559030904
+    "low": 0.5906489676284526,
+    "high": 0.6333088752255663
    }
   }
  ],
  "champion": {
-  "id": "champion-v2",
-  "source": "champion-v2",
+  "id": "champion-krankenpfleger-v3",
+  "source": "cand-krankenpfleger-3944",
   "spec": {
-   "id": "champion-v2",
-   "label": "Champion",
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "id": "champion-krankenpfleger-v3",
+   "label": "Champion (Krankenpfleger/in)",
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -419,16 +494,23 @@
      "loanCoverageFactor": 1,
      "reserveFactor": 0.3
     },
-    "protectLead": null
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
    }
   },
-  "winRate": 0.61,
+  "winRate": 0.6421789105447276,
   "interval": {
-   "low": 0.5850653959956961,
-   "high": 0.6343726086452182
+   "low": 0.620921247978866,
+   "high": 0.6628916976423741
   },
-  "tables": 1500,
-  "againstChampionV1": 0.61
+  "tables": 2001,
+  "againstChampionV1": 0.6121939030484758
  },
- "adopted": false
+ "adopted": true
 }

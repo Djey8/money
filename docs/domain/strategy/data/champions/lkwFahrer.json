@@ -5,13 +5,13 @@
   "title": "LKW-Fahrer/in"
  },
  "meta": {
-  "generatedAt": "2026-10-16T08:06:09.330Z",
+  "generatedAt": "2026-10-19T17:17:33.454Z",
   "rulesDigest": "02d612c9ec287f",
   "config": {
-   "candidates": 32,
-   "generations": 7,
-   "matches": 10,
-   "verify": 1500,
+   "candidates": 48,
+   "generations": 10,
+   "matches": 12,
+   "verify": 2000,
    "seedBase": 410000,
    "field": [
     "champion-v1",
@@ -22,161 +22,376 @@
     "bridge-loans"
    ]
   },
-  "seconds": 272
+  "seconds": 777
  },
  "history": [
   {
    "generation": 0,
-   "tables": 30,
+   "tables": 36,
    "best": [
     {
-     "id": "cand-lkwFahrer-950",
+     "id": "cand-lkwFahrer-1990",
+     "known": false,
+     "winRate": 0.6111111111111112
+    },
+    {
+     "id": "cand-lkwFahrer-1987",
+     "known": false,
+     "winRate": 0.5555555555555556
+    },
+    {
+     "id": "cand-lkwFahrer-1982",
      "known": false,
      "winRate": 0.5
-    },
-    {
-     "id": "cand-lkwFahrer-926",
-     "known": false,
-     "winRate": 0.4666666666666667
-    },
-    {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.43333333333333335
     }
    ]
   },
   {
    "generation": 1,
-   "tables": 30,
+   "tables": 36,
    "best": [
     {
-     "id": "cand-lkwFahrer-926",
+     "id": "cand-lkwFahrer-2035",
      "known": false,
-     "winRate": 0.43333333333333335
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.43333333333333335
+     "id": "cand-lkwFahrer-2030",
+     "known": false,
+     "winRate": 0.5555555555555556
     },
     {
-     "id": "cand-lkwFahrer-927",
+     "id": "cand-lkwFahrer-1982",
      "known": false,
-     "winRate": 0.43333333333333335
+     "winRate": 0.5277777777777778
     }
    ]
   },
   {
    "generation": 2,
-   "tables": 60,
+   "tables": 72,
    "best": [
     {
-     "id": "cand-lkwFahrer-993",
+     "id": "cand-lkwFahrer-2035",
      "known": false,
-     "winRate": 0.65
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "cand-lkwFahrer-926",
+     "id": "cand-lkwFahrer-2070",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "cand-lkwFahrer-966",
+     "id": "cand-lkwFahrer-2075",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.5833333333333334
     }
    ]
   },
   {
    "generation": 3,
-   "tables": 60,
+   "tables": 72,
    "best": [
     {
-     "id": "cand-lkwFahrer-1009",
+     "id": "cand-lkwFahrer-2133",
      "known": false,
-     "winRate": 0.5333333333333333
+     "winRate": 0.4722222222222222
     },
     {
-     "id": "cand-lkwFahrer-926",
+     "id": "cand-lkwFahrer-2035",
      "known": false,
-     "winRate": 0.4666666666666667
+     "winRate": 0.4305555555555556
     },
     {
-     "id": "cand-lkwFahrer-966",
+     "id": "cand-lkwFahrer-2070",
      "known": false,
-     "winRate": 0.4666666666666667
+     "winRate": 0.4305555555555556
     }
    ]
   },
   {
    "generation": 4,
-   "tables": 90,
+   "tables": 108,
    "best": [
     {
-     "id": "cand-lkwFahrer-1057",
+     "id": "cand-lkwFahrer-2086",
      "known": false,
-     "winRate": 0.4777777777777778
+     "winRate": 0.5185185185185185
     },
     {
-     "id": "cand-lkwFahrer-1036",
+     "id": "cand-lkwFahrer-2145",
      "known": false,
-     "winRate": 0.4666666666666667
+     "winRate": 0.5185185185185185
     },
     {
-     "id": "cand-lkwFahrer-1009",
+     "id": "cand-lkwFahrer-2174",
      "known": false,
-     "winRate": 0.45555555555555555
+     "winRate": 0.5185185185185185
     }
    ]
   },
   {
    "generation": 5,
-   "tables": 90,
+   "tables": 108,
    "best": [
     {
-     "id": "cand-lkwFahrer-1009",
+     "id": "cand-lkwFahrer-2144",
      "known": false,
-     "winRate": 0.5444444444444444
+     "winRate": 0.48148148148148145
     },
     {
-     "id": "cand-lkwFahrer-1038",
+     "id": "cand-lkwFahrer-2152",
      "known": false,
-     "winRate": 0.5444444444444444
+     "winRate": 0.48148148148148145
     },
     {
-     "id": "cand-lkwFahrer-1043",
+     "id": "cand-lkwFahrer-2165",
      "known": false,
-     "winRate": 0.5444444444444444
+     "winRate": 0.48148148148148145
     }
    ]
   },
   {
    "generation": 6,
-   "tables": 120,
+   "tables": 144,
    "best": [
     {
-     "id": "cand-lkwFahrer-1095",
+     "id": "cand-lkwFahrer-2249",
+     "known": false,
+     "winRate": 0.5
+    },
+    {
+     "id": "cand-lkwFahrer-2144",
+     "known": false,
+     "winRate": 0.4930555555555556
+    },
+    {
+     "id": "cand-lkwFahrer-2152",
+     "known": false,
+     "winRate": 0.4930555555555556
+    }
+   ]
+  },
+  {
+   "generation": 7,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-lkwFahrer-2275",
+     "known": false,
+     "winRate": 0.5694444444444444
+    },
+    {
+     "id": "cand-lkwFahrer-2285",
+     "known": false,
+     "winRate": 0.5555555555555556
+    },
+    {
+     "id": "cand-lkwFahrer-2292",
+     "known": false,
+     "winRate": 0.5347222222222222
+    }
+   ]
+  },
+  {
+   "generation": 8,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-lkwFahrer-2300",
+     "known": false,
+     "winRate": 0.5611111111111111
+    },
+    {
+     "id": "cand-lkwFahrer-2303",
+     "known": false,
+     "winRate": 0.5444444444444444
+    },
+    {
+     "id": "cand-lkwFahrer-2282",
+     "known": false,
+     "winRate": 0.5277777777777778
+    }
+   ]
+  },
+  {
+   "generation": 9,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-lkwFahrer-2303",
+     "known": false,
+     "winRate": 0.5888888888888889
+    },
+    {
+     "id": "cand-lkwFahrer-2373",
+     "known": false,
+     "winRate": 0.5888888888888889
+    },
+    {
+     "id": "cand-lkwFahrer-2362",
      "known": false,
      "winRate": 0.5833333333333334
-    },
-    {
-     "id": "cand-lkwFahrer-1038",
-     "known": false,
-     "winRate": 0.5583333333333333
-    },
-    {
-     "id": "cand-lkwFahrer-1106",
-     "known": false,
-     "winRate": 0.5583333333333333
     }
    ]
   }
  ],
  "verdict": [
   {
-   "id": "cand-lkwFahrer-1009",
+   "id": "cand-lkwFahrer-2303",
    "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys shares only when a 3x card is still in the pile, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 1
+    },
+    "protectLead": null,
+    "countShares": {
+     "minGain": 3,
+     "maxWaitDraws": 24,
+     "maxLotShare": 0.6,
+     "sellAboveMinor": 1500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 1095,
+   "tables": 2001,
+   "winRate": 0.5472263868065967,
+   "escapeRate": 0.5552223888055972,
+   "bankruptRate": 0.10994502748625687,
+   "interval": {
+    "low": 0.5253465645511937,
+    "high": 0.5689252223071797
+   }
+  },
+  {
+   "id": "cand-lkwFahrer-2373",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys shares only when a 3x card is still in the pile, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 1
+    },
+    "protectLead": null,
+    "countShares": {
+     "minGain": 3,
+     "maxWaitDraws": 24,
+     "maxLotShare": 0.6,
+     "sellAboveMinor": 1500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 1095,
+   "tables": 2001,
+   "winRate": 0.5472263868065967,
+   "escapeRate": 0.5552223888055972,
+   "bankruptRate": 0.10994502748625687,
+   "interval": {
+    "low": 0.5253465645511937,
+    "high": 0.5689252223071797
+   }
+  },
+  {
+   "id": "cand-lkwFahrer-2362",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys shares only when a 3x card is still in the pile, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind, plays safe when 20+ points ahead",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.9,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 1
+    },
+    "protectLead": {
+     "gap": 0.2,
+     "minMonthlyReturnFactor": 2,
+     "loanCoverageFactor": 1.5,
+     "reserveFactor": 3
+    },
+    "countShares": {
+     "minGain": 3,
+     "maxWaitDraws": 24,
+     "maxLotShare": 0.6,
+     "sellAboveMinor": 1500
+    },
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 1095,
+   "tables": 2001,
+   "winRate": 0.5472263868065967,
+   "escapeRate": 0.5552223888055972,
+   "bankruptRate": 0.10844577711144428,
+   "interval": {
+    "low": 0.5253465645511937,
+    "high": 0.5689252223071797
+   }
+  },
+  {
+   "id": "champion-lkwFahrer-v3",
+   "known": true,
    "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
@@ -211,121 +426,26 @@
      "minEvRatio": 0.5
     }
    },
-   "wins": 780,
-   "tables": 1500,
-   "winRate": 0.52,
-   "escapeRate": 0.524,
-   "bankruptRate": 0.12866666666666668,
+   "wins": 1094,
+   "tables": 2001,
+   "winRate": 0.5467266366816592,
+   "escapeRate": 0.551224387806097,
+   "bankruptRate": 0.11544227886056972,
    "interval": {
-    "low": 0.4946979315047373,
-    "high": 0.5451998875208836
+    "low": 0.5248457115481997,
+    "high": 0.5684284902640533
    }
   },
   {
-   "id": "cand-lkwFahrer-1038",
+   "id": "cand-lkwFahrer-2144",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, trades stocks, sells at 12 months of profit, takes more risk when 30+ points behind",
    "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
     "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null,
-    "countShares": null,
-    "pileByCount": false,
-    "countReturnFactor": 0,
-    "speculate": {
-     "maxWaitDraws": 8,
-     "minEvRatio": 0.5
-    }
-   },
-   "wins": 776,
-   "tables": 1500,
-   "winRate": 0.5173333333333333,
-   "escapeRate": 0.5233333333333333,
-   "bankruptRate": 0.11933333333333333,
-   "interval": {
-    "low": 0.49203305447958556,
-    "high": 0.5425450553426191
-   }
-  },
-  {
-   "id": "cand-lkwFahrer-1106",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null,
-    "countShares": null,
-    "pileByCount": false,
-    "countReturnFactor": 0,
-    "speculate": {
-     "maxWaitDraws": 8,
-     "minEvRatio": 0.5
-    }
-   },
-   "wins": 776,
-   "tables": 1500,
-   "winRate": 0.5173333333333333,
-   "escapeRate": 0.5233333333333333,
-   "bankruptRate": 0.11933333333333333,
-   "interval": {
-    "low": 0.49203305447958556,
-    "high": 0.5425450553426191
-   }
-  },
-  {
-   "id": "cand-lkwFahrer-1095",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 15000 cash, Multi-Level-Marketing, dice gambles, scales its bar by what is left in the pile (0.5), buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1500000,
     "buyMlm": true,
     "buyGambles": true,
     "shares": {
@@ -337,75 +457,32 @@
     "repayLoans": true,
     "charityTwoDice": true,
     "skipDoodadsAboveMinor": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null,
     "countShares": null,
     "pileByCount": false,
-    "countReturnFactor": 0.5,
-    "speculate": {
-     "maxWaitDraws": 4,
-     "minEvRatio": 0.5
-    }
-   },
-   "wins": 769,
-   "tables": 1500,
-   "winRate": 0.5126666666666667,
-   "escapeRate": 0.5193333333333333,
-   "bankruptRate": 0.11866666666666667,
-   "interval": {
-    "low": 0.4873712478329568,
-    "high": 0.5378973708832698
-   }
-  },
-  {
-   "id": "champion-v2",
-   "known": true,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": false,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
+    "countReturnFactor": 0,
+    "speculate": null,
     "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
+     "gap": 0.3,
+     "minMonthlyReturnFactor": 0.9,
      "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
+     "reserveFactor": 1
     },
     "protectLead": null
    },
-   "wins": 740,
-   "tables": 1500,
-   "winRate": 0.49333333333333335,
-   "escapeRate": 0.49933333333333335,
-   "bankruptRate": 0.12333333333333334,
+   "wins": 1045,
+   "tables": 2001,
+   "winRate": 0.5222388805597201,
+   "escapeRate": 0.527736131934033,
+   "bankruptRate": 0.11944027986006997,
    "interval": {
-    "low": 0.4680814528448815,
-    "high": 0.5186192741465783
+    "low": 0.5003308954907274,
+    "high": 0.5440616390616282
    }
   }
  ],
  "champion": {
   "id": "champion-lkwFahrer-v3",
-  "source": "cand-lkwFahrer-1009",
+  "source": "champion-lkwFahrer-v3",
   "spec": {
    "id": "champion-lkwFahrer-v3",
    "label": "Champion (LKW-Fahrer/in)",
@@ -444,13 +521,13 @@
     }
    }
   },
-  "winRate": 0.52,
+  "winRate": 0.5467266366816592,
   "interval": {
-   "low": 0.4946979315047373,
-   "high": 0.5451998875208836
+   "low": 0.5248457115481997,
+   "high": 0.5684284902640533
   },
-  "tables": 1500,
-  "againstChampionV1": 0.49333333333333335
+  "tables": 2001,
+  "againstChampionV1": 0.5467266366816592
  },
- "adopted": true
+ "adopted": false
 }

@@ -9,7 +9,10 @@ const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const store = require('../repositories/game-stats-store');
 const { stats, nicknameOf } = require('./game-rooms');
-const { PROVISIONAL_GAMES } = require('@money/domain/dist/cashflow-game/table/rating');
+const {
+  PROVISIONAL_GAMES,
+  RATING_FLOOR,
+} = require('@money/domain/dist/cashflow-game/table/rating');
 
 /**
  * The Cashflow leaderboard (todo/cashflow-leaderboard.md §9). Mounted by routes/api.js at `/api/v1/game`; game accounts only.
@@ -155,7 +158,23 @@ router.get('/players/:playerId', ...guard('r'), async (req, res, next) => {
     if (!profile || (profile.type === 'human' && !profile.visible && !mine)) {
       return problem(res, 404, 'player_not_found', 'No such player', 'No player with that id.');
     }
-    const results = await store.resultsOfPlayer(getGameStatsDb(), playerId, 20);
+    const all = await store.resultsOfPlayer(getGameStatsDb(), playerId, 500);
+    // The rating after each game is the current base plus every change up to it (a rating is base + games, JFK 2026-10-19). Only when
+    // the record is whole; otherwise the rating as it was recorded, on the current base.
+    const chronological = [...all].reverse();
+    const counted = (r) =>
+      r.counted && !r.participants.find((p) => p.playerId === playerId).leftEarly;
+    const whole = chronological.filter(counted).length === profile.rated;
+    const running = new Map();
+    let rating = profile.baseRating ?? 1500;
+    for (const result of chronological) {
+      if (counted(result)) {
+        const mineIn = result.participants.find((p) => p.playerId === playerId);
+        rating = Math.max(RATING_FLOOR, Math.round((rating + mineIn.delta) * 100) / 100);
+      }
+      running.set(result.tableId, rating);
+    }
+    const results = all.slice(0, 20);
     const recent = results.map((result) => {
       const own = result.participants.find((p) => p.playerId === playerId);
       return {
@@ -167,9 +186,11 @@ router.get('/players/:playerId', ...guard('r'), async (req, res, next) => {
         ranked: result.counted,
         ...(result.counted ? {} : { notRankedBecause: result.rankedWhy }),
         ratingChange: own.delta,
-        ratingAfter: Math.round(
-          own.ratingAfter + ((profile.baseRating ?? 1500) - baseAt(profile, result.endedAt)),
-        ),
+        ratingAfter: whole
+          ? Math.round(running.get(result.tableId))
+          : Math.round(
+              own.ratingAfter + ((profile.baseRating ?? 1500) - baseAt(profile, result.endedAt)),
+            ),
       };
     });
     return res.json({ ...present(profile), recent });

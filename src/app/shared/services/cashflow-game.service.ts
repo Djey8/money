@@ -7,6 +7,7 @@ import {
   healLegacyRows,
   planFromPaydays,
   sameRows,
+  shiftMonth,
   withPayday,
   type PlanMonth,
   type PlanRow,
@@ -976,6 +977,16 @@ export class CashflowGameService {
     );
 
     const planOfLastGame = state.cashflowGame.budgetPlan ?? [];
+    // a new game starts with a clean plan: rows of its own categories left in the last months (by an earlier game or version) go
+    const gameTags = new Set(
+      state.allSubscriptions
+        .filter(
+          (sub) =>
+            subscriptionTitles.includes(sub.title) && sub.account !== 'Income' && sub.category,
+        )
+        .map((sub) => sub.category),
+    );
+    const since = shiftMonth(this.clock.todayIso().slice(0, 7), -2);
     state.cashflowGame = {
       ...result.state,
       gameSubscriptionTitles: subscriptionTitles,
@@ -984,7 +995,9 @@ export class CashflowGameService {
     // a new game starts without the plan of the last one
     if (state.tier2Loaded) {
       state.allBudgets = applyPlanChange(
-        (state.allBudgets ?? []).filter((b) => !b.game),
+        (state.allBudgets ?? []).filter(
+          (b) => !b.game && !(gameTags.has(b.tag) && b.date >= since),
+        ),
         planOfLastGame,
         [],
       );
@@ -1115,6 +1128,8 @@ export class CashflowGameService {
     state.allBudgets = heal
       ? healLegacyRows(state.allBudgets ?? [], after)
       : applyPlanChange(state.allBudgets ?? [], before, after);
+    // the Budget page (and anything else drawn from it) follows at once, not only when the save is done
+    state.transactionsUpdated$.next();
     return true;
   }
 

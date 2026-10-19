@@ -1,7 +1,7 @@
 {
  "meta": {
   "rulesDigest": "02d612c9ec287f",
-  "generatedAt": "2026-10-16T09:29:37.730Z",
+  "generatedAt": "2026-10-19T15:43:47.338Z",
   "tables": 18720
  },
  "bots": [
@@ -22,6 +22,12 @@
    "name": "Cash Charlie",
    "label": "Properties from cash",
    "difficulty": "easy"
+  },
+  {
+   "id": "debt-first",
+   "name": "Debt-free Dana",
+   "label": "Debt first",
+   "difficulty": "medium"
   },
   {
    "id": "stocks-for-deposits",
@@ -129,250 +135,263 @@
    "scores": [
     {
      "policyId": "champion-v2",
-     "appearances": 144,
-     "winRate": 0.6944,
+     "appearances": 154,
+     "winRate": 0.7143,
      "winInterval": {
-      "low": 0.615,
-      "high": 0.7638
+      "low": 0.6384,
+      "high": 0.7797
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.229,
-     "escapeRate": 0.6944,
-     "bankruptRate": 0.0417
+     "meanRank": 1.221,
+     "escapeRate": 0.7143,
+     "bankruptRate": 0.0455
     },
     {
      "policyId": "character-banker",
-     "appearances": 170,
-     "winRate": 0.6765,
+     "appearances": 162,
+     "winRate": 0.6914,
      "winInterval": {
-      "low": 0.6029,
-      "high": 0.7422
+      "low": 0.6165,
+      "high": 0.7574
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.241,
-     "escapeRate": 0.6765,
-     "bankruptRate": 0.0765
-    },
-    {
-     "policyId": "character-investor",
-     "appearances": 172,
-     "winRate": 0.6337,
-     "winInterval": {
-      "low": 0.5595,
-      "high": 0.7021
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.297,
-     "escapeRate": 0.6337,
-     "bankruptRate": 0.093
-    },
-    {
-     "policyId": "character-chaser",
-     "appearances": 144,
-     "winRate": 0.625,
-     "winInterval": {
-      "low": 0.5436,
-      "high": 0.6999
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.326,
-     "escapeRate": 0.625,
-     "bankruptRate": 0.0625
+     "meanRank": 1.253,
+     "escapeRate": 0.6914,
+     "bankruptRate": 0.0679
     },
     {
      "policyId": "character-marketer",
-     "appearances": 120,
-     "winRate": 0.6167,
+     "appearances": 126,
+     "winRate": 0.6667,
      "winInterval": {
-      "low": 0.5273,
-      "high": 0.6988
+      "low": 0.5805,
+      "high": 0.743
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.3,
-     "escapeRate": 0.6167,
-     "bankruptRate": 0.0667
+     "meanRank": 1.254,
+     "escapeRate": 0.6667,
+     "bankruptRate": 0.0794
     },
     {
      "policyId": "champion-v1",
-     "appearances": 154,
-     "winRate": 0.6104,
+     "appearances": 152,
+     "winRate": 0.6645,
      "winInterval": {
-      "low": 0.5316,
-      "high": 0.6838
+      "low": 0.5862,
+      "high": 0.7347
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.305,
-     "escapeRate": 0.6104,
-     "bankruptRate": 0.0714
+     "meanRank": 1.276,
+     "escapeRate": 0.6645,
+     "bankruptRate": 0.0658
+    },
+    {
+     "policyId": "character-investor",
+     "appearances": 152,
+     "winRate": 0.6316,
+     "winInterval": {
+      "low": 0.5525,
+      "high": 0.7041
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.316,
+     "escapeRate": 0.6316,
+     "bankruptRate": 0.0987
     },
     {
      "policyId": "character-trader",
-     "appearances": 156,
-     "winRate": 0.6026,
+     "appearances": 140,
+     "winRate": 0.6286,
      "winInterval": {
-      "low": 0.5242,
-      "high": 0.676
+      "low": 0.5461,
+      "high": 0.7042
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.321,
-     "escapeRate": 0.6026,
-     "bankruptRate": 0.0769
+     "meanRank": 1.286,
+     "escapeRate": 0.6286,
+     "bankruptRate": 0.0929
+    },
+    {
+     "policyId": "character-chaser",
+     "appearances": 136,
+     "winRate": 0.5956,
+     "winInterval": {
+      "low": 0.5116,
+      "high": 0.6743
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.324,
+     "escapeRate": 0.6029,
+     "bankruptRate": 0.0441
     },
     {
      "policyId": "character-gambler",
-     "appearances": 170,
-     "winRate": 0.5824,
+     "appearances": 144,
+     "winRate": 0.5556,
      "winInterval": {
-      "low": 0.5072,
-      "high": 0.6539
+      "low": 0.474,
+      "high": 0.6342
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.335,
-     "escapeRate": 0.5824,
-     "bankruptRate": 0.0529
+     "meanRank": 1.354,
+     "escapeRate": 0.5625,
+     "bankruptRate": 0.0486
+    },
+    {
+     "policyId": "all-rounder",
+     "appearances": 144,
+     "winRate": 0.5417,
+     "winInterval": {
+      "low": 0.4603,
+      "high": 0.6209
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.347,
+     "escapeRate": 0.5486,
+     "bankruptRate": 0.0486
     },
     {
      "policyId": "character-cautious",
      "appearances": 128,
-     "winRate": 0.5078,
+     "winRate": 0.5,
      "winInterval": {
-      "low": 0.4222,
-      "high": 0.5929
+      "low": 0.4147,
+      "high": 0.5853
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.453,
+     "meanRank": 1.461,
      "escapeRate": 0.5078,
-     "bankruptRate": 0.0703
-    },
-    {
-     "policyId": "all-rounder",
-     "appearances": 148,
-     "winRate": 0.4527,
-     "winInterval": {
-      "low": 0.3747,
-      "high": 0.5331
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.419,
-     "escapeRate": 0.4595,
-     "bankruptRate": 0.0405
+     "bankruptRate": 0.0781
     },
     {
      "policyId": "best-found",
-     "appearances": 154,
-     "winRate": 0.3247,
+     "appearances": 142,
+     "winRate": 0.3732,
      "winInterval": {
-      "low": 0.2558,
-      "high": 0.4021
+      "low": 0.298,
+      "high": 0.4551
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.584,
-     "escapeRate": 0.3377,
-     "bankruptRate": 0.1039
+     "meanRank": 1.507,
+     "escapeRate": 0.3803,
+     "bankruptRate": 0.0775
     },
     {
      "policyId": "big-deals-when-rich",
-     "appearances": 156,
-     "winRate": 0.3013,
+     "appearances": 152,
+     "winRate": 0.2961,
      "winInterval": {
-      "low": 0.2348,
-      "high": 0.3773
+      "low": 0.2292,
+      "high": 0.3729
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.538,
-     "escapeRate": 0.3333,
-     "bankruptRate": 0.1282
+     "meanRank": 1.592,
+     "escapeRate": 0.3224,
+     "bankruptRate": 0.1184
     },
     {
      "policyId": "cash-properties",
-     "appearances": 156,
-     "winRate": 0.2244,
+     "appearances": 138,
+     "winRate": 0.2029,
      "winInterval": {
-      "low": 0.166,
-      "high": 0.296
+      "low": 0.1443,
+      "high": 0.2776
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.66,
-     "escapeRate": 0.2692,
-     "bankruptRate": 0.1026
-    },
-    {
-     "policyId": "leveraged-big",
-     "appearances": 164,
-     "winRate": 0.2073,
-     "winInterval": {
-      "low": 0.1523,
-      "high": 0.2757
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.671,
-     "escapeRate": 0.2134,
-     "bankruptRate": 0.2378
-    },
-    {
-     "policyId": "stocks-for-deposits",
-     "appearances": 116,
-     "winRate": 0.1897,
-     "winInterval": {
-      "low": 0.1287,
-      "high": 0.2705
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.707,
-     "escapeRate": 0.2586,
-     "bankruptRate": 0.1724
+     "meanRank": 1.703,
+     "escapeRate": 0.2319,
+     "bankruptRate": 0.0797
     },
     {
      "policyId": "mlm-then-properties",
-     "appearances": 172,
-     "winRate": 0.1512,
+     "appearances": 136,
+     "winRate": 0.1985,
      "winInterval": {
-      "low": 0.1053,
-      "high": 0.2123
+      "low": 0.1402,
+      "high": 0.2734
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.715,
-     "escapeRate": 0.186,
-     "bankruptRate": 0.0698
+     "meanRank": 1.61,
+     "escapeRate": 0.2574,
+     "bankruptRate": 0.0882
     },
     {
      "policyId": "bridge-loans",
-     "appearances": 148,
-     "winRate": 0.1284,
+     "appearances": 178,
+     "winRate": 0.1966,
      "winInterval": {
-      "low": 0.0837,
-      "high": 0.1918
+      "low": 0.1449,
+      "high": 0.2612
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.784,
-     "escapeRate": 0.1486,
-     "bankruptRate": 0.1014
+     "meanRank": 1.719,
+     "escapeRate": 0.2191,
+     "bankruptRate": 0.073
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 108,
+     "winRate": 0.1852,
+     "winInterval": {
+      "low": 0.1232,
+      "high": 0.2688
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.731,
+     "escapeRate": 0.287,
+     "bankruptRate": 0.1852
+    },
+    {
+     "policyId": "leveraged-big",
+     "appearances": 146,
+     "winRate": 0.1438,
+     "winInterval": {
+      "low": 0.096,
+      "high": 0.2099
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.726,
+     "escapeRate": 0.1507,
+     "bankruptRate": 0.2466
     },
     {
      "policyId": "picky-properties",
-     "appearances": 152,
-     "winRate": 0.0987,
+     "appearances": 164,
+     "winRate": 0.128,
      "winInterval": {
-      "low": 0.0607,
-      "high": 0.1564
+      "low": 0.0853,
+      "high": 0.1878
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.783,
+     "meanRank": 1.732,
+     "escapeRate": 0.1524,
+     "bankruptRate": 0.1037
+    },
+    {
+     "policyId": "stocks-for-deposits",
+     "appearances": 136,
+     "winRate": 0.1176,
+     "winInterval": {
+      "low": 0.0737,
+      "high": 0.1826
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.75,
      "escapeRate": 0.125,
-     "bankruptRate": 0.1316
+     "bankruptRate": 0.1176
     },
     {
      "policyId": "never-buy",
-     "appearances": 156,
+     "appearances": 142,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.024
+      "high": 0.0263
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.84,
+     "meanRank": 1.859,
      "escapeRate": 0,
-     "bankruptRate": 0.1795
+     "bankruptRate": 0.2113
     }
    ]
   },
@@ -383,7 +402,20 @@
    "tables": 120,
    "scores": [
     {
-     "policyId": "character-chaser",
+     "policyId": "character-marketer",
+     "appearances": 12,
+     "winRate": 0.8333,
+     "winInterval": {
+      "low": 0.552,
+      "high": 0.953
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.167,
+     "escapeRate": 0.8333,
+     "bankruptRate": 0.0833
+    },
+    {
+     "policyId": "champion-v1",
      "appearances": 10,
      "winRate": 0.8,
      "winInterval": {
@@ -393,45 +425,45 @@
      "expectedWinRate": 0.5,
      "meanRank": 1.2,
      "escapeRate": 0.8,
-     "bankruptRate": 0.1
+     "bankruptRate": 0
     },
     {
-     "policyId": "character-gambler",
-     "appearances": 4,
+     "policyId": "character-chaser",
+     "appearances": 8,
      "winRate": 0.75,
      "winInterval": {
-      "low": 0.3006,
-      "high": 0.9544
+      "low": 0.4093,
+      "high": 0.9285
      },
      "expectedWinRate": 0.5,
      "meanRank": 1.25,
      "escapeRate": 0.75,
-     "bankruptRate": 0
+     "bankruptRate": 0.125
     },
     {
      "policyId": "champion-v2",
-     "appearances": 14,
-     "winRate": 0.7143,
+     "appearances": 18,
+     "winRate": 0.7222,
      "winInterval": {
-      "low": 0.4535,
-      "high": 0.8828
+      "low": 0.4913,
+      "high": 0.875
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.143,
-     "escapeRate": 0.7143,
+     "meanRank": 1.222,
+     "escapeRate": 0.7222,
      "bankruptRate": 0
     },
     {
-     "policyId": "character-marketer",
-     "appearances": 16,
-     "winRate": 0.6875,
+     "policyId": "character-gambler",
+     "appearances": 6,
+     "winRate": 0.6667,
      "winInterval": {
-      "low": 0.444,
-      "high": 0.8584
+      "low": 0.3,
+      "high": 0.9032
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.125,
-     "escapeRate": 0.6875,
+     "meanRank": 1.167,
+     "escapeRate": 0.6667,
      "bankruptRate": 0
     },
     {
@@ -448,30 +480,30 @@
      "bankruptRate": 0.0714
     },
     {
-     "policyId": "all-rounder",
-     "appearances": 18,
-     "winRate": 0.5556,
+     "policyId": "character-trader",
+     "appearances": 14,
+     "winRate": 0.5714,
      "winInterval": {
-      "low": 0.3372,
-      "high": 0.7544
+      "low": 0.3259,
+      "high": 0.7862
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.333,
-     "escapeRate": 0.5556,
-     "bankruptRate": 0.0556
+     "meanRank": 1.214,
+     "escapeRate": 0.5714,
+     "bankruptRate": 0
     },
     {
-     "policyId": "character-investor",
-     "appearances": 12,
-     "winRate": 0.5,
+     "policyId": "all-rounder",
+     "appearances": 20,
+     "winRate": 0.55,
      "winInterval": {
-      "low": 0.2538,
-      "high": 0.7462
+      "low": 0.3421,
+      "high": 0.7418
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.25,
-     "escapeRate": 0.5,
-     "bankruptRate": 0
+     "meanRank": 1.35,
+     "escapeRate": 0.55,
+     "bankruptRate": 0.2
     },
     {
      "policyId": "cash-properties",
@@ -487,72 +519,33 @@
      "bankruptRate": 0
     },
     {
-     "policyId": "character-trader",
-     "appearances": 14,
-     "winRate": 0.4286,
+     "policyId": "best-found",
+     "appearances": 12,
+     "winRate": 0.4167,
      "winInterval": {
-      "low": 0.2138,
-      "high": 0.6741
+      "low": 0.1933,
+      "high": 0.6805
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.429,
-     "escapeRate": 0.4286,
-     "bankruptRate": 0.0714
-    },
-    {
-     "policyId": "champion-v1",
-     "appearances": 14,
-     "winRate": 0.4286,
-     "winInterval": {
-      "low": 0.2138,
-      "high": 0.6741
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.5,
-     "escapeRate": 0.4286,
-     "bankruptRate": 0.2143
-    },
-    {
-     "policyId": "picky-properties",
-     "appearances": 10,
-     "winRate": 0.4,
-     "winInterval": {
-      "low": 0.1682,
-      "high": 0.6873
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.4,
-     "escapeRate": 0.4,
-     "bankruptRate": 0.2
+     "meanRank": 1.417,
+     "escapeRate": 0.4167,
+     "bankruptRate": 0.0833
     },
     {
      "policyId": "character-cautious",
      "appearances": 16,
-     "winRate": 0.375,
+     "winRate": 0.3125,
      "winInterval": {
-      "low": 0.1848,
-      "high": 0.6136
+      "low": 0.1416,
+      "high": 0.556
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.438,
-     "escapeRate": 0.375,
+     "meanRank": 1.563,
+     "escapeRate": 0.3125,
      "bankruptRate": 0.125
     },
     {
-     "policyId": "best-found",
-     "appearances": 14,
-     "winRate": 0.3571,
-     "winInterval": {
-      "low": 0.1634,
-      "high": 0.6124
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.643,
-     "escapeRate": 0.3571,
-     "bankruptRate": 0.0714
-    },
-    {
-     "policyId": "big-deals-when-rich",
+     "policyId": "picky-properties",
      "appearances": 10,
      "winRate": 0.3,
      "winInterval": {
@@ -560,12 +553,38 @@
       "high": 0.6032
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.6,
-     "escapeRate": 0.3,
-     "bankruptRate": 0.1
+     "meanRank": 1.5,
+     "escapeRate": 0.4,
+     "bankruptRate": 0.2
     },
     {
      "policyId": "leveraged-big",
+     "appearances": 12,
+     "winRate": 0.25,
+     "winInterval": {
+      "low": 0.0889,
+      "high": 0.5323
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.667,
+     "escapeRate": 0.25,
+     "bankruptRate": 0.1667
+    },
+    {
+     "policyId": "big-deals-when-rich",
+     "appearances": 16,
+     "winRate": 0.1875,
+     "winInterval": {
+      "low": 0.0659,
+      "high": 0.4301
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.75,
+     "escapeRate": 0.1875,
+     "bankruptRate": 0.125
+    },
+    {
+     "policyId": "stocks-for-deposits",
      "appearances": 12,
      "winRate": 0.1667,
      "winInterval": {
@@ -573,48 +592,61 @@
       "high": 0.448
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.833,
-     "escapeRate": 0.1667,
-     "bankruptRate": 0.4167
+     "meanRank": 1.75,
+     "escapeRate": 0.25,
+     "bankruptRate": 0.1667
+    },
+    {
+     "policyId": "character-investor",
+     "appearances": 8,
+     "winRate": 0.125,
+     "winInterval": {
+      "low": 0.0224,
+      "high": 0.4709
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.75,
+     "escapeRate": 0.125,
+     "bankruptRate": 0.125
     },
     {
      "policyId": "bridge-loans",
-     "appearances": 14,
-     "winRate": 0.1429,
+     "appearances": 10,
+     "winRate": 0.1,
      "winInterval": {
-      "low": 0.0401,
-      "high": 0.3994
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.857,
-     "escapeRate": 0.1429,
-     "bankruptRate": 0.1429
-    },
-    {
-     "policyId": "stocks-for-deposits",
-     "appearances": 14,
-     "winRate": 0.0714,
-     "winInterval": {
-      "low": 0.0127,
-      "high": 0.3147
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.857,
-     "escapeRate": 0.1429,
-     "bankruptRate": 0.2857
-    },
-    {
-     "policyId": "mlm-then-properties",
-     "appearances": 20,
-     "winRate": 0,
-     "winInterval": {
-      "low": 0,
-      "high": 0.1611
+      "low": 0.0179,
+      "high": 0.4042
      },
      "expectedWinRate": 0.5,
      "meanRank": 1.8,
-     "escapeRate": 0.05,
+     "escapeRate": 0.1,
      "bankruptRate": 0
+    },
+    {
+     "policyId": "mlm-then-properties",
+     "appearances": 16,
+     "winRate": 0.0625,
+     "winInterval": {
+      "low": 0.0111,
+      "high": 0.2833
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.75,
+     "escapeRate": 0.125,
+     "bankruptRate": 0.0625
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 12,
+     "winRate": 0,
+     "winInterval": {
+      "low": 0,
+      "high": 0.2425
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.833,
+     "escapeRate": 0.0833,
+     "bankruptRate": 0.25
     },
     {
      "policyId": "never-buy",
@@ -639,250 +671,263 @@
    "scores": [
     {
      "policyId": "character-marketer",
-     "appearances": 188,
-     "winRate": 0.7234,
+     "appearances": 164,
+     "winRate": 0.7134,
      "winInterval": {
-      "low": 0.6555,
-      "high": 0.7824
+      "low": 0.6399,
+      "high": 0.7771
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.229,
-     "escapeRate": 0.7287,
-     "bankruptRate": 0.0319
-    },
-    {
-     "policyId": "character-investor",
-     "appearances": 144,
-     "winRate": 0.6597,
-     "winInterval": {
-      "low": 0.5791,
-      "high": 0.7321
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.271,
-     "escapeRate": 0.6597,
-     "bankruptRate": 0.0486
-    },
-    {
-     "policyId": "character-banker",
-     "appearances": 140,
-     "winRate": 0.6571,
-     "winInterval": {
-      "low": 0.5753,
-      "high": 0.7306
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.243,
-     "escapeRate": 0.6571,
-     "bankruptRate": 0.0643
-    },
-    {
-     "policyId": "champion-v2",
-     "appearances": 160,
-     "winRate": 0.6375,
-     "winInterval": {
-      "low": 0.5606,
-      "high": 0.708
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.281,
-     "escapeRate": 0.6375,
-     "bankruptRate": 0.075
+     "meanRank": 1.226,
+     "escapeRate": 0.7195,
+     "bankruptRate": 0.0366
     },
     {
      "policyId": "character-trader",
-     "appearances": 162,
-     "winRate": 0.6235,
+     "appearances": 156,
+     "winRate": 0.6731,
      "winInterval": {
-      "low": 0.5468,
-      "high": 0.6944
+      "low": 0.5961,
+      "high": 0.7418
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.309,
-     "escapeRate": 0.6235,
-     "bankruptRate": 0.0741
+     "meanRank": 1.25,
+     "escapeRate": 0.6795,
+     "bankruptRate": 0.0705
+    },
+    {
+     "policyId": "character-investor",
+     "appearances": 128,
+     "winRate": 0.6641,
+     "winInterval": {
+      "low": 0.5785,
+      "high": 0.74
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.273,
+     "escapeRate": 0.6719,
+     "bankruptRate": 0.0625
     },
     {
      "policyId": "champion-v1",
-     "appearances": 168,
-     "winRate": 0.619,
+     "appearances": 142,
+     "winRate": 0.662,
      "winInterval": {
-      "low": 0.5437,
-      "high": 0.689
+      "low": 0.5808,
+      "high": 0.7346
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.28,
-     "escapeRate": 0.625,
-     "bankruptRate": 0.0417
+     "meanRank": 1.197,
+     "escapeRate": 0.662,
+     "bankruptRate": 0.0282
+    },
+    {
+     "policyId": "character-banker",
+     "appearances": 146,
+     "winRate": 0.6575,
+     "winInterval": {
+      "low": 0.5774,
+      "high": 0.7296
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.281,
+     "escapeRate": 0.6644,
+     "bankruptRate": 0.0548
+    },
+    {
+     "policyId": "champion-v2",
+     "appearances": 146,
+     "winRate": 0.6507,
+     "winInterval": {
+      "low": 0.5704,
+      "high": 0.7233
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.274,
+     "escapeRate": 0.6507,
+     "bankruptRate": 0.0685
     },
     {
      "policyId": "character-gambler",
-     "appearances": 148,
-     "winRate": 0.5946,
+     "appearances": 146,
+     "winRate": 0.6027,
      "winInterval": {
-      "low": 0.5141,
-      "high": 0.6703
+      "low": 0.5217,
+      "high": 0.6785
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.345,
-     "escapeRate": 0.6014,
-     "bankruptRate": 0.0946
+     "meanRank": 1.322,
+     "escapeRate": 0.6096,
+     "bankruptRate": 0.0822
     },
     {
      "policyId": "character-chaser",
-     "appearances": 158,
-     "winRate": 0.5696,
+     "appearances": 152,
+     "winRate": 0.5789,
      "winInterval": {
-      "low": 0.4917,
-      "high": 0.6443
+      "low": 0.4995,
+      "high": 0.6545
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.361,
-     "escapeRate": 0.5759,
-     "bankruptRate": 0.0886
+     "meanRank": 1.349,
+     "escapeRate": 0.5789,
+     "bankruptRate": 0.0855
     },
     {
      "policyId": "character-cautious",
-     "appearances": 146,
-     "winRate": 0.5685,
+     "appearances": 132,
+     "winRate": 0.5455,
      "winInterval": {
-      "low": 0.4874,
-      "high": 0.6461
+      "low": 0.4604,
+      "high": 0.6279
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.336,
-     "escapeRate": 0.5685,
-     "bankruptRate": 0.0616
-    },
-    {
-     "policyId": "all-rounder",
-     "appearances": 148,
-     "winRate": 0.4797,
-     "winInterval": {
-      "low": 0.4008,
-      "high": 0.5597
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.378,
-     "escapeRate": 0.4865,
-     "bankruptRate": 0.0743
+     "meanRank": 1.348,
+     "escapeRate": 0.5455,
+     "bankruptRate": 0.0758
     },
     {
      "policyId": "best-found",
-     "appearances": 144,
-     "winRate": 0.3125,
+     "appearances": 154,
+     "winRate": 0.4481,
      "winInterval": {
-      "low": 0.2425,
-      "high": 0.3922
+      "low": 0.3717,
+      "high": 0.5269
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.59,
-     "escapeRate": 0.3194,
-     "bankruptRate": 0.0347
+     "meanRank": 1.474,
+     "escapeRate": 0.474,
+     "bankruptRate": 0.0519
+    },
+    {
+     "policyId": "all-rounder",
+     "appearances": 150,
+     "winRate": 0.4467,
+     "winInterval": {
+      "low": 0.3694,
+      "high": 0.5266
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.453,
+     "escapeRate": 0.46,
+     "bankruptRate": 0.0533
     },
     {
      "policyId": "big-deals-when-rich",
-     "appearances": 142,
-     "winRate": 0.2394,
+     "appearances": 108,
+     "winRate": 0.2407,
      "winInterval": {
-      "low": 0.1767,
-      "high": 0.3159
+      "low": 0.1699,
+      "high": 0.3294
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.69,
-     "escapeRate": 0.2606,
-     "bankruptRate": 0.1056
+     "meanRank": 1.62,
+     "escapeRate": 0.2685,
+     "bankruptRate": 0.0926
     },
     {
-     "policyId": "bridge-loans",
-     "appearances": 188,
-     "winRate": 0.1755,
+     "policyId": "debt-first",
+     "appearances": 154,
+     "winRate": 0.2013,
      "winInterval": {
-      "low": 0.1278,
-      "high": 0.2363
+      "low": 0.1456,
+      "high": 0.2715
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.723,
-     "escapeRate": 0.2234,
-     "bankruptRate": 0.1383
+     "meanRank": 1.682,
+     "escapeRate": 0.2338,
+     "bankruptRate": 0.1429
     },
     {
      "policyId": "stocks-for-deposits",
-     "appearances": 156,
-     "winRate": 0.1667,
+     "appearances": 158,
+     "winRate": 0.1772,
      "winInterval": {
-      "low": 0.1163,
-      "high": 0.233
+      "low": 0.1255,
+      "high": 0.2442
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.744,
-     "escapeRate": 0.2115,
-     "bankruptRate": 0.1282
+     "meanRank": 1.696,
+     "escapeRate": 0.2278,
+     "bankruptRate": 0.1076
     },
     {
-     "policyId": "cash-properties",
-     "appearances": 158,
-     "winRate": 0.1519,
+     "policyId": "bridge-loans",
+     "appearances": 150,
+     "winRate": 0.1533,
      "winInterval": {
-      "low": 0.1042,
-      "high": 0.2161
+      "low": 0.1044,
+      "high": 0.2196
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.753,
-     "escapeRate": 0.1835,
-     "bankruptRate": 0.1266
+     "meanRank": 1.76,
+     "escapeRate": 0.1933,
+     "bankruptRate": 0.1133
     },
     {
      "policyId": "mlm-then-properties",
-     "appearances": 140,
-     "winRate": 0.1429,
+     "appearances": 150,
+     "winRate": 0.1533,
      "winInterval": {
-      "low": 0.0944,
-      "high": 0.2104
+      "low": 0.1044,
+      "high": 0.2196
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.736,
-     "escapeRate": 0.1643,
-     "bankruptRate": 0.1071
+     "meanRank": 1.72,
+     "escapeRate": 0.1867,
+     "bankruptRate": 0.1267
     },
     {
      "policyId": "leveraged-big",
-     "appearances": 122,
-     "winRate": 0.1066,
+     "appearances": 142,
+     "winRate": 0.1408,
      "winInterval": {
-      "low": 0.0633,
-      "high": 0.1738
+      "low": 0.0931,
+      "high": 0.2076
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.697,
-     "escapeRate": 0.1066,
-     "bankruptRate": 0.2541
+     "meanRank": 1.69,
+     "escapeRate": 0.1408,
+     "bankruptRate": 0.3028
     },
     {
      "policyId": "picky-properties",
-     "appearances": 130,
-     "winRate": 0.0923,
+     "appearances": 112,
+     "winRate": 0.1339,
      "winInterval": {
-      "low": 0.0536,
-      "high": 0.1544
+      "low": 0.0829,
+      "high": 0.2093
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.8,
-     "escapeRate": 0.1308,
-     "bankruptRate": 0.1692
+     "meanRank": 1.759,
+     "escapeRate": 0.1875,
+     "bankruptRate": 0.125
+    },
+    {
+     "policyId": "cash-properties",
+     "appearances": 156,
+     "winRate": 0.1026,
+     "winInterval": {
+      "low": 0.0641,
+      "high": 0.1601
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.795,
+     "escapeRate": 0.1538,
+     "bankruptRate": 0.1474
     },
     {
      "policyId": "never-buy",
-     "appearances": 138,
+     "appearances": 134,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0271
+      "high": 0.0279
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.891,
+     "meanRank": 1.91,
      "escapeRate": 0,
-     "bankruptRate": 0.1159
+     "bankruptRate": 0.1418
     }
    ]
   },
@@ -895,41 +940,41 @@
     {
      "policyId": "character-marketer",
      "appearances": 10,
-     "winRate": 0.9,
+     "winRate": 1,
      "winInterval": {
-      "low": 0.5958,
-      "high": 0.9821
+      "low": 0.7225,
+      "high": 1
      },
      "expectedWinRate": 0.5,
      "meanRank": 1,
-     "escapeRate": 0.9,
+     "escapeRate": 1,
      "bankruptRate": 0
     },
     {
      "policyId": "character-trader",
-     "appearances": 16,
-     "winRate": 0.8125,
+     "appearances": 12,
+     "winRate": 0.8333,
      "winInterval": {
-      "low": 0.5699,
-      "high": 0.9341
+      "low": 0.552,
+      "high": 0.953
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.063,
-     "escapeRate": 0.8125,
+     "meanRank": 1.083,
+     "escapeRate": 0.8333,
      "bankruptRate": 0
     },
     {
-     "policyId": "character-chaser",
-     "appearances": 18,
-     "winRate": 0.7778,
+     "policyId": "champion-v2",
+     "appearances": 10,
+     "winRate": 0.8,
      "winInterval": {
-      "low": 0.5478,
-      "high": 0.91
+      "low": 0.4902,
+      "high": 0.9433
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.167,
-     "escapeRate": 0.7778,
-     "bankruptRate": 0.1111
+     "meanRank": 1.1,
+     "escapeRate": 0.8,
+     "bankruptRate": 0
     },
     {
      "policyId": "character-investor",
@@ -945,69 +990,69 @@
      "bankruptRate": 0.1667
     },
     {
-     "policyId": "all-rounder",
-     "appearances": 14,
-     "winRate": 0.7143,
+     "policyId": "character-chaser",
+     "appearances": 18,
+     "winRate": 0.7222,
      "winInterval": {
-      "low": 0.4535,
-      "high": 0.8828
+      "low": 0.4913,
+      "high": 0.875
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.143,
-     "escapeRate": 0.7143,
-     "bankruptRate": 0.0714
+     "meanRank": 1.167,
+     "escapeRate": 0.7222,
+     "bankruptRate": 0.1111
+    },
+    {
+     "policyId": "all-rounder",
+     "appearances": 16,
+     "winRate": 0.625,
+     "winInterval": {
+      "low": 0.3864,
+      "high": 0.8152
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.313,
+     "escapeRate": 0.625,
+     "bankruptRate": 0.125
+    },
+    {
+     "policyId": "champion-v1",
+     "appearances": 12,
+     "winRate": 0.5,
+     "winInterval": {
+      "low": 0.2538,
+      "high": 0.7462
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.25,
+     "escapeRate": 0.5,
+     "bankruptRate": 0.1667
+    },
+    {
+     "policyId": "best-found",
+     "appearances": 12,
+     "winRate": 0.4167,
+     "winInterval": {
+      "low": 0.1933,
+      "high": 0.6805
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.417,
+     "escapeRate": 0.4167,
+     "bankruptRate": 0.1667
     },
     {
      "policyId": "character-banker",
      "appearances": 6,
-     "winRate": 0.6667,
+     "winRate": 0.3333,
      "winInterval": {
-      "low": 0.3,
-      "high": 0.9032
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.167,
-     "escapeRate": 0.6667,
-     "bankruptRate": 0
-    },
-    {
-     "policyId": "best-found",
-     "appearances": 14,
-     "winRate": 0.4286,
-     "winInterval": {
-      "low": 0.2138,
-      "high": 0.6741
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.357,
-     "escapeRate": 0.5,
-     "bankruptRate": 0.2143
-    },
-    {
-     "policyId": "big-deals-when-rich",
-     "appearances": 14,
-     "winRate": 0.4286,
-     "winInterval": {
-      "low": 0.2138,
-      "high": 0.6741
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.571,
-     "escapeRate": 0.4286,
-     "bankruptRate": 0.2857
-    },
-    {
-     "policyId": "champion-v1",
-     "appearances": 10,
-     "winRate": 0.4,
-     "winInterval": {
-      "low": 0.1682,
-      "high": 0.6873
+      "low": 0.0968,
+      "high": 0.7
      },
      "expectedWinRate": 0.5,
      "meanRank": 1.5,
-     "escapeRate": 0.4,
-     "bankruptRate": 0
+     "escapeRate": 0.3333,
+     "bankruptRate": 0.1667
     },
     {
      "policyId": "character-cautious",
@@ -1023,46 +1068,72 @@
      "bankruptRate": 0
     },
     {
-     "policyId": "champion-v2",
-     "appearances": 8,
-     "winRate": 0.25,
-     "winInterval": {
-      "low": 0.0715,
-      "high": 0.5907
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.375,
-     "escapeRate": 0.25,
-     "bankruptRate": 0.125
-    },
-    {
      "policyId": "picky-properties",
      "appearances": 20,
-     "winRate": 0.25,
+     "winRate": 0.3,
      "winInterval": {
-      "low": 0.1119,
-      "high": 0.4687
+      "low": 0.1455,
+      "high": 0.519
      },
      "expectedWinRate": 0.5,
      "meanRank": 1.65,
-     "escapeRate": 0.25,
+     "escapeRate": 0.3,
      "bankruptRate": 0.15
     },
     {
-     "policyId": "stocks-for-deposits",
-     "appearances": 14,
-     "winRate": 0.1429,
+     "policyId": "big-deals-when-rich",
+     "appearances": 16,
+     "winRate": 0.25,
      "winInterval": {
-      "low": 0.0401,
-      "high": 0.3994
+      "low": 0.1018,
+      "high": 0.495
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.857,
-     "escapeRate": 0.1429,
-     "bankruptRate": 0.1429
+     "meanRank": 1.625,
+     "escapeRate": 0.25,
+     "bankruptRate": 0.0625
+    },
+    {
+     "policyId": "mlm-then-properties",
+     "appearances": 12,
+     "winRate": 0.1667,
+     "winInterval": {
+      "low": 0.047,
+      "high": 0.448
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.5,
+     "escapeRate": 0.1667,
+     "bankruptRate": 0.1667
+    },
+    {
+     "policyId": "stocks-for-deposits",
+     "appearances": 6,
+     "winRate": 0.1667,
+     "winInterval": {
+      "low": 0.0301,
+      "high": 0.5635
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.833,
+     "escapeRate": 0.1667,
+     "bankruptRate": 0
     },
     {
      "policyId": "character-gambler",
+     "appearances": 8,
+     "winRate": 0.125,
+     "winInterval": {
+      "low": 0.0224,
+      "high": 0.4709
+     },
+     "expectedWinRate": 0.5,
+     "meanRank": 1.625,
+     "escapeRate": 0.125,
+     "bankruptRate": 0
+    },
+    {
+     "policyId": "leveraged-big",
      "appearances": 10,
      "winRate": 0.1,
      "winInterval": {
@@ -1071,8 +1142,8 @@
      },
      "expectedWinRate": 0.5,
      "meanRank": 1.7,
-     "escapeRate": 0.1,
-     "bankruptRate": 0.2
+     "escapeRate": 0.2,
+     "bankruptRate": 0.5
     },
     {
      "policyId": "cash-properties",
@@ -1083,22 +1154,9 @@
       "high": 0.3147
      },
      "expectedWinRate": 0.5,
-     "meanRank": 1.714,
+     "meanRank": 1.786,
      "escapeRate": 0.1429,
      "bankruptRate": 0.1429
-    },
-    {
-     "policyId": "leveraged-big",
-     "appearances": 20,
-     "winRate": 0.05,
-     "winInterval": {
-      "low": 0.0089,
-      "high": 0.2361
-     },
-     "expectedWinRate": 0.5,
-     "meanRank": 1.65,
-     "escapeRate": 0.1,
-     "bankruptRate": 0.3
     },
     {
      "policyId": "never-buy",
@@ -1114,7 +1172,7 @@
      "bankruptRate": 0
     },
     {
-     "policyId": "mlm-then-properties",
+     "policyId": "debt-first",
      "appearances": 12,
      "winRate": 0,
      "winInterval": {
@@ -1124,20 +1182,20 @@
      "expectedWinRate": 0.5,
      "meanRank": 1.917,
      "escapeRate": 0,
-     "bankruptRate": 0.1667
+     "bankruptRate": 0.25
     },
     {
      "policyId": "bridge-loans",
-     "appearances": 8,
+     "appearances": 14,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.3244
+      "high": 0.2153
      },
      "expectedWinRate": 0.5,
-     "meanRank": 2,
-     "escapeRate": 0,
-     "bankruptRate": 0
+     "meanRank": 1.929,
+     "escapeRate": 0.0714,
+     "bankruptRate": 0.0714
     }
    ]
   },
@@ -1148,251 +1206,264 @@
    "tables": 2880,
    "scores": [
     {
-     "policyId": "character-marketer",
-     "appearances": 588,
-     "winRate": 0.4932,
+     "policyId": "character-chaser",
+     "appearances": 548,
+     "winRate": 0.5219,
      "winInterval": {
-      "low": 0.453,
-      "high": 0.5335
+      "low": 0.4801,
+      "high": 0.5634
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.973,
-     "escapeRate": 0.4983,
-     "bankruptRate": 0.0629
+     "meanRank": 1.785,
+     "escapeRate": 0.5274,
+     "bankruptRate": 0.0274
     },
     {
-     "policyId": "champion-v2",
-     "appearances": 616,
-     "winRate": 0.4919,
+     "policyId": "character-marketer",
+     "appearances": 540,
+     "winRate": 0.5074,
      "winInterval": {
-      "low": 0.4526,
-      "high": 0.5313
+      "low": 0.4653,
+      "high": 0.5494
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.93,
-     "escapeRate": 0.4935,
-     "bankruptRate": 0.0438
+     "meanRank": 1.88,
+     "escapeRate": 0.5093,
+     "bankruptRate": 0.05
     },
     {
      "policyId": "champion-v1",
-     "appearances": 648,
-     "winRate": 0.4877,
+     "appearances": 620,
+     "winRate": 0.4887,
      "winInterval": {
-      "low": 0.4494,
-      "high": 0.5261
+      "low": 0.4496,
+      "high": 0.528
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.914,
-     "escapeRate": 0.4892,
-     "bankruptRate": 0.037
+     "meanRank": 1.887,
+     "escapeRate": 0.4919,
+     "bankruptRate": 0.0339
     },
     {
      "policyId": "character-investor",
-     "appearances": 604,
-     "winRate": 0.4702,
+     "appearances": 556,
+     "winRate": 0.4874,
      "winInterval": {
-      "low": 0.4307,
-      "high": 0.5101
+      "low": 0.4461,
+      "high": 0.5289
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.914,
-     "escapeRate": 0.4719,
-     "bankruptRate": 0.0414
+     "meanRank": 1.853,
+     "escapeRate": 0.4946,
+     "bankruptRate": 0.0378
     },
     {
-     "policyId": "character-trader",
-     "appearances": 592,
-     "winRate": 0.4611,
+     "policyId": "champion-v2",
+     "appearances": 536,
+     "winRate": 0.4832,
      "winInterval": {
-      "low": 0.4214,
-      "high": 0.5014
+      "low": 0.4412,
+      "high": 0.5255
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.943,
-     "escapeRate": 0.4679,
-     "bankruptRate": 0.0236
-    },
-    {
-     "policyId": "character-chaser",
-     "appearances": 596,
-     "winRate": 0.4597,
-     "winInterval": {
-      "low": 0.4201,
-      "high": 0.4999
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.886,
-     "escapeRate": 0.4681,
-     "bankruptRate": 0.0352
+     "meanRank": 1.929,
+     "escapeRate": 0.4869,
+     "bankruptRate": 0.0299
     },
     {
      "policyId": "character-gambler",
-     "appearances": 628,
-     "winRate": 0.449,
+     "appearances": 592,
+     "winRate": 0.478,
      "winInterval": {
-      "low": 0.4106,
-      "high": 0.4881
+      "low": 0.4381,
+      "high": 0.5183
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.022,
-     "escapeRate": 0.4506,
-     "bankruptRate": 0.0382
+     "meanRank": 1.951,
+     "escapeRate": 0.4814,
+     "bankruptRate": 0.0287
+    },
+    {
+     "policyId": "character-trader",
+     "appearances": 552,
+     "winRate": 0.4547,
+     "winInterval": {
+      "low": 0.4136,
+      "high": 0.4964
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.973,
+     "escapeRate": 0.4583,
+     "bankruptRate": 0.0399
     },
     {
      "policyId": "character-banker",
-     "appearances": 548,
-     "winRate": 0.4343,
+     "appearances": 552,
+     "winRate": 0.4529,
      "winInterval": {
-      "low": 0.3934,
-      "high": 0.4761
+      "low": 0.4118,
+      "high": 0.4946
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.987,
-     "escapeRate": 0.4343,
-     "bankruptRate": 0.0401
+     "meanRank": 1.928,
+     "escapeRate": 0.4583,
+     "bankruptRate": 0.0272
     },
     {
      "policyId": "character-cautious",
-     "appearances": 552,
-     "winRate": 0.3243,
+     "appearances": 540,
+     "winRate": 0.3389,
      "winInterval": {
-      "low": 0.2866,
-      "high": 0.3644
+      "low": 0.3002,
+      "high": 0.3798
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.361,
-     "escapeRate": 0.3279,
-     "bankruptRate": 0.0326
+     "meanRank": 2.293,
+     "escapeRate": 0.3426,
+     "bankruptRate": 0.0426
     },
     {
      "policyId": "all-rounder",
-     "appearances": 660,
-     "winRate": 0.2682,
+     "appearances": 604,
+     "winRate": 0.293,
      "winInterval": {
-      "low": 0.2358,
-      "high": 0.3033
+      "low": 0.2581,
+      "high": 0.3306
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.509,
-     "escapeRate": 0.2727,
-     "bankruptRate": 0.0394
+     "meanRank": 2.452,
+     "escapeRate": 0.2947,
+     "bankruptRate": 0.0397
     },
     {
      "policyId": "best-found",
-     "appearances": 624,
-     "winRate": 0.0913,
+     "appearances": 676,
+     "winRate": 0.1169,
      "winInterval": {
-      "low": 0.0712,
-      "high": 0.1165
+      "low": 0.0948,
+      "high": 0.1433
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.772,
-     "escapeRate": 0.101,
-     "bankruptRate": 0.0401
-    },
-    {
-     "policyId": "cash-properties",
-     "appearances": 660,
-     "winRate": 0.0591,
-     "winInterval": {
-      "low": 0.0435,
-      "high": 0.0798
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.932,
-     "escapeRate": 0.0682,
-     "bankruptRate": 0.0545
-    },
-    {
-     "policyId": "mlm-then-properties",
-     "appearances": 584,
-     "winRate": 0.0411,
-     "winInterval": {
-      "low": 0.0278,
-      "high": 0.0604
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 3.057,
-     "escapeRate": 0.0497,
-     "bankruptRate": 0.0736
+     "meanRank": 2.7,
+     "escapeRate": 0.1272,
+     "bankruptRate": 0.0577
     },
     {
      "policyId": "big-deals-when-rich",
-     "appearances": 612,
-     "winRate": 0.0408,
+     "appearances": 628,
+     "winRate": 0.0812,
      "winInterval": {
-      "low": 0.0278,
-      "high": 0.0596
+      "low": 0.0623,
+      "high": 0.1052
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.997,
-     "escapeRate": 0.0474,
-     "bankruptRate": 0.0833
-    },
-    {
-     "policyId": "stocks-for-deposits",
-     "appearances": 652,
-     "winRate": 0.0368,
-     "winInterval": {
-      "low": 0.0249,
-      "high": 0.0542
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 3.072,
-     "escapeRate": 0.0475,
-     "bankruptRate": 0.0675
+     "meanRank": 2.889,
+     "escapeRate": 0.0955,
+     "bankruptRate": 0.0685
     },
     {
      "policyId": "bridge-loans",
-     "appearances": 560,
-     "winRate": 0.0357,
+     "appearances": 504,
+     "winRate": 0.0496,
      "winInterval": {
-      "low": 0.0232,
-      "high": 0.0545
+      "low": 0.0338,
+      "high": 0.0722
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.066,
-     "escapeRate": 0.0375,
-     "bankruptRate": 0.0857
+     "meanRank": 2.964,
+     "escapeRate": 0.0635,
+     "bankruptRate": 0.0714
+    },
+    {
+     "policyId": "stocks-for-deposits",
+     "appearances": 572,
+     "winRate": 0.0472,
+     "winInterval": {
+      "low": 0.0326,
+      "high": 0.0678
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.042,
+     "escapeRate": 0.0647,
+     "bankruptRate": 0.0559
+    },
+    {
+     "policyId": "cash-properties",
+     "appearances": 616,
+     "winRate": 0.0471,
+     "winInterval": {
+      "low": 0.033,
+      "high": 0.0668
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.927,
+     "escapeRate": 0.0649,
+     "bankruptRate": 0.0503
+    },
+    {
+     "policyId": "mlm-then-properties",
+     "appearances": 592,
+     "winRate": 0.0456,
+     "winInterval": {
+      "low": 0.0315,
+      "high": 0.0655
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.034,
+     "escapeRate": 0.0524,
+     "bankruptRate": 0.0659
     },
     {
      "policyId": "leveraged-big",
-     "appearances": 676,
-     "winRate": 0.0355,
+     "appearances": 592,
+     "winRate": 0.0439,
      "winInterval": {
-      "low": 0.024,
-      "high": 0.0523
+      "low": 0.0301,
+      "high": 0.0636
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.464,
-     "escapeRate": 0.037,
-     "bankruptRate": 0.1302
+     "meanRank": 2.586,
+     "escapeRate": 0.0473,
+     "bankruptRate": 0.1047
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 636,
+     "winRate": 0.0425,
+     "winInterval": {
+      "low": 0.0293,
+      "high": 0.0611
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.046,
+     "escapeRate": 0.0503,
+     "bankruptRate": 0.0833
     },
     {
      "policyId": "picky-properties",
-     "appearances": 616,
-     "winRate": 0.0308,
+     "appearances": 572,
+     "winRate": 0.0367,
      "winInterval": {
-      "low": 0.0198,
-      "high": 0.0477
+      "low": 0.0241,
+      "high": 0.0555
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.159,
-     "escapeRate": 0.0357,
-     "bankruptRate": 0.0682
+     "meanRank": 3.154,
+     "escapeRate": 0.0472,
+     "bankruptRate": 0.0717
     },
     {
      "policyId": "never-buy",
-     "appearances": 504,
+     "appearances": 492,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0076
+      "high": 0.0077
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.665,
+     "meanRank": 3.663,
      "escapeRate": 0,
-     "bankruptRate": 0.0873
+     "bankruptRate": 0.0915
     }
    ]
   },
@@ -1403,176 +1474,176 @@
    "tables": 240,
    "scores": [
     {
-     "policyId": "character-banker",
-     "appearances": 36,
-     "winRate": 0.6111,
+     "policyId": "character-investor",
+     "appearances": 44,
+     "winRate": 0.6364,
      "winInterval": {
-      "low": 0.4486,
-      "high": 0.7522
+      "low": 0.4887,
+      "high": 0.7622
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.778,
-     "escapeRate": 0.6111,
+     "meanRank": 1.5,
+     "escapeRate": 0.6364,
+     "bankruptRate": 0.0227
+    },
+    {
+     "policyId": "character-trader",
+     "appearances": 40,
+     "winRate": 0.625,
+     "winInterval": {
+      "low": 0.4703,
+      "high": 0.7578
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.6,
+     "escapeRate": 0.625,
+     "bankruptRate": 0.025
+    },
+    {
+     "policyId": "character-banker",
+     "appearances": 32,
+     "winRate": 0.5938,
+     "winInterval": {
+      "low": 0.4226,
+      "high": 0.7448
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.719,
+     "escapeRate": 0.5938,
      "bankruptRate": 0
     },
     {
      "policyId": "character-gambler",
-     "appearances": 48,
-     "winRate": 0.6042,
+     "appearances": 44,
+     "winRate": 0.5455,
      "winInterval": {
-      "low": 0.4631,
-      "high": 0.7298
+      "low": 0.4007,
+      "high": 0.6829
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.854,
-     "escapeRate": 0.6042,
-     "bankruptRate": 0.125
-    },
-    {
-     "policyId": "character-trader",
-     "appearances": 56,
-     "winRate": 0.5536,
-     "winInterval": {
-      "low": 0.4241,
-      "high": 0.6761
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.786,
-     "escapeRate": 0.5536,
-     "bankruptRate": 0.0179
-    },
-    {
-     "policyId": "character-cautious",
-     "appearances": 36,
-     "winRate": 0.5,
-     "winInterval": {
-      "low": 0.3447,
-      "high": 0.6553
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.889,
-     "escapeRate": 0.5,
-     "bankruptRate": 0.0556
+     "meanRank": 2.045,
+     "escapeRate": 0.5455,
+     "bankruptRate": 0.1364
     },
     {
      "policyId": "champion-v1",
-     "appearances": 64,
-     "winRate": 0.4688,
+     "appearances": 84,
+     "winRate": 0.5357,
      "winInterval": {
-      "low": 0.3518,
-      "high": 0.5893
+      "low": 0.4298,
+      "high": 0.6385
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.063,
-     "escapeRate": 0.4688,
-     "bankruptRate": 0.0625
-    },
-    {
-     "policyId": "champion-v2",
-     "appearances": 52,
-     "winRate": 0.4231,
-     "winInterval": {
-      "low": 0.2987,
-      "high": 0.5581
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.154,
-     "escapeRate": 0.4231,
-     "bankruptRate": 0.0577
-    },
-    {
-     "policyId": "character-investor",
-     "appearances": 32,
-     "winRate": 0.4063,
-     "winInterval": {
-      "low": 0.2552,
-      "high": 0.5774
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.875,
-     "escapeRate": 0.4063,
-     "bankruptRate": 0.0313
+     "meanRank": 1.893,
+     "escapeRate": 0.5357,
+     "bankruptRate": 0.0357
     },
     {
      "policyId": "character-marketer",
      "appearances": 28,
-     "winRate": 0.3929,
+     "winRate": 0.5,
      "winInterval": {
-      "low": 0.2357,
-      "high": 0.5759
+      "low": 0.3263,
+      "high": 0.6737
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.107,
-     "escapeRate": 0.3929,
-     "bankruptRate": 0
+     "meanRank": 1.786,
+     "escapeRate": 0.5,
+     "bankruptRate": 0.0357
     },
     {
      "policyId": "character-chaser",
      "appearances": 44,
-     "winRate": 0.3409,
+     "winRate": 0.4545,
      "winInterval": {
-      "low": 0.2188,
-      "high": 0.4886
+      "low": 0.3171,
+      "high": 0.5993
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.25,
-     "escapeRate": 0.3409,
-     "bankruptRate": 0.0682
+     "meanRank": 1.955,
+     "escapeRate": 0.4545,
+     "bankruptRate": 0.0455
     },
     {
-     "policyId": "all-rounder",
-     "appearances": 64,
-     "winRate": 0.3125,
+     "policyId": "character-cautious",
+     "appearances": 36,
+     "winRate": 0.3889,
      "winInterval": {
-      "low": 0.2123,
-      "high": 0.4339
+      "low": 0.2478,
+      "high": 0.5514
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.516,
-     "escapeRate": 0.3125,
-     "bankruptRate": 0.0313
+     "meanRank": 2.111,
+     "escapeRate": 0.3889,
+     "bankruptRate": 0.0556
     },
     {
-     "policyId": "cash-properties",
+     "policyId": "champion-v2",
      "appearances": 56,
-     "winRate": 0.125,
+     "winRate": 0.2679,
      "winInterval": {
-      "low": 0.0619,
-      "high": 0.2363
+      "low": 0.1696,
+      "high": 0.3959
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.714,
-     "escapeRate": 0.125,
+     "meanRank": 2.339,
+     "escapeRate": 0.2857,
      "bankruptRate": 0.0714
     },
     {
-     "policyId": "big-deals-when-rich",
-     "appearances": 44,
-     "winRate": 0.1136,
+     "policyId": "all-rounder",
+     "appearances": 56,
+     "winRate": 0.1607,
      "winInterval": {
-      "low": 0.0495,
-      "high": 0.2398
+      "low": 0.0869,
+      "high": 0.2781
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.682,
-     "escapeRate": 0.1364,
-     "bankruptRate": 0.0682
+     "meanRank": 2.893,
+     "escapeRate": 0.1607,
+     "bankruptRate": 0.0357
     },
     {
      "policyId": "best-found",
-     "appearances": 72,
-     "winRate": 0.0972,
+     "appearances": 28,
+     "winRate": 0.1071,
      "winInterval": {
-      "low": 0.0479,
-      "high": 0.1874
+      "low": 0.0371,
+      "high": 0.272
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.792,
-     "escapeRate": 0.0972,
-     "bankruptRate": 0.0278
+     "meanRank": 2.643,
+     "escapeRate": 0.1071,
+     "bankruptRate": 0.0714
     },
     {
-     "policyId": "mlm-then-properties",
+     "policyId": "bridge-loans",
+     "appearances": 56,
+     "winRate": 0.1071,
+     "winInterval": {
+      "low": 0.05,
+      "high": 0.2147
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.893,
+     "escapeRate": 0.125,
+     "bankruptRate": 0.0893
+    },
+    {
+     "policyId": "stocks-for-deposits",
+     "appearances": 52,
+     "winRate": 0.0962,
+     "winInterval": {
+      "low": 0.0418,
+      "high": 0.2061
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.788,
+     "escapeRate": 0.1346,
+     "bankruptRate": 0.0385
+    },
+    {
+     "policyId": "cash-properties",
      "appearances": 44,
      "winRate": 0.0909,
      "winInterval": {
@@ -1580,61 +1651,74 @@
       "high": 0.2116
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.909,
-     "escapeRate": 0.1364,
+     "meanRank": 2.727,
+     "escapeRate": 0.1136,
      "bankruptRate": 0.0455
     },
     {
-     "policyId": "stocks-for-deposits",
-     "appearances": 52,
-     "winRate": 0.0385,
+     "policyId": "mlm-then-properties",
+     "appearances": 28,
+     "winRate": 0.0714,
      "winInterval": {
-      "low": 0.0106,
-      "high": 0.1298
+      "low": 0.0198,
+      "high": 0.2265
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.904,
-     "escapeRate": 0.0769,
-     "bankruptRate": 0.0962
+     "meanRank": 2.536,
+     "escapeRate": 0.1786,
+     "bankruptRate": 0
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 56,
+     "winRate": 0.0536,
+     "winInterval": {
+      "low": 0.0184,
+      "high": 0.1461
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.857,
+     "escapeRate": 0.125,
+     "bankruptRate": 0.0893
+    },
+    {
+     "policyId": "big-deals-when-rich",
+     "appearances": 56,
+     "winRate": 0.0357,
+     "winInterval": {
+      "low": 0.0098,
+      "high": 0.1212
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.089,
+     "escapeRate": 0.0357,
+     "bankruptRate": 0.0893
+    },
+    {
+     "policyId": "leveraged-big",
+     "appearances": 56,
+     "winRate": 0.0179,
+     "winInterval": {
+      "low": 0.0032,
+      "high": 0.0945
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.607,
+     "escapeRate": 0.0179,
+     "bankruptRate": 0.0893
     },
     {
      "policyId": "picky-properties",
      "appearances": 40,
-     "winRate": 0.025,
+     "winRate": 0,
      "winInterval": {
-      "low": 0.0044,
-      "high": 0.1288
+      "low": 0,
+      "high": 0.0876
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.875,
-     "escapeRate": 0.075,
-     "bankruptRate": 0.1
-    },
-    {
-     "policyId": "leveraged-big",
-     "appearances": 52,
-     "winRate": 0.0192,
-     "winInterval": {
-      "low": 0.0034,
-      "high": 0.1012
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.635,
-     "escapeRate": 0.0192,
-     "bankruptRate": 0.1731
-    },
-    {
-     "policyId": "bridge-loans",
-     "appearances": 60,
-     "winRate": 0.0167,
-     "winInterval": {
-      "low": 0.0029,
-      "high": 0.0886
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.817,
-     "escapeRate": 0.0333,
-     "bankruptRate": 0.0833
+     "meanRank": 3.125,
+     "escapeRate": 0.025,
+     "bankruptRate": 0.075
     },
     {
      "policyId": "never-buy",
@@ -1647,7 +1731,7 @@
      "expectedWinRate": 0.25,
      "meanRank": 3.563,
      "escapeRate": 0,
-     "bankruptRate": 0.0875
+     "bankruptRate": 0.1
     }
    ]
   },
@@ -1659,250 +1743,263 @@
    "scores": [
     {
      "policyId": "character-chaser",
-     "appearances": 588,
-     "winRate": 0.5,
+     "appearances": 560,
+     "winRate": 0.55,
      "winInterval": {
-      "low": 0.4597,
-      "high": 0.5403
+      "low": 0.5086,
+      "high": 0.5907
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.864,
-     "escapeRate": 0.5085,
-     "bankruptRate": 0.0374
-    },
-    {
-     "policyId": "champion-v2",
-     "appearances": 556,
-     "winRate": 0.4964,
-     "winInterval": {
-      "low": 0.455,
-      "high": 0.5378
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.919,
-     "escapeRate": 0.4982,
-     "bankruptRate": 0.0324
-    },
-    {
-     "policyId": "character-trader",
-     "appearances": 556,
-     "winRate": 0.4784,
-     "winInterval": {
-      "low": 0.4372,
-      "high": 0.5199
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.917,
-     "escapeRate": 0.482,
-     "bankruptRate": 0.0324
+     "meanRank": 1.748,
+     "escapeRate": 0.5536,
+     "bankruptRate": 0.025
     },
     {
      "policyId": "character-banker",
-     "appearances": 584,
-     "winRate": 0.4589,
+     "appearances": 568,
+     "winRate": 0.493,
      "winInterval": {
-      "low": 0.4189,
-      "high": 0.4995
+      "low": 0.452,
+      "high": 0.534
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.967,
-     "escapeRate": 0.4623,
-     "bankruptRate": 0.0565
-    },
-    {
-     "policyId": "champion-v1",
-     "appearances": 612,
-     "winRate": 0.4575,
-     "winInterval": {
-      "low": 0.4184,
-      "high": 0.4971
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.948,
-     "escapeRate": 0.4608,
-     "bankruptRate": 0.0359
+     "meanRank": 1.866,
+     "escapeRate": 0.4965,
+     "bankruptRate": 0.044
     },
     {
      "policyId": "character-marketer",
-     "appearances": 740,
-     "winRate": 0.4554,
+     "appearances": 676,
+     "winRate": 0.4896,
      "winInterval": {
-      "low": 0.4198,
-      "high": 0.4914
+      "low": 0.4521,
+      "high": 0.5273
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.969,
-     "escapeRate": 0.4608,
-     "bankruptRate": 0.0514
+     "meanRank": 1.904,
+     "escapeRate": 0.4941,
+     "bankruptRate": 0.0547
+    },
+    {
+     "policyId": "character-trader",
+     "appearances": 604,
+     "winRate": 0.4735,
+     "winInterval": {
+      "low": 0.434,
+      "high": 0.5134
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.887,
+     "escapeRate": 0.4801,
+     "bankruptRate": 0.0232
+    },
+    {
+     "policyId": "champion-v1",
+     "appearances": 584,
+     "winRate": 0.4709,
+     "winInterval": {
+      "low": 0.4307,
+      "high": 0.5114
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.943,
+     "escapeRate": 0.4709,
+     "bankruptRate": 0.0462
+    },
+    {
+     "policyId": "champion-v2",
+     "appearances": 580,
+     "winRate": 0.4707,
+     "winInterval": {
+      "low": 0.4304,
+      "high": 0.5114
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.936,
+     "escapeRate": 0.4759,
+     "bankruptRate": 0.0224
     },
     {
      "policyId": "character-investor",
-     "appearances": 644,
-     "winRate": 0.4425,
+     "appearances": 568,
+     "winRate": 0.456,
      "winInterval": {
-      "low": 0.4046,
-      "high": 0.4811
+      "low": 0.4155,
+      "high": 0.4971
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.95,
-     "escapeRate": 0.4519,
-     "bankruptRate": 0.0233
+     "meanRank": 1.912,
+     "escapeRate": 0.4648,
+     "bankruptRate": 0.037
     },
     {
      "policyId": "character-gambler",
-     "appearances": 616,
-     "winRate": 0.4383,
+     "appearances": 552,
+     "winRate": 0.4112,
      "winInterval": {
-      "low": 0.3996,
-      "high": 0.4778
+      "low": 0.3709,
+      "high": 0.4528
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.049,
-     "escapeRate": 0.4448,
-     "bankruptRate": 0.0519
+     "meanRank": 2.109,
+     "escapeRate": 0.4185,
+     "bankruptRate": 0.0507
     },
     {
      "policyId": "character-cautious",
-     "appearances": 620,
-     "winRate": 0.3,
+     "appearances": 600,
+     "winRate": 0.3133,
      "winInterval": {
-      "low": 0.2652,
-      "high": 0.3372
+      "low": 0.2775,
+      "high": 0.3515
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.415,
-     "escapeRate": 0.3048,
-     "bankruptRate": 0.0452
+     "meanRank": 2.337,
+     "escapeRate": 0.3167,
+     "bankruptRate": 0.0433
     },
     {
      "policyId": "all-rounder",
-     "appearances": 668,
-     "winRate": 0.274,
+     "appearances": 624,
+     "winRate": 0.2997,
      "winInterval": {
-      "low": 0.2415,
-      "high": 0.309
+      "low": 0.265,
+      "high": 0.3368
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.525,
-     "escapeRate": 0.2754,
-     "bankruptRate": 0.0419
+     "meanRank": 2.417,
+     "escapeRate": 0.3061,
+     "bankruptRate": 0.0353
     },
     {
      "policyId": "best-found",
-     "appearances": 608,
-     "winRate": 0.0658,
+     "appearances": 520,
+     "winRate": 0.1,
      "winInterval": {
-      "low": 0.0487,
-      "high": 0.0883
+      "low": 0.0771,
+      "high": 0.1288
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.816,
-     "escapeRate": 0.0691,
-     "bankruptRate": 0.0461
+     "meanRank": 2.775,
+     "escapeRate": 0.1019,
+     "bankruptRate": 0.0481
     },
     {
      "policyId": "big-deals-when-rich",
-     "appearances": 584,
-     "winRate": 0.0548,
+     "appearances": 636,
+     "winRate": 0.0739,
      "winInterval": {
-      "low": 0.0391,
-      "high": 0.0763
+      "low": 0.056,
+      "high": 0.0969
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.935,
-     "escapeRate": 0.0616,
-     "bankruptRate": 0.0771
-    },
-    {
-     "policyId": "bridge-loans",
-     "appearances": 548,
-     "winRate": 0.0438,
-     "winInterval": {
-      "low": 0.0296,
-      "high": 0.0643
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.998,
-     "escapeRate": 0.0529,
-     "bankruptRate": 0.0803
-    },
-    {
-     "policyId": "leveraged-big",
-     "appearances": 624,
-     "winRate": 0.0401,
-     "winInterval": {
-      "low": 0.0273,
-      "high": 0.0585
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.389,
-     "escapeRate": 0.0449,
-     "bankruptRate": 0.0785
+     "meanRank": 2.857,
+     "escapeRate": 0.0755,
+     "bankruptRate": 0.0629
     },
     {
      "policyId": "cash-properties",
-     "appearances": 580,
-     "winRate": 0.0397,
+     "appearances": 520,
+     "winRate": 0.0558,
      "winInterval": {
-      "low": 0.0266,
-      "high": 0.0588
+      "low": 0.0391,
+      "high": 0.0789
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.986,
-     "escapeRate": 0.0448,
-     "bankruptRate": 0.0741
+     "meanRank": 2.96,
+     "escapeRate": 0.0673,
+     "bankruptRate": 0.0654
     },
     {
      "policyId": "stocks-for-deposits",
-     "appearances": 600,
-     "winRate": 0.0333,
+     "appearances": 544,
+     "winRate": 0.0551,
      "winInterval": {
-      "low": 0.0217,
-      "high": 0.0509
+      "low": 0.0389,
+      "high": 0.0776
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.107,
-     "escapeRate": 0.045,
-     "bankruptRate": 0.0417
+     "meanRank": 2.996,
+     "escapeRate": 0.0772,
+     "bankruptRate": 0.0423
+    },
+    {
+     "policyId": "bridge-loans",
+     "appearances": 536,
+     "winRate": 0.041,
+     "winInterval": {
+      "low": 0.0273,
+      "high": 0.0614
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.007,
+     "escapeRate": 0.0504,
+     "bankruptRate": 0.0485
     },
     {
      "policyId": "mlm-then-properties",
-     "appearances": 556,
-     "winRate": 0.0306,
+     "appearances": 512,
+     "winRate": 0.0371,
      "winInterval": {
-      "low": 0.0192,
-      "high": 0.0484
+      "low": 0.0239,
+      "high": 0.0572
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.104,
-     "escapeRate": 0.0432,
-     "bankruptRate": 0.0504
+     "meanRank": 3.094,
+     "escapeRate": 0.0488,
+     "bankruptRate": 0.0625
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 552,
+     "winRate": 0.0326,
+     "winInterval": {
+      "low": 0.0207,
+      "high": 0.051
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.098,
+     "escapeRate": 0.0471,
+     "bankruptRate": 0.058
+    },
+    {
+     "policyId": "leveraged-big",
+     "appearances": 592,
+     "winRate": 0.0236,
+     "winInterval": {
+      "low": 0.0141,
+      "high": 0.0393
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.583,
+     "escapeRate": 0.0321,
+     "bankruptRate": 0.0659
     },
     {
      "policyId": "picky-properties",
-     "appearances": 628,
-     "winRate": 0.0255,
+     "appearances": 612,
+     "winRate": 0.0147,
      "winInterval": {
-      "low": 0.0157,
-      "high": 0.041
+      "low": 0.0078,
+      "high": 0.0277
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.145,
-     "escapeRate": 0.0303,
-     "bankruptRate": 0.0732
+     "meanRank": 3.173,
+     "escapeRate": 0.0245,
+     "bankruptRate": 0.0572
     },
     {
      "policyId": "never-buy",
-     "appearances": 608,
+     "appearances": 580,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0063
+      "high": 0.0066
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.641,
+     "meanRank": 3.638,
      "escapeRate": 0,
-     "bankruptRate": 0.1069
+     "bankruptRate": 0.1121
     }
    ]
   },
@@ -1913,72 +2010,72 @@
    "tables": 240,
    "scores": [
     {
-     "policyId": "character-marketer",
-     "appearances": 32,
-     "winRate": 0.5625,
+     "policyId": "champion-v2",
+     "appearances": 36,
+     "winRate": 0.6667,
      "winInterval": {
-      "low": 0.3933,
-      "high": 0.7183
+      "low": 0.5033,
+      "high": 0.7979
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.781,
-     "escapeRate": 0.5625,
-     "bankruptRate": 0.0313
+     "meanRank": 1.611,
+     "escapeRate": 0.6667,
+     "bankruptRate": 0.0278
     },
     {
-     "policyId": "champion-v2",
-     "appearances": 48,
-     "winRate": 0.5625,
+     "policyId": "character-gambler",
+     "appearances": 32,
+     "winRate": 0.5938,
      "winInterval": {
-      "low": 0.4227,
-      "high": 0.693
+      "low": 0.4226,
+      "high": 0.7448
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.938,
-     "escapeRate": 0.6042,
-     "bankruptRate": 0.0417
+     "meanRank": 1.625,
+     "escapeRate": 0.5938,
+     "bankruptRate": 0
     },
     {
      "policyId": "character-banker",
      "appearances": 60,
-     "winRate": 0.5167,
+     "winRate": 0.5333,
      "winInterval": {
-      "low": 0.3931,
-      "high": 0.6383
+      "low": 0.4089,
+      "high": 0.6537
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.867,
-     "escapeRate": 0.5167,
-     "bankruptRate": 0.0167
-    },
-    {
-     "policyId": "character-investor",
-     "appearances": 52,
-     "winRate": 0.4808,
-     "winInterval": {
-      "low": 0.351,
-      "high": 0.6131
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 1.981,
-     "escapeRate": 0.4808,
-     "bankruptRate": 0.0192
+     "meanRank": 1.8,
+     "escapeRate": 0.5333,
+     "bankruptRate": 0
     },
     {
      "policyId": "character-trader",
-     "appearances": 52,
-     "winRate": 0.4808,
+     "appearances": 48,
+     "winRate": 0.5,
      "winInterval": {
-      "low": 0.351,
-      "high": 0.6131
+      "low": 0.3639,
+      "high": 0.6361
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.038,
-     "escapeRate": 0.4808,
-     "bankruptRate": 0.0385
+     "meanRank": 1.958,
+     "escapeRate": 0.5,
+     "bankruptRate": 0.0417
     },
     {
-     "policyId": "character-gambler",
+     "policyId": "character-investor",
+     "appearances": 48,
+     "winRate": 0.4792,
+     "winInterval": {
+      "low": 0.3447,
+      "high": 0.6167
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 1.958,
+     "escapeRate": 0.4792,
+     "bankruptRate": 0.0417
+    },
+    {
+     "policyId": "character-marketer",
      "appearances": 40,
      "winRate": 0.475,
      "winInterval": {
@@ -1986,51 +2083,64 @@
       "high": 0.625
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.9,
-     "escapeRate": 0.475,
-     "bankruptRate": 0
+     "meanRank": 2.025,
+     "escapeRate": 0.5,
+     "bankruptRate": 0.025
     },
     {
      "policyId": "character-chaser",
      "appearances": 32,
-     "winRate": 0.4688,
+     "winRate": 0.4375,
      "winInterval": {
-      "low": 0.3087,
-      "high": 0.6355
+      "low": 0.2817,
+      "high": 0.6067
      },
      "expectedWinRate": 0.25,
-     "meanRank": 1.969,
-     "escapeRate": 0.5,
-     "bankruptRate": 0.0313
-    },
-    {
-     "policyId": "champion-v1",
-     "appearances": 52,
-     "winRate": 0.4231,
-     "winInterval": {
-      "low": 0.2987,
-      "high": 0.5581
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.115,
-     "escapeRate": 0.4231,
-     "bankruptRate": 0.0192
+     "meanRank": 1.906,
+     "escapeRate": 0.4375,
+     "bankruptRate": 0
     },
     {
      "policyId": "all-rounder",
-     "appearances": 48,
-     "winRate": 0.4167,
+     "appearances": 52,
+     "winRate": 0.3654,
      "winInterval": {
-      "low": 0.2885,
-      "high": 0.5572
+      "low": 0.248,
+      "high": 0.5013
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.146,
-     "escapeRate": 0.4167,
-     "bankruptRate": 0.0417
+     "meanRank": 2.288,
+     "escapeRate": 0.3654,
+     "bankruptRate": 0.0385
     },
     {
      "policyId": "character-cautious",
+     "appearances": 56,
+     "winRate": 0.3036,
+     "winInterval": {
+      "low": 0.199,
+      "high": 0.4334
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.5,
+     "escapeRate": 0.3036,
+     "bankruptRate": 0.0536
+    },
+    {
+     "policyId": "champion-v1",
+     "appearances": 36,
+     "winRate": 0.25,
+     "winInterval": {
+      "low": 0.1375,
+      "high": 0.4107
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.361,
+     "escapeRate": 0.25,
+     "bankruptRate": 0.0556
+    },
+    {
+     "policyId": "best-found",
      "appearances": 60,
      "winRate": 0.1833,
      "winInterval": {
@@ -2038,74 +2148,48 @@
       "high": 0.2992
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.733,
-     "escapeRate": 0.1833,
-     "bankruptRate": 0.05
-    },
-    {
-     "policyId": "best-found",
-     "appearances": 56,
-     "winRate": 0.0893,
-     "winInterval": {
-      "low": 0.0387,
-      "high": 0.1926
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.75,
-     "escapeRate": 0.0893,
-     "bankruptRate": 0.0714
+     "meanRank": 2.8,
+     "escapeRate": 0.2,
+     "bankruptRate": 0.0667
     },
     {
      "policyId": "bridge-loans",
      "appearances": 56,
+     "winRate": 0.1071,
+     "winInterval": {
+      "low": 0.05,
+      "high": 0.2147
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.732,
+     "escapeRate": 0.125,
+     "bankruptRate": 0.0357
+    },
+    {
+     "policyId": "leveraged-big",
+     "appearances": 40,
+     "winRate": 0.1,
+     "winInterval": {
+      "low": 0.0396,
+      "high": 0.2305
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.575,
+     "escapeRate": 0.125,
+     "bankruptRate": 0.125
+    },
+    {
+     "policyId": "stocks-for-deposits",
+     "appearances": 56,
      "winRate": 0.0893,
      "winInterval": {
       "low": 0.0387,
       "high": 0.1926
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.786,
-     "escapeRate": 0.0893,
+     "meanRank": 2.714,
+     "escapeRate": 0.1429,
      "bankruptRate": 0.0714
-    },
-    {
-     "policyId": "leveraged-big",
-     "appearances": 48,
-     "winRate": 0.0625,
-     "winInterval": {
-      "low": 0.0215,
-      "high": 0.1684
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.479,
-     "escapeRate": 0.0833,
-     "bankruptRate": 0.0833
-    },
-    {
-     "policyId": "mlm-then-properties",
-     "appearances": 64,
-     "winRate": 0.0625,
-     "winInterval": {
-      "low": 0.0246,
-      "high": 0.15
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 2.828,
-     "escapeRate": 0.0625,
-     "bankruptRate": 0.0313
-    },
-    {
-     "policyId": "picky-properties",
-     "appearances": 64,
-     "winRate": 0.0625,
-     "winInterval": {
-      "low": 0.0246,
-      "high": 0.15
-     },
-     "expectedWinRate": 0.25,
-     "meanRank": 3.063,
-     "escapeRate": 0.0625,
-     "bankruptRate": 0.0781
     },
     {
      "policyId": "cash-properties",
@@ -2116,35 +2200,61 @@
       "high": 0.1417
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.779,
-     "escapeRate": 0.0735,
+     "meanRank": 2.838,
+     "escapeRate": 0.0588,
      "bankruptRate": 0.0588
     },
     {
      "policyId": "big-deals-when-rich",
-     "appearances": 48,
-     "winRate": 0.0208,
+     "appearances": 60,
+     "winRate": 0.05,
      "winInterval": {
-      "low": 0.0037,
-      "high": 0.109
+      "low": 0.0171,
+      "high": 0.137
      },
      "expectedWinRate": 0.25,
-     "meanRank": 2.979,
-     "escapeRate": 0.0208,
-     "bankruptRate": 0
+     "meanRank": 2.817,
+     "escapeRate": 0.0667,
+     "bankruptRate": 0.0833
     },
     {
-     "policyId": "stocks-for-deposits",
-     "appearances": 36,
-     "winRate": 0,
+     "policyId": "mlm-then-properties",
+     "appearances": 48,
+     "winRate": 0.0417,
      "winInterval": {
-      "low": 0,
-      "high": 0.0964
+      "low": 0.0115,
+      "high": 0.1398
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.194,
-     "escapeRate": 0,
-     "bankruptRate": 0.0833
+     "meanRank": 2.958,
+     "escapeRate": 0.0417,
+     "bankruptRate": 0.0208
+    },
+    {
+     "policyId": "picky-properties",
+     "appearances": 56,
+     "winRate": 0.0357,
+     "winInterval": {
+      "low": 0.0098,
+      "high": 0.1212
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 3.071,
+     "escapeRate": 0.0536,
+     "bankruptRate": 0.0714
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 32,
+     "winRate": 0.0313,
+     "winInterval": {
+      "low": 0.0055,
+      "high": 0.1574
+     },
+     "expectedWinRate": 0.25,
+     "meanRank": 2.938,
+     "escapeRate": 0.0313,
+     "bankruptRate": 0.0625
     },
     {
      "policyId": "never-buy",
@@ -2155,9 +2265,9 @@
       "high": 0.0803
      },
      "expectedWinRate": 0.25,
-     "meanRank": 3.636,
+     "meanRank": 3.682,
      "escapeRate": 0,
-     "bankruptRate": 0.1136
+     "bankruptRate": 0.1591
     }
    ]
   },
@@ -2169,175 +2279,201 @@
    "scores": [
     {
      "policyId": "character-investor",
-     "appearances": 1422,
-     "winRate": 0.3748,
+     "appearances": 1338,
+     "winRate": 0.3976,
      "winInterval": {
-      "low": 0.35,
-      "high": 0.4003
+      "low": 0.3717,
+      "high": 0.4241
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.574,
-     "escapeRate": 0.3769,
-     "bankruptRate": 0.0253
-    },
-    {
-     "policyId": "character-banker",
-     "appearances": 1368,
-     "winRate": 0.3509,
-     "winInterval": {
-      "low": 0.326,
-      "high": 0.3766
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.599,
-     "escapeRate": 0.3553,
-     "bankruptRate": 0.0278
+     "meanRank": 2.479,
+     "escapeRate": 0.4013,
+     "bankruptRate": 0.0202
     },
     {
      "policyId": "character-chaser",
-     "appearances": 1338,
-     "winRate": 0.346,
+     "appearances": 1218,
+     "winRate": 0.3703,
      "winInterval": {
-      "low": 0.321,
-      "high": 0.3719
+      "low": 0.3436,
+      "high": 0.3978
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.581,
-     "escapeRate": 0.3498,
-     "bankruptRate": 0.0217
+     "meanRank": 2.47,
+     "escapeRate": 0.3785,
+     "bankruptRate": 0.0189
     },
     {
      "policyId": "champion-v2",
-     "appearances": 1254,
-     "winRate": 0.3429,
+     "appearances": 1248,
+     "winRate": 0.3694,
      "winInterval": {
-      "low": 0.3171,
-      "high": 0.3696
+      "low": 0.3431,
+      "high": 0.3965
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.676,
-     "escapeRate": 0.3461,
-     "bankruptRate": 0.0279
-    },
-    {
-     "policyId": "character-gambler",
-     "appearances": 1260,
-     "winRate": 0.3413,
-     "winInterval": {
-      "low": 0.3156,
-      "high": 0.3679
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.731,
-     "escapeRate": 0.3421,
-     "bankruptRate": 0.0294
-    },
-    {
-     "policyId": "character-trader",
-     "appearances": 1476,
-     "winRate": 0.3347,
-     "winInterval": {
-      "low": 0.3111,
-      "high": 0.3592
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.667,
-     "escapeRate": 0.3415,
-     "bankruptRate": 0.0271
+     "meanRank": 2.575,
+     "escapeRate": 0.3734,
+     "bankruptRate": 0.0208
     },
     {
      "policyId": "champion-v1",
-     "appearances": 1326,
-     "winRate": 0.3258,
+     "appearances": 1170,
+     "winRate": 0.3573,
      "winInterval": {
-      "low": 0.3011,
-      "high": 0.3515
+      "low": 0.3303,
+      "high": 0.3851
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.72,
-     "escapeRate": 0.3303,
-     "bankruptRate": 0.0234
+     "meanRank": 2.644,
+     "escapeRate": 0.3615,
+     "bankruptRate": 0.0214
+    },
+    {
+     "policyId": "character-trader",
+     "appearances": 1356,
+     "winRate": 0.3555,
+     "winInterval": {
+      "low": 0.3304,
+      "high": 0.3813
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.564,
+     "escapeRate": 0.3606,
+     "bankruptRate": 0.0184
+    },
+    {
+     "policyId": "character-banker",
+     "appearances": 1332,
+     "winRate": 0.3529,
+     "winInterval": {
+      "low": 0.3276,
+      "high": 0.3789
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.548,
+     "escapeRate": 0.3589,
+     "bankruptRate": 0.024
     },
     {
      "policyId": "character-marketer",
-     "appearances": 1332,
-     "winRate": 0.3221,
+     "appearances": 1314,
+     "winRate": 0.3326,
      "winInterval": {
-      "low": 0.2975,
-      "high": 0.3476
+      "low": 0.3076,
+      "high": 0.3585
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.696,
-     "escapeRate": 0.3251,
-     "bankruptRate": 0.0263
+     "meanRank": 2.658,
+     "escapeRate": 0.3379,
+     "bankruptRate": 0.0251
+    },
+    {
+     "policyId": "character-gambler",
+     "appearances": 1170,
+     "winRate": 0.3325,
+     "winInterval": {
+      "low": 0.3061,
+      "high": 0.36
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.724,
+     "escapeRate": 0.3368,
+     "bankruptRate": 0.0274
     },
     {
      "policyId": "character-cautious",
-     "appearances": 1344,
-     "winRate": 0.1808,
+     "appearances": 1326,
+     "winRate": 0.1885,
      "winInterval": {
-      "low": 0.1611,
-      "high": 0.2023
+      "low": 0.1684,
+      "high": 0.2105
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.542,
-     "escapeRate": 0.183,
-     "bankruptRate": 0.0335
+     "meanRank": 3.491,
+     "escapeRate": 0.1908,
+     "bankruptRate": 0.0332
     },
     {
      "policyId": "all-rounder",
-     "appearances": 1476,
-     "winRate": 0.1721,
+     "appearances": 1338,
+     "winRate": 0.1876,
      "winInterval": {
-      "low": 0.1537,
-      "high": 0.1922
+      "low": 0.1676,
+      "high": 0.2094
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.61,
-     "escapeRate": 0.1728,
-     "bankruptRate": 0.0366
+     "meanRank": 3.543,
+     "escapeRate": 0.1891,
+     "bankruptRate": 0.0277
     },
     {
      "policyId": "best-found",
-     "appearances": 1182,
-     "winRate": 0.0321,
+     "appearances": 1176,
+     "winRate": 0.0349,
      "winInterval": {
-      "low": 0.0235,
-      "high": 0.0438
+      "low": 0.0258,
+      "high": 0.047
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.818,
-     "escapeRate": 0.0347,
-     "bankruptRate": 0.0338
+     "meanRank": 3.77,
+     "escapeRate": 0.04,
+     "bankruptRate": 0.0221
     },
     {
      "policyId": "bridge-loans",
      "appearances": 1368,
-     "winRate": 0.0132,
+     "winRate": 0.0212,
      "winInterval": {
-      "low": 0.0083,
-      "high": 0.0207
+      "low": 0.0148,
+      "high": 0.0303
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.2,
-     "escapeRate": 0.0146,
+     "meanRank": 4.036,
+     "escapeRate": 0.0249,
      "bankruptRate": 0.0292
     },
     {
-     "policyId": "stocks-for-deposits",
-     "appearances": 1470,
-     "winRate": 0.0129,
+     "policyId": "cash-properties",
+     "appearances": 1314,
+     "winRate": 0.019,
      "winInterval": {
-      "low": 0.0083,
-      "high": 0.0201
+      "low": 0.0129,
+      "high": 0.0279
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.239,
-     "escapeRate": 0.015,
-     "bankruptRate": 0.0313
+     "meanRank": 4.191,
+     "escapeRate": 0.0228,
+     "bankruptRate": 0.0358
     },
     {
-     "policyId": "cash-properties",
+     "policyId": "stocks-for-deposits",
+     "appearances": 1392,
+     "winRate": 0.018,
+     "winInterval": {
+      "low": 0.0122,
+      "high": 0.0264
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.172,
+     "escapeRate": 0.0237,
+     "bankruptRate": 0.0302
+    },
+    {
+     "policyId": "big-deals-when-rich",
+     "appearances": 1248,
+     "winRate": 0.0144,
+     "winInterval": {
+      "low": 0.0091,
+      "high": 0.0227
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.123,
+     "escapeRate": 0.0184,
+     "bankruptRate": 0.0409
+    },
+    {
+     "policyId": "debt-first",
      "appearances": 1356,
      "winRate": 0.0111,
      "winInterval": {
@@ -2345,74 +2481,61 @@
       "high": 0.0182
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.261,
-     "escapeRate": 0.0133,
-     "bankruptRate": 0.0435
+     "meanRank": 4.287,
+     "escapeRate": 0.0147,
+     "bankruptRate": 0.0369
     },
     {
      "policyId": "leveraged-big",
-     "appearances": 1386,
-     "winRate": 0.0101,
+     "appearances": 1428,
+     "winRate": 0.0077,
      "winInterval": {
-      "low": 0.006,
-      "high": 0.0169
+      "low": 0.0043,
+      "high": 0.0137
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.077,
-     "escapeRate": 0.0123,
-     "bankruptRate": 0.0455
-    },
-    {
-     "policyId": "big-deals-when-rich",
-     "appearances": 1326,
-     "winRate": 0.009,
-     "winInterval": {
-      "low": 0.0052,
-      "high": 0.0158
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.166,
-     "escapeRate": 0.0106,
-     "bankruptRate": 0.0407
+     "meanRank": 3.408,
+     "escapeRate": 0.0126,
+     "bankruptRate": 0.0539
     },
     {
      "policyId": "mlm-then-properties",
-     "appearances": 1440,
-     "winRate": 0.009,
+     "appearances": 1212,
+     "winRate": 0.0058,
      "winInterval": {
-      "low": 0.0053,
-      "high": 0.0154
+      "low": 0.0028,
+      "high": 0.0119
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.311,
-     "escapeRate": 0.0118,
-     "bankruptRate": 0.0389
+     "meanRank": 4.372,
+     "escapeRate": 0.0091,
+     "bankruptRate": 0.0297
     },
     {
      "policyId": "picky-properties",
-     "appearances": 1434,
-     "winRate": 0.0014,
+     "appearances": 1344,
+     "winRate": 0.0052,
      "winInterval": {
-      "low": 0.0004,
-      "high": 0.0051
+      "low": 0.0025,
+      "high": 0.0107
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.561,
-     "escapeRate": 0.0021,
-     "bankruptRate": 0.0397
+     "meanRank": 4.47,
+     "escapeRate": 0.0052,
+     "bankruptRate": 0.0342
     },
     {
      "policyId": "never-buy",
-     "appearances": 1362,
+     "appearances": 1272,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0028
+      "high": 0.003
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 5.306,
+     "meanRank": 5.318,
      "escapeRate": 0,
-     "bankruptRate": 0.0404
+     "bankruptRate": 0.0393
     }
    ]
   },
@@ -2423,7 +2546,46 @@
    "tables": 360,
    "scores": [
     {
-     "policyId": "character-gambler",
+     "policyId": "champion-v1",
+     "appearances": 66,
+     "winRate": 0.3939,
+     "winInterval": {
+      "low": 0.285,
+      "high": 0.5145
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.561,
+     "escapeRate": 0.3939,
+     "bankruptRate": 0.0152
+    },
+    {
+     "policyId": "character-chaser",
+     "appearances": 96,
+     "winRate": 0.375,
+     "winInterval": {
+      "low": 0.2847,
+      "high": 0.4749
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.521,
+     "escapeRate": 0.3854,
+     "bankruptRate": 0.0313
+    },
+    {
+     "policyId": "character-trader",
+     "appearances": 102,
+     "winRate": 0.3725,
+     "winInterval": {
+      "low": 0.2849,
+      "high": 0.4694
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.745,
+     "escapeRate": 0.3725,
+     "bankruptRate": 0
+    },
+    {
+     "policyId": "character-banker",
      "appearances": 120,
      "winRate": 0.3583,
      "winInterval": {
@@ -2431,142 +2593,116 @@
       "high": 0.4473
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.825,
-     "escapeRate": 0.3583,
+     "meanRank": 2.433,
+     "escapeRate": 0.3667,
      "bankruptRate": 0.0167
     },
     {
-     "policyId": "champion-v2",
-     "appearances": 126,
-     "winRate": 0.3571,
-     "winInterval": {
-      "low": 0.2788,
-      "high": 0.4439
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.635,
-     "escapeRate": 0.3651,
-     "bankruptRate": 0.0397
-    },
-    {
-     "policyId": "character-banker",
-     "appearances": 102,
-     "winRate": 0.3529,
-     "winInterval": {
-      "low": 0.2671,
-      "high": 0.4495
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.637,
-     "escapeRate": 0.3529,
-     "bankruptRate": 0.0098
-    },
-    {
      "policyId": "character-investor",
-     "appearances": 108,
-     "winRate": 0.3426,
+     "appearances": 114,
+     "winRate": 0.3509,
      "winInterval": {
-      "low": 0.2599,
-      "high": 0.4361
+      "low": 0.2694,
+      "high": 0.442
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.611,
-     "escapeRate": 0.3519,
-     "bankruptRate": 0.0278
+     "meanRank": 2.518,
+     "escapeRate": 0.3596,
+     "bankruptRate": 0.0439
     },
     {
-     "policyId": "character-chaser",
-     "appearances": 96,
-     "winRate": 0.3125,
+     "policyId": "character-gambler",
+     "appearances": 114,
+     "winRate": 0.3509,
      "winInterval": {
-      "low": 0.2285,
-      "high": 0.4109
+      "low": 0.2694,
+      "high": 0.442
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.573,
-     "escapeRate": 0.3125,
-     "bankruptRate": 0.0104
+     "meanRank": 2.754,
+     "escapeRate": 0.3509,
+     "bankruptRate": 0.0351
     },
     {
      "policyId": "character-marketer",
-     "appearances": 108,
-     "winRate": 0.3056,
+     "appearances": 72,
+     "winRate": 0.3472,
      "winInterval": {
-      "low": 0.2266,
-      "high": 0.3979
+      "low": 0.2475,
+      "high": 0.4624
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.861,
-     "escapeRate": 0.3056,
-     "bankruptRate": 0.037
+     "meanRank": 2.764,
+     "escapeRate": 0.3472,
+     "bankruptRate": 0.0278
     },
     {
-     "policyId": "champion-v1",
-     "appearances": 108,
-     "winRate": 0.2963,
+     "policyId": "champion-v2",
+     "appearances": 84,
+     "winRate": 0.3452,
      "winInterval": {
-      "low": 0.2184,
-      "high": 0.3882
+      "low": 0.2523,
+      "high": 0.4517
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.833,
-     "escapeRate": 0.3056,
-     "bankruptRate": 0.0185
-    },
-    {
-     "policyId": "character-trader",
-     "appearances": 96,
-     "winRate": 0.2917,
-     "winInterval": {
-      "low": 0.2102,
-      "high": 0.3892
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.885,
-     "escapeRate": 0.2917,
-     "bankruptRate": 0.0104
-    },
-    {
-     "policyId": "character-cautious",
-     "appearances": 174,
-     "winRate": 0.2299,
-     "winInterval": {
-      "low": 0.1736,
-      "high": 0.2978
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 3.448,
-     "escapeRate": 0.2299,
-     "bankruptRate": 0.023
+     "meanRank": 2.607,
+     "escapeRate": 0.3452,
+     "bankruptRate": 0.0119
     },
     {
      "policyId": "all-rounder",
-     "appearances": 84,
-     "winRate": 0.1905,
+     "appearances": 78,
+     "winRate": 0.2692,
      "winInterval": {
-      "low": 0.1208,
-      "high": 0.2872
+      "low": 0.1834,
+      "high": 0.3768
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.667,
-     "escapeRate": 0.1905,
-     "bankruptRate": 0.0833
+     "meanRank": 3.295,
+     "escapeRate": 0.2692,
+     "bankruptRate": 0.0513
+    },
+    {
+     "policyId": "character-cautious",
+     "appearances": 156,
+     "winRate": 0.2308,
+     "winInterval": {
+      "low": 0.1716,
+      "high": 0.3029
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 3.244,
+     "escapeRate": 0.2372,
+     "bankruptRate": 0.0192
     },
     {
      "policyId": "best-found",
-     "appearances": 96,
-     "winRate": 0.0729,
+     "appearances": 150,
+     "winRate": 0.0533,
      "winInterval": {
-      "low": 0.0358,
-      "high": 0.1429
+      "low": 0.0273,
+      "high": 0.1017
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.688,
-     "escapeRate": 0.0729,
-     "bankruptRate": 0.0313
+     "meanRank": 3.713,
+     "escapeRate": 0.06,
+     "bankruptRate": 0.0467
     },
     {
      "policyId": "stocks-for-deposits",
+     "appearances": 72,
+     "winRate": 0.0417,
+     "winInterval": {
+      "low": 0.0143,
+      "high": 0.1155
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.056,
+     "escapeRate": 0.0556,
+     "bankruptRate": 0.0972
+    },
+    {
+     "policyId": "big-deals-when-rich",
      "appearances": 120,
      "winRate": 0.0417,
      "winInterval": {
@@ -2574,9 +2710,22 @@
       "high": 0.0938
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.892,
+     "meanRank": 4.133,
      "escapeRate": 0.0417,
-     "bankruptRate": 0.0417
+     "bankruptRate": 0.05
+    },
+    {
+     "policyId": "cash-properties",
+     "appearances": 114,
+     "winRate": 0.0351,
+     "winInterval": {
+      "low": 0.0137,
+      "high": 0.0868
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 3.921,
+     "escapeRate": 0.0351,
+     "bankruptRate": 0.0351
     },
     {
      "policyId": "leveraged-big",
@@ -2587,12 +2736,12 @@
       "high": 0.065
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.167,
+     "meanRank": 3.537,
      "escapeRate": 0.0185,
-     "bankruptRate": 0.0648
+     "bankruptRate": 0.0926
     },
     {
-     "policyId": "big-deals-when-rich",
+     "policyId": "picky-properties",
      "appearances": 114,
      "winRate": 0.0175,
      "winInterval": {
@@ -2600,74 +2749,61 @@
       "high": 0.0617
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.175,
-     "escapeRate": 0.0263,
+     "meanRank": 4.184,
+     "escapeRate": 0.0175,
      "bankruptRate": 0.0439
     },
     {
-     "policyId": "cash-properties",
-     "appearances": 132,
-     "winRate": 0.0152,
-     "winInterval": {
-      "low": 0.0042,
-      "high": 0.0536
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.106,
-     "escapeRate": 0.0227,
-     "bankruptRate": 0.053
-    },
-    {
-     "policyId": "picky-properties",
+     "policyId": "debt-first",
      "appearances": 120,
-     "winRate": 0.0083,
+     "winRate": 0.0167,
      "winInterval": {
-      "low": 0.0015,
-      "high": 0.0457
+      "low": 0.0046,
+      "high": 0.0587
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.35,
-     "escapeRate": 0.0083,
-     "bankruptRate": 0.05
-    },
-    {
-     "policyId": "mlm-then-properties",
-     "appearances": 126,
-     "winRate": 0.0079,
-     "winInterval": {
-      "low": 0.0014,
-      "high": 0.0436
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.254,
-     "escapeRate": 0.0159,
-     "bankruptRate": 0.0476
+     "meanRank": 4.125,
+     "escapeRate": 0.0167,
+     "bankruptRate": 0.0417
     },
     {
      "policyId": "bridge-loans",
-     "appearances": 90,
+     "appearances": 150,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0409
+      "high": 0.025
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.178,
-     "escapeRate": 0,
-     "bankruptRate": 0.0222
+     "meanRank": 4.16,
+     "escapeRate": 0.0067,
+     "bankruptRate": 0.04
+    },
+    {
+     "policyId": "mlm-then-properties",
+     "appearances": 84,
+     "winRate": 0,
+     "winInterval": {
+      "low": 0,
+      "high": 0.0437
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.369,
+     "escapeRate": 0.0119,
+     "bankruptRate": 0.0119
     },
     {
      "policyId": "never-buy",
-     "appearances": 132,
+     "appearances": 126,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0283
+      "high": 0.0296
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 5.121,
+     "meanRank": 5.222,
      "escapeRate": 0,
-     "bankruptRate": 0.0682
+     "bankruptRate": 0.0714
     }
    ]
   },
@@ -2678,251 +2814,264 @@
    "tables": 4320,
    "scores": [
     {
-     "policyId": "character-banker",
-     "appearances": 1416,
-     "winRate": 0.3517,
-     "winInterval": {
-      "low": 0.3273,
-      "high": 0.3769
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.629,
-     "escapeRate": 0.3559,
-     "bankruptRate": 0.0339
-    },
-    {
-     "policyId": "character-gambler",
-     "appearances": 1446,
-     "winRate": 0.3465,
-     "winInterval": {
-      "low": 0.3224,
-      "high": 0.3714
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.739,
-     "escapeRate": 0.3506,
-     "bankruptRate": 0.0297
-    },
-    {
-     "policyId": "character-chaser",
-     "appearances": 1404,
-     "winRate": 0.3419,
-     "winInterval": {
-      "low": 0.3175,
-      "high": 0.3671
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.529,
-     "escapeRate": 0.349,
-     "bankruptRate": 0.0207
-    },
-    {
      "policyId": "character-trader",
-     "appearances": 1410,
-     "winRate": 0.3411,
+     "appearances": 1200,
+     "winRate": 0.365,
      "winInterval": {
-      "low": 0.3169,
-      "high": 0.3663
+      "low": 0.3382,
+      "high": 0.3926
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.677,
-     "escapeRate": 0.344,
-     "bankruptRate": 0.0319
+     "meanRank": 2.559,
+     "escapeRate": 0.3667,
+     "bankruptRate": 0.03
     },
     {
      "policyId": "character-investor",
-     "appearances": 1398,
-     "winRate": 0.3383,
+     "appearances": 1404,
+     "winRate": 0.3547,
      "winInterval": {
-      "low": 0.314,
-      "high": 0.3636
+      "low": 0.3301,
+      "high": 0.3801
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.667,
-     "escapeRate": 0.3433,
-     "bankruptRate": 0.025
+     "meanRank": 2.556,
+     "escapeRate": 0.3597,
+     "bankruptRate": 0.0228
     },
     {
-     "policyId": "champion-v1",
-     "appearances": 1302,
-     "winRate": 0.3272,
+     "policyId": "character-chaser",
+     "appearances": 1362,
+     "winRate": 0.3524,
      "winInterval": {
-      "low": 0.3022,
-      "high": 0.3532
+      "low": 0.3275,
+      "high": 0.3782
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.684,
-     "escapeRate": 0.331,
-     "bankruptRate": 0.0215
+     "meanRank": 2.437,
+     "escapeRate": 0.3605,
+     "bankruptRate": 0.0154
+    },
+    {
+     "policyId": "character-banker",
+     "appearances": 1362,
+     "winRate": 0.3473,
+     "winInterval": {
+      "low": 0.3225,
+      "high": 0.373
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.628,
+     "escapeRate": 0.3532,
+     "bankruptRate": 0.0316
     },
     {
      "policyId": "character-marketer",
-     "appearances": 1368,
-     "winRate": 0.3224,
+     "appearances": 1344,
+     "winRate": 0.3408,
      "winInterval": {
-      "low": 0.2981,
-      "high": 0.3476
+      "low": 0.3159,
+      "high": 0.3665
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.77,
-     "escapeRate": 0.3289,
-     "bankruptRate": 0.0351
+     "meanRank": 2.7,
+     "escapeRate": 0.3452,
+     "bankruptRate": 0.026
     },
     {
      "policyId": "champion-v2",
-     "appearances": 1374,
-     "winRate": 0.3064,
+     "appearances": 1326,
+     "winRate": 0.3401,
      "winInterval": {
-      "low": 0.2826,
-      "high": 0.3313
+      "low": 0.3151,
+      "high": 0.366
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.721,
-     "escapeRate": 0.3151,
-     "bankruptRate": 0.0277
+     "meanRank": 2.698,
+     "escapeRate": 0.3462,
+     "bankruptRate": 0.0241
+    },
+    {
+     "policyId": "champion-v1",
+     "appearances": 1206,
+     "winRate": 0.3391,
+     "winInterval": {
+      "low": 0.313,
+      "high": 0.3663
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.689,
+     "escapeRate": 0.3416,
+     "bankruptRate": 0.0249
+    },
+    {
+     "policyId": "character-gambler",
+     "appearances": 1398,
+     "winRate": 0.3312,
+     "winInterval": {
+      "low": 0.307,
+      "high": 0.3563
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.753,
+     "escapeRate": 0.3333,
+     "bankruptRate": 0.025
     },
     {
      "policyId": "character-cautious",
-     "appearances": 1404,
-     "winRate": 0.1895,
+     "appearances": 1296,
+     "winRate": 0.1921,
      "winInterval": {
-      "low": 0.1698,
-      "high": 0.2108
+      "low": 0.1716,
+      "high": 0.2145
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.555,
-     "escapeRate": 0.1923,
-     "bankruptRate": 0.0306
+     "meanRank": 3.464,
+     "escapeRate": 0.1968,
+     "bankruptRate": 0.0293
     },
     {
      "policyId": "all-rounder",
-     "appearances": 1218,
-     "winRate": 0.1675,
+     "appearances": 1296,
+     "winRate": 0.1829,
      "winInterval": {
-      "low": 0.1476,
-      "high": 0.1895
+      "low": 0.1628,
+      "high": 0.2048
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.63,
-     "escapeRate": 0.1708,
-     "bankruptRate": 0.0205
+     "meanRank": 3.54,
+     "escapeRate": 0.1867,
+     "bankruptRate": 0.0216
     },
     {
      "policyId": "best-found",
-     "appearances": 1416,
-     "winRate": 0.0198,
+     "appearances": 1350,
+     "winRate": 0.0244,
      "winInterval": {
-      "low": 0.0137,
-      "high": 0.0284
+      "low": 0.0175,
+      "high": 0.0341
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.944,
-     "escapeRate": 0.0219,
-     "bankruptRate": 0.0282
-    },
-    {
-     "policyId": "stocks-for-deposits",
-     "appearances": 1260,
-     "winRate": 0.0159,
-     "winInterval": {
-      "low": 0.0103,
-      "high": 0.0244
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.223,
-     "escapeRate": 0.0198,
-     "bankruptRate": 0.0254
-    },
-    {
-     "policyId": "big-deals-when-rich",
-     "appearances": 1278,
-     "winRate": 0.0149,
-     "winInterval": {
-      "low": 0.0095,
-      "high": 0.0231
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.138,
-     "escapeRate": 0.0172,
-     "bankruptRate": 0.0462
+     "meanRank": 3.864,
+     "escapeRate": 0.0274,
+     "bankruptRate": 0.0311
     },
     {
      "policyId": "cash-properties",
-     "appearances": 1296,
-     "winRate": 0.0147,
+     "appearances": 1284,
+     "winRate": 0.0234,
      "winInterval": {
-      "low": 0.0094,
-      "high": 0.0228
+      "low": 0.0164,
+      "high": 0.0332
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.094,
-     "escapeRate": 0.0177,
-     "bankruptRate": 0.0363
+     "meanRank": 4.063,
+     "escapeRate": 0.0241,
+     "bankruptRate": 0.035
+    },
+    {
+     "policyId": "big-deals-when-rich",
+     "appearances": 1236,
+     "winRate": 0.0178,
+     "winInterval": {
+      "low": 0.0118,
+      "high": 0.0268
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.053,
+     "escapeRate": 0.0186,
+     "bankruptRate": 0.0348
     },
     {
      "policyId": "bridge-loans",
-     "appearances": 1320,
-     "winRate": 0.0129,
+     "appearances": 1302,
+     "winRate": 0.0177,
      "winInterval": {
-      "low": 0.0081,
-      "high": 0.0205
+      "low": 0.0118,
+      "high": 0.0264
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.18,
-     "escapeRate": 0.0174,
-     "bankruptRate": 0.0386
+     "meanRank": 4.164,
+     "escapeRate": 0.0215,
+     "bankruptRate": 0.0307
+    },
+    {
+     "policyId": "stocks-for-deposits",
+     "appearances": 1368,
+     "winRate": 0.0132,
+     "winInterval": {
+      "low": 0.0083,
+      "high": 0.0207
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.183,
+     "escapeRate": 0.0183,
+     "bankruptRate": 0.0263
     },
     {
      "policyId": "mlm-then-properties",
-     "appearances": 1362,
-     "winRate": 0.0081,
+     "appearances": 1188,
+     "winRate": 0.0126,
      "winInterval": {
-      "low": 0.0045,
-      "high": 0.0144
+      "low": 0.0077,
+      "high": 0.0207
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.413,
-     "escapeRate": 0.0095,
-     "bankruptRate": 0.0345
+     "meanRank": 4.313,
+     "escapeRate": 0.0168,
+     "bankruptRate": 0.0337
     },
     {
      "policyId": "leveraged-big",
-     "appearances": 1380,
-     "winRate": 0.0058,
+     "appearances": 1182,
+     "winRate": 0.0085,
      "winInterval": {
-      "low": 0.0029,
-      "high": 0.0114
+      "low": 0.0046,
+      "high": 0.0155
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.164,
-     "escapeRate": 0.0058,
-     "bankruptRate": 0.0529
+     "meanRank": 3.369,
+     "escapeRate": 0.0118,
+     "bankruptRate": 0.0262
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 1092,
+     "winRate": 0.0064,
+     "winInterval": {
+      "low": 0.0031,
+      "high": 0.0132
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.364,
+     "escapeRate": 0.011,
+     "bankruptRate": 0.0321
     },
     {
      "policyId": "picky-properties",
-     "appearances": 1446,
-     "winRate": 0.0035,
+     "appearances": 1392,
+     "winRate": 0.0043,
      "winInterval": {
-      "low": 0.0015,
-      "high": 0.0081
+      "low": 0.002,
+      "high": 0.0094
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.564,
-     "escapeRate": 0.0041,
-     "bankruptRate": 0.038
+     "meanRank": 4.521,
+     "escapeRate": 0.0065,
+     "bankruptRate": 0.0309
     },
     {
      "policyId": "never-buy",
-     "appearances": 1422,
+     "appearances": 1332,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0027
+      "high": 0.0029
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 5.312,
+     "meanRank": 5.285,
      "escapeRate": 0,
-     "bankruptRate": 0.0513
+     "bankruptRate": 0.0428
     }
    ]
   },
@@ -2933,202 +3082,215 @@
    "tables": 360,
    "scores": [
     {
-     "policyId": "character-investor",
-     "appearances": 120,
-     "winRate": 0.4333,
-     "winInterval": {
-      "low": 0.3481,
-      "high": 0.5227
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.358,
-     "escapeRate": 0.4333,
-     "bankruptRate": 0.0083
-    },
-    {
-     "policyId": "character-marketer",
-     "appearances": 120,
-     "winRate": 0.3833,
-     "winInterval": {
-      "low": 0.3012,
-      "high": 0.4727
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.558,
-     "escapeRate": 0.3917,
-     "bankruptRate": 0.025
-    },
-    {
-     "policyId": "champion-v1",
-     "appearances": 102,
-     "winRate": 0.3725,
-     "winInterval": {
-      "low": 0.2849,
-      "high": 0.4694
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.451,
-     "escapeRate": 0.3824,
-     "bankruptRate": 0.0098
-    },
-    {
      "policyId": "character-trader",
-     "appearances": 102,
-     "winRate": 0.3627,
+     "appearances": 108,
+     "winRate": 0.4167,
      "winInterval": {
-      "low": 0.276,
-      "high": 0.4595
+      "low": 0.3281,
+      "high": 0.5109
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.676,
-     "escapeRate": 0.3627,
-     "bankruptRate": 0.0392
-    },
-    {
-     "policyId": "character-chaser",
-     "appearances": 120,
-     "winRate": 0.35,
-     "winInterval": {
-      "low": 0.2705,
-      "high": 0.4388
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.592,
-     "escapeRate": 0.35,
-     "bankruptRate": 0.025
-    },
-    {
-     "policyId": "character-gambler",
-     "appearances": 126,
-     "winRate": 0.3254,
-     "winInterval": {
-      "low": 0.2498,
-      "high": 0.4113
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 3.048,
-     "escapeRate": 0.3254,
-     "bankruptRate": 0.0397
-    },
-    {
-     "policyId": "character-banker",
-     "appearances": 96,
-     "winRate": 0.3021,
-     "winInterval": {
-      "low": 0.2193,
-      "high": 0.4001
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 2.833,
-     "escapeRate": 0.3021,
-     "bankruptRate": 0.0521
+     "meanRank": 2.296,
+     "escapeRate": 0.4352,
+     "bankruptRate": 0.0278
     },
     {
      "policyId": "champion-v2",
-     "appearances": 102,
-     "winRate": 0.2647,
+     "appearances": 78,
+     "winRate": 0.3846,
      "winInterval": {
-      "low": 0.1888,
-      "high": 0.3577
+      "low": 0.2845,
+      "high": 0.4956
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 2.784,
-     "escapeRate": 0.2745,
-     "bankruptRate": 0.0588
+     "meanRank": 2.385,
+     "escapeRate": 0.3846,
+     "bankruptRate": 0.0128
+    },
+    {
+     "policyId": "character-banker",
+     "appearances": 120,
+     "winRate": 0.375,
+     "winInterval": {
+      "low": 0.2935,
+      "high": 0.4642
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.65,
+     "escapeRate": 0.375,
+     "bankruptRate": 0.05
+    },
+    {
+     "policyId": "character-gambler",
+     "appearances": 108,
+     "winRate": 0.3704,
+     "winInterval": {
+      "low": 0.2852,
+      "high": 0.4644
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.778,
+     "escapeRate": 0.3796,
+     "bankruptRate": 0.037
+    },
+    {
+     "policyId": "character-chaser",
+     "appearances": 114,
+     "winRate": 0.3684,
+     "winInterval": {
+      "low": 0.2855,
+      "high": 0.4599
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.491,
+     "escapeRate": 0.3684,
+     "bankruptRate": 0.0263
+    },
+    {
+     "policyId": "character-investor",
+     "appearances": 108,
+     "winRate": 0.3426,
+     "winInterval": {
+      "low": 0.2599,
+      "high": 0.4361
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.463,
+     "escapeRate": 0.3519,
+     "bankruptRate": 0.0185
+    },
+    {
+     "policyId": "character-marketer",
+     "appearances": 84,
+     "winRate": 0.3214,
+     "winInterval": {
+      "low": 0.2313,
+      "high": 0.4272
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.833,
+     "escapeRate": 0.3214,
+     "bankruptRate": 0.0238
+    },
+    {
+     "policyId": "champion-v1",
+     "appearances": 78,
+     "winRate": 0.3205,
+     "winInterval": {
+      "low": 0.2275,
+      "high": 0.4304
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 2.769,
+     "escapeRate": 0.3205,
+     "bankruptRate": 0.0128
     },
     {
      "policyId": "all-rounder",
-     "appearances": 96,
-     "winRate": 0.1875,
+     "appearances": 108,
+     "winRate": 0.2778,
      "winInterval": {
-      "low": 0.122,
-      "high": 0.277
+      "low": 0.202,
+      "high": 0.3688
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.604,
-     "escapeRate": 0.1875,
-     "bankruptRate": 0.0208
+     "meanRank": 3.185,
+     "escapeRate": 0.2778,
+     "bankruptRate": 0.0185
     },
     {
      "policyId": "character-cautious",
      "appearances": 114,
-     "winRate": 0.1754,
+     "winRate": 0.2105,
      "winInterval": {
-      "low": 0.1165,
-      "high": 0.2555
+      "low": 0.1458,
+      "high": 0.2942
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 3.702,
-     "escapeRate": 0.1754,
+     "meanRank": 3.632,
+     "escapeRate": 0.2105,
      "bankruptRate": 0.0175
     },
     {
-     "policyId": "leveraged-big",
-     "appearances": 120,
-     "winRate": 0.0167,
-     "winInterval": {
-      "low": 0.0046,
-      "high": 0.0587
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 3.142,
-     "escapeRate": 0.025,
-     "bankruptRate": 0.0583
-    },
-    {
-     "policyId": "bridge-loans",
-     "appearances": 126,
-     "winRate": 0.0159,
-     "winInterval": {
-      "low": 0.0044,
-      "high": 0.056
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.23,
-     "escapeRate": 0.0159,
-     "bankruptRate": 0.0556
-    },
-    {
-     "policyId": "stocks-for-deposits",
-     "appearances": 132,
-     "winRate": 0.0152,
-     "winInterval": {
-      "low": 0.0042,
-      "high": 0.0536
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.462,
-     "escapeRate": 0.0152,
-     "bankruptRate": 0.053
-    },
-    {
      "policyId": "cash-properties",
-     "appearances": 138,
-     "winRate": 0.0145,
+     "appearances": 144,
+     "winRate": 0.0278,
      "winInterval": {
-      "low": 0.004,
-      "high": 0.0513
+      "low": 0.0109,
+      "high": 0.0692
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4,
-     "escapeRate": 0.0145,
-     "bankruptRate": 0.0072
-    },
-    {
-     "policyId": "best-found",
-     "appearances": 84,
-     "winRate": 0.0119,
-     "winInterval": {
-      "low": 0.0021,
-      "high": 0.0644
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 3.75,
-     "escapeRate": 0.0238,
-     "bankruptRate": 0.0238
+     "meanRank": 4.007,
+     "escapeRate": 0.0347,
+     "bankruptRate": 0.0278
     },
     {
      "policyId": "big-deals-when-rich",
+     "appearances": 114,
+     "winRate": 0.0263,
+     "winInterval": {
+      "low": 0.009,
+      "high": 0.0745
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 3.93,
+     "escapeRate": 0.0351,
+     "bankruptRate": 0.0439
+    },
+    {
+     "policyId": "leveraged-big",
+     "appearances": 96,
+     "winRate": 0.0208,
+     "winInterval": {
+      "low": 0.0057,
+      "high": 0.0728
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 3.313,
+     "escapeRate": 0.0313,
+     "bankruptRate": 0.0313
+    },
+    {
+     "policyId": "mlm-then-properties",
+     "appearances": 102,
+     "winRate": 0.0196,
+     "winInterval": {
+      "low": 0.0054,
+      "high": 0.0687
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.275,
+     "escapeRate": 0.0196,
+     "bankruptRate": 0.0196
+    },
+    {
+     "policyId": "debt-first",
+     "appearances": 108,
+     "winRate": 0.0093,
+     "winInterval": {
+      "low": 0.0016,
+      "high": 0.0506
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.333,
+     "escapeRate": 0.0093,
+     "bankruptRate": 0.0648
+    },
+    {
+     "policyId": "best-found",
+     "appearances": 114,
+     "winRate": 0.0088,
+     "winInterval": {
+      "low": 0.0016,
+      "high": 0.048
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 3.675,
+     "escapeRate": 0.0088,
+     "bankruptRate": 0.0263
+    },
+    {
+     "policyId": "stocks-for-deposits",
      "appearances": 120,
      "winRate": 0.0083,
      "winInterval": {
@@ -3136,9 +3298,22 @@
       "high": 0.0457
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4,
+     "meanRank": 4.208,
      "escapeRate": 0.0083,
-     "bankruptRate": 0.0083
+     "bankruptRate": 0.0417
+    },
+    {
+     "policyId": "bridge-loans",
+     "appearances": 138,
+     "winRate": 0.0072,
+     "winInterval": {
+      "low": 0.0013,
+      "high": 0.0399
+     },
+     "expectedWinRate": 0.1667,
+     "meanRank": 4.362,
+     "escapeRate": 0.0145,
+     "bankruptRate": 0.0507
     },
     {
      "policyId": "picky-properties",
@@ -3149,35 +3324,22 @@
       "high": 0.0385
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 4.25,
-     "escapeRate": 0.0104,
-     "bankruptRate": 0.0313
-    },
-    {
-     "policyId": "mlm-then-properties",
-     "appearances": 132,
-     "winRate": 0,
-     "winInterval": {
-      "low": 0,
-      "high": 0.0283
-     },
-     "expectedWinRate": 0.1667,
-     "meanRank": 4.455,
+     "meanRank": 4.229,
      "escapeRate": 0,
-     "bankruptRate": 0.0455
+     "bankruptRate": 0.0417
     },
     {
      "policyId": "never-buy",
-     "appearances": 114,
+     "appearances": 108,
      "winRate": 0,
      "winInterval": {
       "low": 0,
-      "high": 0.0326
+      "high": 0.0343
      },
      "expectedWinRate": 0.1667,
-     "meanRank": 5.14,
+     "meanRank": 5.25,
      "escapeRate": 0,
-     "bankruptRate": 0.0175
+     "bankruptRate": 0.0463
     }
    ]
   }
@@ -3186,182 +3348,182 @@
   "hausmeister": {
    "setId": "cashflow",
    "title": "Hausmeister/in",
-   "adopted": false,
-   "winRate": 0.562,
+   "adopted": true,
+   "winRate": 0.6177,
    "interval": {
-    "low": 0.5368,
-    "high": 0.5869
+    "low": 0.5962,
+    "high": 0.6387
    },
-   "tables": 1500,
-   "championV1WinRate": 0.562
+   "tables": 2001,
+   "championV1WinRate": 0.5642
   },
   "lehrer": {
    "setId": "cashflow",
    "title": "Lehrer/in",
-   "adopted": false,
-   "winRate": 0.614,
+   "adopted": true,
+   "winRate": 0.6342,
    "interval": {
-    "low": 0.5891,
-    "high": 0.6383
+    "low": 0.6128,
+    "high": 0.655
    },
-   "tables": 1500,
-   "championV1WinRate": 0.614
+   "tables": 2001,
+   "championV1WinRate": 0.6097
   },
   "pilot": {
    "setId": "cashflow",
    "title": "Pilot/in",
    "adopted": false,
-   "winRate": 0.686,
+   "winRate": 0.6787,
    "interval": {
-    "low": 0.6621,
-    "high": 0.709
+    "low": 0.6579,
+    "high": 0.6988
    },
-   "tables": 1500,
-   "championV1WinRate": 0.686
+   "tables": 2001,
+   "championV1WinRate": 0.6787
   },
   "sekretaer": {
    "setId": "cashflow",
    "title": "Sekretär/in",
    "adopted": false,
-   "winRate": 0.5513,
+   "winRate": 0.5687,
    "interval": {
-    "low": 0.5261,
-    "high": 0.5763
+    "low": 0.5469,
+    "high": 0.5903
    },
-   "tables": 1500,
-   "championV1WinRate": 0.5513
+   "tables": 2001,
+   "championV1WinRate": 0.5687
   },
   "manager": {
    "setId": "cashflow",
    "title": "Manager/in",
-   "adopted": true,
-   "winRate": 0.6247,
+   "adopted": false,
+   "winRate": 0.6142,
    "interval": {
-    "low": 0.5999,
-    "high": 0.6488
+    "low": 0.5927,
+    "high": 0.6353
    },
-   "tables": 1500,
-   "championV1WinRate": 0.598
+   "tables": 2001,
+   "championV1WinRate": 0.6142
   },
   "lkwFahrer": {
    "setId": "cashflow",
    "title": "LKW-Fahrer/in",
-   "adopted": true,
-   "winRate": 0.52,
+   "adopted": false,
+   "winRate": 0.5467,
    "interval": {
-    "low": 0.4947,
-    "high": 0.5452
+    "low": 0.5248,
+    "high": 0.5684
    },
-   "tables": 1500,
-   "championV1WinRate": 0.4933
+   "tables": 2001,
+   "championV1WinRate": 0.5467
   },
   "polizist": {
    "setId": "cashflow",
    "title": "Polizist/in",
    "adopted": false,
-   "winRate": 0.6233,
+   "winRate": 0.6232,
    "interval": {
-    "low": 0.5985,
-    "high": 0.6475
+    "low": 0.6017,
+    "high": 0.6442
    },
-   "tables": 1500,
-   "championV1WinRate": 0.6233
+   "tables": 2001,
+   "championV1WinRate": 0.6232
   },
   "mechaniker": {
    "setId": "cashflow",
    "title": "Mechaniker/in",
-   "adopted": false,
-   "winRate": 0.5653,
+   "adopted": true,
+   "winRate": 0.6232,
    "interval": {
-    "low": 0.5401,
-    "high": 0.5902
+    "low": 0.6017,
+    "high": 0.6442
    },
-   "tables": 1500,
-   "championV1WinRate": 0.5653
+   "tables": 2001,
+   "championV1WinRate": 0.5952
   },
   "anwalt": {
    "setId": "cashflow",
    "title": "Anwalt/Anwältin",
-   "adopted": false,
-   "winRate": 0.5987,
+   "adopted": true,
+   "winRate": 0.6097,
    "interval": {
-    "low": 0.5736,
-    "high": 0.6232
+    "low": 0.5881,
+    "high": 0.6308
    },
-   "tables": 1500,
-   "championV1WinRate": 0.5987
+   "tables": 2001,
+   "championV1WinRate": 0.5842
   },
   "krankenpfleger": {
    "setId": "cashflow",
    "title": "Krankenpfleger/in",
-   "adopted": false,
-   "winRate": 0.61,
+   "adopted": true,
+   "winRate": 0.6422,
    "interval": {
-    "low": 0.5851,
-    "high": 0.6344
+    "low": 0.6209,
+    "high": 0.6629
    },
-   "tables": 1500,
-   "championV1WinRate": 0.61
+   "tables": 2001,
+   "championV1WinRate": 0.6122
   },
   "ingenieur": {
    "setId": "cashflow",
    "title": "Ingenieur/in",
    "adopted": false,
-   "winRate": 0.6467,
+   "winRate": 0.6332,
    "interval": {
-    "low": 0.6221,
-    "high": 0.6705
+    "low": 0.6118,
+    "high": 0.654
    },
-   "tables": 1500,
-   "championV1WinRate": 0.6467
+   "tables": 2001,
+   "championV1WinRate": 0.6332
   },
   "arzt": {
    "setId": "cashflow",
    "title": "Arzt/Ärztin",
    "adopted": false,
-   "winRate": 0.6253,
+   "winRate": 0.6197,
    "interval": {
-    "low": 0.6005,
-    "high": 0.6495
+    "low": 0.5982,
+    "high": 0.6407
    },
-   "tables": 1500,
-   "championV1WinRate": 0.6253
+   "tables": 2001,
+   "championV1WinRate": 0.6197
   },
   "softwareentwickler": {
    "setId": "custom-jfk",
    "title": "Softwareentwickler/in",
-   "adopted": false,
-   "winRate": 0.6453,
+   "adopted": true,
+   "winRate": 0.6622,
    "interval": {
-    "low": 0.6208,
-    "high": 0.6691
+    "low": 0.6412,
+    "high": 0.6826
    },
-   "tables": 1500,
-   "championV1WinRate": 0.6453
+   "tables": 2001,
+   "championV1WinRate": 0.6317
   },
   "freiberufler": {
    "setId": "custom-jfk",
    "title": "Freiberufler/in",
    "adopted": false,
-   "winRate": 0.5827,
+   "winRate": 0.5947,
    "interval": {
-    "low": 0.5575,
-    "high": 0.6074
+    "low": 0.573,
+    "high": 0.616
    },
-   "tables": 1500,
-   "championV1WinRate": 0.5827
+   "tables": 2001,
+   "championV1WinRate": 0.5947
   },
   "unternehmer": {
    "setId": "custom-jfk",
    "title": "Unternehmer/in",
    "adopted": false,
-   "winRate": 0.6107,
+   "winRate": 0.5932,
    "interval": {
-    "low": 0.5857,
-    "high": 0.635
+    "low": 0.5715,
+    "high": 0.6145
    },
-   "tables": 1500,
-   "championV1WinRate": 0.6107
+   "tables": 2001,
+   "championV1WinRate": 0.5932
   }
  }
 }

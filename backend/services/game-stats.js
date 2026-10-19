@@ -224,6 +224,51 @@ function createGameStats({
     return { moved, checked: rows.length };
   }
 
+  /**
+   * A rating is the base plus every change the rated games made (JFK, 2026-10-19: base 1700, two games of +0.86 and -2.64 cannot
+   * end at 1761). A profile whose rating drifted from that - made under an older table of start ratings, or moved by a base that was
+   * recorded wrongly - is set back to base + its games, replayed in the order they were played, the floor applied at each step.
+   * Only done for a profile whose recorded results are all there (as many rated results as it counts), so it never guesses. Safe to
+   * repeat. Returns how many ratings were corrected.
+   */
+  async function recomputeRatings() {
+    const deltas = new Map();
+    let after = '';
+    for (;;) {
+      const page = await store.listResults(db, { after, limit: 200 });
+      if (page.length === 0) break;
+      for (const result of page) {
+        if (!result.counted) continue;
+        for (const p of result.participants) {
+          if (p.leftEarly) continue;
+          if (!deltas.has(p.playerId)) deltas.set(p.playerId, []);
+          deltas.get(p.playerId).push({ at: String(result.endedAt), delta: Number(p.delta) || 0 });
+        }
+      }
+      after = page[page.length - 1]._id;
+      if (page.length < 200) break;
+    }
+    let corrected = 0;
+    for (const row of await store.listProfiles(db)) {
+      const games = (deltas.get(row.playerId) ?? []).sort((a, b) => a.at.localeCompare(b.at));
+      if (games.length !== row.rated) continue; // the record is not whole: do not guess
+      let rating = row.baseRating ?? START_RATING;
+      let peak = rating;
+      for (const game of games) {
+        rating = Math.max(RATING_FLOOR, Math.round((rating + game.delta) * 100) / 100);
+        peak = Math.max(peak, rating);
+      }
+      if (Math.abs(rating - row.rating) < 0.005 && Math.abs(peak - row.peakRating) < 0.005)
+        continue;
+      await mutateProfile(row.playerId, (profile) => {
+        profile.rating = rating;
+        profile.peakRating = peak;
+      });
+      corrected += 1;
+    }
+    return { corrected };
+  }
+
   /** The account set or removed its profile picture (`version`: when it was set; null: removed): its profile says so. */
   async function setPicture(accountId, version) {
     const found =
@@ -522,6 +567,7 @@ function createGameStats({
 
   return {
     reconcileBases,
+    recomputeRatings,
     setPicture,
     currentBotRatings,
     record,

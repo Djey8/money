@@ -125,6 +125,12 @@ async function resultsOfPlayer(db, playerId, limit = 20) {
     .slice(0, limit);
 }
 
+/** Every profile, visible or not (for the checks that look at all of them). */
+async function listProfiles(db) {
+  const found = await db.find({ selector: { kind: 'profile' }, limit: 20000 });
+  return found.docs;
+}
+
 /** The board: profiles of a type that are visible, best rating first. */
 async function listBoard(db, { type, minGames = 0, limit = 50, skip = 0 } = {}) {
   const selector = { kind: 'profile', visible: true, rated: { $gte: minGames } };
@@ -149,4 +155,5 @@ module.exports = {
   listResults,
   resultsOfPlayer,
   listBoard,
+  listProfiles,
 };
