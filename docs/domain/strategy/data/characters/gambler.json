@@ -8,13 +8,13 @@
   "title": "Lucky Lena"
  },
  "meta": {
-  "generatedAt": "2026-10-16T09:14:19.390Z",
+  "generatedAt": "2026-10-19T19:53:07.884Z",
   "rulesDigest": "02d612c9ec287f",
   "config": {
-   "candidates": 40,
-   "generations": 7,
+   "candidates": 48,
+   "generations": 8,
    "matches": 10,
-   "verify": 1200,
+   "verify": 1500,
    "seedBase": 410000,
    "field": [
     "champion-v1",
@@ -25,7 +25,7 @@
     "bridge-loans"
    ]
   },
-  "seconds": 304
+  "seconds": 454
  },
  "history": [
   {
@@ -33,19 +33,19 @@
    "tables": 30,
    "best": [
     {
-     "id": "cand-*-1",
+     "id": "cand-*-48",
      "known": false,
      "winRate": 0.7666666666666667
     },
     {
-     "id": "cand-*-2",
+     "id": "cand-*-1",
      "known": false,
-     "winRate": 0.6666666666666666
+     "winRate": 0.7
     },
     {
-     "id": "cand-*-5",
+     "id": "cand-*-2",
      "known": false,
-     "winRate": 0.6666666666666666
+     "winRate": 0.7
     }
    ]
   },
@@ -54,19 +54,19 @@
    "tables": 30,
    "best": [
     {
-     "id": "cand-*-1",
+     "id": "cand-*-77",
      "known": false,
-     "winRate": 0.7333333333333333
+     "winRate": 0.8
     },
     {
-     "id": "cand-*-49",
+     "id": "cand-*-46",
      "known": false,
-     "winRate": 0.7333333333333333
+     "winRate": 0.7666666666666667
     },
     {
-     "id": "cand-*-56",
+     "id": "cand-*-85",
      "known": false,
-     "winRate": 0.7333333333333333
+     "winRate": 0.7666666666666667
     }
    ]
   },
@@ -75,17 +75,17 @@
    "tables": 60,
    "best": [
     {
-     "id": "cand-*-91",
+     "id": "cand-*-2",
      "known": false,
-     "winRate": 0.65
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "cand-*-55",
+     "id": "cand-*-6",
      "known": false,
-     "winRate": 0.6166666666666667
+     "winRate": 0.5833333333333334
     },
     {
-     "id": "cand-*-1",
+     "id": "cand-*-58",
      "known": false,
      "winRate": 0.5833333333333334
     }
@@ -96,19 +96,19 @@
    "tables": 60,
    "best": [
     {
-     "id": "cand-*-1",
+     "id": "cand-*-2",
      "known": false,
-     "winRate": 0.7
+     "winRate": 0.65
     },
     {
-     "id": "cand-*-49",
+     "id": "cand-*-6",
      "known": false,
-     "winRate": 0.7
+     "winRate": 0.65
     },
     {
-     "id": "cand-*-56",
+     "id": "cand-*-58",
      "known": false,
-     "winRate": 0.7
+     "winRate": 0.65
     }
    ]
   },
@@ -117,19 +117,19 @@
    "tables": 90,
    "best": [
     {
-     "id": "cand-*-155",
+     "id": "cand-*-180",
+     "known": false,
+     "winRate": 0.6888888888888889
+    },
+    {
+     "id": "cand-*-185",
+     "known": false,
+     "winRate": 0.6888888888888889
+    },
+    {
+     "id": "cand-*-2",
      "known": false,
      "winRate": 0.6444444444444445
-    },
-    {
-     "id": "cand-*-1",
-     "known": false,
-     "winRate": 0.6333333333333333
-    },
-    {
-     "id": "cand-*-49",
-     "known": false,
-     "winRate": 0.6333333333333333
     }
    ]
   },
@@ -138,19 +138,19 @@
    "tables": 90,
    "best": [
     {
-     "id": "cand-*-155",
+     "id": "cand-*-219",
      "known": false,
-     "winRate": 0.5777777777777777
+     "winRate": 0.6222222222222222
     },
     {
-     "id": "cand-*-1",
+     "id": "cand-*-237",
      "known": false,
-     "winRate": 0.5777777777777777
+     "winRate": 0.5666666666666667
     },
     {
-     "id": "cand-*-49",
+     "id": "cand-*-231",
      "known": false,
-     "winRate": 0.5777777777777777
+     "winRate": 0.5555555555555556
     }
    ]
   },
@@ -159,41 +159,62 @@
    "tables": 120,
    "best": [
     {
-     "id": "cand-*-155",
+     "id": "cand-*-237",
      "known": false,
-     "winRate": 0.5916666666666667
+     "winRate": 0.6083333333333333
     },
     {
-     "id": "cand-*-218",
+     "id": "cand-*-248",
      "known": false,
-     "winRate": 0.5916666666666667
+     "winRate": 0.6083333333333333
     },
     {
-     "id": "cand-*-225",
+     "id": "cand-*-261",
      "known": false,
-     "winRate": 0.5916666666666667
+     "winRate": 0.6083333333333333
+    }
+   ]
+  },
+  {
+   "generation": 7,
+   "tables": 120,
+   "best": [
+    {
+     "id": "cand-*-287",
+     "known": false,
+     "winRate": 0.6916666666666667
+    },
+    {
+     "id": "cand-*-289",
+     "known": false,
+     "winRate": 0.6833333333333333
+    },
+    {
+     "id": "cand-*-283",
+     "known": false,
+     "winRate": 0.6666666666666666
     }
    ]
   }
  ],
  "verdict": [
   {
-   "id": "cand-*-155",
+   "id": "cand-*-289",
    "known": false,
-   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, scales its bar by what is left in the pile (0.5), trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.025,
     "reserveMinor": 0,
     "loans": "bridge",
-    "loanCoverage": 1.5,
+    "loanCoverage": 1.25,
     "bigDealFromCashMinor": 1000000,
     "buyMlm": true,
     "buyGambles": true,
     "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
     },
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
@@ -208,120 +229,23 @@
     "protectLead": null,
     "countShares": null,
     "pileByCount": true,
-    "countReturnFactor": 0,
-    "speculate": {
-     "maxWaitDraws": 4,
-     "minEvRatio": 0.5
-    }
+    "countReturnFactor": 0.5,
+    "speculate": null
    },
-   "wins": 744,
-   "tables": 1200,
-   "winRate": 0.62,
-   "escapeRate": 0.6233333333333333,
-   "bankruptRate": 0.04083333333333333,
+   "wins": 919,
+   "tables": 1500,
+   "winRate": 0.6126666666666667,
+   "escapeRate": 0.6193333333333333,
+   "bankruptRate": 0.048,
    "interval": {
-    "low": 0.5921949229835336,
-    "high": 0.6470392088158659
+    "low": 0.5877559537673387,
+    "high": 0.6370017600769918
    }
   },
   {
-   "id": "cand-*-225",
+   "id": "cand-*-287",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": true,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null,
-    "countShares": null,
-    "pileByCount": true,
-    "countReturnFactor": 0,
-    "speculate": {
-     "maxWaitDraws": 4,
-     "minEvRatio": 0.5
-    }
-   },
-   "wins": 744,
-   "tables": 1200,
-   "winRate": 0.62,
-   "escapeRate": 0.6233333333333333,
-   "bankruptRate": 0.04083333333333333,
-   "interval": {
-    "low": 0.5921949229835336,
-    "high": 0.6470392088158659
-   }
-  },
-  {
-   "id": "cand-*-226",
-   "known": false,
-   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 24 months of profit, takes more risk when 10+ points behind",
-   "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.025,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": true,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 24,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": null,
-    "countShares": null,
-    "pileByCount": true,
-    "countReturnFactor": 0,
-    "speculate": {
-     "maxWaitDraws": 4,
-     "minEvRatio": 0.5
-    }
-   },
-   "wins": 732,
-   "tables": 1200,
-   "winRate": 0.61,
-   "escapeRate": 0.6141666666666666,
-   "bankruptRate": 0.03833333333333333,
-   "interval": {
-    "low": 0.5820937584956735,
-    "high": 0.6372041956537761
-   }
-  },
-  {
-   "id": "cand-*-218",
-   "known": false,
-   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, scales its bar by what is left in the pile (0.5), trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
     "minMonthlyReturn": 0.025,
@@ -348,18 +272,18 @@
     },
     "protectLead": null,
     "countShares": null,
-    "pileByCount": true,
-    "countReturnFactor": 0,
+    "pileByCount": false,
+    "countReturnFactor": 0.5,
     "speculate": null
    },
-   "wins": 727,
-   "tables": 1200,
-   "winRate": 0.6058333333333333,
-   "escapeRate": 0.6083333333333333,
-   "bankruptRate": 0.050833333333333335,
+   "wins": 913,
+   "tables": 1500,
+   "winRate": 0.6086666666666667,
+   "escapeRate": 0.6146666666666667,
+   "bankruptRate": 0.046,
    "interval": {
-    "low": 0.5778885296890095,
-    "high": 0.633102683772961
+    "low": 0.5837204068753413,
+    "high": 0.633057743163865
    }
   },
   {
@@ -389,27 +313,23 @@
     },
     "protectLead": null
    },
-   "wins": 722,
-   "tables": 1200,
-   "winRate": 0.6016666666666667,
-   "escapeRate": 0.6058333333333333,
-   "bankruptRate": 0.055,
+   "wins": 896,
+   "tables": 1500,
+   "winRate": 0.5973333333333334,
+   "escapeRate": 0.6026666666666667,
+   "bankruptRate": 0.048,
    "interval": {
-    "low": 0.5736853948185264,
-    "high": 0.6289990779559648
+    "low": 0.5722957455100105,
+    "high": 0.6218736404146774
    }
-  }
- ],
- "champion": {
-  "id": "character-gambler",
-  "source": "cand-*-155",
-  "spec": {
-   "id": "character-gambler",
-   "label": "Lucky Lena",
-   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+  },
+  {
+   "id": "cand-*-180",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
-    "minMonthlyReturn": 0.025,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -417,9 +337,9 @@
     "buyMlm": true,
     "buyGambles": true,
     "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
     },
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
@@ -435,19 +355,108 @@
     "countShares": null,
     "pileByCount": true,
     "countReturnFactor": 0,
-    "speculate": {
-     "maxWaitDraws": 4,
-     "minEvRatio": 0.5
-    }
+    "speculate": null
+   },
+   "wins": 890,
+   "tables": 1500,
+   "winRate": 0.5933333333333334,
+   "escapeRate": 0.5993333333333334,
+   "bankruptRate": 0.046,
+   "interval": {
+    "low": 0.5682667981729925,
+    "high": 0.6179230239465713
    }
   },
-  "winRate": 0.62,
-  "interval": {
-   "low": 0.5921949229835336,
-   "high": 0.6470392088158659
+  {
+   "id": "cand-*-283",
+   "known": false,
+   "description": "properties paying at least 4.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.04,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.5,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0,
+    "speculate": null
+   },
+   "wins": 887,
+   "tables": 1500,
+   "winRate": 0.5913333333333334,
+   "escapeRate": 0.596,
+   "bankruptRate": 0.04533333333333334,
+   "interval": {
+    "low": 0.5662529629307126,
+    "high": 0.6159470772862891
+   }
+  }
+ ],
+ "champion": {
+  "id": "character-gambler",
+  "source": "cand-*-289",
+  "spec": {
+   "id": "character-gambler",
+   "label": "Lucky Lena",
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, scales its bar by what is left in the pile (0.5), trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "buyProperties": true,
+    "minMonthlyReturn": 0.025,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": true,
+    "shares": {
+     "buyBelowMinor": 800,
+     "sellAboveMinor": 3000,
+     "maxLotShare": 0.5
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": true,
+    "countReturnFactor": 0.5,
+    "speculate": null
+   }
   },
-  "tables": 1200,
-  "againstChampionV1": 0.6016666666666667
+  "winRate": 0.6126666666666667,
+  "interval": {
+   "low": 0.5877559537673387,
+   "high": 0.6370017600769918
+  },
+  "tables": 1500,
+  "againstChampionV1": 0.5973333333333334
  },
  "adopted": true
 }

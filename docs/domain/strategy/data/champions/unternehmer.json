@@ -5,13 +5,13 @@
   "title": "Unternehmer/in"
  },
  "meta": {
-  "generatedAt": "2026-10-16T08:49:23.304Z",
+  "generatedAt": "2026-10-19T19:16:03.033Z",
   "rulesDigest": "02d612c9ec287f",
   "config": {
-   "candidates": 32,
-   "generations": 7,
-   "matches": 10,
-   "verify": 1500,
+   "candidates": 48,
+   "generations": 10,
+   "matches": 12,
+   "verify": 2000,
    "seedBase": 410000,
    "field": [
     "champion-v1",
@@ -22,221 +22,231 @@
     "bridge-loans"
    ]
   },
-  "seconds": 348
+  "seconds": 937
  },
  "history": [
   {
    "generation": 0,
-   "tables": 30,
+   "tables": 36,
    "best": [
     {
-     "id": "cand-unternehmer-2604",
+     "id": "cand-unternehmer-5551",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.6388888888888888
     },
     {
-     "id": "cand-unternehmer-2612",
-     "known": false,
-     "winRate": 0.6333333333333333
-    },
-    {
-     "id": "champion-v2",
+     "id": "champion-v1",
      "known": true,
-     "winRate": 0.6
+     "winRate": 0.5833333333333334
+    },
+    {
+     "id": "cand-unternehmer-5543",
+     "known": false,
+     "winRate": 0.5833333333333334
     }
    ]
   },
   {
    "generation": 1,
-   "tables": 30,
+   "tables": 36,
    "best": [
     {
-     "id": "cand-unternehmer-2621",
-     "known": false,
-     "winRate": 0.6666666666666666
+     "id": "champion-v1",
+     "known": true,
+     "winRate": 0.6388888888888888
     },
     {
-     "id": "cand-unternehmer-2632",
+     "id": "cand-unternehmer-5543",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.6388888888888888
     },
     {
-     "id": "cand-unternehmer-2633",
+     "id": "cand-unternehmer-5545",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.6388888888888888
     }
    ]
   },
   {
    "generation": 2,
-   "tables": 60,
+   "tables": 72,
    "best": [
     {
-     "id": "champion-v2",
+     "id": "cand-unternehmer-5649",
+     "known": false,
+     "winRate": 0.6527777777777778
+    },
+    {
+     "id": "cand-unternehmer-5661",
+     "known": false,
+     "winRate": 0.625
+    },
+    {
+     "id": "champion-v1",
      "known": true,
-     "winRate": 0.7166666666666667
-    },
-    {
-     "id": "cand-unternehmer-2591",
-     "known": false,
-     "winRate": 0.7166666666666667
-    },
-    {
-     "id": "cand-unternehmer-2652",
-     "known": false,
-     "winRate": 0.7166666666666667
+     "winRate": 0.6111111111111112
     }
    ]
   },
   {
    "generation": 3,
-   "tables": 60,
+   "tables": 72,
    "best": [
     {
-     "id": "champion-v2",
-     "known": true,
-     "winRate": 0.6333333333333333
+     "id": "cand-unternehmer-5696",
+     "known": false,
+     "winRate": 0.625
     },
     {
-     "id": "cand-unternehmer-2591",
+     "id": "cand-unternehmer-5649",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.6111111111111112
     },
     {
-     "id": "cand-unternehmer-2652",
+     "id": "cand-unternehmer-5667",
      "known": false,
-     "winRate": 0.6333333333333333
+     "winRate": 0.6111111111111112
     }
    ]
   },
   {
    "generation": 4,
-   "tables": 90,
+   "tables": 108,
    "best": [
     {
-     "id": "cand-unternehmer-2722",
+     "id": "cand-unternehmer-5724",
      "known": false,
-     "winRate": 0.6222222222222222
+     "winRate": 0.6296296296296297
     },
     {
-     "id": "cand-unternehmer-2704",
+     "id": "cand-unternehmer-5730",
      "known": false,
-     "winRate": 0.6
+     "winRate": 0.6296296296296297
     },
     {
-     "id": "cand-unternehmer-2720",
+     "id": "cand-unternehmer-5743",
      "known": false,
-     "winRate": 0.5888888888888889
+     "winRate": 0.6296296296296297
     }
    ]
   },
   {
    "generation": 5,
-   "tables": 90,
+   "tables": 108,
    "best": [
     {
-     "id": "cand-unternehmer-2722",
+     "id": "cand-unternehmer-5743",
      "known": false,
-     "winRate": 0.5888888888888889
+     "winRate": 0.5740740740740741
     },
     {
-     "id": "cand-unternehmer-2737",
+     "id": "cand-unternehmer-5775",
      "known": false,
-     "winRate": 0.5777777777777777
+     "winRate": 0.5648148148148148
     },
     {
-     "id": "cand-unternehmer-2742",
+     "id": "cand-unternehmer-5724",
      "known": false,
-     "winRate": 0.5777777777777777
+     "winRate": 0.5555555555555556
     }
    ]
   },
   {
    "generation": 6,
-   "tables": 120,
+   "tables": 144,
    "best": [
     {
-     "id": "cand-unternehmer-2755",
+     "id": "cand-unternehmer-5785",
      "known": false,
-     "winRate": 0.6583333333333333
+     "winRate": 0.6597222222222222
     },
     {
-     "id": "cand-unternehmer-2758",
+     "id": "cand-unternehmer-5758",
      "known": false,
-     "winRate": 0.65
+     "winRate": 0.6388888888888888
     },
     {
-     "id": "cand-unternehmer-2759",
+     "id": "cand-unternehmer-5724",
      "known": false,
-     "winRate": 0.65
+     "winRate": 0.6319444444444444
+    }
+   ]
+  },
+  {
+   "generation": 7,
+   "tables": 144,
+   "best": [
+    {
+     "id": "cand-unternehmer-5815",
+     "known": false,
+     "winRate": 0.6458333333333334
+    },
+    {
+     "id": "cand-unternehmer-5827",
+     "known": false,
+     "winRate": 0.6458333333333334
+    },
+    {
+     "id": "cand-unternehmer-5832",
+     "known": false,
+     "winRate": 0.6458333333333334
+    }
+   ]
+  },
+  {
+   "generation": 8,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-unternehmer-5815",
+     "known": false,
+     "winRate": 0.6277777777777778
+    },
+    {
+     "id": "cand-unternehmer-5827",
+     "known": false,
+     "winRate": 0.6277777777777778
+    },
+    {
+     "id": "cand-unternehmer-5832",
+     "known": false,
+     "winRate": 0.6277777777777778
+    }
+   ]
+  },
+  {
+   "generation": 9,
+   "tables": 180,
+   "best": [
+    {
+     "id": "cand-unternehmer-5910",
+     "known": false,
+     "winRate": 0.5777777777777777
+    },
+    {
+     "id": "cand-unternehmer-5914",
+     "known": false,
+     "winRate": 0.5777777777777777
+    },
+    {
+     "id": "cand-unternehmer-5938",
+     "known": false,
+     "winRate": 0.5777777777777777
     }
    ]
   }
  ],
  "verdict": [
   {
-   "id": "cand-unternehmer-2755",
+   "id": "cand-unternehmer-5910",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, buys shares only when a 2x card is still in the pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind, plays safe when 15+ points ahead",
-   "overrides": {
-    "minMonthlyReturn": 0.01,
-    "reserveMinor": 0,
-    "loans": "bridge",
-    "loanCoverage": 1.5,
-    "bigDealFromCashMinor": 1000000,
-    "buyMlm": true,
-    "buyGambles": true,
-    "shares": {
-     "buyBelowMinor": 1000,
-     "sellAboveMinor": 2500,
-     "maxLotShare": 0.4
-    },
-    "sellWhenProfitMonths": 12,
-    "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "countShares": {
-     "minGain": 2,
-     "maxWaitDraws": 24,
-     "maxLotShare": 0.6,
-     "sellAboveMinor": 2500
-    },
-    "pileByCount": false,
-    "countReturnFactor": 0,
-    "speculate": null,
-    "catchUp": {
-     "gap": 0.1,
-     "minMonthlyReturnFactor": 0.8,
-     "loanCoverageFactor": 1,
-     "reserveFactor": 0.3
-    },
-    "protectLead": {
-     "gap": 0.15,
-     "minMonthlyReturnFactor": 1.25,
-     "loanCoverageFactor": 2,
-     "reserveFactor": 3
-    }
-   },
-   "wins": 944,
-   "tables": 1500,
-   "winRate": 0.6293333333333333,
-   "escapeRate": 0.636,
-   "bankruptRate": 0.016666666666666666,
-   "interval": {
-    "low": 0.6045896233084875,
-    "high": 0.6534162730571934
-   }
-  },
-  {
-   "id": "cand-unternehmer-2731",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.025,
     "reserveMinor": 0,
     "loans": "bridge",
-    "loanCoverage": 1.5,
+    "loanCoverage": 1,
     "bigDealFromCashMinor": 1000000,
     "buyMlm": true,
     "buyGambles": false,
@@ -257,30 +267,33 @@
     },
     "protectLead": null,
     "countShares": null,
-    "pileByCount": true,
+    "pileByCount": false,
     "countReturnFactor": 0,
-    "speculate": null
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
    },
-   "wins": 916,
-   "tables": 1500,
-   "winRate": 0.6106666666666667,
-   "escapeRate": 0.6133333333333333,
-   "bankruptRate": 0.018,
+   "wins": 1220,
+   "tables": 2001,
+   "winRate": 0.6096951524237881,
+   "escapeRate": 0.6121939030484758,
+   "bankruptRate": 0.03248375812093953,
    "interval": {
-    "low": 0.5857379629300887,
-    "high": 0.6350299690116796
+    "low": 0.5881301630930419,
+    "high": 0.6308397545303753
    }
   },
   {
-   "id": "champion-v2",
-   "known": true,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "id": "cand-unternehmer-5914",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
     "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
-    "loanCoverage": 1.5,
+    "loanCoverage": 1,
     "bigDealFromCashMinor": 1000000,
     "buyMlm": true,
     "buyGambles": false,
@@ -293,6 +306,59 @@
     "repayLoans": true,
     "charityTwoDice": true,
     "skipDoodadsAboveMinor": null,
+    "catchUp": {
+     "gap": 0.1,
+     "minMonthlyReturnFactor": 0.8,
+     "loanCoverageFactor": 1,
+     "reserveFactor": 0.3
+    },
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    }
+   },
+   "wins": 1220,
+   "tables": 2001,
+   "winRate": 0.6096951524237881,
+   "escapeRate": 0.6121939030484758,
+   "bankruptRate": 0.03248375812093953,
+   "interval": {
+    "low": 0.5881301630930419,
+    "high": 0.6308397545303753
+   }
+  },
+  {
+   "id": "cand-unternehmer-5815",
+   "known": false,
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "overrides": {
+    "minMonthlyReturn": 0.02,
+    "reserveMinor": 0,
+    "loans": "bridge",
+    "loanCoverage": 1.25,
+    "bigDealFromCashMinor": 1000000,
+    "buyMlm": true,
+    "buyGambles": false,
+    "shares": {
+     "buyBelowMinor": 1000,
+     "sellAboveMinor": 2500,
+     "maxLotShare": 0.4
+    },
+    "sellWhenProfitMonths": 12,
+    "repayLoans": true,
+    "charityTwoDice": true,
+    "skipDoodadsAboveMinor": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
+    },
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -301,22 +367,22 @@
     },
     "protectLead": null
    },
-   "wins": 916,
-   "tables": 1500,
-   "winRate": 0.6106666666666667,
-   "escapeRate": 0.6126666666666667,
-   "bankruptRate": 0.02,
+   "wins": 1214,
+   "tables": 2001,
+   "winRate": 0.6066966516741629,
+   "escapeRate": 0.6091954022988506,
+   "bankruptRate": 0.015992003998001,
    "interval": {
-    "low": 0.5857379629300887,
-    "high": 0.6350299690116796
+    "low": 0.5851083728424707,
+    "high": 0.6278760345042242
    }
   },
   {
-   "id": "cand-unternehmer-2758",
-   "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind, plays safe when 15+ points ahead",
+   "id": "champion-v1",
+   "known": true,
+   "description": "The best strategy the tournament search found: any 2% property with no reserve, loans when covered 1.5x, Big Deals from 10,000 cash, marketing, stock trading, selling at 12 months of profit - and it takes more risk when a rival pulls ahead.",
    "overrides": {
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -330,44 +396,34 @@
     },
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
-    "countShares": null,
-    "pileByCount": true,
-    "countReturnFactor": 0,
-    "speculate": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
      "loanCoverageFactor": 1,
      "reserveFactor": 0.3
     },
-    "protectLead": {
-     "gap": 0.15,
-     "minMonthlyReturnFactor": 1.25,
-     "loanCoverageFactor": 2,
-     "reserveFactor": 3
-    }
+    "protectLead": null
    },
-   "wins": 906,
-   "tables": 1500,
-   "winRate": 0.604,
-   "escapeRate": 0.6073333333333333,
-   "bankruptRate": 0.018,
+   "wins": 1187,
+   "tables": 2001,
+   "winRate": 0.5932033983008496,
+   "escapeRate": 0.5952023988005997,
+   "bankruptRate": 0.014992503748125937,
    "interval": {
-    "low": 0.5790144602268653,
-    "high": 0.6284541987063627
+    "low": 0.5715206947043362,
+    "high": 0.6145289163971094
    }
   },
   {
-   "id": "cand-unternehmer-2759",
+   "id": "cand-unternehmer-5938",
    "known": false,
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind, plays safe when 15+ points ahead",
+   "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
    "overrides": {
-    "minMonthlyReturn": 0.01,
+    "buyProperties": true,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
-    "loanCoverage": 1.5,
+    "loanCoverage": 1.25,
     "bigDealFromCashMinor": 1000000,
     "buyMlm": true,
     "buyGambles": false,
@@ -378,46 +434,43 @@
     },
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
-    "charityTwoDice": true,
+    "charityTwoDice": false,
     "skipDoodadsAboveMinor": null,
-    "countShares": null,
-    "pileByCount": true,
-    "countReturnFactor": 0,
-    "speculate": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
      "loanCoverageFactor": 1,
      "reserveFactor": 0.3
     },
-    "protectLead": {
-     "gap": 0.15,
-     "minMonthlyReturnFactor": 1.25,
-     "loanCoverageFactor": 2,
-     "reserveFactor": 3
+    "protectLead": null,
+    "countShares": null,
+    "pileByCount": false,
+    "countReturnFactor": 0,
+    "speculate": {
+     "maxWaitDraws": 16,
+     "minEvRatio": 0.5
     }
    },
-   "wins": 906,
-   "tables": 1500,
-   "winRate": 0.604,
-   "escapeRate": 0.6073333333333333,
-   "bankruptRate": 0.018,
+   "wins": 1149,
+   "tables": 2001,
+   "winRate": 0.5742128935532234,
+   "escapeRate": 0.5797101449275363,
+   "bankruptRate": 0.021989005497251374,
    "interval": {
-    "low": 0.5790144602268653,
-    "high": 0.6284541987063627
+    "low": 0.5524256625372196,
+    "high": 0.5957157168116526
    }
   }
  ],
  "champion": {
-  "id": "champion-v2",
-  "source": "champion-v2",
+  "id": "champion-v1",
+  "source": "champion-v1",
   "spec": {
-   "id": "champion-v2",
-   "label": "Champion",
-   "description": "properties paying at least 1.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 10000 cash, Multi-Level-Marketing, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
+   "id": "champion-v1",
+   "label": "Champion (v1)",
+   "description": "The best strategy the tournament search found: any 2% property with no reserve, loans when covered 1.5x, Big Deals from 10,000 cash, marketing, stock trading, selling at 12 months of profit - and it takes more risk when a rival pulls ahead.",
    "overrides": {
-    "buyProperties": true,
-    "minMonthlyReturn": 0.01,
+    "minMonthlyReturn": 0.02,
     "reserveMinor": 0,
     "loans": "bridge",
     "loanCoverage": 1.5,
@@ -431,8 +484,6 @@
     },
     "sellWhenProfitMonths": 12,
     "repayLoans": true,
-    "charityTwoDice": true,
-    "skipDoodadsAboveMinor": null,
     "catchUp": {
      "gap": 0.1,
      "minMonthlyReturnFactor": 0.8,
@@ -442,13 +493,13 @@
     "protectLead": null
    }
   },
-  "winRate": 0.6106666666666667,
+  "winRate": 0.5932033983008496,
   "interval": {
-   "low": 0.5857379629300887,
-   "high": 0.6350299690116796
+   "low": 0.5715206947043362,
+   "high": 0.6145289163971094
   },
-  "tables": 1500,
-  "againstChampionV1": 0.6106666666666667
+  "tables": 2001,
+  "againstChampionV1": 0.5932033983008496
  },
  "adopted": false
 }
