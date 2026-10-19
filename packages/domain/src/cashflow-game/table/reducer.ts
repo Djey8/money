@@ -28,7 +28,6 @@ import {
 } from './clock';
 import { nextPassiveCommand } from './passive';
 import { applyTradeCommand, isTradeCommand } from './trade';
-import { canBuyAtPriceCard } from './sell-check';
 import { markOffersSeen } from './sell-check';
 import { isAlive, releaseHold, settleTable } from './turns';
 import { proposeUndo, voteUndo } from './undo-vote';
@@ -619,10 +618,8 @@ function play(
     fail('ILLEGAL_MOVE', 'You are out of the game.');
   }
   const now = nowOf(ctx);
-  // Selling is open to everyone while an offer is open; so is buying more of a share at the price of a stock card somebody drew.
-  const anytime =
-    command.type === 'sell_position' ||
-    (command.type === 'buy_planned' && canBuyAtPriceCard(table, playerId, command.title));
+  // Selling is open to everyone while an offer is open; nothing else is out of turn.
+  const anytime = command.type === 'sell_position';
   if (!options.internal) {
     // A paused game accepts no move; the active player's own moves must come in time (the server plays for them otherwise).
     const blocked = whyClockBlocks(table, now);

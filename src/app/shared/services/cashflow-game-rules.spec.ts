@@ -127,6 +127,32 @@ describe('the game rules in the app', () => {
     expect(AppStateService.instance.cashflowGame.turn?.phase).toBe('decide'); // not auto-settled
   });
 
+  it('a stock price card somebody else drew lets a holder sell, never buy, at a table (the Buy button is hidden)', () => {
+    startGame(RULE_PRESETS.guided);
+    const game = AppStateService.instance.cashflowGame;
+    game.turn = { phase: 'roll', count: 4 };
+    game.marketOffers = [
+      {
+        title: 'OK4U',
+        salePriceMinor: 7000,
+        cardId: 'd1',
+        label: '7',
+        pricePerShareMinor: 700,
+        offeredAtRoll: 4,
+      },
+    ];
+    // alone (the solo game): the open price card is a chance to buy, as the rules say
+    expect(CashflowGameService.buyRefusalFor('OK4U')).toBeNull();
+    // at a table the card of another player is only a buyer for the shares: no purchase without a card of one's own in hand
+    const hook = { canAct: () => true } as unknown as RemoteGame;
+    RemoteGameHook.current = hook;
+    try {
+      expect(CashflowGameService.buyRefusalFor('OK4U')).toMatch(/only allow buying/);
+    } finally {
+      RemoteGameHook.current = null;
+    }
+  });
+
   it('a property that is owned is not bought a second time, whatever the rules', () => {
     startGame();
     AppStateService.instance.allInvestments = [{ tag: 'EFH', amount: 1, deposit: 1 }] as never;

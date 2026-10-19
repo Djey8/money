@@ -2355,8 +2355,10 @@ export class CashflowGameService {
     kind: 'property' | 'asset' | 'share' = 'share',
   ): string | null {
     const isProperty = kind === 'property';
-    // at a table a stock price card somebody else drew is open until the player's next roll: asked as if they were deciding
-    const game = CashflowGameService.askingState(AppStateService.instance.cashflowGame);
+    // At a table only the card in hand can be bought: a stock price card somebody else drew lets the holder SELL at that price, never
+    // buy (JFK, 2026-10-19) - so its offer is not looked at for a purchase (the Buy button is hidden, the table refuses it anyway).
+    const state = AppStateService.instance.cashflowGame;
+    const game = RemoteGameHook.current ? { ...state, marketOffers: [] } : state;
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
     // Owned: in the balance sheet - which is only there once the balance data has been loaded - or, as it is always loaded
     // with the Grow projects, a project that has been bought (phase execute / monitor) and not sold since.

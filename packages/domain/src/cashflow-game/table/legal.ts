@@ -2,7 +2,7 @@ import { legalActions as soloLegalActions } from '../legal-actions';
 import { openDecisions } from '../asset-deals';
 import { currentTurn } from '../turn';
 import { whyPaymentPending } from '../rules';
-import { canBuyAtPriceCard, canSellNow } from './sell-check';
+import { canSellNow } from './sell-check';
 import { undoVoters } from './undo-vote';
 import { canAnswerTrade, whyCannotOfferTrade } from './trade';
 import type { Table, TableCommand } from './types';
@@ -140,14 +140,6 @@ export function tableLegalActions(table: Table, playerId: string): TableLegalAct
     add(
       'sell_position',
       "Sell a position you hold into a buyer's offer that is open for you (a Market card or a stock price card someone drew).",
-    );
-  }
-
-  // More of a share they hold, at the price of a stock card somebody drew - open to anyone with the share, like selling.
-  if (canBuyAtPriceCard(table, playerId) && !actions.some((a) => a.action === 'buy_planned')) {
-    add(
-      'buy_planned',
-      'Buy more of a share you hold at the price of a stock card somebody drew (title, quantity), while that card is open.',
     );
   }
 

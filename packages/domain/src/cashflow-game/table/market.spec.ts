@@ -415,42 +415,6 @@ describe('the other Market cards', () => {
     expect(booksOf(sold.table, 'p1').shares.find((s) => s.tag === 'OK4U')!.quantity).toBe(10);
   });
 
-  it('a holder may also buy more at the price of a stock card somebody else drew - off their turn too', () => {
-    const [cheap, dear] = shareCards('OK4U');
-    const table = owns(owns(playingTable(), 'p1', cheap, 10), 'p2', cheap, 10);
-    const drawn = draw(table, 'dealSmall', dear.id);
-    expect(drawn.table.activePlayerId).toBe('host');
-    expect(tableLegalActions(drawn.table, 'p2').map((a) => a.action)).toContain('buy_planned');
-    expect(tableLegalActions(drawn.table, 'host').map((a) => a.action)).not.toContain(
-      'buy_planned',
-    );
-    const cashBefore = cashOnHandMinor(
-      booksOf(drawn.table, 'p2').transactions,
-      booksOf(drawn.table, 'p2').allocation,
-    );
-    const bought = applyCommand(
-      drawn.table,
-      'p2',
-      { type: 'buy_planned', title: 'OK4U', quantity: 2 },
-      ctx,
-    );
-    expect(booksOf(bought.table, 'p2').shares.find((s) => s.tag === 'OK4U')!.quantity).toBe(12);
-    expect(
-      cashOnHandMinor(
-        booksOf(bought.table, 'p2').transactions,
-        booksOf(bought.table, 'p2').allocation,
-      ),
-    ).toBeLessThan(cashBefore);
-    // it is still the drawer's turn; the buyer's own turn is untouched
-    expect(bought.table.activePlayerId).toBe('host');
-    // someone who holds nothing of it cannot buy at that price
-    expectError(
-      () =>
-        applyCommand(drawn.table, 'host', { type: 'buy_planned', title: 'OK4U', quantity: 1 }, ctx),
-      'ILLEGAL_MOVE',
-    );
-  });
-
   it('a share nobody else holds moves no price', () => {
     const [cheap, dear] = shareCards('OK4U');
     const drawn = draw(owns(playingTable(), 'host', cheap, 10), 'dealSmall', dear.id);

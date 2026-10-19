@@ -1,4 +1,3 @@
-import { openPriceCardFor } from '../actions';
 import { legalActions as soloLegalActions } from '../legal-actions';
 import { currentTurn } from '../turn';
 import type { Table } from './types';
@@ -49,16 +48,4 @@ export function markOffersSeen(table: Table, playerIds: string[]): Table {
       return { ...p, seenOffers: [...new Set([...(p.seenOffers ?? []), ...keys])].slice(-40) };
     }),
   };
-}
-
-/** Whether this player may buy more of `title` at the price of a stock card that is open for them (they hold the share). */
-export function canBuyAtPriceCard(table: Table, playerId: string, title?: string): boolean {
-  const me = table.players.find((p) => p.id === playerId);
-  if (!me || me.status !== 'active' || !me.books) return false;
-  if (currentTurn(me.books.state).phase === 'over') return false;
-  const books = me.books;
-  if (title !== undefined) return openPriceCardFor(books, title) !== undefined;
-  return (books.state.marketOffers ?? []).some(
-    (offer) => openPriceCardFor(books, offer.title) !== undefined,
-  );
 }
