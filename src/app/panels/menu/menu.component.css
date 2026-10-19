@@ -96,6 +96,25 @@
   grid-template-columns: 1fr 1fr 1fr 1fr;
 }
 
+/* The reports: Cashflow and Subscriptions are the most used (big, side by side), Grow Projects is a full row, and the four others
+   share the last row - no empty slot at any width (12 columns so 2, 1 and 4 items per row all fill it). */
+.menu-grid--reports {
+  grid-template-columns: repeat(12, 1fr);
+}
+.menu-grid--reports .menu-item--span-6 {
+  grid-column: span 6;
+}
+.menu-grid--reports .menu-item--span-3 {
+  grid-column: span 3;
+}
+.menu-grid--reports .menu-item--span-12 {
+  grid-column: 1 / -1;
+}
+.menu-item--major {
+  padding-block: 14px;
+  font-weight: 600;
+}
+
 /* An item alone in its row — spans the full grid width instead of leaving empty columns beside it. */
 .menu-item--full-row {
   grid-column: 1 / -1;
