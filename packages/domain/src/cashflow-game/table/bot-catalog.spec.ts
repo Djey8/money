@@ -7,6 +7,8 @@ import {
   splitBotId,
   type BotLevel,
 } from './bot-catalog';
+import { simulateTable } from './simulate';
+import { testContext } from './testing';
 import { playMatch } from './tournament';
 
 describe('the bot catalog', () => {
@@ -142,6 +144,41 @@ describe('skill levels', () => {
     const beginner = wins('beginner');
     expect(beginner).toBeLessThan(master);
     expect(master).toBeGreaterThan(30); // a master against itself wins about half
-    expect(beginner).toBeLessThan(30);
+    expect(beginner).toBeLessThan(36); // (the debt payoff thought gives a beginner a little more: 30 of 90)
+  });
+});
+
+// the simulation provides the clock itself
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { clock: _clock, ...context } = testContext;
+
+describe('paying debts off, at whole tables', () => {
+  it('the debt-first bot pays starting debts off, the table plays to an end with every invariant intact', () => {
+    let paid = 0;
+    for (let seed = 1; seed <= 6; seed += 1) {
+      const run = simulateTable({
+        players: 4,
+        seed,
+        context,
+        maxCommands: 8000,
+        policies: [
+          botPolicy('debt-first')!,
+          botPolicy('all-rounder')!,
+          botPolicy('debt-first--casual')!,
+          botPolicy('champion-v1')!,
+        ],
+        professionIds: ['hausmeister', 'lehrer', 'krankenpfleger', 'lehrer'],
+      });
+      expect(run.problems).toEqual([]);
+      paid += run.events.filter((event) => event.type === 'liability_paid').length;
+    }
+    expect(paid).toBeGreaterThan(0);
+  });
+
+  it('the new bot is in the catalog with its four levels', () => {
+    expect(botProfile('debt-first')?.name).toBe('Debt-free Dana');
+    for (const level of ['master', 'strong', 'casual', 'beginner'] as const) {
+      expect(botPolicy(botIdWithLevel('debt-first', level))).not.toBeNull();
+    }
   });
 });

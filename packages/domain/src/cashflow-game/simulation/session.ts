@@ -18,6 +18,7 @@ import { endIfOver } from '../game-end';
 import { identityText } from '../game-text';
 import { playBankLoan } from '../loan';
 import { openDecisions } from '../asset-deals';
+import { payOffLiability } from '../liability-payoff';
 import { CLASSIC_RAT_RACE_BOARD } from '../board';
 import { seededRng, type Rng } from '../rng';
 import { summarizeGameFinances } from '../saved-games';
@@ -63,7 +64,7 @@ export interface Purchase {
 export interface Decision {
   turn: number;
   round: number;
-  kind: 'buy' | 'pass' | 'doodad' | 'market' | 'sell' | 'repay';
+  kind: 'buy' | 'pass' | 'doodad' | 'market' | 'sell' | 'repay' | 'payoff';
   detail: string;
   /** The card the decision was about (a Deal bought or passed, a Doodad paid, a Market card played). */
   cardId?: string;
@@ -247,6 +248,11 @@ export class SimGame {
             this.apply(sellPositionAction(this.books, move.input, this.deps));
             this.record.sales += 1;
             this.note('sell', move.input.title);
+          } else if (move.kind === 'payoff') {
+            this.apply({
+              effects: payOffLiability(this.books, this.profession, move.tag, this.deps),
+            });
+            this.note('payoff', move.tag);
           } else {
             const loan = playBankLoan(this.books, -move.amountMinor, this.deps);
             this.apply({ effects: [loan] });

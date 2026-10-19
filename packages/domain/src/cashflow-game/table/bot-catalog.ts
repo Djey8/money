@@ -1,3 +1,4 @@
+import { withDebtPayoff } from '../simulation/payoff';
 import type { Policy, PolicyView } from '../simulation/policy';
 import { CHAMPION_BOOK } from './champion-book';
 import { CHARACTERS } from './characters';
@@ -29,6 +30,15 @@ export interface BotProfile {
    */
   build?: () => Policy;
 }
+
+/** The debt-first strategy (JFK, 2026-10-19): the starting debts come before any investment. */
+const DEBT_FIRST: PolicySpec = {
+  id: 'debt-first',
+  label: 'Debt first',
+  description:
+    'Pays every starting debt off in one payment, the quickest to pay itself back first, saving its cash for it - and only then buys properties from cash.',
+  overrides: { reserveMinor: 100000 },
+};
 
 const preset = (id: string): PolicySpec => {
   const spec = PRESET_SPECS.find((s) => s.id === id);
@@ -184,6 +194,14 @@ function baseProfiles(): BotProfile[] {
       difficulty: 'easy',
       description: 'Buys any property it can pay for in cash. No loans.',
       spec: preset('cash-properties'),
+    },
+    {
+      id: 'debt-first',
+      name: 'Debt-free Dana',
+      difficulty: 'medium',
+      description:
+        'Pays the mortgage, the car loan and the credit card off first - lower expenses are the way out - and only then buys properties from cash.',
+      spec: DEBT_FIRST,
     },
     {
       id: 'stocks-for-deposits',
@@ -359,7 +377,10 @@ export function botPolicy(id: string): Policy | null {
   if (!policy) {
     const base = botProfiles().find((p) => p.id === parts.base)!;
     const plain = base.build ? base.build() : policyFromSpec(base.spec);
-    policy = parts.level === 'master' ? plain : withMistakes(plain, BOT_LEVELS[parts.level], id);
+    // every bot knows it can pay a starting debt off; how often it thinks of it depends on its level and style (simulation/payoff.ts)
+    const knowing = withDebtPayoff(plain, parts.base, parts.level);
+    policy =
+      parts.level === 'master' ? knowing : withMistakes(knowing, BOT_LEVELS[parts.level], id);
     cache.set(id, policy);
   }
   return policy;

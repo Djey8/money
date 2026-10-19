@@ -48,6 +48,8 @@ export function nextBotCommand(
     for (const move of policy.maintain(view)) {
       if (move.kind === 'sell') {
         if (legal.has('sell_position')) return { type: 'sell_position', input: move.input };
+      } else if (move.kind === 'payoff') {
+        if (legal.has('pay_liability')) return { type: 'pay_liability', tag: move.tag };
       } else if (move.amountMinor > 0) {
         return { type: 'bank_loan', amountMinor: -move.amountMinor };
       }
