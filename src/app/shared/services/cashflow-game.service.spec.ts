@@ -220,6 +220,32 @@ describe('CashflowGameService', () => {
       );
     });
 
+    it('a Payday plans the subscription expenses into the budget of its month - not the income - and undo takes them out', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      state.allBudgets = [];
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets).toHaveLength(1);
+      expect(state.allBudgets[0]).toMatchObject({ tag: '@Placeholder Expenses', amount: 1800 });
+      expect(state.allBudgets[0].date).toMatch(/^\d{4}-\d{2}$/);
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets[0].amount).toBe(3600); // a second Payday in the month adds up, like the actuals
+      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets[0].amount).toBe(1800);
+      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets).toEqual([]);
+    });
+
+    it('leaves the budget alone while it has not been loaded yet (it would replace the stored one)', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = false;
+      state.allBudgets = [];
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets).toEqual([]);
+    });
+
     it('reports an error rather than throwing when there is nothing to undo', () => {
       started();
       service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() }); // undoes Start Game itself

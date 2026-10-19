@@ -8,6 +8,7 @@ export * from './locations/location-split';
 export * from './locations/recurring-transfers';
 export * from './transactions/accounting';
 export * from './transactions/bucket-allocations';
+export * from './transactions/budget-income';
 export * from './transactions/mojo';
 export * from './transactions/fund-projects';
 export * from './transactions/fund-state';

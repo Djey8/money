@@ -1,5 +1,6 @@
 import { RemoteGameHook } from './remote-game';
 import { MoneyLocation } from '../../interfaces/location';
+import { Budget } from '../../interfaces/budget';
 import { reconcileLocationBooking } from '../location-balance';
 import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
@@ -27,6 +28,7 @@ import {
   blankGameData,
   captureGameSnapshot as captureSnapshot,
   GAME_BANK_LOCATION_ID,
+  plannedBudgetFromPayday,
   coinsOwnedOf,
   accountHistoryIsNewer,
   buildLiveHistory,
@@ -361,6 +363,8 @@ export interface CashflowGameSnapshot {
   cashflowGame: CashflowGameState;
   /** The locations (their balances move with the game's bookings); absent on a snapshot from before the game had a location. */
   allLocations?: MoneyLocation[];
+  /** The budget (a Payday plans into it); absent on a snapshot from before the game filled the budget. */
+  allBudgets?: Budget[];
 }
 
 function deepClone<T>(value: T): T {
@@ -568,6 +572,7 @@ export class CashflowGameService {
         cashflowGame: state.cashflowGame,
       }),
       allLocations: deepClone(state.allLocations ?? []),
+      allBudgets: deepClone(state.allBudgets ?? []),
     };
   }
 
@@ -681,6 +686,7 @@ export class CashflowGameService {
     state.mojo = snapshot.mojo;
     state.cashflowGame = snapshot.cashflowGame;
     if (snapshot.allLocations) state.allLocations = snapshot.allLocations;
+    if (snapshot.allBudgets) state.allBudgets = snapshot.allBudgets;
   }
 
   /**
@@ -841,6 +847,7 @@ export class CashflowGameService {
     // A step from before the game was first saved knows nothing of its saved slot: keep the slot.
     this.applySnapshot(keepSavedSlot(snapshot, AppStateService.instance.cashflowGame));
     this.persistAll('cashflow_undo_action', {}, callbacks, {
+      includeBudget: true,
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,
@@ -1021,13 +1028,32 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot(effects.step);
     this.applyGameEffects(effects);
-    this.persistAll(
-      'cashflow_payday',
-      { round: effects.state.round },
-      callbacks,
-      effects.persist.grow ? { includeGrow: true } : {},
-    );
+    const budgetPlanned = this.planBudgetFromPayday(effects);
+    this.persistAll('cashflow_payday', { round: effects.state.round }, callbacks, {
+      includeBudget: budgetPlanned,
+      ...(effects.persist.grow ? { includeGrow: true } : {}),
+    });
     if (effects.decisionNeeded) this.decisionNeeded$.next();
+  }
+
+  /**
+   * The game fills the budget (JFK, 2026-10-19): each Payday plans the subscription expenses it posted, in the month they are
+   * booked. A Doodad or a Market cost is not planned - it shows as over budget. Only from now on: what was posted before is left.
+   */
+  private planBudgetFromPayday(effects: GameEffects): boolean {
+    const state = AppStateService.instance;
+    // the budget is a tier-2 path: writing it before it has been read would replace the stored one with a fragment
+    if (!state.tier2Loaded) return false;
+    const rows = plannedBudgetFromPayday(effects.appendedTransactions);
+    if (rows.length === 0) return false;
+    if (!Array.isArray(state.allBudgets)) state.allBudgets = [];
+    for (const row of rows) {
+      const amount = fromMinorUnits(row.amountMinor);
+      const existing = state.allBudgets.find((b) => b.date === row.date && b.tag === row.tag);
+      if (existing) existing.amount = Math.round((Number(existing.amount) + amount) * 100) / 100;
+      else state.allBudgets.push({ date: row.date, tag: row.tag, amount });
+    }
+    return true;
   }
 
   /**
@@ -2787,6 +2813,7 @@ export class CashflowGameService {
       includeSubscriptions?: boolean;
       includeBalanceSheet?: boolean;
       includeGrow?: boolean;
+      includeBudget?: boolean;
       /** Save without the page-wide saving overlay (the caller already blocks its own buttons). */
       quiet?: boolean;
     } = {},
@@ -2812,6 +2839,7 @@ export class CashflowGameService {
           ]
         : []),
       ...(options.includeGrow ? [{ tag: 'grow', data: state.allGrowProjects }] : []),
+      ...(options.includeBudget ? [{ tag: 'budget', data: state.allBudgets }] : []),
     ];
     const localStorageSaves: { key: string; data: unknown }[] = [
       { key: 'transactions', data: state.allTransactions },
@@ -2829,6 +2857,7 @@ export class CashflowGameService {
           ]
         : []),
       ...(options.includeGrow ? [{ key: 'grow', data: state.allGrowProjects }] : []),
+      ...(options.includeBudget ? [{ key: 'budget', data: state.allBudgets }] : []),
     ];
 
     this.persistence.batchWriteAndSync({

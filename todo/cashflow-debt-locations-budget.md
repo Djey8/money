@@ -65,7 +65,9 @@ Built as: the location "Bank" - "Main" (translated `CashflowGame.bankLocationNam
   `locations enabled`; `placeOneOffTransactions` / the subscription upserts of the game set `locationId`. The locations page and the
   location API refuse deleting the flagged one. Saved games and old games are left as they are.
 
-## E. The budget: the game fills it, and the new chart
+## E. The budget: the game fills it, and the new chart (DONE 2026-10-19, solo; tables do not fill a budget)
+
+Built as: domain `transactions/budget-income.ts` (`isActualIncome`: positive Income-account transactions, not a sale `Sell Share/Asset/Investment...`, not the starting savings; a Bank loan goes to Daily so never counts; `plannedBudgetFromPayday`), solo `planBudgetFromPayday` after each Payday (adds up in a month, skipped while the budget tier is not loaded, Undo restores it via the snapshot), `budget.component.ts` chart (purple Planned, green Income line with bullets, info box with Actual / Planned / Over|Under / Income / Planned cashflow / Cashflow, fits a phone), texts `Budget.income|plannedCashflow|cashflow` x6.
 
 - **Filling:** every Payday the game makes, each subscription expense of that month is **planned** in the budget of that month
   (so a subscription is always planned as it happens). Doodads and Market costs are **not planned**: they land only in the actuals,
