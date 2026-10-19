@@ -2640,3 +2640,14 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+
+/* A liability line of the live profession card opens its Info panel. */
+.cf-line-link {
+  cursor: pointer;
+}
+
+.cf-line-link:hover,
+.cf-line-link:focus-visible {
+  background: var(--color-surface-alt, rgba(0, 0, 0, 0.05));
+  outline: none;
+}

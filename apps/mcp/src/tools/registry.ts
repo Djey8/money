@@ -484,7 +484,7 @@ export const TOOLS: ToolDefinition[] = [
       'table_add_bot (lobby only: policyId from get_cashflow_game table_bots, optional level master|strong|casual|beginner, name and professionId) which ' +
       'seats a bot the server plays by itself - remove it with table_kick of its seat. Then ' +
       'table_move plays ONE move: `command` is {type: roll | draw_card | buy_deal | pay_doodad | pay_market | roll_decision | ' +
-      'pass_card | bank_loan | sell_position | offer_trade | counter_trade | accept_trade | decline_trade | ' +
+      'pass_card | bank_loan | pay_liability | sell_position | offer_trade | counter_trade | accept_trade | decline_trade | ' +
       'withdraw_trade | pause | resume | back | away | done | propose_undo | vote_undo, ...its fields}. Call get_cashflow_game action table before EVERY move and ' +
       'send only a command type its `legalActions` lists; ALWAYS send a unique `clientCommandId` (a retry of the same ' +
       'call is then applied at most once) and `expectedVersion` (the table `version` you read). On your turn: roll, then ' +

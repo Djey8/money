@@ -80,6 +80,9 @@ import {
   pushUndoSnapshot as pushSnapshotOnto,
   registerInvestmentIncome as registerInvestmentIncomeRule,
   removeExpenseForPaidLiability as removeExpenseForPaidLiabilityRule,
+  payOffLiability as payOffLiabilityRule,
+  planLiabilityPayoff as planLiabilityPayoffRule,
+  type PayoffPlan,
   sellCardToFriend as sellCardToFriendRule,
   closePlanOfSettledCard as closePlanOfSettledCardRule,
   setPhaseAfterTrade as setPhaseAfterTradeRule,
@@ -1607,6 +1610,32 @@ export class CashflowGameService {
       plainMoney: (amountMinor) =>
         `${fromMinorUnits(amountMinor).toLocaleString()} ${state.currency}`,
     };
+  }
+
+  /** What paying `tag` off in one payment would do (the Bank loan it needs, the cashflow after it) and whether it is allowed. */
+  payoffPlan(tag: string): PayoffPlan {
+    return planLiabilityPayoffRule(this.gameBooks(), this.currentProfession(), tag, this.dealDeps);
+  }
+
+  /**
+   * Pays a liability off in ONE payment of the full amount (JFK, 2026-10-19): the debt and its monthly expense end, one Undo step.
+   * Short of cash the Bank loan is taken first; refused when that would leave the monthly cashflow negative (`payoffPlan` says why).
+   * Solo games only - at a table the move goes to the server.
+   */
+  payOffLiability(tag: string, callbacks: CashflowGameCallbacks): void {
+    let steps: GameEffects[];
+    try {
+      steps = payOffLiabilityRule(this.gameBooks(), this.currentProfession(), tag, this.dealDeps);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not pay this off.'));
+      return;
+    }
+    this.pushUndoSnapshot({ kind: 'payoff', detail: tag });
+    for (const effects of steps) this.applyGameEffects(effects);
+    this.persistAll('cashflow_liability_payoff', { tag }, callbacks, {
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+    });
   }
 
   /**

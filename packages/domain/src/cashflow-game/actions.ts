@@ -21,6 +21,7 @@ import {
   propertyCardTypes,
   updateSharePrice,
 } from './market-cards';
+import { payOffLiability } from './liability-payoff';
 import { buyAssetDeal, sellPosition, type SellInput } from './positions';
 import { rollDie, type Rng } from './rng';
 import { cardPickedStep, type GameStep } from './steps';
@@ -40,6 +41,7 @@ import type {
   CashflowDoodadCard,
   CashflowGameSet,
   CashflowMarketCard,
+  CashflowProfession,
 } from './types';
 
 /**
@@ -331,6 +333,20 @@ export function buyPlannedAction(
     settle: true,
     result: { card: describeCard(card, deps), title: input.title, kind: executed.kind },
   };
+}
+
+/**
+ * Pays one liability off in one payment of the full amount (JFK, 2026-10-19): the debt and its monthly expense end. Short of cash the
+ * normal Bank loan is taken first; refused when that would leave the monthly cashflow negative (see liability-payoff.ts).
+ */
+export function payLiabilityAction(
+  books: GameBooks,
+  input: { tag: string },
+  deps: ActionDeps,
+  profession: CashflowProfession | undefined,
+): ActionPlan {
+  const effects = payOffLiability(books, profession, input.tag, deps);
+  return { effects, result: { tag: input.tag } };
 }
 
 /** "Done" of the solo game: the card in hand was dealt with (planned and looked at, or sold to a friend) - the space is settled. */

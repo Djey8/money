@@ -294,6 +294,8 @@ export type TableCommand =
   | { type: 'roll_decision'; title?: string }
   | { type: 'pass_card' }
   | { type: 'bank_loan'; amountMinor: number }
+  /** Pay one liability (a mortgage, a car loan, a credit card debt ...) off in one payment of the full amount. */
+  | { type: 'pay_liability'; tag: string }
   // Trading the card in hand (T7).
   | { type: 'offer_trade'; priceMinor: number; to?: string }
   | { type: 'withdraw_trade' }
@@ -337,6 +339,7 @@ export type TableEventType =
   | 'dice_decided'
   | 'position_sold'
   | 'loan_changed'
+  | 'liability_paid'
   | 'player_escaped'
   | 'player_bankrupt'
   | 'game_finished'

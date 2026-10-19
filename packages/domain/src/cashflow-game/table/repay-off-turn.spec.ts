@@ -83,4 +83,55 @@ describe('paying the bank back when it is not your turn', () => {
     const table = playing();
     expect(tableLegalActions(table, 'p1').map((a) => a.action)).not.toContain('bank_loan');
   });
+
+  describe('paying a liability off', () => {
+    /** Every player gets plenty of cash, so the payoff needs no loan. */
+    const rich = (table: Table): Table => ({
+      ...table,
+      players: table.players.map((p) => ({
+        ...p,
+        books: {
+          ...p.books!,
+          transactions: [
+            ...p.books!.transactions,
+            {
+              account: 'Daily',
+              amountMinor: 50_000_000,
+              date: '2026-10-02',
+              time: '',
+              category: '',
+              comment: '',
+            },
+          ],
+        },
+      })),
+    });
+    const debtsOf = (table: Table, id: string) =>
+      table.players
+        .find((p) => p.id === id)!
+        .books!.liabilities.filter((l) => !l.investment && l.tag !== 'Bank loan');
+
+    it('is open off turn by default, is in the history, and ends the debt', () => {
+      const table = rich(playing());
+      const tag = debtsOf(table, 'p1')[0].tag;
+      expect(tableLegalActions(table, 'p1').map((a) => a.action)).toContain('pay_liability');
+      const done = applyCommand(table, 'p1', { type: 'pay_liability', tag }, ctx);
+      expect(done.events.map((e) => e.type)).toContain('liability_paid');
+      expect(debtsOf(done.table, 'p1').some((l) => l.tag === tag)).toBe(false);
+      expect(done.table.activePlayerId).toBe(table.activePlayerId);
+    });
+
+    it('only in your own turn when the host switched it off', () => {
+      const table = rich(playing({ repayOffTurn: false }));
+      const tag = debtsOf(table, 'p1')[0].tag;
+      expect(tableLegalActions(table, 'p1').map((a) => a.action)).not.toContain('pay_liability');
+      expect(code(() => applyCommand(table, 'p1', { type: 'pay_liability', tag }, ctx))).toBe(
+        'NOT_YOUR_TURN',
+      );
+      const host = debtsOf(table, 'host')[0].tag;
+      expect(
+        code(() => applyCommand(table, 'host', { type: 'pay_liability', tag: host }, ctx)),
+      ).toBe('accepted');
+    });
+  });
 });

@@ -45,6 +45,7 @@ const TOLD = new Set([
   'dice_decided',
   'position_sold',
   'loan_changed',
+  'liability_paid',
   'trade_offered',
   'trade_made',
   'player_escaped',
@@ -318,6 +319,13 @@ export class TablePresenter {
         await this.pause(1500 * this.beat);
         return;
       }
+      case 'liability_paid':
+        this.stage.set({
+          ...this.base(line, view, t.stLiability),
+          patch: { text: String(data['tag'] ?? ''), tone: 'neutral' },
+        });
+        await this.pause(1200 * this.beat);
+        return;
       case 'loan_changed':
         this.stage.set(this.base(line, view, t.stLoan));
         await this.pause(900 * this.beat);

@@ -593,6 +593,7 @@ const EVENT_FOR_MOVE: Record<MoveCommand['type'], TableEventType> = {
   roll_decision: 'dice_decided',
   sell_position: 'position_sold',
   bank_loan: 'loan_changed',
+  pay_liability: 'liability_paid',
 };
 
 /**
@@ -621,8 +622,8 @@ function play(
   // Selling is open to everyone while an offer is open; so is paying the bank back when the table's setting allows it (the host's
   // choice, default on) - nothing else is out of turn.
   const repayAnytime =
-    command.type === 'bank_loan' &&
-    command.amountMinor < 0 &&
+    ((command.type === 'bank_loan' && command.amountMinor < 0) ||
+      command.type === 'pay_liability') &&
     table.settings.repayOffTurn !== false;
   const anytime = command.type === 'sell_position' || repayAnytime;
   if (!options.internal) {
@@ -636,7 +637,13 @@ function play(
   if (!anytime && table.activePlayerId !== playerId) {
     fail('NOT_YOUR_TURN', 'It is not your turn.');
   }
-  if (!anytime && command.type !== 'bank_loan' && command.type !== 'roll_decision' && table.hold) {
+  if (
+    !anytime &&
+    command.type !== 'bank_loan' &&
+    command.type !== 'pay_liability' &&
+    command.type !== 'roll_decision' &&
+    table.hold
+  ) {
     fail('ILLEGAL_MOVE', 'The turn is over: the table waits for the others to finish selling.');
   }
   const profession = gameSetOf(table, ctx).professions.find((p) => p.id === me.professionId);
@@ -655,7 +662,8 @@ function play(
       command.type === 'buy_planned' ||
       command.type === 'finish_card' ||
       command.type === 'pay_doodad' ||
-      command.type === 'pay_market'
+      command.type === 'pay_market' ||
+      command.type === 'pay_liability'
         ? { action: command.type }
         : {}),
       ...(played.plan.result ?? {}),

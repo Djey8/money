@@ -567,6 +567,20 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.appState.liabilities;
   }
 
+  /** The balance item (a liability) opens in the Info panel, from where it can be paid back. */
+  async openLiability(index: number): Promise<void> {
+    const liability = this.appState.liabilities[index];
+    if (!liability) return;
+    const module = await import('src/app/panels/info/info-liabilitie/info-liabilitie.component');
+    module.InfoLiabilitieComponent.setInfoLiabilitieComponent(
+      index,
+      liability.tag,
+      liability.amount,
+      liability.credit,
+      liability.investment,
+    );
+  }
+
   /**
    * Which half of the profession card shows — never both stacked at once (JFK, 2026-09-29: "in a live game the
    * active view should be just the Current Game panel and we can add a switch to visualize the start data NOT
