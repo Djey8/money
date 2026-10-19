@@ -532,7 +532,7 @@ function createGameRoomService({
         const policy = botPolicy(bot.bot.policyId);
         if (!policy) continue;
         const coin = seededRng((table.version * 2654435761) >>> 0);
-        const command = nextBotCommand(table, bot.id, policy, coin);
+        const command = nextBotCommand(table, bot.id, policy, coin, Date.now());
         if (!command) continue;
         try {
           result = applyCommand(table, bot.id, command, ctx);
@@ -550,7 +550,12 @@ function createGameRoomService({
         }
         break;
       }
-      if (!result) return { moved: false };
+      if (!result) {
+        // a bot that has put a card to the table waits for the answers: it looks again a little later, nothing else wakes it
+        const trade = table.trade;
+        const waiting = !!trade && table.players.some((p) => p.id === trade.sellerId && p.bot);
+        return { moved: false, waiting };
+      }
       try {
         await persist(doc, result.table, result.events, table);
         return { moved: true };

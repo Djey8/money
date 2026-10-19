@@ -81,6 +81,17 @@ describe('MenuComponent', () => {
       expect(menu(true, [{ path: 'daily' }]).gameMenuEntries()).toEqual([]);
     });
 
+    it('has none while a game is loaded: the Cashflow Game entry is the way back, the dashboard links to the lobby', () => {
+      const state = AppStateService.instance;
+      const before = state.cashflowGame;
+      try {
+        state.cashflowGame = { ...before, professionId: 'nurse' };
+        expect(menu(true, [route]).gameMenuEntries()).toEqual([]);
+      } finally {
+        state.cashflowGame = before;
+      }
+    });
+
     it('clicking an entry goes there and closes the menu', () => {
       const m = menu(true, [route]);
       MenuComponent.isMenu = true;

@@ -172,6 +172,8 @@ export interface TradeOffer {
   counters: { playerId: string; priceMinor: number }[];
   /** Buyers who said no (the offer is then not for them any more). */
   declined: string[];
+  /** When it was made (epoch ms), so a bot that offers a card knows how long it has waited. */
+  at?: number;
 }
 
 /** An open vote to undo the last turn: who asked, and who said what so far. */

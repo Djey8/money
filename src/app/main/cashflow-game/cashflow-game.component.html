@@ -1380,6 +1380,17 @@
             <span class="cf-row-btn-chevron">›</span>
           </button>
 
+          <!-- The way to the lobby while a game is loaded (the menu has only the Cashflow Game entry then). From the route table: -->
+          <!-- nothing of it exists in the Firebase edition. -->
+          <button
+            class="cf-row-btn"
+            *ngIf="multiplayerLink as link"
+            (click)="openMultiplayer(link.path)"
+          >
+            <span>{{ link.label }}</span>
+            <span class="cf-row-btn-chevron">›</span>
+          </button>
+
           <button class="cf-row-btn" (click)="openMenu()">
             <span>{{ 'Menu.title' | translate }}</span>
             <span class="cf-row-btn-chevron">›</span>

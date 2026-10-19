@@ -14,6 +14,7 @@
 const DEFAULT_DELAY_MS = 3500;
 const PACE_DELAY_MS = { fast: 1500, normal: 3500, slow: 6000 };
 const RETRY_MS = 5000;
+const WAIT_MS = 4000;
 
 function createBotDriver({
   run,
@@ -38,7 +39,9 @@ function createBotDriver({
     const handle = scheduler.set(async () => {
       timers.delete(roomId);
       try {
-        await run(roomId);
+        const outcome = await run(roomId);
+        // a bot waiting for the answer to its offer asks again after a moment: a quiet table brings no change to wake it
+        if (outcome && outcome.waiting) wake(roomId, WAIT_MS);
       } catch (error) {
         log('game_room_bots_failed', { roomId, message: error.message });
         wake(roomId, RETRY_MS);

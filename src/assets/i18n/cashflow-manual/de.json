@@ -1813,7 +1813,7 @@
           "type": "callout",
           "kind": "note",
           "title": "Fair Play",
-          "text": "Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel. Jeder Bot kann auf einer Stufe sitzen - Meister, stark, locker oder Anfänger: die niedrigeren Stufen patzen ab und zu (eine gute Gelegenheit auslassen, eine schlechte nehmen, das Verkaufen vergessen), so stellst du ein, wie schwer der Tisch ist."
+          "text": "Nichts, was ein Bot tut, ist verborgen: jeder Zug steht im Protokoll wie bei jedem anderen. Die Stufe sagt, wie oft eine Strategie im Turnier Tische gewann - nicht, was in einem Spiel passiert: die Würfel entscheiden viel. Jeder Bot kann auf einer Stufe sitzen - Meister, stark, locker oder Anfänger: die niedrigeren Stufen patzen ab und zu (eine gute Gelegenheit auslassen, eine schlechte nehmen, das Verkaufen vergessen), so stellst du ein, wie schwer der Tisch ist. Bevor ein Bot eine Deal-Karte ablehnt, bietet er sie manchmal zuerst dem Tisch an - wie oft, hängt von seiner Spielstärke (nie bei Anfängern) und seinem Stil ab -, damit du und die anderen Bots sie kaufen können."
         }
       ]
     },

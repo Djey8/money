@@ -116,6 +116,7 @@ describe('offering the card in hand', () => {
       priceMinor: 300000,
       counters: [],
       declined: [],
+      at: expect.any(Number),
     });
     expect(offered.table.activePlayerId).toBe('host');
     expect(offered.table.version).toBe(table.version + 1);

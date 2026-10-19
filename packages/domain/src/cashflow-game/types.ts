@@ -273,6 +273,8 @@ export interface CashflowPendingDecision {
   purchased?: boolean;
   /** The card was dealt with without a project: sold to a friend or declined. It is only read afterwards, like a played card. */
   closed?: boolean;
+  /** The card was offered to the table once (at a table): a bot does not offer the same card again. */
+  tradeTried?: boolean;
 }
 
 /**

@@ -1809,7 +1809,7 @@
           "type": "callout",
           "kind": "note",
           "title": "Fair-play",
-          "text": "Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup. Chaque bot peut être installé à un niveau de jeu - maître, fort, occasionnel ou débutant : les niveaux inférieurs se trompent de temps en temps (laissent passer une bonne affaire, en prennent une mauvaise, oublient de vendre), ce qui permet de régler la difficulté de la table."
+          "text": "Rien de ce que fait un bot n'est caché : chaque coup est dans le journal comme celui de n'importe qui. Le niveau dit à quelle fréquence une stratégie a gagné des tables au tournoi - pas ce qui arrivera dans une partie : les dés décident beaucoup. Chaque bot peut être installé à un niveau de jeu - maître, fort, occasionnel ou débutant : les niveaux inférieurs se trompent de temps en temps (laissent passer une bonne affaire, en prennent une mauvaise, oublient de vendre), ce qui permet de régler la difficulté de la table. Avant de refuser une carte Affaire, un bot peut d'abord la proposer à la table - plus ou moins souvent selon son niveau (jamais un débutant) et son style - pour que vous et les autres bots puissiez l'acheter."
         }
       ]
     },

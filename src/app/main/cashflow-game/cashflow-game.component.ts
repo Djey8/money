@@ -192,6 +192,20 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     });
   }
 
+  /** The lobby's entry of the route table (the self-hosted build only), or null: the link from the dashboard to Multiplayer. */
+  get multiplayerLink(): { path: string; label: string } | null {
+    const route = this.router.config.find((r) => r.path === 'tables' && r.data?.['gameMenu']);
+    if (!route) return null;
+    const entry = route.data!['gameMenu'] as { label: (lang: string) => string };
+    const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
+    return { path: `/${route.path}`, label: entry.label(lang) };
+  }
+
+  openMultiplayer(path: string): void {
+    this.closeWindow();
+    void this.router.navigate([path]);
+  }
+
   /** Opens the game dashboard on its main view, where the open dice decision stands out. */
   showOpenDecision(): void {
     this.viewedProfession = null;
