@@ -1627,6 +1627,8 @@
   "CashflowGame.solo.modeSolo": "Solo in the app",
   "CashflowGame.solo.modeSoloHint": "The app rolls the dice and walks your token round the rat race.",
   "CashflowGame.solo.roll": "Roll the dice",
+  "CashflowGame.solo.rolling": "Rolling…",
+  "CashflowGame.solo.moving": "Moving…",
   "CashflowGame.solo.finishDiceFirst": "Finish the dice action below first - then you can roll.",
   "CashflowGame.rules.title": "Game rules",
   "CashflowGame.rules.frozen": "The rules are fixed when the game starts and cannot be changed during it.",

@@ -1627,6 +1627,8 @@
   "CashflowGame.solo.modeSolo": "منفردًا داخل التطبيق",
   "CashflowGame.solo.modeSoloHint": "يرمي التطبيق النرد ويحرّك قطعتك في سباق الفئران.",
   "CashflowGame.solo.roll": "ارمِ النرد",
+  "CashflowGame.solo.rolling": "جارٍ الرمي…",
+  "CashflowGame.solo.moving": "جارٍ التحرك…",
   "CashflowGame.solo.finishDiceFirst": "أنهِ أولاً إجراء النرد أدناه، ثم يمكنك رمي النرد.",
   "CashflowGame.rules.title": "قواعد اللعبة",
   "CashflowGame.rules.frozen": "تُحدَّد القواعد عند بدء اللعبة ولا يمكن تغييرها أثناءها.",
