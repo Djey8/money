@@ -294,7 +294,7 @@ describe('CashflowGameService', () => {
       const month = new Date().toISOString().slice(0, 7);
       state.allBudgets = [
         { date: '2020-01', tag: '@Mine', amount: 5 },
-        { date: month, tag: '@Placeholder Expenses', amount: 1800, game: true }, // left by the first version
+        { date: month, tag: '@Placeholder Expenses', amount: 5400 }, // the first version added every Payday into one month
       ];
       const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
       expect(service.backfillBudget()).toBe(true);
