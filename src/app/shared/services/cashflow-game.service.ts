@@ -574,7 +574,8 @@ export class CashflowGameService {
         cashflowGame: state.cashflowGame,
       }),
       allLocations: deepClone(state.allLocations ?? []),
-      allBudgets: deepClone(state.allBudgets ?? []),
+      // the budget is a tier-2 path: before it has been read there is nothing of it to keep or to put back
+      ...(state.tier2Loaded ? { allBudgets: deepClone(state.allBudgets ?? []) } : {}),
     };
   }
 
@@ -611,6 +612,7 @@ export class CashflowGameService {
     this.persistUndoStack();
     this.applySnapshot(deepClone(snapshot));
     this.persistAll('cashflow_game_loaded', { gameId: snapshot.cashflowGame.gameId }, callbacks, {
+      includeBudget: AppStateService.instance.tier2Loaded,
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,
@@ -688,7 +690,10 @@ export class CashflowGameService {
     state.mojo = snapshot.mojo;
     state.cashflowGame = snapshot.cashflowGame;
     if (snapshot.allLocations) state.allLocations = snapshot.allLocations;
-    if (snapshot.allBudgets) state.allBudgets = snapshot.allBudgets;
+    if (state.tier2Loaded) {
+      // a snapshot from before the game planned a budget carries none: the rows of another game must not stay
+      state.allBudgets = snapshot.allBudgets ?? (state.allBudgets ?? []).filter((b) => !b.game);
+    }
   }
 
   /**
@@ -849,7 +854,7 @@ export class CashflowGameService {
     // A step from before the game was first saved knows nothing of its saved slot: keep the slot.
     this.applySnapshot(keepSavedSlot(snapshot, AppStateService.instance.cashflowGame));
     this.persistAll('cashflow_undo_action', {}, callbacks, {
-      includeBudget: true,
+      includeBudget: AppStateService.instance.tier2Loaded,
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,
@@ -963,7 +968,10 @@ export class CashflowGameService {
     );
 
     state.cashflowGame = { ...result.state, gameSubscriptionTitles: subscriptionTitles };
+    // a new game starts without the plan of the last one
+    if (state.tier2Loaded) state.allBudgets = (state.allBudgets ?? []).filter((b) => !b.game);
     this.persistAll('start_cashflow_game', { gameSetId, professionId }, callbacks, {
+      includeBudget: state.tier2Loaded,
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
@@ -1056,14 +1064,17 @@ export class CashflowGameService {
     const earlierPaydays = effects.state.round > 1;
     const owned = new Set(state.cashflowGame.gameSubscriptionTitles);
     const standing = earlierPaydays
-      ? this.standingExpenses(state.allSubscriptions.filter((sub) => owned.has(sub.title)))
+      ? this.standingExpenses(
+          state.allSubscriptions.filter((sub) => owned.has(sub.title)),
+          payday[0].date,
+        )
       : null;
     state.allBudgets = planPayday(state.allBudgets ?? [], payday, standing);
     return true;
   }
 
   /** The monthly cost of subscriptions per category, as they stand (a quarterly one at a third), as planned amounts. */
-  private standingExpenses(subscriptions: Subscription[]): PlannedAmount[] {
+  private standingExpenses(subscriptions: Subscription[], month: string): PlannedAmount[] {
     const rows = computeBudgetRowsFromSubscriptions(
       subscriptions
         .filter((sub) => sub.account !== 'Income' && Number(sub.amount) < 0)
@@ -1075,10 +1086,9 @@ export class CashflowGameService {
           category: sub.category || '@others',
           frequency: sub.frequency as never,
         })),
-      new Date(),
+      new Date(`${month}-15T12:00:00`),
     );
-    // only the current month's line of each category is "what it costs now"
-    const month = new Date().toISOString().slice(0, 7);
+    // only the Payday's month line of each category is "what it costs now"
     return rows
       .filter((row) => row.date === month)
       .map((row) => ({ date: month, tag: row.tag, amount: fromMinorUnits(row.amountMinor) }));
@@ -2239,8 +2249,11 @@ export class CashflowGameService {
     // the game's money is gone with its bookings; the location stays (the player's own ones are untouched)
     const bank = state.allLocations?.find((location) => location.id === GAME_BANK_LOCATION_ID);
     if (bank) bank.amount = 0;
+    // and so is its plan: the rows the game made go, what the player planned stays
+    if (state.tier2Loaded) state.allBudgets = (state.allBudgets ?? []).filter((b) => !b.game);
 
     this.persistAll('cashflow_reset', {}, callbacks, {
+      includeBudget: state.tier2Loaded,
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,

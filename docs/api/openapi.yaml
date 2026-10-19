@@ -3156,7 +3156,8 @@ paths:
       description: >-
         Removes the location. Transactions that were booked there are kept, but lose their `locationId`
         (`transactionsUnlinked` says how many); nothing is cascade-deleted. Not reversible through the API.
-        Requires scope `locations:w`.
+        The default location of a Cashflow game (id `game-bank`, "Bank - Main") can be renamed but never deleted: it answers
+        409 `conflict_protected`. Requires scope `locations:w`.
       security:
         - bearerAuth: []
       responses:
@@ -3181,6 +3182,18 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: The location is the protected default location of a game (`game-bank`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: The default location cannot be deleted
+                status: 409
+                code: conflict_protected
+                detail: The game location can be renamed, but not deleted.
   /recurring-transfers:
     get:
       operationId: listRecurringTransfers

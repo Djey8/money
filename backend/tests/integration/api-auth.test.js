@@ -3157,6 +3157,15 @@ describe('v1 API authentication and PAT management', () => {
       (await request(app).get(`/api/v1/locations/${id}`).set('Authorization', `Bearer ${token}`))
         .body.amountMinor;
 
+    it('refuses to delete the default location of a game (it can be renamed, never deleted)', async () => {
+      const { token } = await locationToken(['locations:r', 'locations:w']);
+      const refused = await request(app)
+        .delete('/api/v1/locations/game-bank')
+        .set('Authorization', `Bearer ${token}`);
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe('conflict_protected');
+    });
+
     it('creates, lists, reads, patches and deletes a location, and audit logs the writes', async () => {
       const { token, tokenId } = await locationToken(['locations:r', 'locations:w']);
       const created = await createLocationVia(token, {

@@ -242,6 +242,53 @@ describe('CashflowGameService', () => {
       expect(state.allBudgets).toEqual([]);
     });
 
+    it('a game from before (no planned rows) gets its last month planned at the next Payday, from the subscriptions as they stand', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      state.allBudgets = [{ date: '2020-01', tag: '@Mine', amount: 5 }];
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      state.allBudgets = state.allBudgets.filter((b) => !b.game); // as if the first Payday was before the budget was planned
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      const planned = state.allBudgets.filter((b) => b.game);
+      expect(planned.map((b) => b.amount)).toEqual([1800, 1800]);
+      expect(planned[0].date < planned[1].date).toBe(true);
+      expect(state.allBudgets.some((b) => b.tag === '@Mine')).toBe(true);
+    });
+
+    it('a reset, a new game and a loaded game without a plan take the rows of the game away, never the ones the player made (here: the reset)', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      state.allBudgets = [{ date: '2026-10', tag: '@Mine', amount: 5 }];
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets.some((b) => b.game)).toBe(true);
+      const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
+      service.resetGame({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets).toEqual([{ date: '2026-10', tag: '@Mine', amount: 5 }]);
+      gameAccount.mockRestore();
+    });
+
+    it('undo writes the budget only when it has been loaded', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = false;
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      persistence.batchWriteAndSync.mockClear();
+      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      const tags = persistence.batchWriteAndSync.mock.calls[0][0].writes.map((w: any) => w.tag);
+      expect(tags).not.toContain('budget');
+    });
+
+    it('undoing the very first booking takes the default location away again', () => {
+      const state = AppStateService.instance;
+      state.allLocations = [];
+      started();
+      expect(state.allLocations.some((l) => l.id === 'game-bank')).toBe(true);
+      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allLocations.some((l) => l.id === 'game-bank')).toBe(false);
+    });
+
     it('leaves the budget alone while it has not been loaded yet (it would replace the stored one)', () => {
       started();
       const state = AppStateService.instance;
