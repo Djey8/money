@@ -1,3 +1,13 @@
+## [1.30.0] - 2026-10-19
+
+### Features
+
+- feat(bots): champion search refresh (six professions got a new champion) and start ratings version 3
+
+### Bug Fixes
+
+- fix(game): the budget plan is set, not added, and shown at once; a rating is the base plus the games, also on the player card
+
 ## [1.29.0] - 2026-10-19
 
 ### Features
