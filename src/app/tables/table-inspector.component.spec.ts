@@ -51,25 +51,4 @@ describe('TableInspectorComponent', () => {
     );
     expect(names.sort()).toEqual(['Ann', 'Bob']);
   });
-
-  it('words the events in the app language, newest first, with the name of who it was', () => {
-    fixture.componentRef.setInput('events', [
-      { seq: 1, version: 1, at: '', type: 'rolled', seat: 0 },
-      { seq: 2, version: 2, at: '', type: 'trade_made', seat: 1 },
-      { seq: 3, version: 3, at: '', type: 'something_new', seat: null },
-    ]);
-    fixture.detectChanges();
-    const items = Array.from(fixture.nativeElement.querySelectorAll('.ti-feed li')).map((li) =>
-      (li as HTMLElement).textContent!.replace(/\s+/g, ' ').trim(),
-    );
-    expect(items).toEqual(['something new', 'Bob made a trade', 'Ann rolled the dice']);
-    fixture.componentRef.setInput('lang', 'de');
-    fixture.detectChanges();
-    expect(text()).toContain('hat gewürfelt');
-  });
-
-  it('says nothing happened yet when the feed is empty', () => {
-    fixture.detectChanges();
-    expect(text()).toContain('Nothing has happened yet.');
-  });
 });

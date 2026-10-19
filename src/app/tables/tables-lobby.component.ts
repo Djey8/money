@@ -290,7 +290,13 @@ function accountName(): string {
       .tl-head-actions {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
         gap: 8px;
+      }
+      .tl-head-actions .tx-btn {
+        /* a link and a button are the same height whatever the width of the screen */
+        align-self: auto;
+        min-height: 2.4rem;
       }
       .tl-card {
         background: var(--color-surface, #fff);
@@ -326,6 +332,8 @@ function accountName(): string {
       }
       .tl-row-actions .tx-btn {
         min-width: 4.6rem;
+        min-height: 2.4rem;
+        justify-content: center;
         text-align: center;
         white-space: nowrap;
       }
