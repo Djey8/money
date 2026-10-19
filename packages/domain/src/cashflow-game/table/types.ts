@@ -99,6 +99,11 @@ export interface TableSettings {
    * ranked rules when it ends (a finished game, a human at the table, a minimum length).
    */
   ranked: boolean;
+  /**
+   * Whether a player may repay the bank loan (and pay off a liability) at any time, also when it is not their turn - it is told in
+   * the history for everybody. Off: only in their own turn. Default on; the host chooses when the table is opened.
+   */
+  repayOffTurn: boolean;
 }
 
 /** What a host may send: everything optional except the name; a few rule settings are the host's to tune. */

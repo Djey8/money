@@ -618,8 +618,13 @@ function play(
     fail('ILLEGAL_MOVE', 'You are out of the game.');
   }
   const now = nowOf(ctx);
-  // Selling is open to everyone while an offer is open; nothing else is out of turn.
-  const anytime = command.type === 'sell_position';
+  // Selling is open to everyone while an offer is open; so is paying the bank back when the table's setting allows it (the host's
+  // choice, default on) - nothing else is out of turn.
+  const repayAnytime =
+    command.type === 'bank_loan' &&
+    command.amountMinor < 0 &&
+    table.settings.repayOffTurn !== false;
+  const anytime = command.type === 'sell_position' || repayAnytime;
   if (!options.internal) {
     // A paused game accepts no move; the active player's own moves must come in time (the server plays for them otherwise).
     const blocked = whyClockBlocks(table, now);
@@ -641,7 +646,7 @@ function play(
     table,
     playerId,
     (books, rng) => planMove(command, books, { ...ctx, rng }, profession as CashflowProfession),
-    { openOfferWindow: anytime },
+    { openOfferWindow: command.type === 'sell_position' },
   );
   const events: TableEvent[] = [
     event(ctx, version, EVENT_FOR_MOVE[command.type], playerId, {

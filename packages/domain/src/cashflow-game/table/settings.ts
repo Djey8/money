@@ -178,5 +178,6 @@ export function normalizeTableSettings(
     pace: normalizePace(input.pace),
     showProgress: input.showProgress ?? true,
     ranked: input.ranked ?? true,
+    repayOffTurn: input.repayOffTurn ?? true,
   };
 }

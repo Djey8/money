@@ -105,6 +105,8 @@ export interface CreateTableInput {
     pace?: 'fast' | 'normal' | 'slow';
     /** Whether everybody's progress towards escaping (a percentage) is shown. */
     showProgress?: boolean;
+    /** Paying the bank back at any time, not only in one's own turn (default on). */
+    repayOffTurn?: boolean;
     /** The game may count for the leaderboard rating (default on; fixed once it starts). */
     ranked?: boolean;
     /** Rule overrides: how many of a player's turns a buyer's offer stays open. */

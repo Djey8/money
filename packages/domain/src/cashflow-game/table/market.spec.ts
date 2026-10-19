@@ -564,8 +564,11 @@ describe('the held turn (the table waits until everybody has said Continue)', ()
     const borrowed = applyCommand(held, 'host', { type: 'bank_loan', amountMinor: 1_000_000 }, ctx);
     expect(borrowed.table.hold?.playerIds).toEqual(['host', 'p1', 'p2']);
     expect(borrowed.table.activePlayerId).toBe('host');
-    // the others cannot borrow on somebody else's turn
-    expect(tableLegalActions(held, 'p1').map((a) => a.action)).not.toContain('bank_loan');
+    // the others cannot borrow on somebody else's turn (paying the bank back is open to them: repay-off-turn.spec.ts)
+    expectError(
+      () => applyCommand(held, 'p1', { type: 'bank_loan', amountMinor: 1_000_000 }, ctx),
+      'NOT_YOUR_TURN',
+    );
   });
 
   it('a card with a die to roll (MLM) is rolled before the turn can end, even while the table waits', () => {
