@@ -453,6 +453,64 @@ describe('the profile picture', () => {
   });
 });
 
+describe('a rating is the base plus the games', () => {
+  it('sets a profile that drifted back to its base plus every change its games made', async () => {
+    if (!dbAvailable) return;
+    const statsDb = getGameStatsDb();
+    const botId = 'never-buy--casual';
+    const playerId = botPlayerId(botId);
+    await stats().ensureBotProfile(botId);
+    const profile = await statsStore.getProfile(statsDb, playerId);
+    const base = profile.baseRating;
+    // made under an older table at 1763, then counted from a base of its own: two games of +0.86 and -2.64 cannot end at base + 61
+    profile.rating = base + 61;
+    profile.peakRating = base + 63;
+    profile.rated = 2;
+    await statsStore.saveProfile(statsDb, profile);
+    const stamp = Date.now();
+    for (const [n, at, delta] of [
+      [1, '2026-10-18T13:42:00.000Z', -2.64],
+      [2, '2026-10-18T14:28:00.000Z', 0.86],
+    ]) {
+      await statsStore.createResult(statsDb, {
+        tableId: `drift-${stamp}-${n}`,
+        endedAt: at,
+        counted: true,
+        applied: true,
+        playerIds: [playerId],
+        participants: [{ playerId, rank: 1, leftEarly: false, delta }],
+        settings: { name: `drift ${n}` },
+      });
+    }
+    expect((await stats().recomputeRatings()).corrected).toBeGreaterThanOrEqual(1);
+    const after = await statsStore.getProfile(statsDb, playerId);
+    expect(after.rating).toBeCloseTo(base - 1.78, 2);
+    expect(after.peakRating).toBeCloseTo(base, 2);
+    // the card shows the same scale: the rating after each game is the base plus the changes up to it
+    const card = await request(app)
+      .get(`/api/v1/game/players/${playerId}`)
+      .set('Authorization', `Bearer ${host.token}`);
+    expect(card.status).toBe(200);
+    expect(card.body.rating).toBe(Math.round(base - 1.78));
+    expect(card.body.recent.map((game) => game.ratingAfter)).toEqual([
+      Math.round(base - 1.78),
+      Math.round(base - 2.64),
+    ]);
+    // and the same again changes nothing
+    expect((await stats().recomputeRatings()).corrected).toBe(0);
+    // a profile whose record is not whole (fewer results than rated games) is left alone
+    after.rated = 3;
+    after.rating = base + 5;
+    await statsStore.saveProfile(statsDb, after);
+    await stats().recomputeRatings();
+    expect((await statsStore.getProfile(statsDb, playerId)).rating).toBe(base + 5);
+    const fresh = await statsStore.getProfile(statsDb, playerId);
+    fresh.rated = 2;
+    fresh.rating = base - 1.78;
+    await statsStore.saveProfile(statsDb, fresh);
+  });
+});
+
 describe('moving the base of the bots', () => {
   it('moves each bot to the new base and keeps every game played on top of it', async () => {
     if (!dbAvailable) return;
@@ -466,6 +524,16 @@ describe('moving the base of the bots', () => {
     const base = profile.baseRating;
     profile.rating = base + 25;
     profile.peakRating = base + 25;
+    profile.rated = 1;
+    await statsStore.createResult(statsDb, {
+      tableId: `base-move-${Date.now()}`,
+      endedAt: '2026-10-18T10:00:00.000Z',
+      counted: true,
+      applied: true,
+      playerIds: [playerId],
+      participants: [{ playerId, rank: 1, leftEarly: false, delta: 25 }],
+      settings: { name: 'base move' },
+    });
     delete profile.baseRating;
     delete profile.baseHistory;
     delete profile.baseVersion;

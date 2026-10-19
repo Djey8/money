@@ -48,26 +48,28 @@ function cellsOf(plan: PlanMonth[]): { date: string; tag: string; amount: number
   );
 }
 
-/** The budget after the game's plan changes from `before` to `after`: what it had put there goes, what it plans now comes. */
+/**
+ * The budget after the game's plan changes from `before` to `after`: a cell the game no longer plans goes, a cell it plans now is
+ * set to what it plans (never added onto whatever was in the budget: a row left by an earlier version or an earlier game would be
+ * counted twice). What the player planned on cells the game does not plan is never touched.
+ */
 export function applyPlanChange(
   budgets: Budget[],
   before: PlanMonth[],
   after: PlanMonth[],
 ): Budget[] {
-  let next = budgets.map((row) => ({ ...row }));
-  for (const cell of cellsOf(before)) {
-    const row = next.find(
-      (candidate) => candidate.date === cell.date && candidate.tag === cell.tag,
-    );
-    if (!row) continue;
-    row.amount = round2(Number(row.amount) - cell.amount);
-    if (row.amount <= 0.004) next = next.filter((candidate) => candidate !== row);
-  }
-  for (const cell of cellsOf(after)) {
-    const row = next.find(
-      (candidate) => candidate.date === cell.date && candidate.tag === cell.tag,
-    );
-    if (row) row.amount = round2(Number(row.amount) + cell.amount);
+  const key = (cell: { date: string; tag: string }) => `${cell.date}|${cell.tag}`;
+  const afterCells = cellsOf(after);
+  const planned = new Set(afterCells.map(key));
+  const dropped = new Set(
+    cellsOf(before)
+      .map(key)
+      .filter((cell) => !planned.has(cell)),
+  );
+  const next = budgets.filter((row) => !dropped.has(key(row))).map((row) => ({ ...row }));
+  for (const cell of afterCells) {
+    const row = next.find((candidate) => key(candidate) === key(cell));
+    if (row) row.amount = cell.amount;
     else next.push({ date: cell.date, tag: cell.tag, amount: cell.amount });
   }
   return next;

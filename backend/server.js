@@ -142,7 +142,9 @@ if (require.main === module) {
           const seeded = await stats.seedBots();
           const bases = await stats.reconcileBases();
           const repaired = await stats.repair();
+          const ratings = await stats.recomputeRatings();
           logger.info('Leaderboard ready', {
+            ratingsCorrected: ratings.corrected,
             botsMade: seeded.made,
             basesMoved: bases.moved,
             repaired: repaired.repaired,
