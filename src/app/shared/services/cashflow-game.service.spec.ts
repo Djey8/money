@@ -3411,6 +3411,17 @@ describe('CashflowGameService', () => {
       expect(state.allBudgets).toEqual([]);
     });
 
+    it('the opening Payday of the very first roll already plans the budget', () => {
+      startSolo();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      state.allBudgets = [];
+      service.rng = die(1); // lands before any Payday space: only the opening Payday is paid
+      service.rollTurn(1, callbacks());
+      expect(state.cashflowGame.round).toBe(1);
+      expect(state.allBudgets.filter((b) => b.game).map((b) => b.amount)).toEqual([1800]);
+    });
+
     it('a roll moves the token, books what the landing does, and is one undo step', () => {
       startSolo();
       service.rng = die(6); // 6 from START lands on the Payday at 5
