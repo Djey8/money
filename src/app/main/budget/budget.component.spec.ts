@@ -39,4 +39,58 @@ describe('BudgetComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('draws the income as a green line with bullets, and a bar tells income and both cashflows', () => {
+    const state = AppStateService.instance;
+    const tx = (account: string, amount: number, date: string, extra: object = {}) =>
+      ({ account, amount, date, time: '', category: '@x', comment: '', ...extra }) as any;
+    state.allTransactions = [
+      tx('Income', 3000, '2026-09-02', { category: '@Salary' }),
+      tx('Daily', -1000, '2026-09-03'),
+      tx('Income', 3000, '2026-10-02', { category: '@Salary' }),
+      tx('Income', 40000, '2026-10-03', { comment: 'Sell Investment EFH 80000 60000;' }),
+      tx('Daily', -2500, '2026-10-04'),
+    ];
+    state.isEuropeanFormat = false;
+    state.allBudgets = [
+      { date: '2026-09', tag: '@x', amount: 1200 },
+      { date: '2026-10', tag: '@x', amount: 2000 },
+    ];
+    document.body.appendChild(fixture.nativeElement); // the chart is drawn into the page
+    fixture.detectChanges();
+    BudgetComponent.createBudgetVsActuals('all', 0);
+
+    const points = document.querySelectorAll('#chart-container .income-point');
+    expect(points).toHaveLength(2);
+    expect(document.querySelectorAll('#chart-container .budget-point')).toHaveLength(2);
+    (points[1] as SVGCircleElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const box = document.getElementById('kpi-info-box')!;
+    const rows = Array.from(box.querySelectorAll('.kpi-row')).map((row) => row.textContent);
+    // October: income 3.000 (the 40.000 sale does not count), planned 2.000, actual 2.500
+    expect(rows.join('|')).toContain('3,000.00');
+    expect(rows.join('|')).not.toContain('43,000');
+    expect(rows.join('|')).toContain('1,000.00'); // planned cashflow 3000 - 2000
+    expect(rows.join('|')).toContain('500.00'); // cashflow 3000 - 2500
+  });
+
+  it('redraws when the game or a transaction changes the data, without a reload', () => {
+    const state = AppStateService.instance;
+    state.isEuropeanFormat = false;
+    state.allTransactions = [
+      { account: 'Daily', amount: -100, date: '2026-10-03', time: '', category: '@x', comment: '' },
+    ] as any;
+    state.allBudgets = [];
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    expect(document.querySelectorAll('#chart-container .budget-point')).toHaveLength(1);
+    state.allBudgets = [
+      { date: '2026-09', tag: '@x', amount: 50 },
+      { date: '2026-10', tag: '@x', amount: 80 },
+    ];
+    state.transactionsUpdated$.next();
+    expect(document.querySelectorAll('#chart-container .budget-point')).toHaveLength(2);
+    fixture.destroy();
+    state.allBudgets = [];
+    state.transactionsUpdated$.next(); // a destroyed page no longer listens
+  });
 });

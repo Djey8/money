@@ -73,7 +73,11 @@ export interface PolicyView {
 
 export type DealChoice = { buy: false } | { buy: true; quantity?: number };
 
-export type HouseMove = { kind: 'sell'; input: SellInput } | { kind: 'repay'; amountMinor: number };
+export type HouseMove =
+  | { kind: 'sell'; input: SellInput }
+  | { kind: 'repay'; amountMinor: number }
+  /** Pay one starting debt (a mortgage, a car loan ...) off in one payment (liability-payoff.ts). */
+  | { kind: 'payoff'; tag: string };
 
 export type Pile = 'dealSmall' | 'dealBig';
 

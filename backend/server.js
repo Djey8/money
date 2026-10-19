@@ -140,8 +140,13 @@ if (require.main === module) {
         .then(async () => {
           const stats = require('./routes/game-rooms').stats();
           const seeded = await stats.seedBots();
+          const bases = await stats.reconcileBases();
           const repaired = await stats.repair();
-          logger.info('Leaderboard ready', { botsMade: seeded.made, repaired: repaired.repaired });
+          logger.info('Leaderboard ready', {
+            botsMade: seeded.made,
+            basesMoved: bases.moved,
+            repaired: repaired.repaired,
+          });
         })
         .catch((err) => logger.logError(err, { context: 'game_stats_startup' })),
     )

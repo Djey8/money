@@ -38,6 +38,7 @@ describe('AddTableComponent', () => {
       clock: { mode: 'per-move', secondsPerMove: 45 },
       endCondition: 'round-limit',
       roundLimit: 8,
+      repayOffTurn: true,
     });
     req.flush({ id: 'new1' });
     expect(created).toHaveBeenCalledWith('new1');

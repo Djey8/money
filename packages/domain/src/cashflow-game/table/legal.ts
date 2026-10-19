@@ -1,6 +1,8 @@
 import { legalActions as soloLegalActions } from '../legal-actions';
 import { openDecisions } from '../asset-deals';
 import { currentTurn } from '../turn';
+import { payableLiabilities } from '../liability-payoff';
+import { BANK_LOAN_TAG } from '../loan';
 import { whyPaymentPending } from '../rules';
 import { canSellNow } from './sell-check';
 import { undoVoters } from './undo-vote';
@@ -140,6 +142,32 @@ export function tableLegalActions(table: Table, playerId: string): TableLegalAct
     add(
       'sell_position',
       "Sell a position you hold into a buyer's offer that is open for you (a Market card or a stock price card someone drew).",
+    );
+  }
+
+  // Paying the bank back is open at any time when the table allows it (a negative amountMinor); borrowing stays in the player's turn.
+  if (
+    table.settings.repayOffTurn !== false &&
+    !actions.some((a) => a.action === 'bank_loan') &&
+    (me.books.liabilities ?? []).some(
+      (liability) => liability.tag === BANK_LOAN_TAG && liability.amountMinor > 0,
+    )
+  ) {
+    add(
+      'bank_loan',
+      'Repay the bank loan at any time (amountMinor negative); borrowing is only in your own turn.',
+    );
+  }
+
+  // A debt (mortgage, car loan, credit card ...) paid off in one payment: in your own turn, or any time when the table allows it.
+  if (
+    (myTurn || table.settings.repayOffTurn !== false) &&
+    payableLiabilities(me.books).length > 0 &&
+    !(myTurn && hold)
+  ) {
+    add(
+      'pay_liability',
+      'Pay one liability off in one payment of the full amount (tag): its monthly expense ends. Short of cash a Bank loan is taken first, unless that would leave your monthly cashflow negative.',
     );
   }
 

@@ -474,6 +474,7 @@ export function simulateTable(config: TableSimConfig): TableSimResult {
     if (currentTurn(books.state).phase === 'roll') {
       for (const move of policy.maintain(viewOf(books, current, who))) {
         if (move.kind === 'sell') send(who, { type: 'sell_position', input: move.input });
+        else if (move.kind === 'payoff') send(who, { type: 'pay_liability', tag: move.tag });
         else send(who, { type: 'bank_loan', amountMinor: -move.amountMinor });
       }
     }

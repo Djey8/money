@@ -158,9 +158,9 @@
   <!-- Reports Section -->
   <div class="menu-section">
     <div class="menu-section-label">{{ 'Menu.financial' | translate }}</div>
-    <div class="menu-grid menu-grid--3">
+    <div class="menu-grid menu-grid--reports">
       <button
-        class="menu-item menu-item--compact"
+        class="menu-item menu-item--compact menu-item--span-6 menu-item--major"
         data-tour-route="/cashflow"
         [class.menu-item--active]="router.url === '/cashflow'"
         (click)="clickedCashflow()"
@@ -169,34 +169,7 @@
         <span>{{ 'Menu.cashflow' | translate }}</span>
       </button>
       <button
-        class="menu-item menu-item--compact"
-        data-tour-route="/income"
-        [class.menu-item--active]="router.url === '/income'"
-        (click)="clickedIncomeStatement()"
-      >
-        <span class="menu-icon">≡</span>
-        <span>{{ 'Menu.statment' | translate }}</span>
-      </button>
-      <button
-        class="menu-item menu-item--compact"
-        data-tour-route="/balance"
-        [class.menu-item--active]="router.url === '/balance'"
-        (click)="clickedBalanceSheet()"
-      >
-        <span class="menu-icon">⊞</span>
-        <span>{{ 'Menu.sheet' | translate }}</span>
-      </button>
-      <button
-        class="menu-item menu-item--compact"
-        data-tour-route="/locations"
-        [class.menu-item--active]="router.url === '/locations'"
-        (click)="clickedLocations()"
-      >
-        <span class="menu-icon">⌂</span>
-        <span>{{ 'Menu.locations' | translate }}</span>
-      </button>
-      <button
-        class="menu-item menu-item--compact"
+        class="menu-item menu-item--compact menu-item--span-6 menu-item--major"
         data-tour-route="/subscription"
         [class.menu-item--active]="router.url === '/subscription'"
         (click)="clickedSubscriptions()"
@@ -205,7 +178,34 @@
         <span>{{ 'Menu.sub' | translate }}</span>
       </button>
       <button
-        class="menu-item menu-item--compact"
+        class="menu-item menu-item--compact menu-item--span-12"
+        data-tour-route="/grow"
+        [class.menu-item--active]="router.url === '/grow'"
+        (click)="clickedGrow()"
+      >
+        <span class="menu-icon">↗</span>
+        <span>{{ 'Menu.grow' | translate }}</span>
+      </button>
+      <button
+        class="menu-item menu-item--compact menu-item--span-3"
+        data-tour-route="/income"
+        [class.menu-item--active]="router.url === '/income'"
+        (click)="clickedIncomeStatement()"
+      >
+        <span class="menu-icon">≡</span>
+        <span>{{ 'Menu.statment' | translate }}</span>
+      </button>
+      <button
+        class="menu-item menu-item--compact menu-item--span-3"
+        data-tour-route="/balance"
+        [class.menu-item--active]="router.url === '/balance'"
+        (click)="clickedBalanceSheet()"
+      >
+        <span class="menu-icon">⊞</span>
+        <span>{{ 'Menu.sheet' | translate }}</span>
+      </button>
+      <button
+        class="menu-item menu-item--compact menu-item--span-3"
         data-tour-route="/budget"
         [class.menu-item--active]="router.url === '/budget'"
         (click)="clickedBudget()"
@@ -214,13 +214,13 @@
         <span>{{ 'Menu.budget' | translate }}</span>
       </button>
       <button
-        class="menu-item menu-item--compact"
-        data-tour-route="/grow"
-        [class.menu-item--active]="router.url === '/grow'"
-        (click)="clickedGrow()"
+        class="menu-item menu-item--compact menu-item--span-3"
+        data-tour-route="/locations"
+        [class.menu-item--active]="router.url === '/locations'"
+        (click)="clickedLocations()"
       >
-        <span class="menu-icon">↗</span>
-        <span>{{ 'Menu.grow' | translate }}</span>
+        <span class="menu-icon">⌂</span>
+        <span>{{ 'Menu.locations' | translate }}</span>
       </button>
       <button
         class="menu-item menu-item--compact menu-item--full-row"

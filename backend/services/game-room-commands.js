@@ -84,6 +84,14 @@ const COMMANDS = {
   },
   finish_card: { fields: [], check: () => null, build: () => ({ type: 'finish_card' }) },
   pass_card: { fields: [], check: () => null, build: () => ({ type: 'pass_card' }) },
+  pay_liability: {
+    fields: ['tag'],
+    check: (c) =>
+      typeof c.tag === 'string' && c.tag.length > 0 && c.tag.length <= 120
+        ? null
+        : 'tag must be the name of the liability to pay off (see books.liabilities).',
+    build: (c) => ({ type: 'pay_liability', tag: c.tag }),
+  },
   bank_loan: {
     fields: ['amountMinor'],
     check: (c) =>

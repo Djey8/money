@@ -273,6 +273,8 @@ export interface CashflowPendingDecision {
   purchased?: boolean;
   /** The card was dealt with without a project: sold to a friend or declined. It is only read afterwards, like a played card. */
   closed?: boolean;
+  /** The card was offered to the table once (at a table): a bot does not offer the same card again. */
+  tradeTried?: boolean;
 }
 
 /**
@@ -291,6 +293,17 @@ export interface CashflowSoloTurn {
   outcome?: 'escaped' | 'bankrupt';
   /** The Grow projects a Market card of this turn touched (an offer, a price move, a boost, a cost): to check for an update. */
   affected?: string[];
+}
+
+/**
+ * What the game planned in the budget for one month (JFK, 2026-10-19): the expenses its subscriptions cost, per category. The plan
+ * is the game's own record - which budget cells are the game's - so it moves back a month with each Payday like the transactions do,
+ * and is undone, saved and reset with the game.
+ */
+export interface CashflowBudgetMonth {
+  /** 'YYYY-MM'; the last entry is the current month, the others follow one month apart. */
+  month: string;
+  rows: { tag: string; amountMinor: number }[];
 }
 
 export interface CashflowGameState {
@@ -324,7 +337,8 @@ export interface CashflowGameState {
   /** The name it goes by in the games list. */
   gameName?: string;
   /** The rules the game is played under, fixed at its start (rules.ts); absent: `free`, as before rules existed. */
-  rules?: GameRules;
+  rules?: GameRules; /** The budget the game planned, oldest month first; absent on a game from before it planned one. */
+  budgetPlan?: CashflowBudgetMonth[];
 }
 
 export function initialCashflowGameState(): CashflowGameState {

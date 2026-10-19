@@ -184,10 +184,12 @@ describe('who may play, and what they are told they may do', () => {
       expect.arrayContaining(['roll', 'pause']),
     );
     expect(asHost.table.activeSeat).toBe(0);
-    // out of turn the only thing left is asking the table to undo (it is everybody's to ask)
+    // out of turn what is left is asking the table to undo (it is everybody's to ask) and paying a starting debt off
+    // (the table's repayOffTurn setting is on by default)
     expect((await view(anna, id)).legalActions.map((a) => a.action)).toEqual([
       'away',
       'propose_undo',
+      'pay_liability',
     ]);
     expect((await view(ben, id)).legalActions).toEqual([]);
   });
@@ -382,7 +384,7 @@ describe('everyone watching is told', () => {
     ).toContain('roll');
     expect(
       asAnna.messages.find((m) => m.event === 'snapshot').data.legalActions.map((a) => a.action),
-    ).toEqual(['away', 'propose_undo']);
+    ).toEqual(['away', 'propose_undo', 'pay_liability']);
 
     const rolled = await command(host, id, { command: { type: 'roll' } });
     for (const stream of [asHost, asAnna]) {

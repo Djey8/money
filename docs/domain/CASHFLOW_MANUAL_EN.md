@@ -667,7 +667,7 @@ The host can seat **bots** in the lobby. A bot has no account; it is always read
 | Champion | Champion Cleo, Champion Cleo II, Master Maxine | Cleo plays the first all-round champion strategy, Cleo II the latest one; Maxine plays the champion of her own profession (a few professions have a specialist) |
 | Characters | Investor Ines, Stock Sasha, Network Nils, Leverage Leo, Lucky Lena, Prudent Paula, Chaser Chen | Each plays the best version of one style - only properties / stocks / marketing / borrowing / dice cards and marketing / no loans and safe / more risk when behind - from hard to champion strength |
 
-> **Fair play** Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is.
+> **Fair play** Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is. Before a bot turns a Deal card down it may offer it to the table first - how often depends on its skill level (never for a beginner) and its style - so you and the other bots get a chance to buy it.
 
 ## 28. How the champions were found
 

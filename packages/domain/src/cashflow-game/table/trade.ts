@@ -324,13 +324,30 @@ export function applyTradeCommand(
         priceMinor,
         counters: [],
         declined: [],
+        at: now,
       };
       emit('trade_offered', playerId, {
         cardId: card.id,
         priceMinor,
         ...(to ? { to: name(to) } : {}),
       });
-      return done(resetTimeouts({ ...table, trade: next }, playerId));
+      // the card has been put to the table once: the seller's space remembers it (a bot never offers the same card twice)
+      const marked = table.players.map((p) => {
+        const turn = p.id === playerId && p.books ? p.books.state.turn : undefined;
+        return turn?.pending && p.books
+          ? {
+              ...p,
+              books: {
+                ...p.books,
+                state: {
+                  ...p.books.state,
+                  turn: { ...turn, pending: { ...turn.pending, tradeTried: true } },
+                },
+              },
+            }
+          : p;
+      });
+      return done(resetTimeouts({ ...table, players: marked, trade: next }, playerId));
     }
 
     case 'withdraw_trade': {

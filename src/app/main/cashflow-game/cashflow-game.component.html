@@ -250,7 +250,15 @@
         <ng-container *ngIf="liveLiabilities.length">
           <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
           <ul class="cf-line-list">
-            <li *ngFor="let liability of liveLiabilities">
+            <!-- a row opens that balance item in the Info panel, where it can be paid back (JFK, 2026-10-19) -->
+            <li
+              *ngFor="let liability of liveLiabilities; let i = index"
+              class="cf-line-link"
+              tabindex="0"
+              role="button"
+              (click)="openLiability(i)"
+              (keydown.enter)="openLiability(i)"
+            >
               <span>{{ liability.tag }}</span>
               <span>{{ liability.amount | appNumber }} {{ appState.currency }}</span>
             </li>
@@ -1377,6 +1385,17 @@
             (click)="dashboardView = 'table'"
           >
             <span>{{ tm.title }}</span>
+            <span class="cf-row-btn-chevron">›</span>
+          </button>
+
+          <!-- The way to the lobby while a game is loaded (the menu has only the Cashflow Game entry then). From the route table: -->
+          <!-- nothing of it exists in the Firebase edition. -->
+          <button
+            class="cf-row-btn"
+            *ngIf="multiplayerLink as link"
+            (click)="openMultiplayer(link.path)"
+          >
+            <span>{{ link.label }}</span>
             <span class="cf-row-btn-chevron">›</span>
           </button>
 

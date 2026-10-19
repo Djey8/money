@@ -167,7 +167,12 @@
     <button id="addbtn" class="btn btn--action" (click)="updateLocation()">
       {{ 'Info.update' | translate }}
     </button>
-    <button id="deletebtn" class="btn btn--danger" (click)="deleteLocation(classReference.index)">
+    <button
+      *ngIf="!isDefaultLocation"
+      id="deletebtn"
+      class="btn btn--danger"
+      (click)="deleteLocation(classReference.index)"
+    >
       {{ 'Info.delete' | translate }}
     </button>
     <button id="canclebtn" class="btn btn--action" (click)="cancel()">

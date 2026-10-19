@@ -62,6 +62,13 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
       <section class="pi-rating">
         <strong class="pi-rating-value">{{ player.rating }}</strong>
         <span class="pi-rating-label">{{ t.colRating }}</span>
+        <small class="pi-base" *ngIf="baseRating !== null"
+          >{{ t.baseRating }}: <strong>{{ baseRating }}</strong
+          ><ng-container *ngIf="baseSince">
+            · {{ baseSince | date: 'dd.MM.yyyy' }}</ng-container
+          ></small
+        >
+        <small class="pi-note" *ngIf="baseRating !== null">{{ t.baseNote }}</small>
         <small *ngIf="player.provisional" class="pi-note">{{ t.provisionalNote }}</small>
       </section>
 
@@ -143,12 +150,30 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
               {{ tick.label }}
             </text>
           </ng-container>
+          <!-- the base the rating is counted from: a dotted line, and the line starts on it -->
+          <line
+            *ngIf="c.baseValue !== null"
+            class="pi-base-line"
+            [attr.x1]="c.left"
+            [attr.x2]="c.width - c.right"
+            [attr.y1]="c.baseY"
+            [attr.y2]="c.baseY"
+          />
+          <text
+            *ngIf="c.baseValue !== null"
+            class="pi-base-label"
+            [attr.x]="c.width - c.right"
+            [attr.y]="c.baseY - 3"
+          >
+            {{ t.baseRating }} {{ c.baseValue }}
+          </text>
           <polygon class="pi-area" [attr.points]="c.area" />
           <polyline class="pi-line" [attr.points]="c.line" fill="none" />
           <circle
             *ngFor="let dot of c.dots"
             class="pi-dot"
             [class.pi-dot--last]="dot.last"
+            [class.pi-dot--start]="dot.start"
             [attr.cx]="dot.x"
             [attr.cy]="dot.y"
             r="3.5"
@@ -379,6 +404,24 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
       .pi-dot--last {
         fill: currentColor;
       }
+      .pi-dot--start {
+        fill: var(--color-text-secondary, #666);
+        stroke: var(--color-text-secondary, #666);
+      }
+      .pi-base-line {
+        stroke: var(--color-text-secondary, #666);
+        stroke-width: 1;
+        stroke-dasharray: 1 3;
+      }
+      .pi-base-label {
+        font-size: 9px;
+        text-anchor: end;
+        fill: var(--color-text-secondary, #666);
+      }
+      .pi-base {
+        margin-top: 4px;
+        color: var(--color-text-secondary, #666);
+      }
       .pi-axis-note {
         margin: 4px 0 0;
         font-size: 0.78rem;
@@ -529,16 +572,45 @@ export class TablePlayerInfoComponent implements OnChanges {
    * The rating after each of the last games, oldest first, as a chart with its axes: the rating on the left (three levels, in
    * numbers), the games along the bottom (their number, and the date of the first and the last), a dot for every game.
    */
+  get baseRating(): number | null {
+    const base = this.detail?.baseRating ?? this.player.baseRating;
+    return typeof base === 'number' ? base : null;
+  }
+
+  get baseSince(): string | null {
+    return this.detail?.baseSince ?? this.player.baseSince ?? null;
+  }
+
   get chart(): Chart | null {
     const games = [...(this.detail?.recent ?? [])].reverse();
-    if (games.length < 2) return null;
+    const baseValue = this.baseRating;
+    if (games.length < (baseValue === null ? 2 : 1)) return null;
+    // the line starts on the base the rating is counted from, then one point for every game
+    const played = games.map((game) => ({
+      value: game.ratingAfter,
+      label: `${game.table}: ${game.ratingAfter} (${game.ratingChange > 0 ? '+' : ''}${game.ratingChange})`,
+      start: false,
+      endedAt: game.endedAt,
+    }));
+    const series =
+      baseValue === null
+        ? played
+        : [
+            {
+              value: baseValue,
+              label: `${this.t.baseRating}: ${baseValue}`,
+              start: true,
+              endedAt: '',
+            },
+            ...played,
+          ];
     const width = 320;
     const height = 170;
     const left = 40;
     const right = 12;
     const top = 12;
     const bottom = 30;
-    const values = games.map((game) => game.ratingAfter);
+    const values = series.map((point) => point.value);
     const rawLow = Math.min(...values);
     const rawHigh = Math.max(...values);
     // a little air above and below, and never a flat axis
@@ -548,13 +620,14 @@ export class TablePlayerInfoComponent implements OnChanges {
     const span = high - low;
     const plotW = width - left - right;
     const plotH = height - top - bottom;
-    const x = (index: number) => left + (index * plotW) / (games.length - 1);
+    const x = (index: number) => left + (index * plotW) / (series.length - 1);
     const y = (value: number) => top + plotH - ((value - low) / span) * plotH;
-    const dots = games.map((game, index) => ({
+    const dots = series.map((point, index) => ({
       x: x(index),
-      y: y(game.ratingAfter),
-      last: index === games.length - 1,
-      label: `${game.table}: ${game.ratingAfter} (${game.ratingChange > 0 ? '+' : ''}${game.ratingChange})`,
+      y: y(point.value),
+      last: index === series.length - 1,
+      start: point.start,
+      label: point.label,
     }));
     const line = dots.map((dot) => `${dot.x},${dot.y}`).join(' ');
     const base = top + plotH;
@@ -567,16 +640,31 @@ export class TablePlayerInfoComponent implements OnChanges {
         ? ''
         : `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.`;
     };
-    const xTicks = [0, Math.floor((games.length - 1) / 2), games.length - 1]
+    const xTicks = [0, Math.floor((series.length - 1) / 2), series.length - 1]
       .filter((index, at, all) => all.indexOf(index) === at)
       .map((index) => ({
         x: x(index),
         label:
-          index === 0 || index === games.length - 1
-            ? `${index + 1} · ${day(games[index].endedAt)}`.trim()
-            : String(index + 1),
+          index === 0 && baseValue !== null
+            ? this.t.chartStart
+            : index === 0 || index === series.length - 1
+              ? `${baseValue === null ? index + 1 : index} · ${day(series[index].endedAt)}`.trim()
+              : String(baseValue === null ? index + 1 : index),
       }));
-    return { width, height, left, right, bottom, line, area, dots, yTicks, xTicks };
+    return {
+      width,
+      height,
+      left,
+      right,
+      bottom,
+      line,
+      area,
+      dots,
+      yTicks,
+      xTicks,
+      baseY: baseValue === null ? 0 : y(baseValue),
+      baseValue,
+    };
   }
 }
 
@@ -588,7 +676,9 @@ interface Chart {
   bottom: number;
   line: string;
   area: string;
-  dots: { x: number; y: number; last: boolean; label: string }[];
+  dots: { x: number; y: number; last: boolean; start: boolean; label: string }[];
+  baseY: number;
+  baseValue: number | null;
   yTicks: { y: number; label: string }[];
   xTicks: { x: number; label: string }[];
 }

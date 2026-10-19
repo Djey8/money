@@ -16,6 +16,7 @@ const SHOWN = new Set([
   'dice_decided',
   'position_sold',
   'loan_changed',
+  'liability_paid',
   'trade_offered',
   'trade_countered',
   'trade_declined',
@@ -70,6 +71,8 @@ function detailOf(line: TableEventLine): string {
       const sum = dice.length > 1 ? ` = ${data?.['total']}` : '';
       return `🎲 ${dice.join(' + ')}${sum}${landed ? ` → ${landed}` : ''}`;
     }
+    case 'liability_paid':
+      return String(data?.['tag'] ?? '');
     case 'card_drawn':
     case 'market_card_played':
       return cardName(data) || String(data?.['cardId'] ?? '');

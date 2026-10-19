@@ -162,6 +162,10 @@ function accountName(): string {
             <span>{{ t.showProgress }}</span>
           </label>
           <label class="tl-check">
+            <input type="checkbox" name="repayOffTurn" [(ngModel)]="form.repayOffTurn" />
+            <span>{{ t.repayOffTurn }}</span>
+          </label>
+          <label class="tl-check">
             <input type="checkbox" name="allowUndo" [(ngModel)]="form.allowUndo" />
             <span>{{ t.allowUndo }}</span>
           </label>
@@ -293,6 +297,7 @@ export class AddTableComponent implements OnInit {
     professions: 'duplicates' as 'duplicates' | 'unique' | 'random',
     spectators: false,
     allowUndo: true,
+    repayOffTurn: true,
     turnGate: true,
     showProgress: true,
     ranked: true,
@@ -352,6 +357,7 @@ export class AddTableComponent implements OnInit {
         ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
         spectators: f.spectators,
         allowRewind: f.allowUndo,
+        repayOffTurn: f.repayOffTurn,
         turnGate: f.turnGate,
         pace: f.pace,
         showProgress: f.showProgress,

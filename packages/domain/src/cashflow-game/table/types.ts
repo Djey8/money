@@ -99,6 +99,11 @@ export interface TableSettings {
    * ranked rules when it ends (a finished game, a human at the table, a minimum length).
    */
   ranked: boolean;
+  /**
+   * Whether a player may repay the bank loan (and pay off a liability) at any time, also when it is not their turn - it is told in
+   * the history for everybody. Off: only in their own turn. Default on; the host chooses when the table is opened.
+   */
+  repayOffTurn: boolean;
 }
 
 /** What a host may send: everything optional except the name; a few rule settings are the host's to tune. */
@@ -172,6 +177,8 @@ export interface TradeOffer {
   counters: { playerId: string; priceMinor: number }[];
   /** Buyers who said no (the offer is then not for them any more). */
   declined: string[];
+  /** When it was made (epoch ms), so a bot that offers a card knows how long it has waited. */
+  at?: number;
 }
 
 /** An open vote to undo the last turn: who asked, and who said what so far. */
@@ -287,6 +294,8 @@ export type TableCommand =
   | { type: 'roll_decision'; title?: string }
   | { type: 'pass_card' }
   | { type: 'bank_loan'; amountMinor: number }
+  /** Pay one liability (a mortgage, a car loan, a credit card debt ...) off in one payment of the full amount. */
+  | { type: 'pay_liability'; tag: string }
   // Trading the card in hand (T7).
   | { type: 'offer_trade'; priceMinor: number; to?: string }
   | { type: 'withdraw_trade' }
@@ -330,6 +339,7 @@ export type TableEventType =
   | 'dice_decided'
   | 'position_sold'
   | 'loan_changed'
+  | 'liability_paid'
   | 'player_escaped'
   | 'player_bankrupt'
   | 'game_finished'

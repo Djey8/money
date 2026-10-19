@@ -174,6 +174,11 @@ export class TableGameDriver implements RemoteGame {
     return this.move({ type: 'bank_loan', amountMinor }, false);
   }
 
+  payLiability(tag: string): Promise<RemoteOutcome> {
+    // like the bank: open any time the table allows it; the server decides (the setting, the cash, the bankruptcy rule)
+    return this.move({ type: 'pay_liability', tag }, false);
+  }
+
   private async move(command: Record<string, unknown>, play = true): Promise<RemoteOutcome> {
     const refused = play ? this.refusal() : null;
     if (refused) return { ok: false, message: refused, events: [] };

@@ -386,7 +386,9 @@ export class MenuComponent {
    * is in that build).
    */
   gameMenuEntries(): { path: string; icon: string; label: string }[] {
-    if (!this.isCashflowGame()) return [];
+    // While a game is loaded the menu has one entry for it (Cashflow Game); Multiplayer and the leaderboard come back with the
+    // lobby (JFK, 2026-10-19: they were pressed by mistake instead of the game). The game dashboard links to the lobby.
+    if (!this.isCashflowGame() || this.hasLoadedGame()) return [];
     const lang = this.translate?.currentLang || this.translate?.defaultLang || 'en';
     return this.router.config
       .filter((route) => route.data?.['gameMenu'])

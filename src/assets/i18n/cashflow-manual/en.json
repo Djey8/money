@@ -1800,7 +1800,7 @@
           "type": "callout",
           "kind": "note",
           "title": "Fair play",
-          "text": "Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is."
+          "text": "Nothing a bot does is hidden: every move is in the log like anyone's. The level says how often a strategy won tables in the tournament - not what will happen in one game: the dice decide a lot. Each bot can be seated at a skill level - master, strong, casual or beginner: the lower levels slip now and then (pass a good deal, take a poor one, forget to sell), so you can tune how hard the table is. Before a bot turns a Deal card down it may offer it to the table first - how often depends on its skill level (never for a beginner) and its style - so you and the other bots get a chance to buy it."
         }
       ]
     },

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
+import { LiabilityPayoffService } from 'src/app/shared/services/liability-payoff.service';
 import { isDuplicateTitle } from 'src/app/shared/validation.utils';
 import { BaseInfoComponent } from 'src/app/shared/base/base-info.component';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -84,6 +85,7 @@ export class InfoLiabilitieComponent extends BaseInfoComponent {
   constructor(
     router: Router,
     private persistence: PersistenceService,
+    private payoff: LiabilityPayoffService,
   ) {
     super(router);
     this.initStatic(InfoLiabilitieComponent);
@@ -118,6 +120,15 @@ export class InfoLiabilitieComponent extends BaseInfoComponent {
   }
 
   payback() {
+    // a Cashflow game pays a starting debt off in ONE payment of the full amount, after saying what it does (liability-payoff.service)
+    if (
+      this.payoff.canPayOff(InfoLiabilitieComponent.title, InfoLiabilitieComponent.isInvestment)
+    ) {
+      const tag = InfoLiabilitieComponent.title;
+      InfoLiabilitieComponent.isInfo = false;
+      this.payoff.start(tag);
+      return;
+    }
     AddComponent.categoryTextField = `@${InfoLiabilitieComponent.title}`;
     AddComponent.url = '/balance';
     AddComponent.commentTextField =

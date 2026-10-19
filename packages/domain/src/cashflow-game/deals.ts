@@ -725,7 +725,7 @@ export const LIABILITY_EXPENSE_KEYS: Record<string, string> = {
 };
 
 /** The game subscription that pays a liability off over time, or null when it has none (e.g. a liability the player added by hand). */
-function expenseTitleForLiability(
+export function expenseTitleForLiability(
   state: CashflowGameState,
   profession: CashflowProfession | undefined,
   liabilityTag: string,

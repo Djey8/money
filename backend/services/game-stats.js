@@ -84,6 +84,17 @@ function createGameStats({
       counters: emptyCounters(),
       applied: [],
       ...fields,
+      // The base the rating is counted from (a person's 1500, a bot's measured start): rating = base + every change the games made.
+      // Each base the profile ever had is kept, so the history can be shown on the current base (see baseAt in routes/game-stats.js).
+      baseRating: fields.baseRating ?? START_RATING,
+      baseHistory: [
+        {
+          baseRating: fields.baseRating ?? START_RATING,
+          version: fields.baseVersion ?? 0,
+          at: stamp,
+        },
+      ],
+      baseVersion: fields.baseVersion ?? 0,
     };
   }
 
@@ -103,6 +114,8 @@ function createGameStats({
         visible: true,
         rating: start,
         peakRating: start,
+        baseRating: start,
+        baseVersion: botRatings().BOT_RATINGS_VERSION,
       }),
     );
     return store.getProfile(db, playerId);
@@ -168,6 +181,47 @@ function createGameStats({
     return mutateProfile(found.playerId, (profile) => {
       profile.displayName = name;
     });
+  }
+
+  /**
+   * The bots were measured again (JFK, 2026-10-19): a new deployment has other start ratings (`bot-ratings.ts`, `BOT_RATINGS_VERSION`).
+   * Each bot's **base** moves to the new one and its rating moves with it - rating = base + every change its games made, and none of
+   * those changes is touched: the history stays as played. A profile from before bases were kept (no `baseRating`) is taken to have
+   * been counted from the start rating the table gave then, which is the table now. Safe to repeat: nothing changes when the base is
+   * what the deployment says. Returns how many bases moved.
+   */
+  async function reconcileBases() {
+    const ratings = botRatings();
+    const version = ratings.BOT_RATINGS_VERSION;
+    const rows = await store.listBoard(db, { type: 'bot', minGames: 0, limit: 2000 });
+    let moved = 0;
+    for (const row of rows) {
+      const wanted = ratings.botStartRating(row.botId);
+      if (row.baseRating !== undefined && row.baseRating === wanted && row.baseVersion === version)
+        continue;
+      await mutateProfile(row.playerId, (profile) => {
+        const stamp = now().toISOString();
+        const before = profile.baseRating ?? wanted;
+        const shift = wanted - before;
+        if (profile.baseRating === undefined) {
+          // from before bases were kept: counted from the start rating it had when it was made
+          profile.baseHistory = [{ baseRating: wanted, version, at: profile.createdAt ?? stamp }];
+        } else if (shift !== 0) {
+          profile.baseHistory = [
+            ...(profile.baseHistory ?? []),
+            { baseRating: wanted, version, at: stamp },
+          ];
+        }
+        profile.baseRating = wanted;
+        profile.baseVersion = version;
+        if (shift !== 0) {
+          profile.rating = Math.max(RATING_FLOOR, Math.round((profile.rating + shift) * 100) / 100);
+          profile.peakRating = Math.round((profile.peakRating + shift) * 100) / 100;
+        }
+      });
+      if (wanted !== (row.baseRating ?? wanted)) moved += 1;
+    }
+    return { moved, checked: rows.length };
   }
 
   /** The account set or removed its profile picture (`version`: when it was set; null: removed): its profile says so. */
@@ -467,6 +521,7 @@ function createGameStats({
   }
 
   return {
+    reconcileBases,
     setPicture,
     currentBotRatings,
     record,

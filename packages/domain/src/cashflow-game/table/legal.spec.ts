@@ -39,11 +39,18 @@ function playingTable(settings: object = {}, players = 3): Table {
   return table;
 }
 
-// asking for / voting on an undo is listed to everyone at all times: it has its own spec (undo-vote.spec.ts)
+// asking for / voting on an undo, and paying a debt off, are listed to everyone at all times: they have their own specs
+// (undo-vote.spec.ts, repay-off-turn.spec.ts)
 const ids = (table: Table, who: string) =>
   tableLegalActions(table, who)
     .map((a) => a.action)
-    .filter((action) => action !== 'propose_undo' && action !== 'vote_undo' && action !== 'away');
+    .filter(
+      (action) =>
+        action !== 'propose_undo' &&
+        action !== 'vote_undo' &&
+        action !== 'away' &&
+        action !== 'pay_liability',
+    );
 const booksOf = (table: Table, id: string) => table.players.find((p) => p.id === id)!.books!;
 
 /** The active player stands on a Deals space holding `cardId` (drawn). */

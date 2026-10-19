@@ -80,6 +80,12 @@ The things built after the first playtest. Tick them on the Pi (or the local sta
 
 **Rating and bots**
 
+- [ ] A bot that is about to turn a Deal card down sometimes **offers it to the table first** (not a beginner bot; a "never buys" style most often):
+      the offer shows in the bar, you can take it or counter, other bots may buy it, and after about 25 s without an answer (or when
+      everybody said no) the bot withdraws it and passes the card. A card is offered once.
+- [ ] While a game is loaded the menu has only **Cashflow Game** (no Multiplayer / Leaderboard); the game dashboard has a Multiplayer
+      row that opens the lobby; after _Table lobby_ the three entries (Solo, Multiplayer, Leaderboard) are back.
+
 - [ ] _Add a bot_ shows each bot's rating for the chosen skill level ("... - Hard - 1650").
 - [ ] After a **ranked** game with at least 8 rounds the game-over panel says how your rating moved; _Leaderboard_ shows you only after
       you switched "Show me on the leaderboard" on; bots appear after their first rated game.

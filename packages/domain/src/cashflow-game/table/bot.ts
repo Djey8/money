@@ -4,6 +4,7 @@ import type { Policy } from '../simulation/policy';
 import { canAnswerTrade } from './trade';
 import { tableLegalActions } from './legal';
 import { nextPassiveCommand } from './passive';
+import { botTradeMove } from './bot-trade';
 import { cardOf, decide, viewOf } from './simulate';
 import type { Table, TableCommand } from './types';
 
@@ -20,6 +21,7 @@ export function nextBotCommand(
   botId: string,
   policy: Policy,
   coin: () => number,
+  now: number = Date.now(),
 ): TableCommand | null {
   if (table.phase !== 'playing' || table.clock.pausedAt !== null) return null;
   const me = table.players.find((p) => p.id === botId);
@@ -46,11 +48,16 @@ export function nextBotCommand(
     for (const move of policy.maintain(view)) {
       if (move.kind === 'sell') {
         if (legal.has('sell_position')) return { type: 'sell_position', input: move.input };
+      } else if (move.kind === 'payoff') {
+        if (legal.has('pay_liability')) return { type: 'pay_liability', tag: move.tag };
       } else if (move.amountMinor > 0) {
         return { type: 'bank_loan', amountMinor: -move.amountMinor };
       }
     }
   }
+  // before a Deal card is turned down, the bot may try to sell it to the table (bot-trade.ts)
+  const trade = botTradeMove(table, me, policy, coin, now);
+  if (trade !== undefined) return trade;
   return decide(table, botId, policy, coin);
 }
 

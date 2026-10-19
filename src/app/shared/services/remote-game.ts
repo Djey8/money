@@ -121,6 +121,8 @@ export interface RemoteGame {
   offerTrade(priceMinor: number): Promise<RemoteOutcome>;
   /** Borrow (positive) or repay (negative) from the bank, in minor units. */
   bankLoan(amountMinor: number): Promise<RemoteOutcome>;
+  /** Pay one liability (a mortgage, a car loan, a credit card debt ...) off in one payment of the full amount. */
+  payLiability(tag: string): Promise<RemoteOutcome>;
 }
 
 /** The one game being played remotely, or null for a normal (solo) game. */

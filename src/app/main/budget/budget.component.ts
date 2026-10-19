@@ -1,5 +1,7 @@
 import { viewportHeight } from '../../stats/viewport';
-import { Component, HostListener, OnInit } from '@angular/core';
+import { isActualIncome, toMinorUnits } from '@money/domain';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { merge, Subscription } from 'rxjs';
 import { formatNumber } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
@@ -14,6 +16,7 @@ import * as sankey from 'd3-sankey';
 import { StatsComponent } from 'src/app/stats/stats.component';
 import { ChartFilterService, ChartFilterState } from 'src/app/shared/services/chart-filter.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -29,7 +32,9 @@ import { TranslateModule } from '@ngx-translate/core';
     '../../shared/styles/filter-styles.css',
   ],
 })
-export class BudgetComponent implements OnInit {
+export class BudgetComponent implements OnInit, OnDestroy {
+  private dataSub?: Subscription;
+
   /** An amount in the chart labels, in the number format the player chose (4.000,00 / 4,000.00), no sign. */
   private static amount(value: number, decimals = 2): string {
     const locale = AppStateService.instance.isEuropeanFormat ? 'de-DE' : 'en-US';
@@ -69,6 +74,7 @@ export class BudgetComponent implements OnInit {
     private router: Router,
     private localStorage: LocalService,
     private translate: TranslateService,
+    private game: CashflowGameService,
   ) {
     BudgetComponent.isVisual = true;
     BudgetComponent.translateService = translate;
@@ -77,6 +83,8 @@ export class BudgetComponent implements OnInit {
         ? []
         : JSON.parse(this.localStorage.getData('budget'));
 
+    // a game from before the budget was planned gets this and last month planned now
+    this.game.backfillBudget();
     this.callCharts();
   }
 
@@ -102,6 +110,15 @@ export class BudgetComponent implements OnInit {
   ngOnInit(): void {
     // Initialize the component
     this.callCharts();
+    // A Payday, a game move or a new transaction changes the actuals, the plan and the income: the chart follows without a reload
+    const state = AppStateService.instance;
+    this.dataSub = merge(state.transactionsUpdated$, state.subscriptionsUpdated$).subscribe(() =>
+      this.callCharts(),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.dataSub?.unsubscribe();
   }
 
   callCharts() {
@@ -315,6 +332,26 @@ export class BudgetComponent implements OnInit {
       });
     }
 
+    // The income of each month (the green line): what was earned, not what was sold or borrowed
+    const monthlyIncome = new Map<string, number>();
+    for (const tx of baseTransactions) {
+      const amount = Number(tx.amount);
+      if (
+        !isActualIncome({
+          account: tx.account,
+          amountMinor: toMinorUnits(amount),
+          comment: tx.comment,
+          category: tx.category,
+        })
+      ) {
+        continue;
+      }
+      const date = new Date(tx.date);
+      if (isNaN(date.getTime())) continue;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyIncome.set(key, (monthlyIncome.get(key) || 0) + amount);
+    }
+
     // Determine months to show based on chart filter
     const monthsToShow: string[] = [];
     const range = ChartFilterService.getDateRange(
@@ -362,11 +399,15 @@ export class BudgetComponent implements OnInit {
       const actual = actualEntry ? actualEntry[1] : 0;
       const planned = budgetMap.get(monthKey) || 0;
       const difference = actual - planned;
+      const income = monthlyIncome.get(monthKey) || 0;
 
       return {
         month: monthKey,
         actual,
         planned,
+        income,
+        plannedCashflow: income - planned,
+        cashflow: income - actual,
         difference,
         overBudget: difference > 0 ? difference : 0,
         underBudget: difference > 0 ? planned : actual,
@@ -380,32 +421,47 @@ export class BudgetComponent implements OnInit {
       .range([0, width])
       .padding(0.3);
 
-    const maxValue = d3.max(chartData, (d) => Math.max(d.actual, d.planned)) || 0;
+    const maxValue = d3.max(chartData, (d) => Math.max(d.actual, d.planned, d.income)) || 0;
     const y = d3
       .scaleLinear()
       .domain([0, maxValue * 1.15])
       .range([height, 0]);
 
     // Shared function to show info box for a month
+    const PLANNED = '#7b1fa2';
+    const INCOME = '#2e7d32';
+    const PLANNED_CASHFLOW = '#00897b'; // income - planned
+    const CASHFLOW = '#ef6c00'; // income - actual
     const showInfoBox = (d: any, xPos: number) => {
       d3.select('#kpi-info-box').remove();
 
+      const tr = (key: string) => BudgetComponent.translateService.instant(key);
+      const money = (value: number) =>
+        `${value < 0 ? '-' : ''}${BudgetComponent.amount(Math.abs(value))} ${AppStateService.instance.currency}`;
+      const row = (color: string, label: string, value: string, strong = false) =>
+        `<div class="kpi-row"><span class="kpi-label"><span style="color:${color};">●</span> ${label}</span><span class="kpi-value"${strong ? ' style="font-weight:bold;"' : ''}>${value}</span></div>`;
+      const over = d.difference > 0;
       const info = `
-      <strong>${d3.timeFormat('%B %Y')(new Date(d.month))}</strong><br/>
-      <span style="color:#2196F3;">●</span> ${BudgetComponent.translateService.instant('Budget.actual')}: ${BudgetComponent.amount(d.actual)} ${AppStateService.instance.currency}<br/>
-      <span style="color:green;">●</span> ${BudgetComponent.translateService.instant('Budget.planned')}: ${BudgetComponent.amount(d.planned)} ${AppStateService.instance.currency}<br/>
-      <strong style="color:${d.difference > 0 ? '#d32f2f' : '#4caf50'}">
-        ${d.difference > 0 ? BudgetComponent.translateService.instant('Budget.over') : BudgetComponent.translateService.instant('Budget.under')} ${BudgetComponent.translateService.instant('Budget.label')}: ${BudgetComponent.amount(Math.abs(d.difference))} ${AppStateService.instance.currency}
-      </strong>
+      <strong>${d3.timeFormat('%B %Y')(new Date(d.month))}</strong>
+      ${row('#2196F3', tr('Budget.actual'), money(d.actual))}
+      ${row(PLANNED, tr('Budget.planned'), money(d.planned))}
+      ${row(over ? '#d32f2f' : '#2196F3', `${over ? tr('Budget.over') : tr('Budget.under')} ${tr('Budget.label')}`, money(Math.abs(d.difference)), true)}
+      <hr style="margin:6px 0;border:0;border-top:1px solid var(--color-border, #ccc);" />
+      ${row(INCOME, tr('Budget.income'), money(d.income))}
+      ${row(PLANNED_CASHFLOW, tr('Budget.plannedCashflow'), money(d.plannedCashflow), true)}
+      ${row(CASHFLOW, tr('Budget.cashflow'), money(d.cashflow), true)}
     `;
 
-      const infoBoxWidth = 200;
+      // as wide as the chart allows (a phone), and always inside it
+      const containerWidth = (chartContainer as HTMLElement).offsetWidth || width + margin.left;
+      const boxWidth = Math.min(260, containerWidth - 8);
       const xPercent = xPos / width;
-      const left = xPercent < 0.5 ? xPos + margin.left + 12 : xPos + margin.left - infoBoxWidth;
+      let left = xPercent < 0.5 ? xPos + margin.left + 12 : xPos + margin.left - boxWidth;
+      left = Math.max(4, Math.min(left, containerWidth - boxWidth - 4));
       let top = Math.min(y(d.underBudget), y(d.actual), y(d.planned)) + margin.top - 10;
 
       if (top < 10) top = 10;
-      if (top + 150 > window.innerHeight) top = window.innerHeight - 160;
+      if (top + 190 > window.innerHeight) top = Math.max(10, window.innerHeight - 200);
 
       d3.select('#chart-container')
         .append('div')
@@ -413,14 +469,21 @@ export class BudgetComponent implements OnInit {
         .style('position', 'absolute')
         .style('left', left + 'px')
         .style('top', top + 'px')
+        .style('width', boxWidth + 'px')
+        .style('box-sizing', 'border-box')
         .style('background', 'var(--color-surface)')
         .style('border', '1px solid var(--color-warning)')
         .style('border-radius', '6px')
-        .style('padding', '12px')
+        .style('padding', '10px')
         .style('font-size', '13px')
         .style('box-shadow', '0 2px 8px rgba(0,0,0,0.15)')
-        .style('min-width', '180px')
+        .style('z-index', '5')
         .html(info);
+      d3.selectAll('#kpi-info-box .kpi-row')
+        .style('display', 'flex')
+        .style('justify-content', 'space-between')
+        .style('gap', '8px');
+      d3.selectAll('#kpi-info-box .kpi-value').style('white-space', 'nowrap');
     };
 
     // Axes
@@ -499,7 +562,7 @@ export class BudgetComponent implements OnInit {
       .append('path')
       .datum(chartData)
       .attr('fill', 'none')
-      .attr('stroke', 'green')
+      .attr('stroke', PLANNED)
       .attr('stroke-width', 3)
       .attr('d', line);
 
@@ -513,14 +576,46 @@ export class BudgetComponent implements OnInit {
       .attr('cx', (d) => x(d.month)! + x.bandwidth() / 2)
       .attr('cy', (d) => y(d.planned))
       .attr('r', 5)
-      .attr('fill', 'green')
-      .attr('stroke', 'green')
+      .attr('fill', PLANNED)
+      .attr('stroke', PLANNED)
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
       .on('click', function (event, d) {
         showInfoBox(d, x(d.month)! + x.bandwidth() / 2);
         event.stopPropagation();
       });
+
+    // Income line (green, with bullets): what was earned in the month
+    const incomeLine = d3
+      .line<any>()
+      .x((d) => x(d.month)! + x.bandwidth() / 2)
+      .y((d) => y(d.income));
+    if (chartData.some((d) => d.income > 0)) {
+      svg
+        .append('path')
+        .datum(chartData)
+        .attr('fill', 'none')
+        .attr('stroke', INCOME)
+        .attr('stroke-width', 3)
+        .attr('d', incomeLine);
+      svg
+        .selectAll('.income-point')
+        .data(chartData)
+        .enter()
+        .append('circle')
+        .attr('class', 'income-point')
+        .attr('cx', (d) => x(d.month)! + x.bandwidth() / 2)
+        .attr('cy', (d) => y(d.income))
+        .attr('r', 5)
+        .attr('fill', INCOME)
+        .attr('stroke', INCOME)
+        .attr('stroke-width', 2)
+        .style('cursor', 'pointer')
+        .on('click', function (event, d) {
+          showInfoBox(d, x(d.month)! + x.bandwidth() / 2);
+          event.stopPropagation();
+        });
+    }
 
     // Actual value labels
     svg
@@ -618,7 +713,16 @@ export class BudgetComponent implements OnInit {
     const legendData = [
       { label: BudgetComponent.translateService.instant('Budget.actual'), color: '#2196F3' },
       { label: BudgetComponent.translateService.instant('Budget.overBudget'), color: '#d32f2f' },
-      { label: BudgetComponent.translateService.instant('Budget.planned'), color: 'green' },
+      {
+        label: BudgetComponent.translateService.instant('Budget.planned'),
+        color: PLANNED,
+        line: true,
+      },
+      {
+        label: BudgetComponent.translateService.instant('Budget.income'),
+        color: INCOME,
+        line: true,
+      },
     ];
 
     legendData.forEach((item) => {
@@ -628,11 +732,9 @@ export class BudgetComponent implements OnInit {
         .style('align-items', 'center')
         .style('margin-bottom', '4px');
 
-      if (item.label === 'Planned') {
-        row
-          .append('svg')
-          .attr('width', 22)
-          .attr('height', 12)
+      if (item.line) {
+        const mark = row.append('svg').attr('width', 22).attr('height', 12);
+        mark
           .append('line')
           .attr('x1', 2)
           .attr('x2', 20)
@@ -640,6 +742,7 @@ export class BudgetComponent implements OnInit {
           .attr('y2', 6)
           .attr('stroke', item.color)
           .attr('stroke-width', 3);
+        mark.append('circle').attr('cx', 11).attr('cy', 6).attr('r', 3.5).attr('fill', item.color);
       } else {
         row
           .append('div')

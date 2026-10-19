@@ -5,6 +5,7 @@ import {
   finishCardAction,
   planDealAction,
   payDoodadAction,
+  payLiabilityAction,
   payMarketCostAction,
   rollDecisionAction,
   sellPositionAction,
@@ -48,6 +49,7 @@ export type MoveCommand = Extract<
       | 'roll_decision'
       | 'pass_card'
       | 'bank_loan'
+      | 'pay_liability'
       | 'sell_position';
   }
 >;
@@ -64,6 +66,7 @@ const MOVE_TYPES = new Set([
   'roll_decision',
   'pass_card',
   'bank_loan',
+  'pay_liability',
   'sell_position',
 ]);
 
@@ -151,6 +154,8 @@ export function planMove(
       return rollDecisionAction(books, { title: command.title }, deps);
     case 'sell_position':
       return sellPositionAction(books, command.input, deps);
+    case 'pay_liability':
+      return payLiabilityAction(books, { tag: command.tag }, deps, profession);
     case 'bank_loan':
       return { effects: [playBankLoan(books, command.amountMinor, deps)] };
   }
