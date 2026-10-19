@@ -182,12 +182,15 @@ async function main() {
       .toString()
       .trim();
     const body = rows.map((r) => `  '${r.id}': ${r.rating},`).join('\n');
+    // every new measurement is a new version: the backend moves each bot's base to it at its next start, the games played stay
+    const nextVersion =
+      require('@money/domain/dist/cashflow-game/table/bot-ratings').BOT_RATINGS_VERSION + 1;
     fs.writeFileSync(
       path.join(root, 'packages/domain/src/cashflow-game/table/bot-ratings.ts'),
       `// Written by scripts/calibrate-bot-ratings.js - do not edit by hand.\n` +
         `// ${tables} tables per bot, four seats, ${rules} rules, base seed ${baseSeed}, at commit ${commit}.\n` +
         `// The starting rating of every bot profile (persona at level); a bot's rating then moves with real games.\n\n` +
-        `export const BOT_RATINGS_VERSION = 1;\n\n` +
+        `export const BOT_RATINGS_VERSION = ${nextVersion};\n\n` +
         `export const BOT_START_RATINGS: Record<string, number> = {\n${body}\n};\n\n` +
         `/** The calibrated starting rating of a bot (persona plus level), or the par rating for one that was not measured. */\n` +
         `export function botStartRating(botId: string): number {\n  return BOT_START_RATINGS[botId] ?? 1500;\n}\n`,

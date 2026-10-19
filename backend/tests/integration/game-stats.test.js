@@ -452,3 +452,63 @@ describe('the profile picture', () => {
     expect((await picture(host, 'put').send({})).status).toBe(400);
   });
 });
+
+describe('moving the base of the bots', () => {
+  it('moves each bot to the new base and keeps every game played on top of it', async () => {
+    if (!dbAvailable) return;
+    const { createGameStats } = require('../../services/game-stats');
+    const statsDb = getGameStatsDb();
+    const botId = 'never-buy--beginner';
+    const playerId = botPlayerId(botId);
+    // a profile as it is today: made with the start rating of the table, one game's change on top of it
+    await stats().ensureBotProfile(botId);
+    const profile = await statsStore.getProfile(statsDb, playerId);
+    const base = profile.baseRating;
+    profile.rating = base + 25;
+    profile.peakRating = base + 25;
+    delete profile.baseRating;
+    delete profile.baseHistory;
+    delete profile.baseVersion;
+    await statsStore.saveProfile(statsDb, profile);
+
+    const current = require('@money/domain/dist/cashflow-game/table/bot-ratings');
+    // 1) the same table: a profile from before bases were kept gets its base recorded, its rating is untouched
+    const same = await stats().reconcileBases();
+    expect(same.moved).toBe(0);
+    let after = await statsStore.getProfile(statsDb, playerId);
+    expect(after).toMatchObject({
+      baseRating: base,
+      rating: base + 25,
+      baseVersion: current.BOT_RATINGS_VERSION,
+    });
+    expect(after.baseHistory).toHaveLength(1);
+    // 2) measured again: the base moves, the 25 the game made stays on top of it
+    const later = createGameStats({
+      db: statsDb,
+      botRatings: () => ({
+        BOT_RATINGS_VERSION: current.BOT_RATINGS_VERSION + 1,
+        botStartRating: (id) => (id === botId ? base + 300 : current.botStartRating(id)),
+      }),
+    });
+    const moved = await later.reconcileBases();
+    expect(moved.moved).toBeGreaterThanOrEqual(1);
+    after = await statsStore.getProfile(statsDb, playerId);
+    expect(after).toMatchObject({
+      baseRating: base + 300,
+      rating: base + 325,
+      peakRating: base + 325,
+      baseVersion: current.BOT_RATINGS_VERSION + 1,
+    });
+    expect(after.baseHistory.map((entry) => entry.baseRating)).toEqual([base, base + 300]);
+    // the API says what it is counted from
+    const shown = await board(host, '?type=bot&minGames=0&limit=200');
+    const row = shown.body.items.find((item) => item.playerId === playerId);
+    expect(row).toMatchObject({ baseRating: base + 300, rating: base + 325 });
+    expect(typeof row.baseSince).toBe('string');
+    // 3) put back: the same again changes nothing
+    expect((await stats().reconcileBases()).moved).toBeGreaterThanOrEqual(1);
+    after = await statsStore.getProfile(statsDb, playerId);
+    expect(after).toMatchObject({ baseRating: base, rating: base + 25 });
+    expect((await stats().reconcileBases()).moved).toBe(0);
+  });
+});

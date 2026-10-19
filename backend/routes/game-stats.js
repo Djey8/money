@@ -43,6 +43,20 @@ const levelOf = (botId) => {
   return at < 0 ? 'master' : botId.slice(at + 2);
 };
 
+/**
+ * The base a profile was counted from when a game ended: the last base that began before it (the first one for a game from
+ * before any record). A game's rating is shown on the CURRENT base: `ratingAfter + (current base - the base it was played on)`, so
+ * the history reads on one scale after the bots were measured again.
+ */
+function baseAt(profile, endedAt) {
+  const history = profile.baseHistory ?? [];
+  let found = history.length ? history[0].baseRating : (profile.baseRating ?? 1500);
+  for (const entry of history) {
+    if (String(entry.at) <= String(endedAt)) found = entry.baseRating;
+  }
+  return found;
+}
+
 /** A profile as the API shows it: no account id, the rating rounded, the counters with their derived figures. */
 function present(profile) {
   const c = profile.counters;
@@ -55,6 +69,11 @@ function present(profile) {
     ...(profile.pictureVersion ? { pictureVersion: profile.pictureVersion } : {}),
     rating: Math.round(profile.rating),
     peakRating: Math.round(profile.peakRating),
+    // what the rating is counted from (a person's 1500, a bot's measured start) and when that base was set
+    baseRating: Math.round(profile.baseRating ?? 1500),
+    ...(profile.baseHistory?.length
+      ? { baseSince: profile.baseHistory[profile.baseHistory.length - 1].at }
+      : {}),
     ratedGames: ranked,
     provisional: ranked < PROVISIONAL_GAMES,
     games: c.played,
@@ -148,7 +167,9 @@ router.get('/players/:playerId', ...guard('r'), async (req, res, next) => {
         ranked: result.counted,
         ...(result.counted ? {} : { notRankedBecause: result.rankedWhy }),
         ratingChange: own.delta,
-        ratingAfter: Math.round(own.ratingAfter),
+        ratingAfter: Math.round(
+          own.ratingAfter + ((profile.baseRating ?? 1500) - baseAt(profile, result.endedAt)),
+        ),
       };
     });
     return res.json({ ...present(profile), recent });

@@ -41,6 +41,10 @@ export interface GamePlayer {
   pictureVersion?: number;
   rating: number;
   peakRating: number;
+  /** What the rating is counted from (a person's 1500, a bot's measured start); the games played are added on top of it. */
+  baseRating?: number;
+  /** When that base was set (ISO time). */
+  baseSince?: string;
   ratedGames: number;
   provisional: boolean;
   games: number;

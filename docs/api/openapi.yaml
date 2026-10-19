@@ -11343,6 +11343,13 @@ components:
         playerId:
           type: string
           description: The public id of the profile (a UUID) - never an account id.
+        baseRating:
+          type: integer
+          description: What the rating is counted from - a person's 1500, a bot's measured start rating. A rating is the base plus every change the games made; when the bots are measured again only the base moves (`baseSince`), the games stay as they were played.
+        baseSince:
+          type: string
+          format: date-time
+          description: When the current base was set.
         pictureVersion:
           type: integer
           description: A person's profile picture is available at `/game/players/{playerId}/picture?v=<this>`; absent when there is none.

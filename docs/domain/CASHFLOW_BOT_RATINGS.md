@@ -81,3 +81,18 @@ Each bot played tables of four against three other bots; its share of won tables
 | never-buy--casual             |   1000 |  0.0% |   0/400 |
 | never-buy--strong             |   1000 |  0.0% |   0/400 |
 | stocks-for-deposits--beginner |   1000 |  1.8% |   7/400 |
+
+## Measuring the bots again (the procedure)
+
+The leaderboard keeps the games the bots really played. A bot's rating is its **base** (the start rating of this table) plus every
+change its games made - so the base can be replaced at any time without losing a single game:
+
+1. Change the bots (a new strategy, a new champion, a rule change) and run `node scripts/calibrate-bot-ratings.js --tables 400 --write`.
+   It writes `bot-ratings.ts` with `BOT_RATINGS_VERSION` raised by one, and this document.
+2. Commit and deploy as usual. At its next start the backend (`reconcileBases` in `services/game-stats.js`, log line `basesMoved`)
+   moves every bot whose base differs: base := the new start rating, rating and best rating move by the same difference, the old base is
+   kept in `baseHistory`. Games played before are not touched: their ratings in the player card are shown on the current base
+   (`ratingAfter + current base - the base they were played on`). A bot that is new (a new strategy) gets a profile at its start rating.
+3. The player card shows the base ("Base rating", and since when) and the chart starts on it.
+
+`rebuild` (the CLI) is a different thing: it recomputes every rating from the stored result records with the current bases.

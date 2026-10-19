@@ -134,6 +134,44 @@ describe('TablesLeaderboardComponent', () => {
     expect(element.querySelector('app-table-player-info')).toBeNull();
   });
 
+  it('shows the base the rating is counted from, and the chart starts on it', () => {
+    me(player({ type: 'human', visible: true }));
+    board([player({})]);
+    (element.querySelector('.lb-row') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/players/p1'))
+      .flush(
+        player({
+          baseRating: 1700,
+          baseSince: '2026-10-19T08:00:00Z',
+          recent: [
+            {
+              table: 'Friday',
+              endedAt: '2026-10-20T10:00:00Z',
+              players: 4,
+              place: 1,
+              outcome: 'escaped',
+              ranked: true,
+              ratingChange: 12,
+              ratingAfter: 1712,
+            },
+          ],
+        }),
+      );
+    fixture.detectChanges();
+    const panel = element.querySelector('app-table-player-info') as HTMLElement;
+    expect(panel.textContent).toContain('Base rating');
+    expect(panel.querySelector('.pi-base strong')!.textContent).toBe('1700');
+    expect(panel.textContent).toContain('19.10.2026');
+    // one game is enough for a line: it runs from the base to the game
+    expect(panel.querySelector('.pi-trend svg')).not.toBeNull();
+    expect(panel.querySelector('.pi-base-line')).not.toBeNull();
+    expect(panel.querySelectorAll('.pi-dot')).toHaveLength(2);
+    expect(panel.querySelector('.pi-dot--start')).not.toBeNull();
+    expect(panel.querySelector('.pi-axis-x')!.textContent!.trim()).toBe('Start');
+  });
+
   it('switches between all, players and bots, and asks the server for that', () => {
     me(player({ type: 'human' }));
     board([]);
