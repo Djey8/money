@@ -289,6 +289,21 @@ describe('CashflowGameService', () => {
       expect(state.allLocations.some((l) => l.id === 'game-bank')).toBe(false);
     });
 
+    it('plans this and last month at once for a running game that has no plan yet, and only once', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      state.allBudgets = [];
+      const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
+      expect(service.backfillBudget()).toBe(true);
+      expect(state.allBudgets.map((b) => b.amount)).toEqual([1800, 1800]);
+      expect(new Set(state.allBudgets.map((b) => b.date)).size).toBe(2); // this month and last
+      expect(service.backfillBudget()).toBe(false);
+      gameAccount.mockRestore();
+    });
+
     it('leaves the budget alone while it has not been loaded yet (it would replace the stored one)', () => {
       started();
       const state = AppStateService.instance;

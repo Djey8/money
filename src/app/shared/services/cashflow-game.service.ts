@@ -2,7 +2,7 @@ import { RemoteGameHook } from './remote-game';
 import { MoneyLocation } from '../../interfaces/location';
 import { Budget } from '../../interfaces/budget';
 import { reconcileLocationBooking } from '../location-balance';
-import { planPayday, type PlannedAmount } from '../game-budget';
+import { addPlanned, planPayday, shiftMonth, type PlannedAmount } from '../game-budget';
 import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
@@ -1070,6 +1070,44 @@ export class CashflowGameService {
         )
       : null;
     state.allBudgets = planPayday(state.allBudgets ?? [], payday, standing);
+    return true;
+  }
+
+  /**
+   * A game that was played before the budget was planned (or whose plan was lost) gets this month and last month planned from the
+   * subscriptions as they stand, without waiting for the next Payday. Does nothing when the game already has planned rows, is not
+   * a running game, or the budget has not been loaded. Returns whether it planned anything.
+   */
+  backfillBudget(): boolean {
+    const state = AppStateService.instance;
+    if (!CashflowGameService.isCashflowGame() || !state.tier2Loaded) return false;
+    const game = state.cashflowGame;
+    if (!game || !game.round || game.round < 1 || !game.professionId) return false;
+    if ((state.allBudgets ?? []).some((b) => b.game)) return false;
+    const month = this.clock.todayIso().slice(0, 7);
+    const owned = new Set(game.gameSubscriptionTitles);
+    const standing = this.standingExpenses(
+      state.allSubscriptions.filter((sub) => owned.has(sub.title)),
+      month,
+    );
+    if (standing.length === 0) return false;
+    const months = game.round > 1 ? [month, shiftMonth(month, -1)] : [month];
+    let rows = state.allBudgets ?? [];
+    for (const date of months)
+      rows = addPlanned(
+        rows,
+        standing.map((s) => ({ ...s, date })),
+      );
+    state.allBudgets = rows;
+    this.persistAll(
+      'cashflow_budget_backfill',
+      {},
+      { onSuccess: () => undefined, onError: () => undefined },
+      {
+        includeBudget: true,
+        quiet: true,
+      },
+    );
     return true;
   }
 

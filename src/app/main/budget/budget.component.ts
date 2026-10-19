@@ -15,6 +15,7 @@ import * as sankey from 'd3-sankey';
 import { StatsComponent } from 'src/app/stats/stats.component';
 import { ChartFilterService, ChartFilterState } from 'src/app/shared/services/chart-filter.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -70,6 +71,7 @@ export class BudgetComponent implements OnInit {
     private router: Router,
     private localStorage: LocalService,
     private translate: TranslateService,
+    private game: CashflowGameService,
   ) {
     BudgetComponent.isVisual = true;
     BudgetComponent.translateService = translate;
@@ -78,6 +80,8 @@ export class BudgetComponent implements OnInit {
         ? []
         : JSON.parse(this.localStorage.getData('budget'));
 
+    // a game from before the budget was planned gets this and last month planned now
+    this.game.backfillBudget();
     this.callCharts();
   }
 
