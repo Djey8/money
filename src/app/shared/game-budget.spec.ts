@@ -1,11 +1,15 @@
-import { addPlanned, planPayday, shiftGameRows, shiftMonth } from './game-budget';
+import {
+  applyPlanChange,
+  fillMissing,
+  healLegacyRows,
+  layout,
+  planFromPaydays,
+  shiftMonth,
+  withPayday,
+} from './game-budget';
 
-const row = (date: string, tag: string, amount: number, game = true) => ({
-  date,
-  tag,
-  amount,
-  ...(game ? { game } : {}),
-});
+const rows = (...pairs: [string, number][]) =>
+  pairs.map(([tag, amountMinor]) => ({ tag, amountMinor }));
 
 describe('the budget a game plans', () => {
   it('moves months across a year', () => {
@@ -13,50 +17,62 @@ describe('the budget a game plans', () => {
     expect(shiftMonth('2026-12', 1)).toBe('2027-01');
   });
 
-  it('moves only the rows of the game back, never one the player planned', () => {
-    const rows = [row('2026-10', '@Kids', 400), row('2026-10', '@Gym', 30, false)];
-    expect(shiftGameRows(rows, -1)).toEqual([
-      row('2026-10', '@Gym', 30, false),
-      row('2026-09', '@Kids', 400),
-    ]);
+  it('every Payday moves the earlier months back and the new one becomes the current month', () => {
+    let plan = withPayday([], '2026-10', rows(['@Taxes', 90000]));
+    plan = withPayday(plan, '2026-10', rows(['@Taxes', 90000], ['@Kids', 40000]));
+    plan = withPayday(plan, '2026-10', rows(['@Taxes', 90000], ['@Kids', 40000]));
+    expect(plan.map((m) => m.month)).toEqual(['2026-08', '2026-09', '2026-10']);
+    expect(plan[0].rows).toEqual(rows(['@Taxes', 90000])); // what that month planned stays with it
+    expect(plan[2].rows).toHaveLength(2);
   });
 
-  it('a Payday moves the earlier rows back and plans its own month', () => {
-    const before = [row('2026-10', '@Kids', 400), row('2026-10', '@Taxes', 900)];
-    const after = planPayday(
-      before,
-      [row('2026-10', '@Kids', 400), row('2026-10', '@Taxes', 900)],
-      null,
+  it('a plan lays itself out one month apart ending at the current month', () => {
+    const plan = layout(
+      [
+        { month: 'x', rows: [] },
+        { month: 'y', rows: [] },
+      ],
+      '2027-01',
     );
-    expect(after).toEqual([
-      row('2026-09', '@Kids', 400),
-      row('2026-09', '@Taxes', 900),
-      row('2026-10', '@Kids', 400),
-      row('2026-10', '@Taxes', 900),
+    expect(plan.map((m) => m.month)).toEqual(['2026-12', '2027-01']);
+  });
+
+  it('puts the plan into the budget, and takes back exactly what the game put there when the plan changes', () => {
+    const before = withPayday([], '2026-10', rows(['@Taxes', 90000]));
+    const mine = { date: '2026-10', tag: '@Taxes', amount: 100 }; // the player planned 100 on the same cell
+    const withPlan = applyPlanChange([mine], [], before);
+    expect(withPlan).toEqual([{ date: '2026-10', tag: '@Taxes', amount: 1000 }]);
+    // the next Payday moves the game's 900 back a month; the player's 100 stays where it is
+    const after = withPayday(before, '2026-10', rows(['@Taxes', 90000]));
+    const next = applyPlanChange(withPlan, before, after);
+    expect(next.find((b) => b.date === '2026-09')?.amount).toBe(900);
+    expect(next.find((b) => b.date === '2026-10')?.amount).toBe(1000);
+    // everything goes with the plan
+    expect(applyPlanChange(next, after, [])).toEqual([
+      { date: '2026-10', tag: '@Taxes', amount: 100 },
     ]);
   });
 
-  it('a new expense of the game (a second child) shows from its Payday on, the months before keep their plan', () => {
-    const month1 = planPayday([], [row('2026-10', '@Kids', 400)], null);
-    const month2 = planPayday(month1, [row('2026-10', '@Kids', 800)], null);
-    expect(month2).toEqual([row('2026-09', '@Kids', 400), row('2026-10', '@Kids', 800)]);
+  it('a game from before: its plan comes from its Paydays, replacing rows an earlier version left', () => {
+    const plan = planFromPaydays([rows(['@Taxes', 90000]), rows(['@Taxes', 90000])], '2026-10');
+    expect(plan.map((m) => m.month)).toEqual(['2026-09', '2026-10']);
+    const healed = healLegacyRows(
+      [
+        { date: '2026-10', tag: '@Taxes', amount: 900 }, // doubled by the first version
+        { date: '2026-10', tag: '@Mine', amount: 5 },
+        { date: '2026-08', tag: '@Old', amount: 7, game: true },
+      ],
+      plan,
+    );
+    expect(healed.filter((b) => b.tag === '@Taxes').map((b) => b.amount)).toEqual([900, 900]);
+    expect(healed.some((b) => b.tag === '@Mine')).toBe(true);
+    expect(healed.some((b) => b.tag === '@Old')).toBe(false);
   });
 
-  it('a game from before gets its last month planned from what the subscriptions cost now, once', () => {
-    const standing = [{ date: '2026-10', tag: '@Taxes', amount: 900 }];
-    const first = planPayday([], [row('2026-10', '@Taxes', 900)], standing);
-    expect(first).toEqual([row('2026-09', '@Taxes', 900), row('2026-10', '@Taxes', 900)]);
-    // the next Payday does not plan the past again
-    const second = planPayday(first, [row('2026-10', '@Taxes', 900)], standing);
-    expect(second.map((r) => r.date).sort()).toEqual(['2026-08', '2026-09', '2026-10']);
-  });
-
-  it('adds into a row the player made instead of making a second row of the same month and category', () => {
-    expect(
-      addPlanned(
-        [row('2026-10', '@Gym', 30, false)],
-        [{ date: '2026-10', tag: '@Gym', amount: 20 }],
-      ),
-    ).toEqual([row('2026-10', '@Gym', 50, false)]);
+  it('only adds the cells the budget lacks', () => {
+    const plan = withPayday([], '2026-10', rows(['@Taxes', 90000]));
+    const kept = [{ date: '2026-10', tag: '@Taxes', amount: 5 }];
+    expect(fillMissing(kept, plan)).toEqual(kept);
+    expect(fillMissing([], plan)).toEqual([{ date: '2026-10', tag: '@Taxes', amount: 900 }]);
   });
 });

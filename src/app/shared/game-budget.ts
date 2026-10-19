@@ -1,11 +1,19 @@
+import type { CashflowBudgetMonth } from '@money/domain';
 import { Budget } from '../interfaces/budget';
 
 /**
- * The budget of a game (JFK, 2026-10-19): every Payday plans what the game's subscriptions cost in the month they are paid - the
- * kids, the mortgage and loan lines, a property's costs, every expense managed as a subscription. The planned rows move back a
- * month with each Payday, exactly like the transactions do (the game's calendar ages them), so a planned row always sits next to
- * the actuals it belongs to. The rows the game makes carry `game: true`; whatever the player planned by hand is never moved.
+ * The budget of a game (JFK, 2026-10-19): every Payday plans what the game's subscriptions cost in the month it is paid - the kids,
+ * the mortgage and loan lines, a property's costs, every expense managed as a subscription. When the next Payday comes, everything
+ * moves back a month, exactly like the transactions, and the new month is planned. The current month follows the game (a baby, a
+ * property bought) until it is closed.
+ *
+ * The game keeps its own record of what it planned (`CashflowGameState.budgetPlan`, one entry per Payday, oldest first), so it
+ * always knows which budget cells are its own: it never moves, replaces or removes a row the player planned by hand, and Undo,
+ * Reset and a loaded game take back exactly what the game put there.
  */
+
+export type PlanMonth = CashflowBudgetMonth;
+export type PlanRow = PlanMonth['rows'][number];
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
@@ -16,59 +24,88 @@ export function shiftMonth(month: string, delta: number): string {
   return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}`;
 }
 
-export interface PlannedAmount {
-  date: string;
-  tag: string;
-  amount: number;
+/** The plan with its months one apart and ending at `current` - every Payday moves the earlier ones back, whatever they said. */
+export function layout(plan: PlanMonth[], current: string): PlanMonth[] {
+  return plan.map((entry, index) => ({
+    month: shiftMonth(current, index - (plan.length - 1)),
+    rows: entry.rows.map((row) => ({ ...row })),
+  }));
 }
 
-/** Adds planned amounts: into the row of that month and category when there is one, else as a new row of the game. */
-export function addPlanned(rows: Budget[], planned: PlannedAmount[]): Budget[] {
-  const next = rows.map((row) => ({ ...row }));
-  for (const item of planned) {
-    const existing = next.find((row) => row.date === item.date && row.tag === item.tag);
-    if (existing) existing.amount = round2(Number(existing.amount) + item.amount);
-    else next.push({ date: item.date, tag: item.tag, amount: round2(item.amount), game: true });
+/** The plan after one more Payday: the earlier months move back, the month it paid is the new current one. */
+export function withPayday(plan: PlanMonth[], current: string, rows: PlanRow[]): PlanMonth[] {
+  return layout([...plan, { month: current, rows }], current);
+}
+
+/** The cells of a plan: one per month and category, in the amounts the budget uses. */
+function cellsOf(plan: PlanMonth[]): { date: string; tag: string; amount: number }[] {
+  return plan.flatMap((entry) =>
+    entry.rows.map((row) => ({
+      date: entry.month,
+      tag: row.tag,
+      amount: round2(row.amountMinor / 100),
+    })),
+  );
+}
+
+/** The budget after the game's plan changes from `before` to `after`: what it had put there goes, what it plans now comes. */
+export function applyPlanChange(
+  budgets: Budget[],
+  before: PlanMonth[],
+  after: PlanMonth[],
+): Budget[] {
+  let next = budgets.map((row) => ({ ...row }));
+  for (const cell of cellsOf(before)) {
+    const row = next.find(
+      (candidate) => candidate.date === cell.date && candidate.tag === cell.tag,
+    );
+    if (!row) continue;
+    row.amount = round2(Number(row.amount) - cell.amount);
+    if (row.amount <= 0.004) next = next.filter((candidate) => candidate !== row);
+  }
+  for (const cell of cellsOf(after)) {
+    const row = next.find(
+      (candidate) => candidate.date === cell.date && candidate.tag === cell.tag,
+    );
+    if (row) row.amount = round2(Number(row.amount) + cell.amount);
+    else next.push({ date: cell.date, tag: cell.tag, amount: cell.amount });
   }
   return next;
 }
 
-/** Every planned row of the game moves `months` (negative: back); rows that land on the same month and category add up. */
-export function shiftGameRows(rows: Budget[], months: number): Budget[] {
-  const kept = rows.filter((row) => !row.game).map((row) => ({ ...row }));
-  const moved: PlannedAmount[] = rows
-    .filter((row) => row.game)
-    .map((row) => ({
-      date: shiftMonth(row.date, months),
-      tag: row.tag,
-      amount: Number(row.amount) || 0,
-    }));
-  return addPlanned(kept, moved);
-}
-
-export function hasGameRows(rows: Budget[]): boolean {
-  return rows.some((row) => row.game);
-}
-
 /**
- * What one Payday does to the budget: the rows of the game move back a month, then the month this Payday paid is planned. A game
- * that was played before the budget was planned has none of its rows yet: its last month (the Payday before this one) is planned
- * from the subscriptions as they stand, so the chart is not empty for it.
+ * A plan that was never recorded (a game from before it existed) is made from what its Paydays posted: the expenses of each, the
+ * latest in `current`, the others one month back each. Rows an earlier version of the planning left in the budget (flagged `game`,
+ * or on the same month and category) are replaced, not doubled.
  */
-export function planPayday(
-  rows: Budget[],
-  payday: PlannedAmount[],
-  standing: PlannedAmount[] | null,
-): Budget[] {
-  if (payday.length === 0) return rows;
-  const month = payday[0].date;
-  const seed = !hasGameRows(rows) && standing && standing.length > 0;
-  let next = shiftGameRows(rows, -1);
-  if (seed) {
-    next = addPlanned(
-      next,
-      standing.map((item) => ({ ...item, date: shiftMonth(month, -1) })),
-    );
+export function planFromPaydays(paydays: PlanRow[][], current: string): PlanMonth[] {
+  return layout(
+    paydays.map((rows) => ({ month: current, rows })),
+    current,
+  );
+}
+
+export function healLegacyRows(budgets: Budget[], plan: PlanMonth[]): Budget[] {
+  const cells = cellsOf(plan);
+  const kept = budgets.filter(
+    (row) => !row.game && !cells.some((cell) => cell.date === row.date && cell.tag === row.tag),
+  );
+  return applyPlanChange(kept, [], plan);
+}
+
+/** Cells the plan has but the budget lacks (the budget was not loaded when they were planned) are added; nothing else is touched. */
+export function fillMissing(budgets: Budget[], plan: PlanMonth[]): Budget[] {
+  const next = budgets.map((row) => ({ ...row }));
+  for (const cell of cellsOf(plan)) {
+    if (!next.some((row) => row.date === cell.date && row.tag === cell.tag)) {
+      next.push({ date: cell.date, tag: cell.tag, amount: cell.amount });
+    }
   }
-  return addPlanned(next, payday);
+  return next;
+}
+
+export function sameRows(a: PlanRow[], b: PlanRow[]): boolean {
+  const key = (rows: PlanRow[]) =>
+    JSON.stringify([...rows].sort((x, y) => x.tag.localeCompare(y.tag)));
+  return key(a) === key(b);
 }

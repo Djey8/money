@@ -430,6 +430,8 @@ export class BudgetComponent implements OnInit, OnDestroy {
     // Shared function to show info box for a month
     const PLANNED = '#7b1fa2';
     const INCOME = '#2e7d32';
+    const PLANNED_CASHFLOW = '#00897b'; // income - planned
+    const CASHFLOW = '#ef6c00'; // income - actual
     const showInfoBox = (d: any, xPos: number) => {
       d3.select('#kpi-info-box').remove();
 
@@ -446,8 +448,8 @@ export class BudgetComponent implements OnInit, OnDestroy {
       ${row(over ? '#d32f2f' : '#2196F3', `${over ? tr('Budget.over') : tr('Budget.under')} ${tr('Budget.label')}`, money(Math.abs(d.difference)), true)}
       <hr style="margin:6px 0;border:0;border-top:1px solid var(--color-border, #ccc);" />
       ${row(INCOME, tr('Budget.income'), money(d.income))}
-      ${row(PLANNED, tr('Budget.plannedCashflow'), money(d.plannedCashflow), true)}
-      ${row('#2196F3', tr('Budget.cashflow'), money(d.cashflow), true)}
+      ${row(PLANNED_CASHFLOW, tr('Budget.plannedCashflow'), money(d.plannedCashflow), true)}
+      ${row(CASHFLOW, tr('Budget.cashflow'), money(d.cashflow), true)}
     `;
 
       // as wide as the chart allows (a phone), and always inside it

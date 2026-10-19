@@ -1,8 +1,16 @@
 import { RemoteGameHook } from './remote-game';
 import { MoneyLocation } from '../../interfaces/location';
-import { Budget } from '../../interfaces/budget';
 import { reconcileLocationBooking } from '../location-balance';
-import { addPlanned, planPayday, shiftMonth, type PlannedAmount } from '../game-budget';
+import {
+  applyPlanChange,
+  fillMissing,
+  healLegacyRows,
+  planFromPaydays,
+  sameRows,
+  withPayday,
+  type PlanMonth,
+  type PlanRow,
+} from '../game-budget';
 import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
@@ -29,7 +37,6 @@ import {
   blankGameData,
   captureGameSnapshot as captureSnapshot,
   GAME_BANK_LOCATION_ID,
-  computeBudgetRowsFromSubscriptions,
   plannedBudgetFromPayday,
   coinsOwnedOf,
   accountHistoryIsNewer,
@@ -365,8 +372,6 @@ export interface CashflowGameSnapshot {
   cashflowGame: CashflowGameState;
   /** The locations (their balances move with the game's bookings); absent on a snapshot from before the game had a location. */
   allLocations?: MoneyLocation[];
-  /** The budget (a Payday plans into it); absent on a snapshot from before the game filled the budget. */
-  allBudgets?: Budget[];
 }
 
 function deepClone<T>(value: T): T {
@@ -574,8 +579,6 @@ export class CashflowGameService {
         cashflowGame: state.cashflowGame,
       }),
       allLocations: deepClone(state.allLocations ?? []),
-      // the budget is a tier-2 path: before it has been read there is nothing of it to keep or to put back
-      ...(state.tier2Loaded ? { allBudgets: deepClone(state.allBudgets ?? []) } : {}),
     };
   }
 
@@ -678,6 +681,7 @@ export class CashflowGameService {
 
   private applySnapshot(snapshot: CashflowGameSnapshot): void {
     const state = AppStateService.instance;
+    const planBefore = state.cashflowGame.budgetPlan ?? [];
     state.allTransactions = snapshot.allTransactions;
     state.allSubscriptions = snapshot.allSubscriptions;
     state.allGrowProjects = snapshot.allGrowProjects;
@@ -690,9 +694,13 @@ export class CashflowGameService {
     state.mojo = snapshot.mojo;
     state.cashflowGame = snapshot.cashflowGame;
     if (snapshot.allLocations) state.allLocations = snapshot.allLocations;
+    // the budget follows the game's own plan (what Undo or a loaded game had planned), never what the player planned by hand
     if (state.tier2Loaded) {
-      // a snapshot from before the game planned a budget carries none: the rows of another game must not stay
-      state.allBudgets = snapshot.allBudgets ?? (state.allBudgets ?? []).filter((b) => !b.game);
+      state.allBudgets = applyPlanChange(
+        state.allBudgets ?? [],
+        planBefore,
+        snapshot.cashflowGame.budgetPlan ?? [],
+      );
     }
   }
 
@@ -967,9 +975,20 @@ export class CashflowGameService {
       }),
     );
 
-    state.cashflowGame = { ...result.state, gameSubscriptionTitles: subscriptionTitles };
+    const planOfLastGame = state.cashflowGame.budgetPlan ?? [];
+    state.cashflowGame = {
+      ...result.state,
+      gameSubscriptionTitles: subscriptionTitles,
+      budgetPlan: [],
+    };
     // a new game starts without the plan of the last one
-    if (state.tier2Loaded) state.allBudgets = (state.allBudgets ?? []).filter((b) => !b.game);
+    if (state.tier2Loaded) {
+      state.allBudgets = applyPlanChange(
+        (state.allBudgets ?? []).filter((b) => !b.game),
+        planOfLastGame,
+        [],
+      );
+    }
     this.persistAll('start_cashflow_game', { gameSetId, professionId }, callbacks, {
       includeBudget: state.tier2Loaded,
       includeSubscriptions: true,
@@ -1037,8 +1056,9 @@ export class CashflowGameService {
       return;
     }
     this.pushUndoSnapshot(effects.step);
+    const planBefore = AppStateService.instance.cashflowGame.budgetPlan;
     this.applyGameEffects(effects);
-    const budgetPlanned = this.planBudgetFromPayday(effects);
+    const budgetPlanned = this.planPaydays(planBefore, [effects]);
     this.persistAll('cashflow_payday', { round: effects.state.round }, callbacks, {
       includeBudget: budgetPlanned,
       ...(effects.persist.grow ? { includeGrow: true } : {}),
@@ -1047,89 +1067,116 @@ export class CashflowGameService {
   }
 
   /**
-   * The game plans the budget (JFK, 2026-10-19): each Payday plans the subscription expenses it paid in the month they are booked,
-   * and the planned rows move back a month with the transactions. A Doodad or a Market cost is not planned - it shows as over
-   * budget. A game from before has its last month planned from the subscriptions as they stand now.
+   * The game plans the budget (JFK, 2026-10-19): each Payday plans the subscription expenses it paid, in the month they are booked,
+   * and moves everything planned before back a month, exactly like the transactions. The plan is the game's own record
+   * (`budgetPlan` in its state), so the budget cells it made are always known. A Doodad or a Market cost is not planned - it shows
+   * as over budget. A game from before has its plan made from what its Paydays posted. Returns whether the budget changed.
    */
-  private planBudgetFromPayday(effects: GameEffects): boolean {
+  private planPaydays(before: PlanMonth[] | undefined, paydays: GameEffects[]): boolean {
+    if (paydays.length === 0) return false;
     const state = AppStateService.instance;
+    const monthOf = (effects: GameEffects) =>
+      (effects.appendedTransactions[0]?.date ?? this.clock.todayIso()).slice(0, 7);
+    const rowsOf = (
+      transactions: { account: string; amountMinor: number; date: string; category?: string }[],
+    ) =>
+      plannedBudgetFromPayday(transactions).map((row) => ({
+        tag: row.tag,
+        amountMinor: row.amountMinor,
+      }));
+    if (before === undefined) return this.planFromHistory(monthOf(paydays[paydays.length - 1]));
+    let after = before;
+    for (const effects of paydays) {
+      after = withPayday(after, monthOf(effects), rowsOf(effects.appendedTransactions));
+    }
+    return this.setBudgetPlan(before, after);
+  }
+
+  /** The plan of a game that never recorded one: from the Paydays in its history, the latest in `current`. */
+  private planFromHistory(current: string, heal = true): boolean {
+    const state = AppStateService.instance;
+    const paydays = (state.cashflowGame.history ?? [])
+      .filter((entry) => entry.kind === 'payday')
+      .map((entry) =>
+        plannedBudgetFromPayday(entry.createdTransactions).map((row) => ({
+          tag: row.tag,
+          amountMinor: row.amountMinor,
+        })),
+      );
+    return this.setBudgetPlan([], planFromPaydays(paydays, current), heal);
+  }
+
+  /** Records the plan on the live game and moves the budget with it (when the budget has been read). */
+  private setBudgetPlan(before: PlanMonth[], after: PlanMonth[], heal = false): boolean {
+    const state = AppStateService.instance;
+    state.cashflowGame = { ...state.cashflowGame, budgetPlan: after };
     // the budget is a tier-2 path: writing it before it has been read would replace the stored one with a fragment
     if (!state.tier2Loaded) return false;
-    const payday = plannedBudgetFromPayday(effects.appendedTransactions).map((row) => ({
-      date: row.date,
-      tag: row.tag,
-      amount: fromMinorUnits(row.amountMinor),
-    }));
-    if (payday.length === 0) return false;
-    const earlierPaydays = effects.state.round > 1;
-    const owned = new Set(state.cashflowGame.gameSubscriptionTitles);
-    const standing = earlierPaydays
-      ? this.standingExpenses(
-          state.allSubscriptions.filter((sub) => owned.has(sub.title)),
-          payday[0].date,
-        )
-      : null;
-    state.allBudgets = planPayday(state.allBudgets ?? [], payday, standing);
+    state.allBudgets = heal
+      ? healLegacyRows(state.allBudgets ?? [], after)
+      : applyPlanChange(state.allBudgets ?? [], before, after);
     return true;
   }
 
+  /** What the subscriptions of the game cost per month, per category: what the next Payday would post. */
+  private standingRows(): PlanRow[] {
+    const state = AppStateService.instance;
+    const owned = new Set(state.cashflowGame.gameSubscriptionTitles);
+    const totals = new Map<string, number>();
+    for (const sub of state.allSubscriptions) {
+      if (!owned.has(sub.title) || sub.account === 'Income' || !(Number(sub.amount) < 0)) continue;
+      const tag = sub.category || '@others';
+      totals.set(tag, (totals.get(tag) ?? 0) - toMinorUnits(sub.amount));
+    }
+    return [...totals.entries()].map(([tag, amountMinor]) => ({ tag, amountMinor }));
+  }
+
   /**
-   * A game that was played before the budget was planned (or whose plan was lost) gets this month and last month planned from the
-   * subscriptions as they stand, without waiting for the next Payday. Does nothing when the game already has planned rows, is not
-   * a running game, or the budget has not been loaded. Returns whether it planned anything.
+   * The current month follows the game (JFK, 2026-10-19: a property bought, a baby): whenever the subscriptions change, what is
+   * planned for the month changes with them - until the next Payday closes it and moves it back. Returns whether the budget changed.
+   */
+  private refreshCurrentMonthPlan(): boolean {
+    const plan = AppStateService.instance.cashflowGame.budgetPlan;
+    if (!plan || plan.length === 0) return false;
+    const last = plan[plan.length - 1];
+    const rows = this.standingRows();
+    if (sameRows(last.rows, rows)) return false;
+    return this.setBudgetPlan(plan, [...plan.slice(0, -1), { month: last.month, rows }]);
+  }
+
+  /**
+   * A running game that has no plan yet (it was played before the budget was planned) gets all its months planned from what its
+   * Paydays posted, without waiting for the next one; a plan whose cells the budget lacks (it was not loaded then) is put in. Does
+   * nothing for a game that is not running or while the budget is not loaded. Returns whether the budget changed.
    */
   backfillBudget(): boolean {
     const state = AppStateService.instance;
     if (!CashflowGameService.isCashflowGame() || !state.tier2Loaded) return false;
     const game = state.cashflowGame;
-    if (!game || !game.round || game.round < 1 || !game.professionId) return false;
-    if ((state.allBudgets ?? []).some((b) => b.game)) return false;
-    const month = this.clock.todayIso().slice(0, 7);
-    const owned = new Set(game.gameSubscriptionTitles);
-    const standing = this.standingExpenses(
-      state.allSubscriptions.filter((sub) => owned.has(sub.title)),
-      month,
-    );
-    if (standing.length === 0) return false;
-    const months = game.round > 1 ? [month, shiftMonth(month, -1)] : [month];
-    let rows = state.allBudgets ?? [];
-    for (const date of months)
-      rows = addPlanned(
-        rows,
-        standing.map((s) => ({ ...s, date })),
+    if (!game || !game.professionId || !(game.round >= 1)) return false;
+    let changed: boolean;
+    if (game.budgetPlan === undefined) {
+      const latest = [...(game.history ?? [])].reverse().find((entry) => entry.kind === 'payday')
+        ?.createdTransactions[0]?.date;
+      changed = this.planFromHistory((latest ?? this.clock.todayIso()).slice(0, 7));
+    } else {
+      const before = state.allBudgets ?? [];
+      const filled = fillMissing(before, game.budgetPlan);
+      changed = filled.length !== before.length;
+      if (changed) state.allBudgets = filled;
+    }
+    if (changed) {
+      this.persistAll(
+        'cashflow_budget_backfill',
+        {},
+        { onSuccess: () => undefined, onError: () => undefined },
+        {
+          includeBudget: true,
+          quiet: true,
+        },
       );
-    state.allBudgets = rows;
-    this.persistAll(
-      'cashflow_budget_backfill',
-      {},
-      { onSuccess: () => undefined, onError: () => undefined },
-      {
-        includeBudget: true,
-        quiet: true,
-      },
-    );
-    return true;
-  }
-
-  /** The monthly cost of subscriptions per category, as they stand (a quarterly one at a third), as planned amounts. */
-  private standingExpenses(subscriptions: Subscription[], month: string): PlannedAmount[] {
-    const rows = computeBudgetRowsFromSubscriptions(
-      subscriptions
-        .filter((sub) => sub.account !== 'Income' && Number(sub.amount) < 0)
-        .map((sub) => ({
-          account: sub.account,
-          amountMinor: toMinorUnits(sub.amount),
-          startDate: sub.startDate,
-          endDate: sub.endDate || null,
-          category: sub.category || '@others',
-          frequency: sub.frequency as never,
-        })),
-      new Date(`${month}-15T12:00:00`),
-    );
-    // only the Payday's month line of each category is "what it costs now"
-    return rows
-      .filter((row) => row.date === month)
-      .map((row) => ({ date: month, tag: row.tag, amount: fromMinorUnits(row.amountMinor) }));
+    }
+    return changed;
   }
 
   /**
@@ -1394,16 +1441,18 @@ export class CashflowGameService {
   commitTurn(result: TurnResult, callbacks: CashflowGameCallbacks): void {
     this.pushUndoSnapshot(result.step);
     // a roll that passes a Payday space runs the Payday: it plans the budget like the Payday button does
-    let budgetPlanned = false;
+    const planBefore = AppStateService.instance.cashflowGame.budgetPlan;
+    const paydays: GameEffects[] = [];
     let round = AppStateService.instance.cashflowGame.round;
     for (const effects of result.effects) {
       this.applyGameEffects(effects);
       // only a Payday advances the round (the turn's effects carry no step of their own)
       if (effects.state.round > round) {
         round = effects.state.round;
-        budgetPlanned = this.planBudgetFromPayday(effects) || budgetPlanned;
+        paydays.push(effects);
       }
     }
+    const budgetPlanned = this.planPaydays(planBefore, paydays);
     // an automatic bank loan (Charity or Downsized with too little cash) writes the Bank loan liability too
     this.persistAll('cashflow_roll', { total: result.roll.total, to: result.move.to }, callbacks, {
       includeBudget: budgetPlanned,
@@ -2294,12 +2343,19 @@ export class CashflowGameService {
     state.allSmileProjects = blank.allSmileProjects as Smile[];
     state.allFireEmergencies = blank.allFireEmergencies as Fire[];
     state.mojo = blank.mojo as Mojo;
+    const planOfThisGame = state.cashflowGame.budgetPlan ?? [];
     state.cashflowGame = blank.cashflowGame;
     // the game's money is gone with its bookings; the location stays (the player's own ones are untouched)
     const bank = state.allLocations?.find((location) => location.id === GAME_BANK_LOCATION_ID);
     if (bank) bank.amount = 0;
     // and so is its plan: the rows the game made go, what the player planned stays
-    if (state.tier2Loaded) state.allBudgets = (state.allBudgets ?? []).filter((b) => !b.game);
+    if (state.tier2Loaded) {
+      state.allBudgets = applyPlanChange(
+        (state.allBudgets ?? []).filter((b) => !b.game),
+        planOfThisGame,
+        [],
+      );
+    }
 
     this.persistAll('cashflow_reset', {}, callbacks, {
       includeBudget: state.tier2Loaded,
@@ -2911,6 +2967,7 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     this.incomeStatement.recalculate();
     if (!options.quiet) state.isSaving = true;
+    if (this.refreshCurrentMonthPlan()) options = { ...options, includeBudget: true };
 
     const writes: { tag: string; data: unknown }[] = [
       { tag: 'transactions', data: state.allTransactions },

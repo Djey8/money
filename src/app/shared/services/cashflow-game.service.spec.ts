@@ -220,49 +220,100 @@ describe('CashflowGameService', () => {
       );
     });
 
-    it('a Payday plans the subscription expenses into the budget of its month - not the income - and the plan moves back with the next Payday', () => {
+    it('every Payday plans its month and moves everything planned before back a month, like the transactions', () => {
+      started();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      state.allBudgets = [];
+      const payday = () => service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      payday();
+      expect(state.allBudgets).toHaveLength(1);
+      expect(state.allBudgets[0]).toMatchObject({ tag: '@Placeholder Expenses', amount: 1800 });
+      const current = state.allBudgets[0].date;
+      expect(current).toMatch(/^\d{4}-\d{2}$/);
+      payday();
+      payday();
+      payday();
+      // four Paydays: four months, one apart, the latest in the current month - not only this and last month
+      const months = state.allBudgets.map((b) => b.date).sort();
+      expect(months).toHaveLength(4);
+      expect(months[3]).toBe(current);
+      expect(state.allBudgets.every((b) => b.amount === 1800)).toBe(true);
+      expect(new Set(months).size).toBe(4);
+      // one Undo takes the last Payday's plan back: the others move forward again
+      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets.map((b) => b.date).sort()[2]).toBe(current);
+      expect(state.allBudgets).toHaveLength(3);
+    });
+
+    it('the current month follows the game: an expense added to the subscriptions is planned at once, and moves back with the next Payday', () => {
       started();
       const state = AppStateService.instance;
       state.tier2Loaded = true;
       state.allBudgets = [];
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets).toHaveLength(1);
-      expect(state.allBudgets[0]).toMatchObject({ tag: '@Placeholder Expenses', amount: 1800 });
-      const month = state.allBudgets[0].date;
-      expect(month).toMatch(/^\d{4}-\d{2}$/);
+      const current = state.allBudgets[0].date;
+      // a baby, a property: a new expense line of the game
+      state.allSubscriptions.push({
+        title: 'Kids',
+        account: 'Daily',
+        amount: -400,
+        startDate: '2026-10-05',
+        endDate: '',
+        category: '@Kids',
+        comment: '#cashflow',
+        frequency: 'monthly',
+      } as any);
+      state.cashflowGame = {
+        ...state.cashflowGame,
+        gameSubscriptionTitles: [...state.cashflowGame.gameSubscriptionTitles, 'Kids'],
+      };
+      (service as any).persistAll('test', {}, { onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets.find((b) => b.tag === '@Kids' && b.date === current)?.amount).toBe(
+        400,
+      );
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      // the first month moved back with its transactions, the new one is planned
-      expect(state.allBudgets.map((b) => b.amount)).toEqual([1800, 1800]);
-      expect(state.allBudgets[1].date).toBe(month);
-      expect(state.allBudgets[0].date < month).toBe(true);
-      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets).toHaveLength(1);
-      expect(state.allBudgets[0].date).toBe(month);
-      service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets).toEqual([]);
+      // the closed month keeps what it had, the new current month plans both
+      const kids = state.allBudgets
+        .filter((b) => b.tag === '@Kids')
+        .map((b) => b.date)
+        .sort();
+      expect(kids).toHaveLength(2);
+      expect(kids[1]).toBe(current);
     });
 
-    it('a game from before (no planned rows) gets its last month planned at the next Payday, from the subscriptions as they stand', () => {
+    it('a game from before (no plan recorded) gets every month of its Paydays planned, replacing what the first version left', () => {
       started();
       const state = AppStateService.instance;
+      state.tier2Loaded = false; // the Paydays were played before the budget was planned
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      state.cashflowGame = { ...state.cashflowGame, budgetPlan: undefined };
       state.tier2Loaded = true;
-      state.allBudgets = [{ date: '2020-01', tag: '@Mine', amount: 5 }];
-      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      state.allBudgets = state.allBudgets.filter((b) => !b.game); // as if the first Payday was before the budget was planned
-      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      const planned = state.allBudgets.filter((b) => b.game);
-      expect(planned.map((b) => b.amount)).toEqual([1800, 1800]);
-      expect(planned[0].date < planned[1].date).toBe(true);
+      const month = new Date().toISOString().slice(0, 7);
+      state.allBudgets = [
+        { date: '2020-01', tag: '@Mine', amount: 5 },
+        { date: month, tag: '@Placeholder Expenses', amount: 1800, game: true }, // left by the first version
+      ];
+      const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
+      expect(service.backfillBudget()).toBe(true);
+      const planned = state.allBudgets.filter((b) => b.tag === '@Placeholder Expenses');
+      expect(planned).toHaveLength(3);
+      expect(planned.every((b) => b.amount === 1800 && !b.game)).toBe(true);
       expect(state.allBudgets.some((b) => b.tag === '@Mine')).toBe(true);
+      expect(service.backfillBudget()).toBe(false); // only once
+      gameAccount.mockRestore();
     });
 
-    it('a reset, a new game and a loaded game without a plan take the rows of the game away, never the ones the player made (here: the reset)', () => {
+    it('a reset takes the cells the game planned away, never the ones the player planned', () => {
       started();
       const state = AppStateService.instance;
       state.tier2Loaded = true;
       state.allBudgets = [{ date: '2026-10', tag: '@Mine', amount: 5 }];
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets.some((b) => b.game)).toBe(true);
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets.length).toBeGreaterThan(2);
       const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
       service.resetGame({ onSuccess: jest.fn(), onError: jest.fn() });
       expect(state.allBudgets).toEqual([{ date: '2026-10', tag: '@Mine', amount: 5 }]);
@@ -289,28 +340,20 @@ describe('CashflowGameService', () => {
       expect(state.allLocations.some((l) => l.id === 'game-bank')).toBe(false);
     });
 
-    it('plans this and last month at once for a running game that has no plan yet, and only once', () => {
-      started();
-      const state = AppStateService.instance;
-      state.tier2Loaded = true;
-      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      state.allBudgets = [];
-      const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
-      expect(service.backfillBudget()).toBe(true);
-      expect(state.allBudgets.map((b) => b.amount)).toEqual([1800, 1800]);
-      expect(new Set(state.allBudgets.map((b) => b.date)).size).toBe(2); // this month and last
-      expect(service.backfillBudget()).toBe(false);
-      gameAccount.mockRestore();
-    });
-
-    it('leaves the budget alone while it has not been loaded yet (it would replace the stored one)', () => {
+    it('a plan made while the budget was not loaded is put in when it is (nothing else is touched)', () => {
       started();
       const state = AppStateService.instance;
       state.tier2Loaded = false;
-      state.allBudgets = [];
+      state.allBudgets = [{ date: '2020-01', tag: '@Mine', amount: 5 }];
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets).toEqual([]);
+      service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
+      expect(state.allBudgets).toEqual([{ date: '2020-01', tag: '@Mine', amount: 5 }]);
+      state.tier2Loaded = true;
+      const gameAccount = jest.spyOn(CashflowGameService, 'isCashflowGame').mockReturnValue(true);
+      expect(service.backfillBudget()).toBe(true);
+      expect(state.allBudgets.filter((b) => b.tag === '@Placeholder Expenses')).toHaveLength(2);
+      expect(service.backfillBudget()).toBe(false);
+      gameAccount.mockRestore();
     });
 
     it('reports an error rather than throwing when there is nothing to undo', () => {
@@ -3397,16 +3440,15 @@ describe('CashflowGameService', () => {
       expect(service.cannotRollBecause).toMatch(/solo/);
     });
 
-    it('the Paydays of a solo roll plan the budget too, and undoing the roll takes the plan back', () => {
+    it('the Paydays of a solo roll plan the budget too, one month apart, and undoing the roll takes the plan back', () => {
       startSolo();
       const state = AppStateService.instance;
       state.tier2Loaded = true;
       state.allBudgets = [];
       service.rng = die(6); // the opening Payday and the Payday it lands on
       service.rollTurn(1, callbacks());
-      const planned = state.allBudgets.filter((b) => b.game);
-      expect(planned.map((b) => b.amount)).toEqual([1800, 1800]);
-      expect(new Set(planned.map((b) => b.date)).size).toBe(2);
+      expect(state.allBudgets.map((b) => b.amount)).toEqual([1800, 1800]);
+      expect(new Set(state.allBudgets.map((b) => b.date)).size).toBe(2);
       service.undoLastAction(callbacks());
       expect(state.allBudgets).toEqual([]);
     });
@@ -3419,7 +3461,7 @@ describe('CashflowGameService', () => {
       service.rng = die(1); // lands before any Payday space: only the opening Payday is paid
       service.rollTurn(1, callbacks());
       expect(state.cashflowGame.round).toBe(1);
-      expect(state.allBudgets.filter((b) => b.game).map((b) => b.amount)).toEqual([1800]);
+      expect(state.allBudgets.map((b) => b.amount)).toEqual([1800]);
     });
 
     it('a roll moves the token, books what the landing does, and is one undo step', () => {

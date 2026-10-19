@@ -295,6 +295,17 @@ export interface CashflowSoloTurn {
   affected?: string[];
 }
 
+/**
+ * What the game planned in the budget for one month (JFK, 2026-10-19): the expenses its subscriptions cost, per category. The plan
+ * is the game's own record - which budget cells are the game's - so it moves back a month with each Payday like the transactions do,
+ * and is undone, saved and reset with the game.
+ */
+export interface CashflowBudgetMonth {
+  /** 'YYYY-MM'; the last entry is the current month, the others follow one month apart. */
+  month: string;
+  rows: { tag: string; amountMinor: number }[];
+}
+
 export interface CashflowGameState {
   gameSetId: string | null;
   professionId: string | null;
@@ -326,7 +337,8 @@ export interface CashflowGameState {
   /** The name it goes by in the games list. */
   gameName?: string;
   /** The rules the game is played under, fixed at its start (rules.ts); absent: `free`, as before rules existed. */
-  rules?: GameRules;
+  rules?: GameRules; /** The budget the game planned, oldest month first; absent on a game from before it planned one. */
+  budgetPlan?: CashflowBudgetMonth[];
 }
 
 export function initialCashflowGameState(): CashflowGameState {
