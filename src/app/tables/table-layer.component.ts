@@ -267,10 +267,15 @@ import { TablesApiService } from './tables-api.service';
         min-width: 0;
         overflow-wrap: anywhere;
       }
+      /* always one row: when the players do not fit, this row (only) scrolls sideways; the player on the move is first anyway */
       .tl-players {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 6px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding-bottom: 6px;
+        scrollbar-width: thin;
       }
       /* a player: the colour on the left, the name above, who they are and how close to escaping below */
       .tl-player {
@@ -282,8 +287,8 @@ import { TablesApiService } from './tables-api.service';
         align-items: center;
         column-gap: 8px;
         row-gap: 0;
-        flex: 1 1 9em;
-        max-width: 100%;
+        flex: 1 0 9em;
+        min-width: 9em;
         padding: 6px 10px;
         text-align: start;
       }

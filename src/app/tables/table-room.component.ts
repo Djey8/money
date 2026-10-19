@@ -181,7 +181,7 @@ const money = (minor: number | null): string =>
                 (change)="botChoice = $any($event.target).value"
                 [attr.aria-label]="t.addBot"
               >
-                <option *ngFor="let bot of botCatalog()" [value]="bot.id">
+                <option *ngFor="let bot of sortedBots()" [value]="bot.id">
                   {{ bot.name }} - {{ level(bot) }}{{ ratingTag(bot) }}
                 </option>
               </select>
@@ -801,7 +801,7 @@ export class TableRoomComponent implements OnInit, OnDestroy {
       this.tablesApi.bots().subscribe({
         next: (r) => {
           this.botCatalog.set(r.items);
-          if (!this.botChoice && r.items.length) this.botChoice = r.items[0].id;
+          if (!this.botChoice && r.items.length) this.botChoice = this.sortedBots()[0].id;
         },
         error: () => (this.botsRequested = false),
       });
@@ -819,6 +819,15 @@ export class TableRoomComponent implements OnInit, OnDestroy {
       default:
         return this.t.levelChampion;
     }
+  }
+
+  /** The bots with the highest rating first, by their rating at the chosen skill level (those without one last, by name). */
+  sortedBots(): BotInfo[] {
+    const level = this.botLevel;
+    return [...this.botCatalog()].sort(
+      (a, b) =>
+        (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) || a.name.localeCompare(b.name),
+    );
   }
 
   /** " · 1650": what the bot is rated at the chosen skill level, so the host sees what they seat. */

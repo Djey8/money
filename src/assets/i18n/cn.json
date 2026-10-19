@@ -1652,6 +1652,8 @@
   "CashflowGame.solo.modeSolo": "在应用中单人游玩",
   "CashflowGame.solo.modeSoloHint": "应用掷骰子,并让你的棋子在老鼠赛跑中前进。",
   "CashflowGame.solo.roll": "掷骰子",
+  "CashflowGame.solo.rolling": "掷骰中…",
+  "CashflowGame.solo.moving": "移动中…",
   "CashflowGame.solo.finishDiceFirst": "请先完成下方的骰子行动，然后才能掷骰子。",
   "CashflowGame.rules.title": "游戏规则",
   "CashflowGame.rules.frozen": "规则在游戏开始时确定，游戏中无法更改。",

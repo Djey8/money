@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter,
   HostListener,
   Input,
   OnChanges,
   Output,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
@@ -124,7 +126,7 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
             </ng-container>
           </g>
           <!-- the games axis: the first, the last and the middle one -->
-          <ng-container *ngFor="let tick of c.xTicks">
+          <ng-container *ngFor="let tick of c.xTicks; let first = first; let last = last">
             <line
               class="pi-tick"
               [attr.x1]="tick.x"
@@ -132,7 +134,12 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
               [attr.y1]="c.height - c.bottom"
               [attr.y2]="c.height - c.bottom + 4"
             />
-            <text class="pi-axis-x" [attr.x]="tick.x" [attr.y]="c.height - 8">
+            <text
+              class="pi-axis-x"
+              [style.text-anchor]="first ? 'start' : last ? 'end' : 'middle'"
+              [attr.x]="first ? c.left : last ? c.width - 2 : tick.x"
+              [attr.y]="c.height - 8"
+            >
               {{ tick.label }}
             </text>
           </ng-container>
@@ -155,7 +162,8 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
       <section class="pi-recent">
         <h4>{{ t.recent }}</h4>
         <p class="pi-empty" *ngIf="loaded && !detail?.recent?.length">{{ t.noGames }}</p>
-        <ul>
+        <!-- the last five games are in view; the rest scrolls inside the list -->
+        <ul #recentList [style.max-height.px]="recentMax">
           <li *ngFor="let r of detail?.recent">
             <span class="pi-place" [attr.data-place]="r.place">{{ medal(r.place) }}</span>
             <span class="pi-game">
@@ -207,9 +215,17 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
         border-inline-start: 1px solid var(--color-border-light, #ddd);
         box-shadow: var(--shadow-lg, -8px 0 24px rgba(0, 0, 0, 0.25));
         padding: 16px 16px 28px;
+        box-sizing: border-box;
+        max-width: 100vw;
         display: flex;
         flex-direction: column;
         gap: 16px;
+      }
+      /* the sections keep their own height (the panel scrolls, they are not squeezed to fit it) and may not push it wider */
+      .pi-panel > * {
+        flex: none;
+        min-width: 0;
+        max-width: 100%;
       }
       .pi-head {
         display: flex;
@@ -372,6 +388,8 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
         list-style: none;
         margin: 0;
         padding: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
       .pi-recent li {
         display: grid;
@@ -414,6 +432,25 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
       @media (max-width: 520px) {
         .pi-panel {
           width: 100%;
+          padding: 12px 12px 24px;
+          gap: 12px;
+        }
+        .pi-rating-value {
+          font-size: 2.2rem;
+        }
+        .pi-stat {
+          padding: 8px 4px;
+        }
+        .pi-stat strong {
+          font-size: 1.1rem;
+        }
+        .pi-stat span {
+          font-size: 0.72rem;
+          overflow-wrap: anywhere;
+        }
+        .pi-recent li {
+          grid-template-columns: 2rem minmax(0, 1fr) auto;
+          gap: 8px;
         }
       }
     `,
@@ -427,6 +464,9 @@ export class TablePlayerInfoComponent implements OnChanges {
   rtl: boolean;
   detail: GamePlayer | null = null;
   loaded = false;
+  /** The list of the last games is as high as its first five rows (null: five or fewer); the rest scrolls. */
+  recentMax: number | null = null;
+  @ViewChild('recentList') private recentList?: ElementRef<HTMLElement>;
 
   constructor(
     private api: TablesApiService,
@@ -454,12 +494,26 @@ export class TablePlayerInfoComponent implements OnChanges {
         this.detail = full;
         this.loaded = true;
         this.cdr.markForCheck();
+        setTimeout(() => this.fitRecent());
       },
       error: () => {
         this.loaded = true;
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /** Measured, because a game is two to four lines high depending on the width of the screen. */
+  @HostListener('window:resize')
+  fitRecent(): void {
+    const list = this.recentList?.nativeElement;
+    const rows = list ? Array.from(list.querySelectorAll<HTMLElement>(':scope > li')) : [];
+    const before = this.recentMax;
+    this.recentMax =
+      list && rows.length > 5
+        ? Math.ceil(rows[4].getBoundingClientRect().bottom - list.getBoundingClientRect().top)
+        : null;
+    if (before !== this.recentMax) this.cdr.markForCheck();
   }
 
   @HostListener('document:keydown.escape')

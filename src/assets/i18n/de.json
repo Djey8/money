@@ -1652,6 +1652,8 @@
   "CashflowGame.solo.modeSolo": "Allein in der App",
   "CashflowGame.solo.modeSoloHint": "Die App würfelt und bewegt deine Figur durch das Hamsterrad.",
   "CashflowGame.solo.roll": "Würfeln",
+  "CashflowGame.solo.rolling": "Würfelt …",
+  "CashflowGame.solo.moving": "Zieht …",
   "CashflowGame.solo.finishDiceFirst": "Erledige zuerst die Würfelaktion weiter unten - dann kannst du würfeln.",
   "CashflowGame.rules.title": "Spielregeln",
   "CashflowGame.rules.frozen": "Die Regeln werden beim Start festgelegt und lassen sich im Spiel nicht mehr ändern.",

@@ -1652,6 +1652,8 @@
   "CashflowGame.solo.modeSolo": "En solo dans l’appli",
   "CashflowGame.solo.modeSoloHint": "L’appli lance les dés et déplace votre pion sur la course de rats.",
   "CashflowGame.solo.roll": "Lancer les dés",
+  "CashflowGame.solo.rolling": "Lancer en cours…",
+  "CashflowGame.solo.moving": "Déplacement…",
   "CashflowGame.solo.finishDiceFirst": "Termine d'abord l'action de dés ci-dessous - ensuite tu peux lancer.",
   "CashflowGame.rules.title": "Règles du jeu",
   "CashflowGame.rules.frozen": "Les règles sont fixées au début et ne peuvent pas être changées pendant la partie.",

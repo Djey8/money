@@ -982,7 +982,11 @@
                 </div>
               </div>
               <ng-container *ngIf="soloTurn.phase === 'roll' && !diceActionOpen">
-                <fieldset class="cf-dice-choice" *ngIf="canChooseDice">
+                <!-- the choice of one or two dice is the player's own, in their own turn only -->
+                <fieldset
+                  class="cf-dice-choice"
+                  *ngIf="canChooseDice && !remoteGate && !turnBanner"
+                >
                   <legend>{{ 'CashflowGame.solo.diceHow' | translate }}</legend>
                   <label class="cf-dice-option">
                     <input type="radio" name="diceChoice" [value]="1" [(ngModel)]="diceChoice" />
@@ -1011,7 +1015,7 @@
                     [disabled]="!canRoll"
                     (click)="rollSolo()"
                   >
-                    🎲 {{ 'CashflowGame.solo.roll' | translate }}
+                    🎲 {{ rollButtonKey | translate }}
                   </button>
                   <!-- A game with others: the turn is ended (or let go on, after selling) where the roll button is, once everything has been shown -->
                   <button
@@ -1086,6 +1090,10 @@
               <!-- a roll in progress (the decision waits for the totem): the dice stay in view -->
               <div class="cf-solo-roll-row" *ngIf="soloTurn.phase === 'decide' && walking">
                 <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                <!-- the roll is under way: the button says so (rolling, then moving) and cannot be pressed again -->
+                <button class="btn btn--primary" disabled aria-live="polite">
+                  🎲 {{ rollButtonKey | translate }}
+                </button>
                 <button class="btn btn--sm" (click)="skipWalk()">
                   {{ 'CashflowGame.solo.skipAnimation' | translate }}
                 </button>

@@ -118,16 +118,6 @@ const money = (minor: number): string =>
         </ng-container>
       </ng-container>
     </section>
-
-    <section class="ti-card">
-      <h3>{{ t.feed }}</h3>
-      <p class="ti-empty" *ngIf="!feed.length">{{ t.noEvents }}</p>
-      <ol class="ti-feed" *ngIf="feed.length">
-        <li *ngFor="let line of feed">
-          <strong>{{ line.who }}</strong> {{ line.text }}
-        </li>
-      </ol>
-    </section>
   `,
   styles: [
     `

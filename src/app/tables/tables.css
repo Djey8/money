@@ -47,7 +47,12 @@
 
 /* ── buttons ── */
 :host .tx-btn {
-  display: inline-block;
+  /* one look for links and buttons: the label centred both ways, on one line, never taller than it needs to be */
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
   flex: none;
   width: auto;
   margin: 0;

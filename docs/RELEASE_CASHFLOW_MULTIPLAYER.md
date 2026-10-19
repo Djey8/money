@@ -24,7 +24,7 @@ pages read and write their own account exactly as before.
 | Revisions before compaction | up to 10 - 30 MB per long game, written to disk move by move                   | CouchDB compacts by itself (smoosh, on by default); measured 14 MB file for 9 MB live                          |
 | A finished table            | deleted after 7 days unless someone saved it to their games                    | `GAME_ROOMS_RETENTION_MS`; idle lobby 1 day, idle game 7 days                                                  |
 | Limits that bound the total | 3 hosted + 5 seated tables per account, 200 open tables, 5 streams per account | at the limits: 200 x 1.2 MB = about 240 MB live. The data volume is 5 Gi (`k8s/couchdb.yaml`)                  |
-| Leaderboard                 | profile 1 KB, result 2 KB per counted table, kept for good                     | 77 bot profiles; 1,000 counted games = about 2 MB                                                              |
+| Leaderboard                 | profile 1 KB, result 2 KB per counted table, kept for good                     | 76 bot profiles; 1,000 counted games = about 2 MB                                                              |
 | A profile picture           | 10 - 25 KB (limit 150 KB) in the account's document                            | only for accounts that set one; its document is read with every data read of that account                      |
 | Memory                      | backend limit 768 Mi, CouchDB 1 Gi (unchanged)                                 | table clocks, the bot timer and the live streams are in the backend's memory, one timer per table being played |
 
@@ -62,7 +62,7 @@ rating, and finishes anything a crash left half recorded (`repair`). Check it:
 
 ```bash
 kubectl logs -n money-app deploy/backend | grep "Leaderboard ready"
-#  ... Leaderboard ready {"botsMade":77,"repaired":0}      (0 on every later start)
+#  ... Leaderboard ready {"botsMade":76,"repaired":0}      (0 on every later start)
 
 # the bots a host can seat, with their ratings (as a game account):
 curl -s -b cookies.txt https://<your-host>/api/v1/game/rooms/bots | head -c 400

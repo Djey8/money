@@ -26,7 +26,6 @@ import { rollDie, type Rng } from './rng';
 import { cardPickedStep, type GameStep } from './steps';
 import {
   normalizeRules,
-  offerIsOpen,
   whyCannotBuyCard,
   whyCardAlreadyBought,
   whyCardAlreadyPlayed,
@@ -41,7 +40,6 @@ import type {
   CashflowDoodadCard,
   CashflowGameSet,
   CashflowMarketCard,
-  CashflowMarketOffer,
 } from './types';
 
 /**
@@ -298,26 +296,6 @@ export function planDealAction(
  * Grow's Buy for the project the card in hand became: shares (`quantity`), a property or a special asset. A card buys once;
  * the bank loan is taken first when cash is short. Settles the card.
  */
-/**
- * The open stock price card for a share the player holds, or undefined (JFK, 2026-10-18). A drawn stock card sets the price for
- * everyone who holds the share: they may sell at it - and buy more at it - while the offer is open. The question is asked as if
- * the player were still deciding, because at a table the offer comes from somebody else's card and stays until their next roll.
- */
-export function openPriceCardFor(
-  books: Pick<GameBooks, 'state' | 'shares'>,
-  title: string,
-): CashflowMarketOffer | undefined {
-  const state = books.state;
-  const turn = state.turn;
-  const asking =
-    turn?.phase === 'roll' ? { ...state, turn: { ...turn, phase: 'decide' as const } } : state;
-  if (!books.shares.some((share) => share.tag === title && share.quantity > 0)) return undefined;
-  return (state.marketOffers ?? []).find(
-    (offer) =>
-      offer.title === title && offer.pricePerShareMinor !== undefined && offerIsOpen(asking, offer),
-  );
-}
-
 export function buyPlannedAction(
   books: GameBooks,
   input: { title: string; quantity?: number },
@@ -325,19 +303,6 @@ export function buyPlannedAction(
 ): ActionPlan {
   const pending = books.state.turn?.pending;
   const offered = pending?.offered;
-  // More of a share the player holds, at the price of a stock card somebody drew: no plan, no card of their own is needed.
-  if (!(offered && pending?.played && offered.title === input.title)) {
-    const priceCard = openPriceCardFor(books, input.title);
-    if (priceCard) {
-      const waiting = whyPaymentPending(books.state);
-      if (waiting) throw new Error(waiting);
-      const executed = executeDeal(books, input.title, input.quantity, deps);
-      return {
-        effects: executed.steps,
-        result: { title: input.title, kind: executed.kind, atPriceCard: priceCard.cardId },
-      };
-    }
-  }
   const refused =
     whyPaymentPending(books.state) ??
     whyDiceFirst(books.state) ??

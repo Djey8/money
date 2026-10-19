@@ -392,12 +392,19 @@ describe('TableRoomComponent', () => {
     };
     const catalog = {
       items: [
-        { id: 'never-buy', name: 'Sleepy Sam', difficulty: 'easy', description: 'Never invests.' },
+        {
+          id: 'never-buy',
+          name: 'Sleepy Sam',
+          difficulty: 'easy',
+          description: 'Never invests.',
+          ratings: { master: 1000, casual: 1000 },
+        },
         {
           id: 'all-rounder',
           name: 'Allie All-Round',
           difficulty: 'hard',
           description: 'Does it all.',
+          ratings: { master: 1650, casual: 1480 },
         },
       ],
     };
@@ -415,7 +422,12 @@ describe('TableRoomComponent', () => {
       fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain('Add a bot');
       expect(fixture.nativeElement.textContent).toContain('Sleepy Sam - easy');
-      expect(fixture.nativeElement.textContent).toContain('Never invests.');
+      // the bots come highest rating first (at the chosen skill level), and the best one is the one picked at first
+      const names = Array.from(
+        fixture.nativeElement.querySelectorAll('.tr-bot-select:first-of-type option'),
+      ).map((option) => (option as HTMLElement).textContent!.trim());
+      expect(names).toEqual(['Allie All-Round - hard · 1650', 'Sleepy Sam - easy · 1000']);
+      expect(fixture.nativeElement.textContent).toContain('Does it all.');
       const select = fixture.nativeElement.querySelector('.tr-bot-select') as HTMLSelectElement;
       select.value = 'all-rounder';
       select.dispatchEvent(new Event('change'));

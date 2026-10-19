@@ -848,6 +848,12 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     );
   }
 
+  /** What the roll button says: the roll itself while the dice tumble, the move while the token walks (the button is off then). */
+  get rollButtonKey(): string {
+    if (this.diceTumbling) return 'CashflowGame.solo.rolling';
+    return this.walking ? 'CashflowGame.solo.moving' : 'CashflowGame.solo.roll';
+  }
+
   /** A paid dice card (Multi-Level-Marketing, ...) waits for its roll: it is done before the next turn. */
   get hasOpenDiceAction(): boolean {
     return this.visibleDecisions.length > 0;

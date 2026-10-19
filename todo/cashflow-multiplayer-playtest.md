@@ -70,7 +70,7 @@ The things built after the first playtest. Tick them on the Pi (or the local sta
 
 - [ ] **Latest** (the line under the bar) never runs ahead: after your roll it first says the dice, and "-> market" only when your
       token has landed; another player's move appears when its telling reaches it.
-- [ ] A Market cost card, a share price card of a bot (you hold the share): you can **sell and buy** at that price, also off your turn.
+- [ ] A Market cost card, a share price card of a bot (you hold the share): you can only **sell** at that price, also off your turn; there is no Buy button (only the player who drew the card can buy).
 - [ ] A planned deal you did not buy (the card is settled) goes from _Plan_ to _Completed_ in Grow; drawing the card again makes it _Plan_.
 - [ ] The winning move (a buy on the Grow page that gets you out) brings up the game dashboard with the result by itself.
 - [ ] The **Repay** button on the dashboard says how much is owed. The stats page redraws after a Payday or a Doodad you pay.
