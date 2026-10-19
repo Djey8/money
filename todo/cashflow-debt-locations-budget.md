@@ -76,22 +76,30 @@ start must be measured again - but the games already played (since the release y
 - Needs: a monthly **income** series from the transactions (and a planned income, see question 6), the budget fill in the game's
   payday step (domain `rounds.ts` -> effects `budgetUpserts`), the chart code (`budget.component.ts`, d3), texts in six languages.
 
-## Questions (with my recommendation)
+## Decisions (JFK, 2026-10-19)
 
-1. **A:** setting name and default - `Bank repay off turn`, default **on**? Does it also allow _borrowing_ off turn? (recommend: repay only.)
-2. **B:** one setting for both (repay the bank and pay off a liability off turn), or paying off a liability **only on your own turn**?
-   (recommend: one setting, both off turn.)
-3. **B:** when the cash is short, may a payoff take a Bank loan first (as a purchase does), or is it refused? A bank loan costs 10%
-   of its amount per month, so a payoff financed by it cannot lower the expenses much. (recommend: refused, cash only.)
-4. **B:** the bots: an add-on thought for **all** strategies (cheap, no search) plus one new debt-first bot - or search a new champion
-   for it later? (recommend: add-on + the new bot now.)
-5. **C:** keep what was played and only move the base (as written), or also offer a full re-score of all results with the new
-   bases? (recommend: only move the base; re-score stays a manual CLI.)
-6. **D:** name of the default location in the six languages ("Bank account" / "Bankkonto" ...) and may the user **rename** it?
-   (recommend: yes rename, never delete.)
-7. **E:** where does **planned income** come from, for "Planned cashflow"? The salary subscription of the game (positive
-   subscriptions of the month) is the natural planned income; other accounts have no planned income today - for them show only
-   Income and Cashflow, or add a planned-income budget line? (recommend: planned income = positive subscriptions of the month; hide
-   "Planned cashflow" when there are none.)
-8. **E:** should the game also fill the budget **for months that already passed** in a running game, or only from now on? (recommend:
-   from now on.)
+- **A:** a table setting, **default on**: with it on any seated player may repay the bank at any time, not only on their own turn;
+  it is written to the history for everybody. With it off (host's choice when opening the table) only in your own turn. Repay only,
+  never borrowing off turn.
+- **B:** the same setting covers paying off a liability. Not enough cash: the normal borrowing rule applies, with a **warning** of how
+  much has to be borrowed (it rarely makes sense, but it is allowed). **Forbidden** when the borrowing needed would put the player
+  into bankruptcy - i.e. when the monthly cashflow after the payoff (expenses lower by the liability's payment, higher by the new
+  bank loan's payment) would be negative.
+- **Bots:** the payoff thought for all strategies plus a new debt-first bot; once it is deployed, **recalculate all bots and
+  strategies, search a new champion and get new start ratings** (a later step, after the deploy of the features).
+- **C:** the existing bot profiles and all their statistics stay. Only the **base** moves; every game played after the base was set
+  stays applied on top of it (history never re-scored). New bots get their own profile with a measured base.
+- **D:** every game starts with the location "Bank account" (translated); automations book to it; the user may add locations,
+  change bookings and **rename** the default one (the automation finds it by its flag, not its name); it cannot be deleted.
+  Only new games.
+- **E:** the game fills the budget on its own (subscriptions planned as they happen; Doodads and Market costs not planned). The
+  income line is for **all accounts**: the **actual income** of a month = the sum of the month's income transactions (in the game:
+  salary, passive income, MLM, the interest of a loan to a relative, a card sold to someone ...). Planned cashflow = income - planned
+  expenses; cashflow = income - actual expenses. Only from now on (games started after the release).
+
+## Still to confirm
+
+1. Do the **proceeds of selling a position** (shares, a property, gold) count as income in the chart? Recommendation: **no** - they
+   are capital, not earnings, and would make a month's cashflow jump; a deal card sold to a player **does** count, as you said.
+   Money borrowed from the bank does not count either.
+2. The payoff rule for "cannot afford" is as written above (cashflow after the payoff and its loan must stay >= 0). Right?
