@@ -1,3 +1,25 @@
+## [1.29.0] - 2026-10-19
+
+### Features
+
+- feat(bots): new start ratings (version 2) after debt payoff and the debt-first bot
+- feat(budget): the game plans its expenses into the budget; the chart shows income and both cashflows
+- feat(game): every game starts with the location Bank - Main, which all its bookings use and which cannot be deleted
+- feat(leaderboard): a base rating that can be set again without losing the games played
+- feat(bots): every bot knows it can pay a starting debt off; a new debt-first bot (Debt-free Dana)
+- feat(game): pay a starting debt off in one payment (mortgage, car loan, credit card, student loan)
+- feat(tables): paying the bank back at any time, a table setting (default on)
+- feat(bots): a bot may offer a Deal card to the table before it turns it down; the menu has one entry while a game is loaded
+
+### Bug Fixes
+
+- fix(budget): the game keeps its own plan per Payday, moves it back a month each Payday, and follows the current month
+- fix(budget): the chart redraws on game and transaction changes; docs: repayOffTurn, pay_liability, base ratings
+- fix(budget): the Paydays of a solo roll plan the budget, not only the Payday button
+- fix(budget): a running game with no planned rows gets this and last month planned when the budget opens
+- fix(game): budget rows are guarded on undo, reset, new and loaded games; the default location is tested and documented
+- fix(budget): the game plans each Payday's expenses and moves the plan back a month with the transactions
+
 ## [1.28.0] - 2026-10-19
 
 ### Features
