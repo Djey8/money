@@ -2,6 +2,7 @@ import { RemoteGameHook } from './remote-game';
 import { MoneyLocation } from '../../interfaces/location';
 import { Budget } from '../../interfaces/budget';
 import { reconcileLocationBooking } from '../location-balance';
+import { planPayday, type PlannedAmount } from '../game-budget';
 import { translateRuleRefusal } from '../rule-refusal';
 import { Injectable } from '@angular/core';
 import { Subject, auditTime, merge } from 'rxjs';
@@ -28,6 +29,7 @@ import {
   blankGameData,
   captureGameSnapshot as captureSnapshot,
   GAME_BANK_LOCATION_ID,
+  computeBudgetRowsFromSubscriptions,
   plannedBudgetFromPayday,
   coinsOwnedOf,
   accountHistoryIsNewer,
@@ -1037,23 +1039,49 @@ export class CashflowGameService {
   }
 
   /**
-   * The game fills the budget (JFK, 2026-10-19): each Payday plans the subscription expenses it posted, in the month they are
-   * booked. A Doodad or a Market cost is not planned - it shows as over budget. Only from now on: what was posted before is left.
+   * The game plans the budget (JFK, 2026-10-19): each Payday plans the subscription expenses it paid in the month they are booked,
+   * and the planned rows move back a month with the transactions. A Doodad or a Market cost is not planned - it shows as over
+   * budget. A game from before has its last month planned from the subscriptions as they stand now.
    */
   private planBudgetFromPayday(effects: GameEffects): boolean {
     const state = AppStateService.instance;
     // the budget is a tier-2 path: writing it before it has been read would replace the stored one with a fragment
     if (!state.tier2Loaded) return false;
-    const rows = plannedBudgetFromPayday(effects.appendedTransactions);
-    if (rows.length === 0) return false;
-    if (!Array.isArray(state.allBudgets)) state.allBudgets = [];
-    for (const row of rows) {
-      const amount = fromMinorUnits(row.amountMinor);
-      const existing = state.allBudgets.find((b) => b.date === row.date && b.tag === row.tag);
-      if (existing) existing.amount = Math.round((Number(existing.amount) + amount) * 100) / 100;
-      else state.allBudgets.push({ date: row.date, tag: row.tag, amount });
-    }
+    const payday = plannedBudgetFromPayday(effects.appendedTransactions).map((row) => ({
+      date: row.date,
+      tag: row.tag,
+      amount: fromMinorUnits(row.amountMinor),
+    }));
+    if (payday.length === 0) return false;
+    const earlierPaydays = effects.state.round > 1;
+    const owned = new Set(state.cashflowGame.gameSubscriptionTitles);
+    const standing = earlierPaydays
+      ? this.standingExpenses(state.allSubscriptions.filter((sub) => owned.has(sub.title)))
+      : null;
+    state.allBudgets = planPayday(state.allBudgets ?? [], payday, standing);
     return true;
+  }
+
+  /** The monthly cost of subscriptions per category, as they stand (a quarterly one at a third), as planned amounts. */
+  private standingExpenses(subscriptions: Subscription[]): PlannedAmount[] {
+    const rows = computeBudgetRowsFromSubscriptions(
+      subscriptions
+        .filter((sub) => sub.account !== 'Income' && Number(sub.amount) < 0)
+        .map((sub) => ({
+          account: sub.account,
+          amountMinor: toMinorUnits(sub.amount),
+          startDate: sub.startDate,
+          endDate: sub.endDate || null,
+          category: sub.category || '@others',
+          frequency: sub.frequency as never,
+        })),
+      new Date(),
+    );
+    // only the current month's line of each category is "what it costs now"
+    const month = new Date().toISOString().slice(0, 7);
+    return rows
+      .filter((row) => row.date === month)
+      .map((row) => ({ date: month, tag: row.tag, amount: fromMinorUnits(row.amountMinor) }));
   }
 
   /**

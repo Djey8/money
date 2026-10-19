@@ -220,7 +220,7 @@ describe('CashflowGameService', () => {
       );
     });
 
-    it('a Payday plans the subscription expenses into the budget of its month - not the income - and undo takes them out', () => {
+    it('a Payday plans the subscription expenses into the budget of its month - not the income - and the plan moves back with the next Payday', () => {
       started();
       const state = AppStateService.instance;
       state.tier2Loaded = true;
@@ -228,11 +228,16 @@ describe('CashflowGameService', () => {
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
       expect(state.allBudgets).toHaveLength(1);
       expect(state.allBudgets[0]).toMatchObject({ tag: '@Placeholder Expenses', amount: 1800 });
-      expect(state.allBudgets[0].date).toMatch(/^\d{4}-\d{2}$/);
+      const month = state.allBudgets[0].date;
+      expect(month).toMatch(/^\d{4}-\d{2}$/);
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets[0].amount).toBe(3600); // a second Payday in the month adds up, like the actuals
+      // the first month moved back with its transactions, the new one is planned
+      expect(state.allBudgets.map((b) => b.amount)).toEqual([1800, 1800]);
+      expect(state.allBudgets[1].date).toBe(month);
+      expect(state.allBudgets[0].date < month).toBe(true);
       service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
-      expect(state.allBudgets[0].amount).toBe(1800);
+      expect(state.allBudgets).toHaveLength(1);
+      expect(state.allBudgets[0].date).toBe(month);
       service.undoLastAction({ onSuccess: jest.fn(), onError: jest.fn() });
       expect(state.allBudgets).toEqual([]);
     });
