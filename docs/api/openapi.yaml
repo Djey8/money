@@ -6897,6 +6897,8 @@ paths:
                     type: bot
                     level: master
                     rating: 1782
+                    baseRating: 1712
+                    baseSince: '2026-10-19T12:00:00.000Z'
                     peakRating: 1790
                     ratedGames: 214
                     provisional: false
@@ -7607,10 +7609,18 @@ paths:
                 expectedVersion:
                   type: integer
                   minimum: 0
-            example:
-              command: { type: roll }
-              clientCommandId: turn-12-roll
-              expectedVersion: 41
+            examples:
+              roll:
+                summary: Roll one die
+                value:
+                  command: { type: roll }
+                  clientCommandId: turn-12-roll
+                  expectedVersion: 41
+              payOffCarLoan:
+                summary: Pay a starting debt off in one payment (also off your turn unless the table switched `repayOffTurn` off)
+                value:
+                  command: { type: pay_liability, tag: Car Loan }
+                  clientCommandId: pay-car-loan
       responses:
         '200':
           description: The table after the move
@@ -11177,7 +11187,8 @@ components:
           description: Positive borrows from the bank, negative repays.
         tag:
           type: string
-          description: For `pay_liability`, the liability to pay off, as named in your books.
+          maxLength: 120
+          description: For `pay_liability`, the liability to pay off, as named in your books. Refused (422 `table_illegal_move`) when no such starting liability is there ("tag must be the name of the liability to pay off"), or when the Bank loan it would need first would leave the monthly cashflow negative (bankruptcy).
         input:
           type: object
           description: The position to sell.
@@ -11362,7 +11373,7 @@ components:
         baseSince:
           type: string
           format: date-time
-          description: When the current base was set.
+          description: When the current base was set. Only present once a base has been changed; a profile that still has its first base has none.
         pictureVersion:
           type: integer
           description: A person's profile picture is available at `/game/players/{playerId}/picture?v=<this>`; absent when there is none.

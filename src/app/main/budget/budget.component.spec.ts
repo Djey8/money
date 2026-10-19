@@ -72,4 +72,25 @@ describe('BudgetComponent', () => {
     expect(rows.join('|')).toContain('1,000.00'); // planned cashflow 3000 - 2000
     expect(rows.join('|')).toContain('500.00'); // cashflow 3000 - 2500
   });
+
+  it('redraws when the game or a transaction changes the data, without a reload', () => {
+    const state = AppStateService.instance;
+    state.isEuropeanFormat = false;
+    state.allTransactions = [
+      { account: 'Daily', amount: -100, date: '2026-10-03', time: '', category: '@x', comment: '' },
+    ] as any;
+    state.allBudgets = [];
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    expect(document.querySelectorAll('#chart-container .budget-point')).toHaveLength(1);
+    state.allBudgets = [
+      { date: '2026-09', tag: '@x', amount: 50 },
+      { date: '2026-10', tag: '@x', amount: 80 },
+    ];
+    state.transactionsUpdated$.next();
+    expect(document.querySelectorAll('#chart-container .budget-point')).toHaveLength(2);
+    fixture.destroy();
+    state.allBudgets = [];
+    state.transactionsUpdated$.next(); // a destroyed page no longer listens
+  });
 });

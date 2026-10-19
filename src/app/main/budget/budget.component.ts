@@ -1,6 +1,7 @@
 import { viewportHeight } from '../../stats/viewport';
 import { isActualIncome, toMinorUnits } from '@money/domain';
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { merge, Subscription } from 'rxjs';
 import { formatNumber } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
@@ -31,7 +32,9 @@ import { TranslateModule } from '@ngx-translate/core';
     '../../shared/styles/filter-styles.css',
   ],
 })
-export class BudgetComponent implements OnInit {
+export class BudgetComponent implements OnInit, OnDestroy {
+  private dataSub?: Subscription;
+
   /** An amount in the chart labels, in the number format the player chose (4.000,00 / 4,000.00), no sign. */
   private static amount(value: number, decimals = 2): string {
     const locale = AppStateService.instance.isEuropeanFormat ? 'de-DE' : 'en-US';
@@ -107,6 +110,15 @@ export class BudgetComponent implements OnInit {
   ngOnInit(): void {
     // Initialize the component
     this.callCharts();
+    // A Payday, a game move or a new transaction changes the actuals, the plan and the income: the chart follows without a reload
+    const state = AppStateService.instance;
+    this.dataSub = merge(state.transactionsUpdated$, state.subscriptionsUpdated$).subscribe(() =>
+      this.callCharts(),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.dataSub?.unsubscribe();
   }
 
   callCharts() {
