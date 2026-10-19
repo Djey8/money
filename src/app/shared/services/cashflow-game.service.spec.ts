@@ -3397,6 +3397,20 @@ describe('CashflowGameService', () => {
       expect(service.cannotRollBecause).toMatch(/solo/);
     });
 
+    it('the Paydays of a solo roll plan the budget too, and undoing the roll takes the plan back', () => {
+      startSolo();
+      const state = AppStateService.instance;
+      state.tier2Loaded = true;
+      state.allBudgets = [];
+      service.rng = die(6); // the opening Payday and the Payday it lands on
+      service.rollTurn(1, callbacks());
+      const planned = state.allBudgets.filter((b) => b.game);
+      expect(planned.map((b) => b.amount)).toEqual([1800, 1800]);
+      expect(new Set(planned.map((b) => b.date)).size).toBe(2);
+      service.undoLastAction(callbacks());
+      expect(state.allBudgets).toEqual([]);
+    });
+
     it('a roll moves the token, books what the landing does, and is one undo step', () => {
       startSolo();
       service.rng = die(6); // 6 from START lands on the Payday at 5

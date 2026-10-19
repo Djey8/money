@@ -1393,9 +1393,20 @@ export class CashflowGameService {
    */
   commitTurn(result: TurnResult, callbacks: CashflowGameCallbacks): void {
     this.pushUndoSnapshot(result.step);
-    for (const effects of result.effects) this.applyGameEffects(effects);
+    // a roll that passes a Payday space runs the Payday: it plans the budget like the Payday button does
+    let budgetPlanned = false;
+    let round = AppStateService.instance.cashflowGame.round;
+    for (const effects of result.effects) {
+      this.applyGameEffects(effects);
+      // only a Payday advances the round (the turn's effects carry no step of their own)
+      if (effects.state.round > round) {
+        round = effects.state.round;
+        budgetPlanned = this.planBudgetFromPayday(effects) || budgetPlanned;
+      }
+    }
     // an automatic bank loan (Charity or Downsized with too little cash) writes the Bank loan liability too
     this.persistAll('cashflow_roll', { total: result.roll.total, to: result.move.to }, callbacks, {
+      includeBudget: budgetPlanned,
       includeSubscriptions: true,
       includeBalanceSheet: true,
       includeGrow: true,
