@@ -2336,6 +2336,17 @@
   text-decoration: underline dotted;
 }
 
+/* A line of the table's history that is about a card: the whole line opens the card. */
+.cf-history-step--card {
+  cursor: pointer;
+  border-radius: 8px;
+}
+.cf-history-step--card:hover,
+.cf-history-step--card:focus-visible {
+  background: color-mix(in srgb, var(--color-primary, #2a7de1) 10%, transparent);
+  outline: none;
+}
+
 /*
  * The messages that come and go (a Payday, a Market card, what another player did) float over the content instead of pushing it -
  * a zero-height slot that stays at the top of the panel while it scrolls, with the message hanging from it. The panel is as tall

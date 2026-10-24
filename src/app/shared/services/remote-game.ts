@@ -160,6 +160,8 @@ export class RemoteGameHook {
   static leaveHome: (() => void) | null = null;
   /** The box that tells what the others do: the game screen lays it in the middle of its wheel. */
   static stage: Type<unknown> | null = null;
+  /** Opens a card to be read (read only, with a way back): the game screen's own card view, from a message or a line of the history. */
+  static openCard: ((cardId: string) => void) | null = null;
   /** Whether the wheel is on screen to hold that box (else the table layer floats it at the top). */
   static ringVisible: (() => boolean) | null = null;
   static resume: (() => void) | null = null;

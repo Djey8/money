@@ -1627,7 +1627,16 @@
             {{ 'CashflowGame.historyEmpty' | translate }}
           </p>
           <ul class="cf-history" *ngIf="remoteHistory.length">
-            <li class="cf-history-step" *ngFor="let line of remoteHistory; trackBy: trackLine">
+            <li
+              class="cf-history-step"
+              [class.cf-history-step--card]="!!line.cardId"
+              *ngFor="let line of remoteHistory; trackBy: trackLine"
+              [attr.role]="line.cardId ? 'link' : null"
+              [attr.tabindex]="line.cardId ? 0 : null"
+              [attr.title]="line.cardId ? ('CashflowGame.historyShowCard' | translate) : null"
+              (click)="line.cardId && showHistoryCard(line.cardId)"
+              (keydown.enter)="line.cardId && showHistoryCard(line.cardId)"
+            >
               <div class="cf-history-row">
                 <span class="cf-history-toggle">
                   <span class="cf-history-number">{{ line.number }}.</span>
@@ -1638,16 +1647,6 @@
                     {{ line.title }}</span
                   >
                   <span class="cf-history-detail" *ngIf="line.detail">{{ line.detail }}</span>
-                  <span
-                    class="cf-history-detail cf-history-card"
-                    *ngIf="line.cardId"
-                    role="link"
-                    tabindex="0"
-                    [attr.title]="'CashflowGame.historyShowCard' | translate"
-                    (click)="showHistoryCard(line.cardId); $event.stopPropagation()"
-                    (keydown.enter)="showHistoryCard(line.cardId); $event.stopPropagation()"
-                    >🃏</span
-                  >
                 </span>
               </div>
               <span class="cf-history-date" *ngIf="line.at">{{
@@ -1702,7 +1701,7 @@
                   [attr.title]="'CashflowGame.historyShowCard' | translate"
                   (click)="showHistoryCard(step.cardId); $event.stopPropagation()"
                   (keydown.enter)="showHistoryCard(step.cardId); $event.stopPropagation()"
-                  >🃏 {{ cardLabelOf(step.cardId) }}</span
+                  >{{ cardLabelOf(step.cardId) }}</span
                 >
               </button>
               <button

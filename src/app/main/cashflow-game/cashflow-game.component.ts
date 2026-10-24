@@ -183,6 +183,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     // the table layer floats its telling at the top only where the wheel is not there to hold it
     RemoteGameHook.ringVisible = () =>
       CashflowGameComponent.isOpen && this.dashboardView === 'main' && this.isSolo;
+    // a card named in a message of the others or a line of the history opens here, to be read
+    RemoteGameHook.openCard = (cardId) => {
+      CashflowGameComponent.open();
+      this.showHistoryCard(cardId);
+    };
     // Paying a dice card (gold coins) brings the player here, to the decision.
     this.cashflowGameService.decisionNeeded$?.subscribe(() => this.showOpenDecision());
     // The game ended with a move (the winning buy made from Grow ...): the dashboard shows the result, the player need not look for it.
@@ -1148,6 +1153,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     document.removeEventListener('click', this.onAnyClick, true);
     this.fitObserver?.disconnect();
     if (RemoteGameHook.ringVisible) RemoteGameHook.ringVisible = null;
+    RemoteGameHook.openCard = null;
   }
 
   private fitQueued = false;

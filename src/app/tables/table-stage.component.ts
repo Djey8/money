@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RemoteGameHook } from '../shared/services/remote-game';
 import { TableModeService } from './table-mode.service';
 
 /**
@@ -31,7 +32,16 @@ import { TableModeService } from './table-mode.service';
           faces[face - 1]
         }}</span>
       </div>
-      <div class="ts-card" *ngIf="s.card as card" [attr.data-tone]="card.tone">
+      <div
+        class="ts-card"
+        *ngIf="s.card as card"
+        [attr.data-tone]="card.tone"
+        [class.ts-card--link]="canOpen(card)"
+        [attr.role]="canOpen(card) ? 'link' : null"
+        [attr.tabindex]="canOpen(card) ? 0 : null"
+        (click)="open(card)"
+        (keydown.enter)="open(card)"
+      >
         <strong>{{ card.title }}</strong>
         <small *ngIf="card.deck">{{ card.deck }}</small>
         <ul *ngIf="card.lines.length">
@@ -121,6 +131,13 @@ import { TableModeService } from './table-mode.service';
         border-inline-start: 6px solid var(--color-primary, #2a7de1);
         background: var(--color-surface-alt, #f4f6f8);
       }
+      .ts-card--link {
+        cursor: pointer;
+      }
+      .ts-card--link:hover,
+      .ts-card--link:focus-visible {
+        outline: 2px solid var(--color-primary, #2a7de1);
+      }
       .ts-card[data-tone='market'] {
         border-color: #2a7de1;
       }
@@ -172,5 +189,15 @@ import { TableModeService } from './table-mode.service';
 })
 export class TableStageComponent {
   readonly presenter = inject(TableModeService).presenter;
+
+  /** A card of the message opens, to be read, in the game screen's own card view. */
+  canOpen(card: { id?: string }): boolean {
+    return !!card.id && !!RemoteGameHook.openCard;
+  }
+  open(card: { id?: string }): void {
+    if (!card.id || !RemoteGameHook.openCard) return;
+    this.presenter.dismiss();
+    RemoteGameHook.openCard(card.id);
+  }
   readonly faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 }

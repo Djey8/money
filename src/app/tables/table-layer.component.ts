@@ -150,7 +150,14 @@ import { TablesApiService } from './tables-api.service';
       </div>
 
       <!-- always there, so the bar keeps its height before the first move and after it -->
-      <p class="tl-latest">
+      <p
+        class="tl-latest"
+        [class.tl-latest--card]="!!latest()?.cardId"
+        [attr.role]="latest()?.cardId ? 'link' : null"
+        [attr.tabindex]="latest()?.cardId ? 0 : null"
+        (click)="openCard(latest()?.cardId)"
+        (keydown.enter)="openCard(latest()?.cardId)"
+      >
         <ng-container *ngIf="latest() as last"
           ><span class="tl-meta">{{ t.latest }}:</span> <strong>{{ last.who }}</strong>
           {{ last.title }} {{ last.detail }}</ng-container
@@ -415,6 +422,10 @@ import { TablesApiService } from './tables-api.service';
       .tl-latest .tl-meta {
         margin-inline-end: 0.4em;
       }
+      .tl-latest--card {
+        cursor: pointer;
+        text-decoration: underline dotted;
+      }
       .tl-latest {
         margin: 0;
         min-height: 1.3em;
@@ -658,6 +669,11 @@ export class TableLayerComponent implements OnDestroy {
 
   async move(command: Record<string, unknown>): Promise<void> {
     await this.mode.session()?.play(command);
+  }
+
+  /** The card the latest line is about opens, to be read. */
+  openCard(cardId: string | undefined): void {
+    if (cardId) RemoteGameHook.openCard?.(cardId);
   }
 
   trackSeat(_index: number, row: { seat: number }): number {

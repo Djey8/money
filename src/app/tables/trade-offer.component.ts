@@ -43,7 +43,7 @@ import { tradeOfferTexts, type TradeOfferTexts } from './trade-offer.texts';
       *ngIf="trade && hidden"
       (click)="hidden = false"
     >
-      🃏 {{ t.reopen }}
+      {{ t.reopen }}
     </button>
 
     <div

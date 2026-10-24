@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { RemoteGameHook } from '../shared/services/remote-game';
 import { TableModeService } from './table-mode.service';
 import { TableStageComponent } from './table-stage.component';
 
@@ -33,5 +34,34 @@ describe('TableStageComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.ts-stage')).toBeNull();
     mode.presenter.setMessages(true);
+  });
+
+  it('a card in the message opens, to be read, when it is pressed - and the message gives way', () => {
+    TestBed.configureTestingModule({});
+    const mode = TestBed.inject(TableModeService);
+    mode.presenter.stage.set({
+      seat: 1,
+      who: 'Bea',
+      color: '#c0392b',
+      headline: 'draws a card',
+      card: {
+        id: 'classic-small-efh-45k-2k',
+        title: 'EFH',
+        deck: 'Small Deal',
+        tone: 'deal',
+        lines: [],
+      },
+    } as never);
+    const opened = jest.fn();
+    RemoteGameHook.openCard = opened;
+    try {
+      const fixture = TestBed.createComponent(TableStageComponent);
+      fixture.detectChanges();
+      (fixture.nativeElement.querySelector('.ts-card--link') as HTMLElement).click();
+      expect(opened).toHaveBeenCalledWith('classic-small-efh-45k-2k');
+      expect(mode.presenter.stage()).toBeNull();
+    } finally {
+      RemoteGameHook.openCard = null;
+    }
   });
 });

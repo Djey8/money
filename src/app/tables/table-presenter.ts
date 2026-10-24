@@ -12,6 +12,8 @@ export interface Stage {
   dice?: number[];
   tumbling?: boolean;
   card?: {
+    /** For opening it to be read. */
+    id?: string;
     title: string;
     deck: string;
     tone: 'deal' | 'market' | 'doodad';
@@ -384,6 +386,7 @@ export class TablePresenter {
     add(t.deposit, card['depositMinor']);
     add(t.cashflow, card['cashflowMinor']);
     return {
+      id: typeof card['id'] === 'string' ? card['id'] : undefined,
       title,
       deck: names[deck] ?? '',
       tone,
