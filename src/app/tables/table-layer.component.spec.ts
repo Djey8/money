@@ -1,6 +1,8 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import type { TableView } from '@money/domain';
+import { CashflowCardTextService } from '../shared/services/cashflow-card-text.service';
 import { DatabaseService } from '../shared/services/database.service';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TableLayerComponent } from './table-layer.component';
@@ -40,10 +42,20 @@ function render(table: TableView, canDone: boolean | string[] = false) {
     can: (action: string) =>
       Array.isArray(canDone) ? canDone.includes(action) : canDone && action === 'done',
     play,
+    busy: signal(false),
     close: jest.fn(),
     problem: signal<string | null>(null),
   } as unknown as TableSessionService;
-  TestBed.configureTestingModule({});
+  TestBed.configureTestingModule({
+    imports: [HttpClientTestingModule],
+    providers: [
+      // the printed card texts come from files: here the card's own title and numbers are enough
+      {
+        provide: CashflowCardTextService,
+        useValue: { ensureLoaded: async () => undefined, textFor: () => ({}) },
+      },
+    ],
+  });
   // the books on the app are the layer's neighbour's business; here only what the layer itself reads
   jest.spyOn(TableModeService.prototype, 'show').mockImplementation(() => undefined);
   TestBed.inject(TableModeService).begin(session, 'en', false);
@@ -69,6 +81,26 @@ describe('TableLayerComponent', () => {
     expect(text).toContain('Ben');
     expect(text).toContain('you');
     expect(text).toContain('bot');
+  });
+
+  it('shows who is out of the game and where everybody stands, so a player knows their chances', () => {
+    const { fixture } = render(
+      view({
+        standings: [
+          { seat: 2, rank: 1, outcome: 'escaped' },
+          { seat: 0, rank: 2, outcome: 'playing' },
+          { seat: 1, rank: 3, outcome: 'bankrupt' },
+        ],
+      }),
+    );
+    const chips = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.tl-player'));
+    const place = (index: number) => chips[index].querySelector('.tl-place')?.textContent?.trim();
+    expect(place(0)).toBe('#2'); // Ann, still playing: her place as it is now
+    expect(place(1)).toBe('✖ #3'); // Ben went bankrupt: last, and out
+    expect(place(2)).toBe('🥇 #1'); // the bot got out first
+    expect(chips[1].classList).toContain('tl-player--bankrupt');
+    expect(chips[2].classList).toContain('tl-player--out');
+    expect(chips[0].classList).not.toContain('tl-player--out');
   });
 
   it('says it is my turn when it is', () => {
@@ -165,32 +197,144 @@ describe('TableLayerComponent', () => {
     expect(play).toHaveBeenCalledWith({ type: 'sell_position', input: { title: 'EFH' } });
   });
 
-  it('shows a friend offering a card to me and lets me take it or turn it down', () => {
+  it('shows a card offered to me as a card, with what it would do to me, and lets me take it or turn it down', () => {
+    const offer = {
+      sellerSeat: 0,
+      cardId: 'classic-small-efh-45k-2k',
+      deck: 'dealSmall',
+      toSeat: null,
+      priceMinor: 500000,
+      counters: [],
+      declinedSeats: [],
+      at: 1,
+      you: {
+        quote: {
+          ok: true,
+          reason: null,
+          priceMinor: 500000,
+          loanMinor: 100000,
+          cashflowAfterMinor: 34500,
+        },
+        maxPriceMinor: 3000000,
+      },
+    };
+    const { fixture, play } = render(
+      view({
+        trade: offer,
+        settings: { clock: { mode: 'none' }, showProgress: true, gameSetId: 'cashflow' },
+      }),
+      ['accept_trade', 'counter_trade', 'decline_trade'],
+    );
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Ann offers this card to the table');
+    expect(text).toMatch(/Down payment/); // the card as it is, with its own terms
+    expect(text).toMatch(/Asking price/);
+    expect(text).toMatch(/Bank loan taken first/);
+    const buttons = () =>
+      Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('.to-panel button'));
+    buttons()
+      .find((b) => b.textContent!.includes('Buy for'))!
+      .click();
+    expect(play).toHaveBeenCalledWith({ type: 'accept_trade' });
+    buttons()
+      .find((b) => b.textContent!.includes('No thanks'))!
+      .click();
+    expect(play).toHaveBeenCalledWith({ type: 'decline_trade' });
+  });
+
+  it('a card I cannot afford cannot be taken: the reason is told and only an offer within my means is possible', () => {
     const { fixture, play } = render(
       view({
         trade: {
           sellerSeat: 0,
-          cardId: 'card-x',
+          cardId: 'classic-small-efh-45k-2k',
           deck: 'dealSmall',
           toSeat: null,
+          priceMinor: 9000000,
+          counters: [],
+          declinedSeats: [],
+          you: {
+            quote: {
+              ok: false,
+              reason: 'Your monthly cashflow would be -500.',
+              priceMinor: 9000000,
+              loanMinor: 9000000,
+              cashflowAfterMinor: null,
+            },
+            maxPriceMinor: 1200000,
+          },
+        },
+      }),
+      ['counter_trade', 'decline_trade'],
+    );
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.to-panel');
+    expect(panel.textContent).toContain('You cannot take it: Your monthly cashflow would be -500.');
+    const buy = Array.from<HTMLButtonElement>(panel.querySelectorAll('button')).find((b) =>
+      b.textContent!.includes('Buy for'),
+    )!;
+    expect(buy.disabled).toBe(true);
+    const input: HTMLInputElement = panel.querySelector('.to-input')!;
+    input.value = '30000'; // more than the 12.000 I can afford
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const offerButton = () =>
+      Array.from<HTMLButtonElement>(panel.querySelectorAll('button')).find((b) =>
+        b.textContent!.includes('Make an offer'),
+      )!;
+    expect(offerButton().disabled).toBe(true);
+    input.value = '10000';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(offerButton().disabled).toBe(false);
+    offerButton().click();
+    expect(play).toHaveBeenCalledWith({ type: 'counter_trade', priceMinor: 1000000 });
+  });
+
+  it('shows the seller the offers that came in, to accept or take the card back', () => {
+    const { fixture, play } = render(
+      view({
+        youSeat: 0,
+        activeSeat: 0,
+        trade: {
+          sellerSeat: 0,
+          cardId: 'classic-small-efh-45k-2k',
+          deck: 'dealSmall',
+          toSeat: null,
+          priceMinor: 500000,
+          counters: [{ seat: 1, priceMinor: 300000 }],
+          declinedSeats: [],
+        },
+      }),
+      ['accept_trade', 'withdraw_trade'],
+    );
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.to-panel');
+    expect(panel.textContent).toContain('Your card on the table');
+    expect(panel.textContent).toContain('Ben');
+    Array.from<HTMLButtonElement>(panel.querySelectorAll('button'))
+      .find((b) => b.textContent!.includes('Accept'))!
+      .click();
+    expect(play).toHaveBeenCalledWith({ type: 'accept_trade', fromSeat: 1 });
+    Array.from<HTMLButtonElement>(panel.querySelectorAll('button'))
+      .find((b) => b.textContent!.includes('Take it back'))!
+      .click();
+    expect(play).toHaveBeenCalledWith({ type: 'withdraw_trade' });
+  });
+
+  it('nobody else sees an offer that is not theirs to answer', () => {
+    const { fixture } = render(
+      view({
+        trade: {
+          sellerSeat: 2,
+          cardId: 'classic-small-efh-45k-2k',
+          deck: 'dealSmall',
+          toSeat: 0,
           priceMinor: 500000,
           counters: [],
           declinedSeats: [],
         },
       }),
-      ['accept_trade', 'counter_trade', 'decline_trade'],
     );
-    expect(fixture.nativeElement.textContent).toMatch(/Ann offers card-x for 5[.,]000/);
-    const take = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((b) => b.textContent!.includes('Take it'))!;
-    take.click();
-    expect(play).toHaveBeenCalledWith({ type: 'accept_trade' });
-    const decline = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((b) => b.textContent!.includes('Decline'))!;
-    decline.click();
-    expect(play).toHaveBeenCalledWith({ type: 'decline_trade' });
+    expect(fixture.nativeElement.querySelector('.to-panel')).toBeNull();
   });
 
   it('shows an open undo vote and lets me answer it', () => {

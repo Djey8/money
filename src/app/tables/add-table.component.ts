@@ -165,6 +165,15 @@ function accountName(): string {
             <input type="checkbox" name="repayOffTurn" [(ngModel)]="form.repayOffTurn" />
             <span>{{ t.repayOffTurn }}</span>
           </label>
+          <label class="tl-field" *ngIf="form.ranked">
+            <span>{{ t.leaveFree }}</span>
+            <select name="leaveFreeRounds" [(ngModel)]="form.leaveFreeRounds">
+              <option [ngValue]="0">{{ t.leaveFromStart }}</option>
+              <option [ngValue]="1">1</option>
+              <option [ngValue]="2">2</option>
+              <option [ngValue]="3">3</option>
+            </select>
+          </label>
           <label class="tl-check">
             <input type="checkbox" name="allowUndo" [(ngModel)]="form.allowUndo" />
             <span>{{ t.allowUndo }}</span>
@@ -298,6 +307,7 @@ export class AddTableComponent implements OnInit {
     spectators: false,
     allowUndo: true,
     repayOffTurn: true,
+    leaveFreeRounds: 0,
     turnGate: true,
     showProgress: true,
     ranked: true,
@@ -358,6 +368,7 @@ export class AddTableComponent implements OnInit {
         spectators: f.spectators,
         allowRewind: f.allowUndo,
         repayOffTurn: f.repayOffTurn,
+        leaveFreeRounds: f.leaveFreeRounds,
         turnGate: f.turnGate,
         pace: f.pace,
         showProgress: f.showProgress,

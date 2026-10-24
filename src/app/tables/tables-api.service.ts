@@ -111,6 +111,7 @@ export interface CreateTableInput {
     showProgress?: boolean;
     /** Paying the bank back at any time, not only in one's own turn (default on). */
     repayOffTurn?: boolean;
+    leaveFreeRounds?: number;
     /** The game may count for the leaderboard rating (default on; fixed once it starts). */
     ranked?: boolean;
     /** Rule overrides: how many of a player's turns a buyer's offer stays open. */

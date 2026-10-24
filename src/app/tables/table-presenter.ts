@@ -121,6 +121,13 @@ export class TablePresenter {
   /** The events a table update brought, before its books are shown: the walks they tell start from where tokens were. */
   push(lines: TableEventLine[], view: TableView | null): void {
     if (!view || this.stopped) return;
+    // only bots are left and they play to the end at full speed: nothing is told step by step, nobody waits for it
+    if (view.fastForward) {
+      this.queue = [];
+      this.stage.set(null);
+      this.dice.set(null);
+      return;
+    }
     const mine = view.youSeat;
     for (const line of lines) {
       if (line.seat === null || !TOLD.has(line.type)) continue;
