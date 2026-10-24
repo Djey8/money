@@ -2651,3 +2651,88 @@
   background: var(--color-surface-alt, rgba(0, 0, 0, 0.05));
   outline: none;
 }
+
+/* The Payday banner (JFK, 2026-10-25): a gold header with the coin, and three tiles - what came in, what went out, what is left. */
+.cf-notice--payday {
+  border-left: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-warning, #f39c12) 55%, transparent);
+  animation: cf-payday-pop 0.28s ease-out;
+}
+@keyframes cf-payday-pop {
+  from {
+    transform: translateY(8px) scale(0.96);
+    opacity: 0;
+  }
+}
+.cf-notice--payday > .cf-friend-sale-close {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 8px;
+}
+.cf-notice--payday {
+  position: relative;
+}
+.cf-payday {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cf-payday-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 40px 8px 12px;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--color-warning, #f39c12) 38%, var(--color-surface, #fff)),
+    color-mix(in srgb, var(--color-warning, #f39c12) 12%, var(--color-surface, #fff))
+  );
+  font-size: 1.05rem;
+}
+.cf-payday-coin {
+  font-size: 1.35rem;
+}
+.cf-payday-times {
+  margin-inline-start: auto;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--color-warning, #f39c12);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.cf-payday-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.cf-payday-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 4px 10px;
+  text-align: center;
+}
+.cf-payday-tile + .cf-payday-tile {
+  border-inline-start: 1px solid var(--color-border, #e3e6ea);
+}
+.cf-payday-tile small {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.cf-payday-tile b {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.cf-payday-tile--net b {
+  font-size: 1.15rem;
+}
+.cf-payday-tile--net b.cf-negative {
+  color: var(--color-danger);
+}

@@ -1038,15 +1038,22 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
               Number(data['paydayIncomeMinor'] ?? 0) - Number(data['paydayExpensesMinor'] ?? 0),
           }
         : null;
-      if (data['openingPayday']) this.showPayday();
+      // The Payday banner comes when the token gets there (JFK, 2026-10-25): not while it is still walking. The opening Payday of
+      // the first roll has no space of its own: it is told when the token has landed.
+      let paydayTold = false;
       const move = total > 0 ? moveToken(this.board, from, total) : null;
       for (const space of move?.entered ?? []) {
         if (this.skipWalking) break;
         await this.pause(WALK_STEP_MS);
         this.walkingAt = space.index;
-        if (space.kind === 'payday') this.showPayday();
+        if (space.kind === 'payday') {
+          this.showPayday();
+          paydayTold = true;
+        }
       }
-      if (this.skipWalking && paydays > 0) this.showPayday();
+      if ((this.skipWalking && paydays > 0) || (data['openingPayday'] && !paydayTold)) {
+        this.showPayday();
+      }
       this.walkingAt = typeof data['to'] === 'number' ? (data['to'] as number) : undefined;
       // the token is on its tile: now the books of the new situation appear
       RemoteGameHook.holdUpdates = false;
@@ -1234,14 +1241,21 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.skipWalking = this.reducedMotion;
     this.walkingAt = from;
     await this.tumbleDice(result.roll.dice.length);
-    if (result.openingPayday) this.showPayday();
+    // The Payday banner comes when the token gets there, not while it is still walking; the opening Payday of the first roll has no
+    // space of its own, so it is told when the token has landed (JFK, 2026-10-25).
+    let paydayTold = false;
     for (const space of result.move.entered) {
       if (this.skipWalking) break;
       await this.pause(WALK_STEP_MS);
       this.walkingAt = space.index;
-      if (space.kind === 'payday') this.showPayday();
+      if (space.kind === 'payday') {
+        this.showPayday();
+        paydayTold = true;
+      }
     }
-    if (this.skipWalking && result.move.paydays > 0) this.showPayday();
+    if ((this.skipWalking && result.move.paydays > 0) || (result.openingPayday && !paydayTold)) {
+      this.showPayday();
+    }
     // The totem is on its tile: only now does the roll take effect - Charity's dice choice, the child, the spanner, the
     // cash - and the dialog or the action comes at once (JFK, 2026-10-06: nothing before the animation has settled).
     this.walkingAt = result.move.to;

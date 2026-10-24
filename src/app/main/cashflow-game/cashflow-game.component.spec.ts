@@ -2518,6 +2518,37 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.paydayBanner).toBeNull();
   });
 
+  it('the Payday banner comes when the token gets there, not while it is still walking - the opening Payday when it has landed', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState();
+    const payday = { appendedTransactions: [{ amountMinor: 300000 }, { amountMinor: -120000 }] };
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [2], total: 2 },
+        move: {
+          entered: [{ index: 1 }, { index: 2 }],
+          paydays: 0,
+          landed: { kind: 'deal', index: 2 },
+        },
+        effects: [payday],
+        openingPayday: true,
+      };
+    });
+    (window as any).matchMedia = jest.fn(() => ({ matches: false })); // the token really walks, step by step
+    const seen: unknown[] = [];
+    const walked = jest.spyOn(component as any, 'pause').mockImplementation(async () => {
+      seen.push(component.paydayBanner); // what is on the screen at each step of the walk
+    });
+    component.rollSolo();
+    await settle();
+    // while the token walked, no banner; once it had landed, the opening Payday was told
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((banner) => banner === null)).toBe(true);
+    expect(component.paydayBanner).toMatchObject({ count: 1 });
+    walked.mockRestore();
+  });
+
   it('under Charity two dice are the default and the player may change to one; landing on Charity selects two again', async () => {
     const first = soloComponent();
     setSoloState({ charityRoundsLeft: 3 });

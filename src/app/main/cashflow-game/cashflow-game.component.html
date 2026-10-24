@@ -826,27 +826,31 @@
                   *ngIf="paydayBanner as payday"
                   role="status"
                 >
-                  <span class="cf-payday-note">
-                    <strong>💰 {{ 'CashflowGame.solo.passedPayday' | translate }}</strong>
-                    <span *ngIf="payday.count > 1">{{
-                      'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
-                    }}</span>
-                    <span
-                      class="cf-payday-note-line cf-payday-note-net"
-                      [class.cf-negative]="payday.netMinor < 0"
-                    >
-                      {{ 'CashflowGame.monthlyCashflow' | translate }}
-                      <b>{{ signedCardAmount(payday.netMinor) }}</b>
-                    </span>
-                    <span class="cf-payday-note-line">
-                      {{ 'CashflowGame.solo.paydayIncome' | translate }}
-                      <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
-                    </span>
-                    <span class="cf-payday-note-line">
-                      {{ 'CashflowGame.solo.sumExpenses' | translate }}
-                      <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
-                    </span>
-                  </span>
+                  <div class="cf-payday">
+                    <header class="cf-payday-head">
+                      <span class="cf-payday-coin" aria-hidden="true">💰</span>
+                      <strong>{{ 'CashflowGame.solo.passedPayday' | translate }}</strong>
+                      <span class="cf-payday-times" *ngIf="payday.count > 1">{{
+                        'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
+                      }}</span>
+                    </header>
+                    <div class="cf-payday-tiles">
+                      <span class="cf-payday-tile">
+                        <small>{{ 'CashflowGame.solo.paydayIncome' | translate }}</small>
+                        <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
+                      </span>
+                      <span class="cf-payday-tile">
+                        <small>{{ 'CashflowGame.solo.sumExpenses' | translate }}</small>
+                        <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
+                      </span>
+                      <span class="cf-payday-tile cf-payday-tile--net">
+                        <small>{{ 'CashflowGame.monthlyCashflow' | translate }}</small>
+                        <b [class.cf-negative]="payday.netMinor < 0">{{
+                          signedCardAmount(payday.netMinor)
+                        }}</b>
+                      </span>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     class="cf-friend-sale-close"
