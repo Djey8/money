@@ -65,4 +65,51 @@ describe('AddTableComponent', () => {
       component.t.notGame,
     );
   });
+
+  it('needs no name: an empty one is replaced by the suggestion on the dice, which another throw changes', () => {
+    const component = fixture.componentInstance;
+    expect(component.suggestion.length).toBeGreaterThan(0);
+    const first = component.suggestion;
+    component.nextSuggestion();
+    expect(component.suggestion).not.toBe(first);
+    component.form.name = '';
+    component.create();
+    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/v1/game/rooms'));
+    expect(req.request.body.settings.name).toBe(component.suggestion);
+  });
+
+  it('picks the players on the wheel and takes a number of your own when none fits', () => {
+    const component = fixture.componentInstance;
+    const wheel: HTMLElement = fixture.nativeElement.querySelector('app-wheel-picker');
+    const items = Array.from<HTMLButtonElement>(wheel.querySelectorAll('.wp-item'));
+    items.find((b) => b.textContent!.trim() === '4')!.click();
+    fixture.detectChanges();
+    expect(component.form.maxSeats).toBe(4);
+    (wheel.querySelector('.wp-other') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const input: HTMLInputElement = wheel.querySelector('.wp-input')!;
+    input.value = '9';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(component.form.maxSeats).toBe(9);
+    // a number outside the limits is held to them
+    input.value = '99';
+    input.dispatchEvent(new Event('input'));
+    expect(component.form.maxSeats).toBe(24);
+  });
+
+  it('every setting says in a line what it does, and a switch flips its rule', () => {
+    const component = fixture.componentInstance;
+    const rows = fixture.nativeElement.querySelectorAll('.at-row');
+    expect(rows.length).toBeGreaterThan(10);
+    for (const row of Array.from<HTMLElement>(rows)) {
+      expect(row.querySelector('.at-label strong')?.textContent?.trim().length).toBeGreaterThan(0);
+    }
+    const before = component.form.spectators;
+    const spectators: HTMLInputElement = fixture.nativeElement.querySelector(
+      'input[name="spectators"]',
+    );
+    spectators.dispatchEvent(new Event('change'));
+    expect(component.form.spectators).toBe(!before);
+  });
 });

@@ -120,7 +120,7 @@ function championByProfession(): Policy {
   return {
     id: 'champion',
     label: 'Champion of the profession',
-    description: 'Plays the champion of its own profession from the champion book.',
+    description: 'Plays the best strategy for its profession.',
     dice: (view) => forView(view).dice(view),
     pile: (view, random) => forView(view).pile(view, random),
     deal: (view, card) => forView(view).deal(view, card),
@@ -149,7 +149,7 @@ function searchedProfiles(): BotProfile[] {
       id: 'champion-latest',
       name: 'Champion Cleo II',
       difficulty: 'champion',
-      description: `The latest global champion (${global.spec.id}): ${global.spec.description} It won ${Math.round(global.winRate * 100)}% of fresh tables against the field.`,
+      description: 'The best of all: the strategy that wins most often.',
       spec: global.spec,
     });
   }
@@ -159,7 +159,7 @@ function searchedProfiles(): BotProfile[] {
       id: `character-${style}`,
       name: entry.name,
       difficulty: difficultyOf(entry.winRate),
-      description: `${entry.summary} ${entry.spec.description}`,
+      description: entry.summary,
       spec: { ...entry.spec, id: `character-${style}` },
     });
   }
@@ -177,83 +177,77 @@ function baseProfiles(): BotProfile[] {
       id: 'never-buy',
       name: 'Sleepy Sam',
       difficulty: 'easy',
-      description:
-        'Never invests: pays every Doodad and passes every deal. A bot to practise against.',
+      description: 'Never invests. A bot to practise against.',
       spec: preset('never-buy'),
     },
     {
       id: 'picky-properties',
       name: 'Careful Carla',
       difficulty: 'easy',
-      description: 'Buys only properties that pay at least 3% a month, and keeps a reserve.',
+      description: 'Only picks good properties, and keeps a reserve.',
       spec: preset('picky-properties'),
     },
     {
       id: 'cash-properties',
       name: 'Cash Charlie',
       difficulty: 'easy',
-      description: 'Buys any property it can pay for in cash. No loans.',
+      description: 'Buys properties with cash only. No loans.',
       spec: preset('cash-properties'),
     },
     {
       id: 'debt-first',
       name: 'Debt-free Dana',
       difficulty: 'medium',
-      description:
-        'Pays the mortgage, the car loan and the credit card off first - lower expenses are the way out - and only then buys properties from cash.',
+      description: 'Pays its debts off first, then invests.',
       spec: DEBT_FIRST,
     },
     {
       id: 'stocks-for-deposits',
       name: 'Trader Tina',
       difficulty: 'medium',
-      description: 'Trades stocks to raise the deposits for properties.',
+      description: 'Trades stocks to pay for properties.',
       spec: preset('stocks-for-deposits'),
     },
     {
       id: 'bridge-loans',
       name: 'Banker Ben',
       difficulty: 'medium',
-      description:
-        'Borrows from the bank when a property pays well above the interest, and pays back early.',
+      description: 'Borrows when a property pays more than the loan costs.',
       spec: preset('bridge-loans'),
     },
     {
       id: 'mlm-then-properties',
       name: 'Marketing Mia',
       difficulty: 'medium',
-      description: 'Takes every Multi-Level-Marketing card it can afford, then buys properties.',
+      description: 'Starts with marketing cards, then properties.',
       spec: preset('mlm-then-properties'),
     },
     {
       id: 'big-deals-when-rich',
       name: 'Steady Stella',
       difficulty: 'medium',
-      description: 'Small Deals first, Big Deals once the cash is there.',
+      description: 'Small deals first, big deals when rich.',
       spec: preset('big-deals-when-rich'),
     },
     {
       id: 'leveraged-big',
       name: 'Gambler Gus',
       difficulty: 'medium',
-      description:
-        'Goes for Big Deals on borrowed money. Fast when it works, bankrupt when it does not.',
+      description: 'Big deals on borrowed money. All or nothing.',
       spec: preset('leveraged-big'),
     },
     {
       id: 'all-rounder',
       name: 'Allie All-Round',
       difficulty: 'hard',
-      description:
-        'Properties, loans only when well covered, marketing, stocks and selling to generous buyers.',
+      description: 'A bit of everything, in balance.',
       spec: preset('all-rounder'),
     },
     {
       id: 'champion',
       name: 'Master Maxine',
       difficulty: 'champion',
-      description:
-        'Plays the champion of her own profession: the strategy that won the most tables for that profession in the tournament.',
+      description: 'Plays the best strategy for her profession.',
       spec: CHAMPION_V1,
       build: championByProfession,
     },
@@ -261,16 +255,14 @@ function baseProfiles(): BotProfile[] {
       id: 'champion-v1',
       name: 'Champion Cleo',
       difficulty: 'champion',
-      description:
-        'The strategy the tournament found to win tables most often, and the only one that watches the race: it takes more risk when a rival pulls ahead.',
+      description: 'Wins often, and takes more risk when a rival pulls ahead.',
       spec: CHAMPION_V1,
     },
     {
       id: 'best-found',
       name: 'Quick Quinn',
       difficulty: 'hard',
-      description:
-        'The best strategy the solo search found: fast properties, borrowing when it pays, marketing.',
+      description: 'Fast properties, borrowing when it pays.',
       spec: BEST_FOUND,
     },
   ];
@@ -362,7 +354,7 @@ export function botProfile(id: string): BotProfile | undefined {
     id,
     name: `${base.name} (${parts.level})`,
     difficulty: parts.level === 'beginner' ? 'easy' : TIERS[tier],
-    description: `${base.description} Plays at the ${parts.level} level: now and then it slips.`,
+    description: base.description,
   };
 }
 
