@@ -301,10 +301,11 @@ describe('the record of a table', () => {
     expect(rest.body.events.length + 3).toBe(all.body.events.length);
   });
 
-  it("follows the live channel's access: players, and spectators of a public table that allows them", async () => {
+  it("follows the live channel's access: players, spectators of a public table that allows them, and anyone once the game is over", async () => {
     if (!dbAvailable) return;
     const id = await finishedTable('Closed record');
-    expect((await rooms(ben, 'get', `/${id}/log`)).status).toBe(403);
+    // a game that is over is open to anyone with a game account at a public table (it opens from the leaderboard)
+    expect((await rooms(ben, 'get', `/${id}/log`)).status).toBe(200);
     expect((await rooms(normal, 'get', `/${id}/log`)).body.code).toBe('not_a_game_account');
     expect((await rooms(host, 'get', `/${id}/log?after=-1`)).status).toBe(400);
     expect((await rooms(host, 'get', `/${id}/log?limit=0`)).status).toBe(400);
