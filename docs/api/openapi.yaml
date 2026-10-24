@@ -7013,9 +7013,13 @@ paths:
                     properties:
                       recent:
                         type: array
+                        description: The player's last games (up to 100), newest first.
                         items:
                           type: object
                           properties:
+                            tableId:
+                              type: string
+                              description: The table the game was played at. A finished table stays readable for three months (`GET /game/rooms/{id}`; a private one only for the people who sat at it).
                             table:
                               type: string
                             endedAt:

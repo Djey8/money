@@ -204,6 +204,25 @@ describe('who may watch', () => {
   });
 });
 
+describe('a game that is over', () => {
+  it('can be read by anyone with a game account at a public table, not at a private one', async () => {
+    if (!dbAvailable) return;
+    const room = await createRoom(host);
+    const priv = await createRoom(host, { visibility: 'private', name: 'Hidden over' });
+    for (const id of [room.id, priv.id]) {
+      const doc = await store.getRoom(getGameRoomsDb(), id);
+      await store.saveRoom(getGameRoomsDb(), {
+        ...doc,
+        phase: 'finished',
+        table: { ...doc.table, phase: 'finished' },
+      });
+    }
+    const open = await openStream(ben, room.id);
+    expect(open.status).toBe(200);
+    expect((await openStream(ben, priv.id)).status).toBe(404);
+  });
+});
+
 describe('the stream of a table', () => {
   it('starts with the snapshot of the table as its viewer sees it', async () => {
     if (!dbAvailable) return;

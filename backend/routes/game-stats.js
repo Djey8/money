@@ -174,10 +174,11 @@ router.get('/players/:playerId', ...guard('r'), async (req, res, next) => {
       }
       running.set(result.tableId, rating);
     }
-    const results = all.slice(0, 20);
+    const results = all.slice(0, 100);
     const recent = results.map((result) => {
       const own = result.participants.find((p) => p.playerId === playerId);
       return {
+        tableId: result.tableId,
         table: result.settings.name,
         endedAt: result.endedAt,
         players: result.participants.length,

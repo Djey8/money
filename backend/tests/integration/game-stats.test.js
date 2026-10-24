@@ -492,6 +492,11 @@ describe('a rating is the base plus the games', () => {
       .set('Authorization', `Bearer ${host.token}`);
     expect(card.status).toBe(200);
     expect(card.body.rating).toBe(Math.round(base - 1.78));
+    // every game of the list names its table, so it can be opened
+    expect(card.body.recent.map((game) => game.tableId)).toEqual([
+      `drift-${stamp}-2`,
+      `drift-${stamp}-1`,
+    ]);
     expect(card.body.recent.map((game) => game.ratingAfter)).toEqual([
       Math.round(base - 1.78),
       Math.round(base - 2.64),

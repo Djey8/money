@@ -57,6 +57,8 @@ export interface GamePlayer {
   avgPlace: number | null;
   bestPlace: number | null;
   recent?: {
+    /** The table the game was played at: it opens from the list while it is still kept. */
+    tableId?: string;
     table: string;
     endedAt: string;
     players: number;

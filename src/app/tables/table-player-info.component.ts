@@ -11,6 +11,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { TablesApiService, type GamePlayer } from './tables-api.service';
 import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
@@ -189,7 +190,15 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
         <p class="pi-empty" *ngIf="loaded && !detail?.recent?.length">{{ t.noGames }}</p>
         <!-- the last five games are in view; the rest scrolls inside the list -->
         <ul #recentList [style.max-height.px]="recentMax">
-          <li *ngFor="let r of detail?.recent">
+          <li
+            *ngFor="let r of detail?.recent"
+            [class.pi-game-link]="!!r.tableId"
+            [attr.role]="r.tableId ? 'link' : null"
+            [attr.tabindex]="r.tableId ? 0 : null"
+            [attr.title]="r.tableId ? t.openGame : null"
+            (click)="open(r)"
+            (keydown.enter)="open(r)"
+          >
             <span class="pi-place" [attr.data-place]="r.place">{{ medal(r.place) }}</span>
             <span class="pi-game">
               <strong>{{ r.table }}</strong>
@@ -442,6 +451,14 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
         padding: 8px 0;
         border-bottom: 1px solid var(--color-border-light, #eee);
       }
+      .pi-recent li.pi-game-link {
+        cursor: pointer;
+      }
+      .pi-recent li.pi-game-link:hover,
+      .pi-recent li.pi-game-link:focus-visible {
+        background: color-mix(in srgb, var(--color-primary, #2a7de1) 10%, transparent);
+        outline: none;
+      }
       .pi-recent li:last-child {
         border-bottom: 0;
       }
@@ -515,6 +532,7 @@ export class TablePlayerInfoComponent implements OnChanges {
     private api: TablesApiService,
     private translate: TranslateService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
   ) {
     const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
     this.t = leaderboardTexts(lang);
@@ -562,6 +580,13 @@ export class TablePlayerInfoComponent implements OnChanges {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.closed.emit();
+  }
+
+  /** A game of the list opens at its table: the result, the ranking, everybody's books. */
+  open(game: { tableId?: string }): void {
+    if (!game.tableId) return;
+    this.closed.emit();
+    void this.router.navigate(['/tables', game.tableId]);
   }
 
   medal(place: number): string {

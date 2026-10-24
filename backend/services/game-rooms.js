@@ -62,7 +62,8 @@ function limits() {
     maxOpen: number('GAME_ROOMS_MAX_OPEN', 200),
     lobbyIdleMs: number('GAME_ROOMS_LOBBY_IDLE_MS', DAY_MS),
     playingIdleMs: number('GAME_ROOMS_PLAYING_IDLE_MS', 7 * DAY_MS),
-    retentionMs: number('GAME_ROOMS_RETENTION_MS', 7 * DAY_MS),
+    // a finished table stays readable for the people who played it, and from the leaderboard, for three months
+    retentionMs: number('GAME_ROOMS_RETENTION_MS', 90 * DAY_MS),
   };
 }
 
@@ -727,7 +728,9 @@ function createGameRoomService({
   /** Who may follow a table: a seated player, or anyone with a game account at a public table that allows spectators. */
   function assertCanWatch(doc, userId) {
     const seated = doc.table.players.some((p) => p.id === userId);
-    if (!seated && !(doc.visibility === 'public' && doc.table.settings.spectators)) {
+    // a game that is over can be read by anyone with a game account (it opens from the leaderboard), at a public table
+    const over = doc.table.phase === 'finished';
+    if (!seated && !(doc.visibility === 'public' && (doc.table.settings.spectators || over))) {
       throw new RoomError('room_forbidden', 403, 'This table does not allow spectators.');
     }
   }
