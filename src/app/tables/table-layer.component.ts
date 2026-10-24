@@ -95,7 +95,7 @@ import { TablesApiService } from './tables-api.service';
       <app-trade-offer
         *ngIf="table.trade && (table.trade.you || table.trade.sellerSeat === table.youSeat)"
         [view]="table"
-        [lang]="mode.lang"
+        [lang]="lang"
         [busy]="busy()"
         (move)="move($event)"
       ></app-trade-offer>
@@ -467,6 +467,10 @@ export class TableLayerComponent implements OnDestroy {
 
   get t() {
     return tableLayerTexts(this.mode.lang);
+  }
+  /** The language of the table's texts (for the panels the layer opens). */
+  get lang(): string {
+    return this.mode.lang;
   }
   get rtl(): boolean {
     return this.mode.lang.toLowerCase().startsWith('ar');
