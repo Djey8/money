@@ -64,12 +64,12 @@
       </thead>
       <tbody>
         <tr *ngFor="let token of tokens" [class.revoked-row]="token.revoked">
-          <td>{{ token.name }}</td>
-          <td>
+          <td class="pat-name" data-label="Name">{{ token.name }}</td>
+          <td data-label="Scopes">
             <span class="scope-badge" *ngFor="let scope of token.scopes">{{ scope }}</span>
           </td>
-          <td>{{ formatDate(token.createdAt) }}</td>
-          <td>{{ formatDate(token.expiresAt) }}</td>
+          <td data-label="Created">{{ formatDate(token.createdAt) }}</td>
+          <td data-label="Expires">{{ formatDate(token.expiresAt) }}</td>
           <td class="pat-actions">
             <ng-container *ngIf="!token.revoked">
               <ng-container *ngIf="confirmingRevoke !== token.tokenId">

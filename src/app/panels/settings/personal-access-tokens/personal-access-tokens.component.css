@@ -265,3 +265,106 @@
   color: var(--color-text-secondary);
   font-style: italic;
 }
+
+/* Phones and narrow windows (JFK, 2026-10-25): the table becomes a list of cards - the name on top, the scopes and the dates as
+   labelled lines, and the actions as big buttons along the bottom edge. */
+@media (max-width: 640px) {
+  .pat-page {
+    padding: 1rem 0.75rem calc(70px + 1rem);
+  }
+  .pat-card {
+    padding: 0.9rem;
+  }
+  .pat-table,
+  .pat-table tbody {
+    display: block;
+  }
+  .pat-table thead {
+    display: none;
+  }
+  .pat-table tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem 0.75rem;
+    padding: 0.8rem 0.2rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .pat-table tr:last-child {
+    border-bottom: 0;
+  }
+  .pat-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .pat-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.1rem;
+  }
+  .pat-table td.pat-name {
+    grid-column: 1 / -1;
+    font-size: 1.05rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .pat-table td.pat-name::before {
+    display: none;
+  }
+  .pat-table td[data-label='Scopes'] {
+    grid-column: 1 / -1;
+  }
+  .pat-table td.pat-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+    white-space: normal;
+  }
+  .pat-table td.pat-actions::before {
+    display: none;
+  }
+  .pat-table .revoke-btn,
+  .pat-table .revoke-btn-confirm,
+  .pat-table .link-btn {
+    min-height: 44px;
+    padding: 0 1rem;
+    font-size: 0.95rem;
+    margin: 0;
+  }
+  .pat-table .link-btn {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-text);
+  }
+  .pat-table .confirm-text {
+    flex: 1 1 100%;
+    text-align: right;
+    font-size: 0.9rem;
+  }
+  .scope-row {
+    flex-wrap: wrap;
+  }
+  .scope-select {
+    min-height: 40px;
+    flex: 1 1 8rem;
+  }
+  .pat-input-narrow {
+    max-width: none;
+  }
+  .token-value-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .copy-btn {
+    min-height: 44px;
+  }
+}
