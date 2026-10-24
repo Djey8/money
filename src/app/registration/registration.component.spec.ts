@@ -5,9 +5,11 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DatabaseService } from '../shared/services/database.service';
 import { FIREBASE_OPTIONS } from '@angular/fire/compat';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { LocalService } from '../shared/services/local.service';
 import { CrypticService } from '../shared/services/cryptic.service';
 import { AppStateService } from '../shared/services/app-state.service';
+import { defer, of, throwError } from 'rxjs';
 
 describe('RegistrationComponent', () => {
   let component: RegistrationComponent;
@@ -37,6 +39,8 @@ describe('RegistrationComponent', () => {
       ],
       providers: [
         { provide: DatabaseService, useValue: {} },
+        // the sign-in service of Firebase is not needed here (and would load its modules in the background)
+        { provide: AngularFireAuth, useValue: { authState: of(null) } },
         { provide: LocalService, useValue: mockLocalService },
         { provide: CrypticService, useValue: mockCrypticService },
         {
@@ -132,6 +136,32 @@ describe('RegistrationComponent', () => {
 
       expect(component.isError).toBe(false);
       expect(signUp).toHaveBeenCalled();
+    });
+
+    it('the first data of a new account never fails the registration: a failing write is tried again, then skipped, and the account is signed in', () => {
+      AppStateService.instance.lastUpdatedAt = '2020-01-01T00:00:00.000Z'; // the version of another account
+      component.retryDelayMs = 0;
+      jest.spyOn(console, 'warn').mockImplementation(); // each skipped write is told in the console
+      let tries = 0;
+      const writes = [
+        { tag: 'info/username', data: 'Anna' },
+        { tag: 'transactions', data: [] },
+        { tag: 'mojo', data: {} },
+      ];
+      const done = jest.fn();
+      component.layDownFirstData(writes, done, (tag) =>
+        defer(() => {
+          tries += 1;
+          // the second write works on its third try, the others never do
+          return tag === 'transactions' && tries >= 5
+            ? of({ success: true })
+            : throwError(() => new Error('stale'));
+        }),
+      );
+      expect(done).toHaveBeenCalledTimes(1);
+      expect(AppStateService.instance.lastUpdatedAt).toBeNull();
+      expect(tries).toBeGreaterThanOrEqual(7);
+      expect(component.isError).toBe(false);
     });
 
     it('sends it to the server with the registration', () => {

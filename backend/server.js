@@ -83,7 +83,10 @@ app.use(
 // Strict rate limiting for auth endpoints (brute-force protection)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // max 10 login/register attempts per 15 min
+  max: 10, // max 10 FAILED login/register attempts per 15 min
+  // Only the attempts that fail count: a family behind one router can all sign in and create their accounts, while guessing
+  // passwords is still held back.
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => process.env.SKIP_RATE_LIMIT === 'true',
