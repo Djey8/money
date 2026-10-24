@@ -22,6 +22,7 @@ const { botPolicy } = require('@money/domain/dist/cashflow-game/table/bot-catalo
 const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
+const { createRoomQueue } = require('./room-queue');
 const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
 const { createGameText } = require('./game-text');
 const { createCardTextSource } = require('./game-card-text');
@@ -212,6 +213,8 @@ function createGameRoomService({
   filer = null,
 }) {
   let lastSweep = -Infinity;
+  /** Everything that changes a table waits in this line, in the order it arrived (services/room-queue.js). */
+  const queue = createRoomQueue();
 
   const contexts = new Map();
   /** What the domain needs from outside for a table played in `language` (with this service's clock). */
@@ -383,7 +386,11 @@ function createGameRoomService({
    * retry - after a lost response, or two identical requests at once - finds it and gets `replayed: true` instead of a second
    * move. Returns `{ view, events, replayed, appliedVersion }`.
    */
-  async function execute(
+  function execute(userId, roomId, compute, options = {}) {
+    return queue.run(roomId, () => executeNow(userId, roomId, compute, options));
+  }
+
+  async function executeNow(
     userId,
     roomId,
     compute,
@@ -489,7 +496,11 @@ function createGameRoomService({
    * played for them, saved and told to everyone like any other change; if not (they moved, the game is paused, the timer was a
    * hair early) the table just arms for the deadline it has. Safe to call at any time.
    */
-  async function runTimeout(roomId) {
+  function runTimeout(roomId) {
+    return queue.run(roomId, () => runTimeoutNow(roomId));
+  }
+
+  async function runTimeoutNow(roomId) {
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await store.getRoom(db, roomId);
       if (!doc || doc.table.phase !== 'playing') {
@@ -579,7 +590,11 @@ function createGameRoomService({
     }
   }
 
-  async function runBots(roomId) {
+  function runBots(roomId) {
+    return queue.run(roomId, () => runBotsNow(roomId));
+  }
+
+  async function runBotsNow(roomId) {
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await store.getRoom(db, roomId);
       if (!doc || doc.table.phase !== 'playing') return { moved: false };

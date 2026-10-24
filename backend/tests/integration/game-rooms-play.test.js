@@ -194,6 +194,22 @@ describe('who may play, and what they are told they may do', () => {
     expect((await view(ben, id)).legalActions).toEqual([]);
   });
 
+  it('moves of several players that reach the table at the same moment all go through, one after the other (nobody is refused for a move that came a moment earlier)', async () => {
+    if (!dbAvailable) return;
+    const id = await startedTable();
+    const before = (await view(host, id)).table.version;
+    // without an expected version, three moves at once: the roll of the player on the move and two others'
+    const answers = await Promise.all([
+      command(host, id, { command: { type: 'roll' }, clientCommandId: 'q-roll' }),
+      command(anna, id, { command: { type: 'away' }, clientCommandId: 'q-away' }),
+      command(anna, id, { command: { type: 'propose_undo' }, clientCommandId: 'q-undo' }),
+    ]);
+    // the roll went through (the others' moves are the rules' to judge - never a clash of versions)
+    expect(answers[0].status).toBe(200);
+    expect(answers.map((a) => a.body.code)).not.toContain('room_conflict');
+    expect((await view(host, id)).table.version).toBeGreaterThanOrEqual(before + 2);
+  });
+
   it('refuses the wrong player, a normal account, a stranger and a bad request - and changes nothing', async () => {
     if (!dbAvailable) return;
     const id = await startedTable();

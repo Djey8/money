@@ -212,11 +212,11 @@ export class TableSessionService {
 
   /** A move of play, answered with what the server says it did (events, the version it made); null when it was refused. */
   async playForResult(command: Record<string, unknown>): Promise<TableMoveResult | null> {
-    const view = this.view();
     const done = await this.send('commands', 'post', {
       command,
       clientCommandId: newCommandId(),
-      expectedVersion: view?.version,
+      // No expected version: the server puts every move in a line per table and judges it against the table as it is when its turn
+      // comes (a move of somebody else a moment earlier must not make mine fail) - the rules say if it is not legal any more.
     });
     return done === null ? null : (done as TableMoveResult);
   }
