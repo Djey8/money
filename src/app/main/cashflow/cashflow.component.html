@@ -59,6 +59,13 @@
   />
 </div>
 
+<!-- Quick periods: month, quarter, year ... and back through the time series -->
+<app-period-filter
+  [filter]="incomeReference.currentFilter"
+  (apply)="applyDateFilter()"
+  (clear)="clearAllFilters()"
+></app-period-filter>
+
 <div id="cashflow" *ngIf="!incomeReference.isFiltered">
   <div class="cashflowBox">
     <h3 class="TextLable">{{ 'Cashflow.Salary' | translate }}</h3>
