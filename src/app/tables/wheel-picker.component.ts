@@ -97,7 +97,7 @@ const ITEM_PX = 40;
       }
       .wp-marker {
         position: sticky;
-        top: 40px;
+        top: 0; /* the sticky edge already sits inside the wheel's padding */
         display: block;
         height: 0;
         pointer-events: none;

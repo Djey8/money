@@ -432,6 +432,9 @@ function accountName(): string {
         min-width: 0;
         flex: 1 1 10rem;
       }
+      .at-row--stack .at-label {
+        flex: 0 0 auto;
+      }
       .at-label small {
         opacity: 0.7;
         font-size: 0.82rem;

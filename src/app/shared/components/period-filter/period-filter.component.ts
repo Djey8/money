@@ -63,7 +63,7 @@ function iso(date: Date): string {
         flex-direction: column;
         align-items: center;
         gap: 8px;
-        margin: 10px 12px 4px;
+        margin: 10px 12px 10px;
       }
       .pf-periods {
         display: flex;
