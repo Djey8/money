@@ -35,6 +35,13 @@ export interface TableWide {
   effects: TableWideEffect[];
 }
 
+/**
+ * Market cards whose printed text says that only the person who drew them is affected, though the card is read out to the table
+ * ("Neues Managementsystem"). A fact about the table rules, kept here so the card data - and every number measured on it - stays as
+ * it is.
+ */
+const DRAWER_ONLY_CARDS = new Set(['classic-market-boost-mgmt-400']);
+
 const inGame = (player: TablePlayer): player is TablePlayer & { books: GameBooks } =>
   player.status === 'active' &&
   player.books !== null &&
@@ -102,6 +109,8 @@ export function playMarketForTable(
   const effects: TableWideEffect[] = [];
 
   for (const player of table.players.filter(inGame)) {
+    // "Only the person who drew this card is affected": nobody else gets the boost (the small Business Boom says everybody)
+    if (kind === 'boost' && DRAWER_ONLY_CARDS.has(card.id) && player.id !== drawerId) continue;
     const plan = marketCardPlan(player.books, card, withRng);
     const result = { ...(plan.result ?? {}) } as Record<string, unknown>;
 
