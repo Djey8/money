@@ -2,7 +2,7 @@ import { seededRng } from '../rng';
 import { PRESET_POLICIES } from '../simulation/strategies';
 import { nextBotCommand, botFallbackCommand } from './bot';
 import { applyCommand, createTable, type TableContext } from './reducer';
-import { humansAreOut } from './turns';
+import { BOTS_ONLY_ROUND_CAP, humansAreOut } from './turns';
 import { leakProblems, tableInvariantProblems } from './simulate';
 import { testContext } from './testing';
 import { TableCommandError, type Table, type TableCommand } from './types';
@@ -178,6 +178,22 @@ describe('the last person leaving a ranked game that has started', () => {
     expect(applyCommand(started({ ranked: false }), HOST, { type: 'leave' }, ctx).table.phase).toBe(
       'abandoned',
     );
+  });
+
+  it('the one who left holds no seat of command any more: the table passes to a bot, and a left player commands nothing', () => {
+    const left = applyCommand(started(), HOST, { type: 'leave' }, ctx).table;
+    expect(left.players.find((p) => p.id === left.hostId)?.bot).toBeDefined();
+    expect(refusal(left, HOST, { type: 'pause' })).toBe('NOT_A_MEMBER');
+    expect(refusal(left, HOST, { type: 'propose_undo' })).toBe('NOT_A_MEMBER');
+  });
+
+  it('a game of bots only never runs on for ever: past the round cap it ends', () => {
+    let left = applyCommand(started(), HOST, { type: 'leave' }, ctx).table;
+    left = { ...left, tableRound: BOTS_ONLY_ROUND_CAP + 1 };
+    const bot = left.players.find((p) => p.bot)!;
+    const next = applyCommand(left, bot.id, { type: 'away' }, ctx).table;
+    expect(next.phase).toBe('finished');
+    expect(next.result?.reason).toBe('round-limit');
   });
 
   it('nobody waits for bots once the people are out, and a person still playing is waited for', () => {

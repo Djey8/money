@@ -373,7 +373,14 @@ import { TablesApiService } from './tables-api.service';
       .tl-num {
         font-variant-numeric: tabular-nums;
       }
-      .tl-offers,
+      .tl-offers {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 8px;
+        background: var(--color-surface-alt, #f4f6f8);
+      }
       .tl-row {
         display: flex;
         flex-wrap: wrap;

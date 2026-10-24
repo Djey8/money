@@ -150,8 +150,14 @@ function noteFinishers(table: Table, emit: EmitEvent): Table {
   return next;
 }
 
+/** A game of bots only that has not ended by this round ends there, whatever its end condition says: nobody is waiting for it, so it is never left to run on. */
+export const BOTS_ONLY_ROUND_CAP = 150;
+
 /** The end condition, checked after anything that could end the game. Returns the finished table or null. */
 function checkEnd(table: Table, emit: EmitEvent): Table | null {
+  if (humansAreOut(table) && table.tableRound > BOTS_ONLY_ROUND_CAP) {
+    return finish(table, 'round-limit', undefined, emit);
+  }
   const escaped = table.finishers.filter((f) => f.outcome === 'escaped');
   if (table.settings.endCondition === 'first-escape' && escaped.length > 0) {
     return finish(table, 'escaped', escaped[0].playerId, emit);

@@ -298,7 +298,7 @@ describe('an agreed price moves everything at once', () => {
       ...offered,
       players: offered.players.map((p) => (p.id === 'p2' ? { ...p, status: 'left' as const } : p)),
     };
-    expectError(() => send(left, 'p2', { type: 'accept_trade' }), 'ILLEGAL_MOVE');
+    expectError(() => send(left, 'p2', { type: 'accept_trade' }), 'NOT_A_MEMBER');
   });
 
   it('is all or nothing: a buyer who cannot take the card leaves both sides untouched', () => {

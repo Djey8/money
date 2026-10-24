@@ -38,9 +38,11 @@ export interface TableWide {
 /**
  * Market cards whose printed text says that only the person who drew them is affected, though the card is read out to the table
  * ("Neues Managementsystem"). A fact about the table rules, kept here so the card data - and every number measured on it - stays as
- * it is.
+ * it is. Matched by the end of the card id: the Firebase build must not carry the catalog's own id prefixes.
  */
-const DRAWER_ONLY_CARDS = new Set(['classic-market-boost-mgmt-400']);
+const DRAWER_ONLY_CARDS = ['boost-mgmt-400'];
+const drawerOnly = (cardId: string): boolean =>
+  DRAWER_ONLY_CARDS.some((tail) => cardId.endsWith(tail));
 
 const inGame = (player: TablePlayer): player is TablePlayer & { books: GameBooks } =>
   player.status === 'active' &&
@@ -110,7 +112,7 @@ export function playMarketForTable(
 
   for (const player of table.players.filter(inGame)) {
     // "Only the person who drew this card is affected": nobody else gets the boost (the small Business Boom says everybody)
-    if (kind === 'boost' && DRAWER_ONLY_CARDS.has(card.id) && player.id !== drawerId) continue;
+    if (kind === 'boost' && drawerOnly(card.id) && player.id !== drawerId) continue;
     const plan = marketCardPlan(player.books, card, withRng);
     const result = { ...(plan.result ?? {}) } as Record<string, unknown>;
 

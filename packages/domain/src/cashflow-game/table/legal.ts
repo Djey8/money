@@ -181,7 +181,14 @@ export function tableLegalActions(table: Table, playerId: string): TableLegalAct
   const offer = table.trade;
   if (offer && offer.sellerId === playerId) {
     add('withdraw_trade', 'Take your offer back.');
-    if (offer.counters.length > 0) {
+    // only a counter that still holds: the buyer's cash or cashflow may have moved since they made it
+    const standing = offer.counters.some((counter) => {
+      const buyer = table.players.find((p) => p.id === counter.playerId);
+      return (
+        !!buyer?.books && quoteTrade(buyer.books, offer.deck, offer.cardId, counter.priceMinor).ok
+      );
+    });
+    if (standing) {
       add('accept_trade', 'Accept the price a buyer proposed (name the buyer).');
     }
   } else if (canAnswerTrade(table, playerId)) {

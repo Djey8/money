@@ -174,7 +174,14 @@ import { tradeOfferTexts, type TradeOfferTexts } from './trade-offer.texts';
           </div>
           <p class="to-race">{{ t.race }}</p>
 
-          <div class="to-counter" *ngIf="!myCounter; else counterSent">
+          <p class="to-hint" *ngIf="myCounter as sent">
+            {{
+              t.yourCounter
+                .replace('{price}', fmt(sent.priceMinor))
+                .replace('{name}', nameOf(trade!.sellerSeat))
+            }}
+          </p>
+          <div class="to-counter">
             <h4>{{ t.orOffer }}</h4>
             <div class="to-actions">
               <input
@@ -198,15 +205,6 @@ import { tradeOfferTexts, type TradeOfferTexts } from './trade-offer.texts';
             </div>
             <small class="to-hint">{{ t.atMost.replace('{max}', fmt(you.maxPriceMinor)) }}</small>
           </div>
-          <ng-template #counterSent>
-            <p class="to-hint">
-              {{
-                t.yourCounter
-                  .replace('{price}', fmt(myCounter!.priceMinor))
-                  .replace('{name}', nameOf(trade!.sellerSeat))
-              }}
-            </p>
-          </ng-template>
 
           <div class="to-actions">
             <button
@@ -437,7 +435,6 @@ export class TradeOfferComponent implements OnChanges, OnInit {
       this.hidden = false;
       this.counterPrice = null;
     }
-    void changes;
   }
 
   get t(): TradeOfferTexts {

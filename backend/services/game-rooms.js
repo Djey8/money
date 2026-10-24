@@ -551,7 +551,7 @@ function createGameRoomService({
 
   /**
    * Only bots are left in the game (every person escaped, went bankrupt or left): they play it to its end at once, no waiting between
-   * moves - the clock of the game is moved on by the move itself, so an offer nobody answers still runs out. The moves are saved in
+   * moves - time is moved on with every move, so a bot waiting for answers to its offer is not waited for in real time. The moves are saved in
    * batches, so a table of ten bots is over in seconds, and the result is recorded like any other.
    */
   async function runBotsFast(doc, roomId) {
@@ -574,7 +574,8 @@ function createGameRoomService({
       return { moved: true };
     } catch (error) {
       if (!(error instanceof store.RoomConflictError)) throw error;
-      return { moved: false };
+      // somebody moved meanwhile: look at the table again a moment later
+      return { moved: false, waiting: true };
     }
   }
 

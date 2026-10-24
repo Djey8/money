@@ -84,7 +84,7 @@ export function answerDelayMs(
 }
 
 /**
- * How much of the card's up-front cost a bot is willing to pay ON TOP of it to the seller, by skill: a master only pays a small
+ * The most a bot pays the seller, as a share of the card's up-front cost, by skill (on top of the card's own terms): a master only pays a small
  * premium - it has to still make its profit soon - and the lower the level the more it overpays.
  */
 const PREMIUM: Record<string, number> = { master: 0.08, strong: 0.15, casual: 0.3, beginner: 0.55 };

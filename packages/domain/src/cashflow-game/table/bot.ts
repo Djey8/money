@@ -3,6 +3,7 @@ import type { Policy } from '../simulation/policy';
 import { canAnswerTrade } from './trade';
 import { tableLegalActions } from './legal';
 import { nextPassiveCommand } from './passive';
+import { humansAreOut } from './turns';
 import { answerDelayMs, botTakesTrade, botTradeLimitMinor, botTradeMove } from './bot-trade';
 import { decide, viewOf } from './simulate';
 import type { Table, TableCommand } from './types';
@@ -38,8 +39,11 @@ export function nextBotCommand(
   if (canAnswerTrade(table, botId) && table.trade) {
     const offer = table.trade;
     // an offer is a race: a bot waits a while first (the stronger the bot, the shorter), so a person can be quicker
-    if (now - (offer.at ?? now) < answerDelayMs(table, me.bot?.policyId ?? '', offer, botId))
+    // (with only bots left nobody is racing them, and an offer without a time is not waited on)
+    const racing = !humansAreOut(table) && offer.at !== undefined;
+    if (racing && now - offer.at! < answerDelayMs(table, me.bot?.policyId ?? '', offer, botId)) {
       return null;
+    }
     if (botTakesTrade(table, me, policy, offer, offer.priceMinor)) return { type: 'accept_trade' };
     // not at that price: a counter-offer with what the card is worth to it, when it is worth anything
     const limit = botTradeLimitMinor(table, me, policy, offer);

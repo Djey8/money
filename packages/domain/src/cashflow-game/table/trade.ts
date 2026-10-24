@@ -291,6 +291,8 @@ export function quoteTrade(
         .monthlyCashflowMinor,
     };
   } catch (error) {
+    // only the rules' own refusals mean "cannot": anything else is a bug and must not hide behind a quote
+    if (!(error instanceof TableCommandError)) throw error;
     return {
       ok: false,
       reason: (error as Error).message,
@@ -306,7 +308,26 @@ export function maxTradePriceMinor(
   books: GameBooks,
   deck: 'dealSmall' | 'dealBig',
   cardId: string,
-  deps: PlayDeps = planningDeps(books),
+  deps?: PlayDeps,
+): number {
+  const memo = MAX_PRICE_MEMO.get(books) ?? new Map<string, number>();
+  const key = `${deck}|${cardId}`;
+  const known = memo.get(key);
+  if (known !== undefined) return known;
+  const found = searchMaxPrice(books, deck, cardId, deps ?? planningDeps(books));
+  memo.set(key, found);
+  MAX_PRICE_MEMO.set(books, memo);
+  return found;
+}
+
+/** The search is about fifty purchases on a copy: the books of a player (they change with every move) are the key, so it runs once per state. */
+const MAX_PRICE_MEMO = new WeakMap<GameBooks, Map<string, number>>();
+
+function searchMaxPrice(
+  books: GameBooks,
+  deck: 'dealSmall' | 'dealBig',
+  cardId: string,
+  deps: PlayDeps,
 ): number {
   const unit = 100;
   if (!quoteTrade(books, deck, cardId, unit, deps).ok) return 0;

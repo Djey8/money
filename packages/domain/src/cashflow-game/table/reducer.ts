@@ -136,6 +136,10 @@ export function applyCommand(
 ): CommandResult {
   const me = table.players.find((player) => player.id === playerId);
   if (command.type !== 'join' && !me) fail('NOT_A_MEMBER', 'You are not at this table.');
+  // somebody who left a running game is out of it: the seat stays for the books, but it commands nothing any more
+  if (me && me.status === 'left' && table.phase === 'playing') {
+    fail('NOT_A_MEMBER', 'You have left this game.');
+  }
   const version = table.version + 1;
   if (isTradeCommand(command)) {
     const traded = applyTradeCommand(
@@ -436,7 +440,9 @@ function leave(
     }
   }
   if (table.hostId === playerId) {
-    const heir = activePlayers(next).filter((p) => !p.bot)[0];
+    // no person is left to take over: a bot holds the table (it never gives a host's command), the one who left holds nothing
+    const heir =
+      activePlayers(next).filter((p) => !p.bot)[0] ?? activePlayers(next).find((p) => p.bot);
     if (heir) {
       next = { ...next, hostId: heir.id };
       events.push(emit('host_changed', heir.id));
