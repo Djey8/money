@@ -11,14 +11,19 @@
  * tables again. Timers do not keep the process alive.
  */
 
+const { humansAreOut } = require('@money/domain');
+
 const DEFAULT_DELAY_MS = 3500;
 const PACE_DELAY_MS = { fast: 1500, normal: 3500, slow: 6000 };
+const FAST_DELAY_MS = 20;
 const RETRY_MS = 5000;
-const WAIT_MS = 4000;
+const WAIT_MS = 1000;
 
 function createBotDriver({
   run,
   delayMs = (table) => {
+    // only bots are left: nobody is waiting to follow what they do
+    if (table && humansAreOut(table)) return FAST_DELAY_MS;
     const configured = Number(process.env.GAME_BOT_DELAY_MS);
     if (Number.isFinite(configured) && configured >= 0) return configured;
     // the table's own pace: how long people have to follow what a bot does between two steps

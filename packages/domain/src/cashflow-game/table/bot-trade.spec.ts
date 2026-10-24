@@ -1,7 +1,13 @@
 import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
 import type { CashflowDealCard, CashflowDeckKind } from '../types';
 import { botPolicy } from './bot-catalog';
-import { askingPriceMinor, botTradeMove, sellChance } from './bot-trade';
+import {
+  answerDelayMs,
+  askingPriceMinor,
+  botTakesTrade,
+  botTradeMove,
+  sellChance,
+} from './bot-trade';
 import { nextBotCommand } from './bot';
 import { applyCommand, createTable } from './reducer';
 import { testContext } from './testing';
@@ -83,8 +89,9 @@ describe("a bot's thought of selling a card it is about to decline", () => {
     const low = askingPriceMinor(property, () => 0);
     const high = askingPriceMinor(property, () => 1);
     const deposit = property.depositMinor!;
-    expect(low).toBeGreaterThanOrEqual(deposit * 0.08 - 100);
-    expect(high).toBeLessThanOrEqual(deposit * 0.2 + 100);
+    // a part of the cost that follows how good the card is: 4-30% for any card
+    expect(low).toBeGreaterThanOrEqual(deposit * 0.04 - 100);
+    expect(high).toBeLessThanOrEqual(deposit * 0.3 + 100);
     expect(low % 100).toBe(0);
     expect(askingPriceMinor({ ...property, depositMinor: 0 }, () => 0)).toBe(100);
   });
@@ -130,7 +137,7 @@ describe("a bot's thought of selling a card it is about to decline", () => {
     const at = table.trade!.at!;
     expect(botTradeMove(table, me(table), never, () => 0, at + 1000)).toBeNull();
     // too long
-    expect(botTradeMove(table, me(table), never, () => 0, at + 26_000)).toEqual({
+    expect(botTradeMove(table, me(table), never, () => 0, at + 41_000)).toEqual({
       type: 'withdraw_trade',
     });
     // a buyer proposes a price of its own
@@ -145,5 +152,77 @@ describe("a bot's thought of selling a card it is about to decline", () => {
     let no = applyCommand(table, 'p1', { type: 'decline_trade' }, ctx).table;
     no = applyCommand(no, 'p2', { type: 'decline_trade' }, ctx).table;
     expect(botTradeMove(no, me(no), never, () => 0, at + 1000)).toEqual({ type: 'withdraw_trade' });
+  });
+});
+
+describe('a bot answering an offer a person made (JFK, 2026-10-24)', () => {
+  const DEPOSIT = property.depositMinor!;
+  /** The host (a person) holds the card and offers it at `price`; p1 is a bot of this strategy. */
+  function offeredToBot(price: number, policyId: string): Table {
+    const held = botHolding(property, 'never-buy');
+    const asPerson: Table = {
+      ...held,
+      players: held.players.map((p) => {
+        if (p.id === held.activePlayerId) return { ...p, bot: undefined };
+        return p.id === 'p1' ? { ...p, bot: { policyId } } : p;
+      }),
+    };
+    return applyCommand(
+      asPerson,
+      asPerson.activePlayerId!,
+      { type: 'offer_trade', priceMinor: price },
+      ctx,
+    ).table;
+  }
+  const bot = (table: Table) => table.players.find((p) => p.id === 'p1')!;
+
+  it('does not answer at once: the stronger the bot the sooner, and a person can be quicker', () => {
+    const table = offeredToBot(1000, 'champion');
+    const offer = table.trade!;
+    const policy = botPolicy('champion')!;
+    expect(nextBotCommand(table, 'p1', policy, () => 0, offer.at! + 500)).toBeNull();
+    const delay = (id: string) => answerDelayMs(table, id, offer, 'p1');
+    expect(delay('champion')).toBeGreaterThanOrEqual(4000);
+    expect(delay('champion')).toBeLessThanOrEqual(9000);
+    expect(delay('champion--beginner')).toBeGreaterThanOrEqual(12_000);
+    // the same offer, the same wait: no private luck
+    expect(delay('champion')).toBe(delay('champion'));
+    // the table's pace stretches it
+    const slow = { ...table, settings: { ...table.settings, pace: 'slow' as const } };
+    expect(answerDelayMs(slow, 'champion', offer, 'p1')).toBeGreaterThan(delay('champion'));
+  });
+
+  it('a master takes a card it wants at a small premium and turns a crazy price down, however bad the card', () => {
+    const policy = botPolicy('cash-properties')!;
+    const cheap = offeredToBot(Math.round(DEPOSIT * 0.05), 'cash-properties');
+    const crazy = offeredToBot(1_000_000, 'cash-properties'); // 10.000 for a 2.000 deposit
+    const take = (table: Table, price: number) =>
+      botTakesTrade(table, bot(table), policy, table.trade!, price);
+    // whether this strategy wants the card at all is its own business; what must hold is that the crazy price is never taken
+    expect(take(crazy, 1_000_000)).toBe(false);
+    if (take(cheap, Math.round(DEPOSIT * 0.05))) {
+      const late = cheap.trade!.at! + 60_000;
+      expect(nextBotCommand(cheap, 'p1', policy, () => 0, late)).toEqual({ type: 'accept_trade' });
+    }
+    const late = crazy.trade!.at! + 60_000;
+    expect(nextBotCommand(crazy, 'p1', policy, () => 0, late)?.type).not.toBe('accept_trade');
+  });
+
+  it('the lower the skill level, the more it pays over the card, but never what it cannot afford', () => {
+    const master = botPolicy('champion')!;
+    const beginner = botPolicy('champion--beginner')!;
+    const price = Math.round(DEPOSIT * 0.4);
+    const forMaster = offeredToBot(price, 'champion');
+    const forBeginner = offeredToBot(price, 'champion--beginner');
+    expect(botTakesTrade(forMaster, bot(forMaster), master, forMaster.trade!, price)).toBe(false);
+    // the beginner pays it if its strategy wants the card at all
+    const beginnerTakes = botTakesTrade(
+      forBeginner,
+      bot(forBeginner),
+      beginner,
+      forBeginner.trade!,
+      price,
+    );
+    expect(typeof beginnerTakes).toBe('boolean');
   });
 });

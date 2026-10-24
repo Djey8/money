@@ -10,6 +10,7 @@ import {
   type TableErrorCode,
   type TableEvent,
 } from './types';
+import { tableLegalActions } from './legal';
 import { projectFor } from './view';
 import { fixedClock } from '../clock';
 
@@ -130,7 +131,14 @@ describe('offering the card in hand', () => {
       priceMinor: 300000,
       counters: [],
       declinedSeats: [],
+      at: expect.any(Number),
+      // what taking it would do to the one who may answer it
+      you: {
+        quote: expect.objectContaining({ ok: true, priceMinor: 300000 }),
+        maxPriceMinor: expect.any(Number),
+      },
     });
+    expect(projectFor(offered.table, 'host').trade?.you).toBeUndefined(); // the seller has nothing to answer
     expect(JSON.stringify(view)).not.toContain('"host"');
 
     const toOne = send(table, 'host', { type: 'offer_trade', priceMinor: 100, to: 'p1' });
@@ -377,6 +385,43 @@ describe('agreeing on a price', () => {
     const over = send(one, 'p1', { type: 'decline_trade' });
     expect(types(over.events)).toEqual(['trade_declined', 'trade_expired']);
     expect(over.table.trade).toBeNull();
+  });
+});
+
+describe('nobody goes bankrupt on an offer (JFK, 2026-10-24)', () => {
+  const HIGH = 5_000_000; // 50.000: far more than a salary carries once the Bank loan for it is taken
+  const offer = () =>
+    send(holding(playingTable(), EFH), 'host', { type: 'offer_trade', priceMinor: HIGH }).table;
+
+  it('a price that would leave the buyer with a negative cashflow cannot be taken, and is not offered as a move', () => {
+    const offered = offer();
+    expectError(
+      () => send(offered, 'p1', { type: 'accept_trade' }),
+      'ILLEGAL_MOVE',
+      /cannot afford/,
+    );
+    const actions = tableLegalActions(offered, 'p1').map((a) => a.action);
+    expect(actions).not.toContain('accept_trade');
+    expect(actions).toEqual(expect.arrayContaining(['counter_trade', 'decline_trade']));
+    expect(projectFor(offered, 'p1').trade?.you?.quote.ok).toBe(false);
+    expect(offered.trade).not.toBeNull(); // nothing changed
+  });
+
+  it('a counter-offer is limited to what the buyer can afford, and the most they can pay is told', () => {
+    const offered = offer();
+    const most = projectFor(offered, 'p1').trade!.you!.maxPriceMinor;
+    expect(most).toBeGreaterThan(0);
+    expect(most).toBeLessThan(HIGH);
+    expectError(
+      () => send(offered, 'p1', { type: 'counter_trade', priceMinor: most + 100 }),
+      'ILLEGAL_MOVE',
+      /cannot offer that much/,
+    );
+    const countered = send(offered, 'p1', { type: 'counter_trade', priceMinor: most });
+    expect(countered.table.trade?.counters).toEqual([{ playerId: 'p1', priceMinor: most }]);
+    // and the seller can take it: the buyer's cashflow stays 0 or more
+    const made = send(countered.table, 'host', { type: 'accept_trade', from: 'p1' });
+    expect(made.table.trade).toBeNull();
   });
 });
 

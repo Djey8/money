@@ -342,8 +342,9 @@ function createGameStats({
       const profile = bot
         ? await ensureBotProfile(player.bot.policyId)
         : await ensureHumanProfile(player.id, player.name);
-      const leftEarly =
-        player.status === 'left' && (player.leftRound ?? 0) <= LEAVE_LOSS_AFTER_ROUND;
+      // leaving is a loss from the moment play starts, unless the host gave some free rounds when opening the table
+      const free = table.settings.leaveFreeRounds ?? LEAVE_LOSS_AFTER_ROUND;
+      const leftEarly = player.status === 'left' && (player.leftRound ?? 0) <= free;
       members.push({ player, entry, profile, bot, leftEarly });
     }
     const rated = members.filter((m) => !m.leftEarly);
@@ -355,6 +356,7 @@ function createGameStats({
       humans: humans.length,
       tableRound: table.tableRound,
       escaped: table.result.ranking.some((entry) => entry.outcome === 'escaped'),
+      abandoned: members.some((m) => !m.bot && m.player.status === 'left' && !m.leftEarly),
     });
     const repeats = eligibility.counts
       ? await repeatsOf(

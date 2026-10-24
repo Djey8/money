@@ -256,4 +256,35 @@ describe('a person and two bots play a whole table', () => {
     expect(filed.status).toBe(200);
     human.disconnect();
   });
+
+  describe('leaving a ranked game that has started is a loss, and the bots finish it', () => {
+    it('the last person leaving does not close the table: the bots play it to its end, recorded as a loss for the person', async () => {
+      if (!dbAvailable) return;
+      const roomId = await openTable({ roundLimit: 5 });
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'all-rounder' });
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'mlm-then-properties' });
+      const human = new TableBot({ name: 'human', token: host.token, baseUrl, roomId });
+      await human.connect();
+      await call(host, 'put', `/game/rooms/${roomId}/ready`, { ready: true });
+      await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+      await call(host, 'put', `/game/rooms/${roomId}/profession`, { professionId: 'manager' });
+      await human.waitFor((b) => b.view && b.view.phase === 'playing');
+
+      const left = await call(host, 'post', `/game/rooms/${roomId}/leave`, {});
+      expect(left.status).toBe(200);
+      // the table is not closed: only bots are left in it, and they finish the game
+      const deadline = Date.now() + 90000;
+      let room;
+      do {
+        room = (await call(host, 'get', `/game/rooms/${roomId}`)).body;
+        if ((room.table || room).phase === 'finished') break;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } while (Date.now() < deadline);
+      const table = room.table || room;
+      expect(table.phase).toBe('finished');
+      expect(table.result.ranking.find((entry) => entry.outcome === 'left')).toBeDefined();
+      expect(table.result.ranking[table.result.ranking.length - 1].outcome).toBe('left');
+      human.disconnect();
+    });
+  });
 });

@@ -2,8 +2,8 @@ import { currentTurn } from '../turn';
 import type { CashflowDealCard } from '../types';
 import type { Policy } from '../simulation/policy';
 import { cardOf, viewOf } from './simulate';
-import { whyCannotOfferTrade } from './trade';
-import type { Table, TableCommand, TablePlayer } from './types';
+import { maxTradePriceMinor, quoteTrade, whyCannotOfferTrade } from './trade';
+import type { Table, TableCommand, TablePlayer, TradeOffer } from './types';
 
 /**
  * A bot that is about to turn a Deal card down may first try to sell it to the table (JFK, 2026-10-19), so the others have a chance
@@ -41,7 +41,105 @@ const STYLE_CHANCE: Record<string, number> = {
 const DEFAULT_CHANCE = 0.35;
 
 /** How long a bot waits for an answer to its offer, by the table's pace (people have to read the card and decide). */
-const PATIENCE_MS: Record<string, number> = { fast: 12_000, normal: 25_000, slow: 45_000 };
+const PATIENCE_MS: Record<string, number> = { fast: 24_000, normal: 40_000, slow: 70_000 };
+
+/** The skill level of a bot id (`champion-latest--casual`); a plain id is a master, an unknown level is a beginner. */
+export function levelOfPolicy(policyId: string): string {
+  const at = policyId.lastIndexOf('--');
+  return at < 0 ? 'master' : policyId.slice(at + 2);
+}
+
+/**
+ * How long a bot lets an offer be before it answers (JFK, 2026-10-24: an offer is a race and everybody must have the same chance).
+ * A person has to read the card, so a bot never answers at once: the stronger it is the sooner it answers, and the delay is a fixed
+ * pseudo-random point of its range for this offer (a bot has no private luck: the same offer, the same wait). The table's pace
+ * stretches or shortens the range, like everything else the table paces.
+ */
+const ANSWER_RANGE_MS: Record<string, [number, number]> = {
+  master: [4_000, 9_000],
+  strong: [6_000, 12_000],
+  casual: [9_000, 16_000],
+  beginner: [12_000, 22_000],
+};
+const PACE_FACTOR: Record<string, number> = { fast: 0.6, normal: 1, slow: 1.6 };
+
+function hash01(text: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i += 1) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  h ^= h >>> 15;
+  h = Math.imul(h, 2246822507);
+  h ^= h >>> 13;
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+export function answerDelayMs(
+  table: Table,
+  policyId: string,
+  offer: TradeOffer,
+  botId: string,
+): number {
+  const [low, high] = ANSWER_RANGE_MS[levelOfPolicy(policyId)] ?? ANSWER_RANGE_MS['beginner'];
+  const point = hash01(`${offer.cardId}|${offer.at ?? 0}|${botId}`);
+  return Math.round((low + (high - low) * point) * (PACE_FACTOR[table.settings.pace] ?? 1));
+}
+
+/**
+ * How much of the card's up-front cost a bot is willing to pay ON TOP of it to the seller, by skill: a master only pays a small
+ * premium - it has to still make its profit soon - and the lower the level the more it overpays.
+ */
+const PREMIUM: Record<string, number> = { master: 0.08, strong: 0.15, casual: 0.3, beginner: 0.55 };
+/** The longest a bot waits to earn back everything the card costs it (the seller's price included), by skill, in months. */
+const PAYBACK_MONTHS: Record<string, number> = {
+  master: 36,
+  strong: 48,
+  casual: 72,
+  beginner: 120,
+};
+
+/**
+ * Whether a bot takes this card at this price: its strategy wants the card on its normal terms, the price is within what the bot
+ * level pays over them, it earns the whole outlay back in time, and it can pay without going bankrupt (the cashflow stays 0 or more
+ * after the Bank loan). A bad card never sells at a high price, whatever the seller asks.
+ */
+export function botTakesTrade(
+  table: Table,
+  me: TablePlayer,
+  policy: Policy,
+  offer: TradeOffer,
+  priceMinor: number,
+): boolean {
+  if (!me.bot || !me.books) return false;
+  const card = cardOf(me.books, offer.deck, offer.cardId) as CashflowDealCard | undefined;
+  if (!card || card.assetKind === 'share') return false;
+  if (!policy.deal(viewOf(me.books, table, me.id), card).buy) return false;
+  const level = levelOfPolicy(me.bot.policyId);
+  const outlay = outlayMinor(card);
+  if (priceMinor > Math.round(outlay * (PREMIUM[level] ?? PREMIUM['beginner']))) return false;
+  const cashflow = card.cashflowMinor ?? 0;
+  if (cashflow > 0) {
+    const months = (outlay + priceMinor) / cashflow;
+    if (months > (PAYBACK_MONTHS[level] ?? PAYBACK_MONTHS['beginner'])) return false;
+  }
+  return quoteTrade(me.books, offer.deck, offer.cardId, priceMinor).ok;
+}
+
+/** The most this bot would pay for the offered card, or 0 (used to answer with a counter-offer instead of a plain no). */
+export function botTradeLimitMinor(
+  table: Table,
+  me: TablePlayer,
+  policy: Policy,
+  offer: TradeOffer,
+): number {
+  if (!me.books) return 0;
+  const card = cardOf(me.books, offer.deck, offer.cardId) as CashflowDealCard | undefined;
+  if (!card) return 0;
+  const cap = Math.round(
+    outlayMinor(card) * (PREMIUM[levelOfPolicy(me.bot?.policyId ?? '')] ?? PREMIUM['beginner']),
+  );
+  const affordable = maxTradePriceMinor(me.books, offer.deck, offer.cardId);
+  const limit = Math.floor(Math.min(cap, affordable) / 100) * 100;
+  return limit > 0 && botTakesTrade(table, me, policy, offer, limit) ? limit : 0;
+}
 
 /** A counter-offer at or above this share of the asking price is taken. */
 const ACCEPT_COUNTER_AT = 0.6;
@@ -63,10 +161,16 @@ function outlayMinor(card: CashflowDealCard): number {
   return card.depositMinor ?? card.costMinor ?? 0;
 }
 
-/** The price a bot asks: 8-20% of what the card costs up front, in whole units of money (multiples of 100 minor units), never less than 100. */
+/**
+ * The price a bot asks: a share of what the card costs up front that follows how good the card is (its yearly cashflow against that
+ * cost) - a poor card goes cheap, a very good one is worth more to the buyer - in whole units of money, never less than 100.
+ */
 export function askingPriceMinor(card: CashflowDealCard, coin: () => number): number {
-  const share = 0.08 + 0.12 * coin();
-  return Math.max(100, Math.round((outlayMinor(card) * share) / 100) * 100);
+  const outlay = outlayMinor(card);
+  const yearly = outlay > 0 ? ((card.cashflowMinor ?? 0) * 12) / outlay : 0;
+  const base = yearly >= 0.6 ? 0.26 : yearly >= 0.3 ? 0.17 : yearly >= 0.15 ? 0.1 : 0.05;
+  const share = base * (0.85 + 0.3 * coin());
+  return Math.max(100, Math.round((outlay * share) / 100) * 100);
 }
 
 /**

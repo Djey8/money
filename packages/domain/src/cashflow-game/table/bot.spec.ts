@@ -2,6 +2,7 @@ import { seededRng } from '../rng';
 import { PRESET_POLICIES } from '../simulation/strategies';
 import { nextBotCommand, botFallbackCommand } from './bot';
 import { applyCommand, createTable, type TableContext } from './reducer';
+import { humansAreOut } from './turns';
 import { leakProblems, tableInvariantProblems } from './simulate';
 import { testContext } from './testing';
 import { TableCommandError, type Table, type TableCommand } from './types';
@@ -134,6 +135,54 @@ describe('seating a bot', () => {
     table = run(table, HOST, { type: 'pick_profession', professionId: 'lehrer' });
     expect(table.phase).toBe('playing');
     expect(table.players.map((p) => p.professionId)).toEqual(['lehrer', 'pilot']);
+  });
+});
+
+describe('the last person leaving a ranked game that has started', () => {
+  const started = (settings: object = {}) => {
+    let table = createTable(
+      {
+        id: 't2',
+        hostId: HOST,
+        hostName: 'Host',
+        settings: {
+          name: 'Bots',
+          professions: 'duplicates',
+          maxSeats: 6,
+          clock: { mode: 'none' },
+          ...settings,
+        },
+        seed: 5,
+      },
+      ctx,
+    ).table;
+    table = run(table, HOST, { type: 'add_bot', name: 'Rob', policyId: 'all-rounder' });
+    table = run(table, HOST, { type: 'add_bot', name: 'Bea', policyId: 'mlm-then-properties' });
+    table = run(table, HOST, { type: 'set_ready', ready: true });
+    table = run(table, HOST, { type: 'start' });
+    return run(table, HOST, { type: 'pick_profession', professionId: 'manager' });
+  };
+
+  it('is a loss from the first moment: the table is not closed, the bots play it to its end', () => {
+    const left = applyCommand(started(), HOST, { type: 'leave' }, ctx).table;
+    expect(left.phase).toBe('playing');
+    expect(left.players[0].status).toBe('left');
+    expect(humansAreOut(left)).toBe(true);
+    expect(projectFor(left, null).fastForward).toBe(true);
+  });
+
+  it('is free during the rounds the host gave, and on a table that is not ranked', () => {
+    expect(
+      applyCommand(started({ leaveFreeRounds: 1 }), HOST, { type: 'leave' }, ctx).table.phase,
+    ).toBe('abandoned');
+    expect(applyCommand(started({ ranked: false }), HOST, { type: 'leave' }, ctx).table.phase).toBe(
+      'abandoned',
+    );
+  });
+
+  it('nobody waits for bots once the people are out, and a person still playing is waited for', () => {
+    expect(humansAreOut(started())).toBe(false);
+    expect(projectFor(started(), HOST).fastForward).toBe(false);
   });
 });
 

@@ -423,14 +423,24 @@ function leave(
   const events: TableEvent[] = [emit('player_left', playerId)];
   let next: Table = { ...table, version, players };
   if (activePlayers(next).filter((p) => !p.bot).length === 0) {
-    next = { ...next, phase: 'abandoned', activePlayerId: null };
-    events.push(emit('table_closed', playerId, { reason: 'everyone_left' }));
-    return { table: next, events };
+    // On a ranked table nobody walks away from a game for free (a bad profession): once the free rounds are over the last person
+    // leaving is a loss, so the bots play the game to its end at once and it is recorded. Otherwise the table just closes.
+    const recorded =
+      table.settings.ranked !== false &&
+      table.tableRound > (table.settings.leaveFreeRounds ?? 0) &&
+      activePlayers(next).some((p) => p.bot);
+    if (!recorded) {
+      next = { ...next, phase: 'abandoned', activePlayerId: null };
+      events.push(emit('table_closed', playerId, { reason: 'everyone_left' }));
+      return { table: next, events };
+    }
   }
   if (table.hostId === playerId) {
     const heir = activePlayers(next).filter((p) => !p.bot)[0];
-    next = { ...next, hostId: heir.id };
-    events.push(emit('host_changed', heir.id));
+    if (heir) {
+      next = { ...next, hostId: heir.id };
+      events.push(emit('host_changed', heir.id));
+    }
   }
   next = settleTable(next, (type, who, data) => events.push(emit(type, who, data)), nowOf(ctx));
   return runAwayTurns({ table: next, events }, version, ctx);

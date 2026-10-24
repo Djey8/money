@@ -2,6 +2,8 @@ import type { GameBooks } from '../books';
 import type { CashflowDeckKind, CashflowGameState } from '../types';
 import { nextDeadline } from './clock';
 import { undoVoters } from './undo-vote';
+import { humansAreOut, rankPlayers } from './turns';
+import { canAnswerTrade, maxTradePriceMinor, quoteTrade, type TradeQuote } from './trade';
 import { cardsLeft } from './deck';
 import type {
   PlayerStatus,
@@ -86,6 +88,10 @@ export interface TableView {
     voterSeats: number[];
   } | null;
   result: ResultView | null;
+  /** Where everybody stands right now, by seat: the ones who are out hold their final place, the others their place as it is now. */
+  standings: { seat: number; rank: number; outcome: TableStanding['outcome'] }[];
+  /** Only bots are left in the game: it is being played to its end at full speed, nobody waits and nothing is told step by step. */
+  fastForward: boolean;
   decks: Record<CashflowDeckKind, DeckView>;
   createdAt: string;
 }
@@ -112,6 +118,13 @@ export interface TradeView {
   priceMinor: number;
   counters: { seat: number; priceMinor: number }[];
   declinedSeats: number[];
+  /**
+   * What the card would do to the viewer, who may answer the offer: whether they can take it at the asking price (cash, the Bank loan it
+   * takes first, their cashflow staying 0 or more) and the most they can offer for it. Absent for everybody else.
+   */
+  you?: { quote: TradeQuote; maxPriceMinor: number };
+  /** When the offer was made (epoch ms): its age is what a bot waits for before it answers. */
+  at?: number;
 }
 
 export interface ResultView {
@@ -138,6 +151,22 @@ function publicBooks(books: GameBooks): PublicBooks {
   const publicRest: Partial<GameBooks> = { ...rest };
   delete publicRest.gameSet;
   return { ...publicRest, state: publicState } as PublicBooks;
+}
+
+/** The viewer's own view of the open offer: what taking it would do to them, when they may answer it. */
+function tradeYou(
+  table: Table,
+  viewerId: string | null,
+): { you?: { quote: TradeQuote; maxPriceMinor: number } } {
+  const offer = table.trade;
+  const me = viewerId === null ? undefined : table.players.find((p) => p.id === viewerId);
+  if (!offer || !me?.books || !canAnswerTrade(table, me.id)) return {};
+  return {
+    you: {
+      quote: quoteTrade(me.books, offer.deck, offer.cardId, offer.priceMinor),
+      maxPriceMinor: maxTradePriceMinor(me.books, offer.deck, offer.cardId),
+    },
+  };
 }
 
 /** The table as `viewerId` (an account id, or anything not seated for a spectator) may see it. */
@@ -193,6 +222,8 @@ export function projectFor(table: Table, viewerId: string | null): TableView {
             priceMinor: c.priceMinor,
           })),
           declinedSeats: table.trade.declined.map(seatOf),
+          ...(table.trade.at !== undefined ? { at: table.trade.at } : {}),
+          ...tradeYou(table, viewerId),
         }
       : null,
     clock: {
@@ -211,6 +242,15 @@ export function projectFor(table: Table, viewerId: string | null): TableView {
           })),
         }
       : null,
+    standings:
+      table.phase === 'playing' || table.phase === 'finished'
+        ? (table.result?.ranking ?? rankPlayers(table)).map((standing) => ({
+            seat: seatOf(standing.playerId),
+            rank: standing.rank,
+            outcome: standing.outcome,
+          }))
+        : [],
+    fastForward: humansAreOut(table),
     decks: Object.fromEntries(
       DECKS.map((deck) => [
         deck,

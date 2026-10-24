@@ -11282,6 +11282,15 @@ components:
           description: >-
             Whether a player may pay the bank loan back (`bank_loan` with a negative `amountMinor`) at any time, also when it is not their turn;
             the repayment is told in the history for everybody. Off: only in their own turn. Borrowing is always only in the player's own turn. Frozen when play starts.
+        leaveFreeRounds:
+          type: integer
+          minimum: 0
+          maximum: 3
+          default: 0
+          description: >-
+            Ranked tables: how many table rounds a person may leave a game that has started without it counting against them. 0 (the default):
+            leaving a started game is a loss from its first moment. When the last person leaves a ranked game that is past its free rounds, the
+            bots play it to its end at once and it is recorded (a loss for the person who left). Frozen when play starts.
         showProgress:
           type: boolean
           default: true
