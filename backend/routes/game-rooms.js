@@ -232,6 +232,10 @@ router.get(
         name,
         difficulty,
         description,
+        // the leaderboard player of each level: the lobby opens its stats panel
+        playerIds: Object.fromEntries(
+          levels.map((level) => [level, stats().botPlayerId(botIdOf(id, level))]),
+        ),
         ratings: Object.fromEntries(
           levels
             .filter((level) => ratings[botIdOf(id, level)] !== undefined)
@@ -307,6 +311,18 @@ function readerHasMove(view) {
     view.legalActions.some((a) => a.action === 'sell_position' || a.action === 'vote_undo')
   );
 }
+
+/**
+ * `GET /game/rooms/{roomId}/seats` - who sits at the table, for the lobby: every seat with the public profile of the person or the bot
+ * (picture, rating, the numbers of their games). A person who is not listed on the leaderboard shows only the rating.
+ */
+router.get(
+  '/:roomId/seats',
+  ...guard('r'),
+  handle(async (req, res) => {
+    res.json({ seats: await rooms().seatsOfRoom(req.userId, req.params.roomId) });
+  }),
+);
 
 /**
  * `GET /game/rooms/{roomId}` - the table as the reader may see it. With `wait` the read is held open (up to `timeoutSeconds`,
@@ -626,6 +642,7 @@ module.exports.resetServiceForTests = () => {
 };
 module.exports.hub = hub;
 module.exports.stats = stats;
+module.exports.rooms = rooms;
 module.exports.nicknameOf = nicknameOf;
 /**
  * The account changed its nickname (the profile page or the settings API): the one name follows everywhere - the leaderboard

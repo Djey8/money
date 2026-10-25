@@ -701,6 +701,52 @@ function createGameRoomService({
     return joined.view;
   }
 
+  /** Who sits at a table, for the lobby: the public profile of every seat (picture, rating, numbers) - for those who may see the table. */
+  async function seatsOfRoom(userId, roomId) {
+    const doc = await loadFor(userId, roomId);
+    if (!stats) return [];
+    return stats.seatsOf(doc.table);
+  }
+
+  /** Whether both accounts sit at this table (a table-mate may see the other's picture, listed or not). */
+  async function sitTogether(roomId, accountA, accountB) {
+    const doc = await store.getRoom(db, roomId);
+    if (!doc) return false;
+    const ids = doc.table.players.map((p) => p.id);
+    return ids.includes(accountA) && ids.includes(accountB);
+  }
+
+  /** The lobby lists carry who sits at each table (a short preview: name, picture, rating), so a player sees who is there before joining. */
+  async function withSeats(summaries, docs) {
+    if (!stats) return summaries;
+    const byId = new Map(docs.map((doc) => [doc.roomId, doc]));
+    const out = [];
+    for (const summary of summaries) {
+      const doc = byId.get(summary.id);
+      let seats = [];
+      try {
+        seats = doc ? await stats.seatsOf(doc.table) : [];
+      } catch (error) {
+        log('game_room_seats_failed', { roomId: summary.id, message: error.message });
+      }
+      out.push({
+        ...summary,
+        seats: seats.map((seat) => ({
+          seat: seat.seat,
+          name: seat.name,
+          bot: seat.bot,
+          listed: seat.listed,
+          rating: seat.rating,
+          ratedGames: seat.ratedGames,
+          ...(seat.level ? { level: seat.level } : {}),
+          ...(seat.playerId ? { playerId: seat.playerId } : {}),
+          ...(seat.pictureVersion ? { pictureVersion: seat.pictureVersion } : {}),
+        })),
+      });
+    }
+    return out;
+  }
+
   /** The public tables with a free seat, or the tables `userId` sits at. */
   async function listRooms(userId, { scope = 'open', limit = 50 } = {}) {
     await maybeSweep();
@@ -713,16 +759,22 @@ function createGameRoomService({
         db,
         markers.map((m) => m.roomId),
       );
-      return docs
+      const picked = docs
         .filter((doc) => OPEN_PHASES.includes(doc.phase) !== wantClosed)
         .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
-        .slice(0, limit)
-        .map((doc) => roomSummary(doc, userId));
+        .slice(0, limit);
+      return withSeats(
+        picked.map((doc) => roomSummary(doc, userId)),
+        picked,
+      );
     }
-    const docs = await store.listPublicRooms(db, 'lobby', limit);
-    return docs
-      .filter((doc) => doc.seatsTaken < doc.maxSeats)
-      .map((doc) => roomSummary(doc, userId));
+    const docs = (await store.listPublicRooms(db, 'lobby', limit)).filter(
+      (doc) => doc.seatsTaken < doc.maxSeats,
+    );
+    return withSeats(
+      docs.map((doc) => roomSummary(doc, userId)),
+      docs,
+    );
   }
 
   /** Who may follow a table: a seated player, or anyone with a game account at a public table that allows spectators. */
@@ -1026,6 +1078,8 @@ function createGameRoomService({
   return {
     createRoom,
     getRoom,
+    seatsOfRoom,
+    sitTogether,
     runCommand,
     removeRoom,
     forgetRoom,

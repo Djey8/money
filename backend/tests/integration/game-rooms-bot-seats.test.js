@@ -126,6 +126,7 @@ describe('the catalog and the lobby', () => {
         'difficulty',
         'id',
         'name',
+        'playerIds',
         'ratings',
       ]);
     }
@@ -153,6 +154,33 @@ describe('the catalog and the lobby', () => {
     expect(markers.filter((m) => m.roomId === roomId)).toHaveLength(1);
     const room = await store.getRoom(getGameRoomsDb(), roomId);
     expect(room.seatsTaken).toBe(2);
+  });
+
+  it('says who sits at a table before anybody joins: the list carries the seats, and the seats route the profiles', async () => {
+    if (!dbAvailable) return;
+    const roomId = await openTable({ name: 'Seats preview' });
+    await call(host, 'post', `/game/rooms/${roomId}/bots`, {
+      policyId: 'champion-v1',
+      level: 'strong',
+    });
+    const open = (await call(guest, 'get', '/game/rooms?scope=open')).body.items.find(
+      (table) => table.id === roomId,
+    );
+    expect(open.seats).toHaveLength(2);
+    expect(open.seats[0]).toMatchObject({ bot: false, listed: false, rating: 1500 });
+    expect(open.seats[1]).toMatchObject({ bot: true, listed: true, level: 'strong' });
+    expect(open.seats[1].rating).toBeGreaterThan(1000);
+    const seats = (await call(host, 'get', `/game/rooms/${roomId}/seats`)).body.seats;
+    expect(seats.map((seat) => seat.name)).toEqual(['Human', 'Champion Cleo (strong)']);
+    // the bot is a leaderboard player: its panel opens by this id
+    expect(seats[1].playerId).toMatch(/^[0-9a-f-]{36}$/);
+    const panel = await call(host, 'get', `/game/players/${seats[1].playerId}`);
+    expect(panel.status).toBe(200);
+    // the catalog names the player of every level
+    const catalog = (await call(host, 'get', '/game/rooms/bots')).body.items.find(
+      (bot) => bot.id === 'champion-v1',
+    );
+    expect(catalog.playerIds.strong).toBe(seats[1].playerId);
   });
 
   it('a bot can be seated at a skill level, which is part of its strategy id and name', async () => {

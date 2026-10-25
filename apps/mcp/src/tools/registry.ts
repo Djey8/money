@@ -438,7 +438,7 @@ export const TOOLS: ToolDefinition[] = [
       'the game is over; `timedOut: true` means nothing happened yet, so just call it again (never poll faster). ' +
       'Slim leaves the other books out; drop `slim` when you need to study them. `wait: "change"` with `since` (the ' +
       '`version` you saw) waits for any change instead. table_log pages through what happened (`after`). ' +
-      'table_bots lists the bots a host can seat (id, name, difficulty, how it plays). LEADERBOARD: leaderboard ' +
+      'table_seats shows who sits at a table (rating, record, picture version of each seat). table_bots lists the bots a host can seat (id, name, difficulty, how it plays). LEADERBOARD: leaderboard ' +
       '(type all|human|bot, minGames, limit, after) lists players by rating - humans who opted in, and each bot persona at ' +
       'each level as a player of its own; player (playerId) shows one with their last results; my_player is your own ' +
       'profile (rating, counters, whether you are listed). A finished table says in `rating` whether it counted. ' +
@@ -448,6 +448,7 @@ export const TOOLS: ToolDefinition[] = [
       tables: action('listGameRooms'),
       table: action('getGameRoom'),
       table_log: action('getGameRoomLog'),
+      table_seats: action('listGameRoomSeats'),
       table_bots: action('listGameBots'),
       leaderboard: action('getGameLeaderboard'),
       player: action('getGamePlayer'),

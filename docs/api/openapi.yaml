@@ -7089,6 +7089,41 @@ paths:
           $ref: '#/components/responses/NotAGameAccountOrScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /game/rooms/{roomId}/seats:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listGameRoomSeats
+      summary: Who sits at a table
+      description: >-
+        Game accounts only; requires `game:r`. Every seat of a table you may look at with the public profile of the person or bot: name, colour, `bot`, rating, the numbers of their games and the picture version. A person who is not on the leaderboard (`listed: false`) shows only the starting rating.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The seats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seats:
+                    type: array
+                    items:
+                      type: object
+              example:
+                seats:
+                  - { seat: 0, name: Ada, bot: false, listed: true, rating: 1534, ratedGames: 7 }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /game/rooms/{roomId}:
     parameters:
       - name: roomId
@@ -11132,6 +11167,11 @@ components:
           additionalProperties:
             type: integer
           example: { master: 1650, strong: 1590, casual: 1480, beginner: 1210 }
+        playerIds:
+          type: object
+          description: The leaderboard player of each skill level, so a client can open the bot's stats (`getGamePlayer`).
+          additionalProperties:
+            type: string
     GameRoomCommandBody:
       type: object
       description: Every table change takes an optional `expectedVersion`, the table version the caller last saw; if the table has moved on the change is refused with 409 `room_conflict` and nothing happens.
@@ -11360,6 +11400,31 @@ components:
         humans:
           type: integer
           description: How many people (not bots) are still playing at the table.
+        seats:
+          type: array
+          description: Who sits at the table (list calls only), so a player sees who is there before joining. A person who is not on the leaderboard shows only the rating.
+          items:
+            type: object
+            properties:
+              seat:
+                type: integer
+              name:
+                type: string
+              bot:
+                type: boolean
+              listed:
+                type: boolean
+              rating:
+                type: integer
+              ratedGames:
+                type: integer
+              level:
+                type: string
+                enum: [master, strong, casual, beginner]
+              playerId:
+                type: string
+              pictureVersion:
+                type: integer
         result:
           type: object
           nullable: true

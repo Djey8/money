@@ -8,11 +8,9 @@ const profilePicture = require('../repositories/profile-picture');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const store = require('../repositories/game-stats-store');
-const { stats, nicknameOf } = require('./game-rooms');
-const {
-  PROVISIONAL_GAMES,
-  RATING_FLOOR,
-} = require('@money/domain/dist/cashflow-game/table/rating');
+const { stats, nicknameOf, rooms } = require('./game-rooms');
+const { baseAt, present } = require('../services/game-profile-view');
+const { RATING_FLOOR } = require('@money/domain/dist/cashflow-game/table/rating');
 
 /**
  * The Cashflow leaderboard (todo/cashflow-leaderboard.md §9). Mounted by routes/api.js at `/api/v1/game`; game accounts only.
@@ -38,59 +36,6 @@ const limiter = rateLimit({
 const guard = (level) => [requireScope(`game:${level}`), requireGameAccount, limiter];
 const invalid = (res, detail) =>
   problem(res, 400, 'validation_invalid', 'Invalid leaderboard request', detail);
-
-/** The level a bot id carries; a plain id is a master. */
-const levelOf = (botId) => {
-  if (!botId) return undefined;
-  const at = botId.lastIndexOf('--');
-  return at < 0 ? 'master' : botId.slice(at + 2);
-};
-
-/**
- * The base a profile was counted from when a game ended: the last base that began before it (the first one for a game from
- * before any record). A game's rating is shown on the CURRENT base: `ratingAfter + (current base - the base it was played on)`, so
- * the history reads on one scale after the bots were measured again.
- */
-function baseAt(profile, endedAt) {
-  const history = profile.baseHistory ?? [];
-  let found = history.length ? history[0].baseRating : (profile.baseRating ?? 1500);
-  for (const entry of history) {
-    if (String(entry.at) <= String(endedAt)) found = entry.baseRating;
-  }
-  return found;
-}
-
-/** A profile as the API shows it: no account id, the rating rounded, the counters with their derived figures. */
-function present(profile) {
-  const c = profile.counters;
-  const ranked = profile.rated;
-  return {
-    playerId: profile.playerId,
-    name: profile.displayName,
-    type: profile.type,
-    ...(profile.type === 'bot' ? { level: levelOf(profile.botId) } : {}),
-    ...(profile.pictureVersion ? { pictureVersion: profile.pictureVersion } : {}),
-    rating: Math.round(profile.rating),
-    peakRating: Math.round(profile.peakRating),
-    // what the rating is counted from (a person's 1500, a bot's measured start) and when that base was set
-    baseRating: Math.round(profile.baseRating ?? 1500),
-    ...(profile.baseHistory?.length
-      ? { baseSince: profile.baseHistory[profile.baseHistory.length - 1].at }
-      : {}),
-    ratedGames: ranked,
-    provisional: ranked < PROVISIONAL_GAMES,
-    games: c.played,
-    wins: c.wins,
-    losses: Math.max(0, c.played - c.wins - c.gaveUp),
-    gaveUp: c.gaveUp,
-    bankruptcies: c.bankruptcies,
-    escaped: c.escaped,
-    winRate: c.played ? Math.round((c.wins / c.played) * 1000) / 10 : 0,
-    avgPlace:
-      c.played - c.gaveUp > 0 ? Math.round((c.rankSum / (c.played - c.gaveUp)) * 100) / 100 : null,
-    bestPlace: c.bestRank,
-  };
-}
 
 /** `GET /game/leaderboard` - the board, best rating first; players with at least `minGames` rated games. */
 router.get('/leaderboard', ...guard('r'), async (req, res, next) => {
@@ -208,7 +153,20 @@ router.get('/players/:playerId/picture', ...guard('r'), async (req, res, next) =
   try {
     const profile = await store.getProfile(getGameStatsDb(), req.params.playerId);
     const mine = profile && profile.type === 'human' && profile.accountId === req.userId;
-    if (!profile || profile.type !== 'human' || !profile.accountId || (!profile.visible && !mine)) {
+    // a person who is not listed has their picture seen by the people who sit at a table with them (`?table=<id>`)
+    const tableMate =
+      profile &&
+      profile.accountId &&
+      !profile.visible &&
+      !mine &&
+      typeof req.query.table === 'string' &&
+      (await rooms().sitTogether(req.query.table, req.userId, profile.accountId));
+    if (
+      !profile ||
+      profile.type !== 'human' ||
+      !profile.accountId ||
+      (!profile.visible && !mine && !tableMate)
+    ) {
       return problem(
         res,
         404,
