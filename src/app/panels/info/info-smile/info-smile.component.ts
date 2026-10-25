@@ -196,6 +196,15 @@ export class InfoSmileComponent extends BaseInfoComponent {
       : '';
   }
 
+  /** In a game: what the month has free for plans, the plan being changed left out (null outside a game). */
+  get maxPayment(): number | null {
+    const editing =
+      this.editingPlanIndex !== null
+        ? InfoSmileComponent.plannedSubscriptions[this.editingPlanIndex]?.title
+        : undefined;
+    return CashflowGameService.fundingRoom(editing);
+  }
+
   // Payment Plans
   isPaymentPlannerOpen = false;
   editingPlanIndex: number | null = null;
@@ -1455,7 +1464,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
     this.confirmService.confirm(
       `Activate payment plan "${plan.title}"? This will create a recurring subscription.`,
       () => {
-        this.subscriptionActivationService.activatePlannedSubscription(plan, project);
+        if (!this.subscriptionActivationService.activatePlannedSubscription(plan, project)) {
+          this.toastService.show(
+            this.translate.instant('PaymentPlannerDialog.tooMuchToActivate'),
+            'error',
+          );
+          return;
+        }
         InfoSmileComponent.plannedSubscriptions = project.plannedSubscriptions || [];
         this.saveProject('Payment plan activated');
       },

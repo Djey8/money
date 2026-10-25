@@ -43,6 +43,8 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   @Input() existingPlan?: PlannedSubscription; // For editing
   /** The date of the game's next Payday: given, the plan is made in Paydays (rounds), not in calendar dates (JFK, 2026-10-25). */
   @Input() gameDate = '';
+  /** In a game: the most a Payday may pay into plans - what the month has free. Null: no limit. */
+  @Input() maxPayment: number | null = null;
 
   @Output() planCreated = new EventEmitter<PlannedSubscription>();
   @Output() planUpdated = new EventEmitter<PlannedSubscription>();
@@ -107,6 +109,13 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   get paydaysNeeded(): number {
     const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
     return payment > 0 ? Math.ceil(this.totalMissing / payment) : 0;
+  }
+
+  /** Game: the payment is more than the month can carry (the cashflow would go into the red). */
+  get overBudget(): boolean {
+    if (!this.gameMode || this.maxPayment === null) return false;
+    const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
+    return payment > this.maxPayment + 0.005;
   }
 
   /** Game: what the plan costs in all, paid over its Paydays. */
@@ -344,6 +353,10 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       manualAmount: this.manualAmount !== null ? this.manualAmount : undefined,
     });
 
+    if (this.overBudget) {
+      this.showError('The month cannot carry this payment: choose a lower amount or more Paydays.');
+      return;
+    }
     // In a game the plan pays once at each of its Paydays: it ends on the last of them
     if (this.gameMode) plan.endDate = this.addMonths(this.startDate, this.paydays - 1);
 

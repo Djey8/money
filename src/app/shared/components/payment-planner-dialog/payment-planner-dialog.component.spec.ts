@@ -67,6 +67,27 @@ describe('PaymentPlannerDialogComponent in a game (Paydays)', () => {
     });
   });
 
+  it('refuses a payment the month cannot carry: more than the free cashflow is not possible', () => {
+    fixture.componentRef.setInput('maxPayment', 200);
+    dialog.paydays = 12;
+    dialog.recalculate();
+    // the buckets hold 4.000 missing: in 12 Paydays that is 333 a Payday, more than the 200 the month has free
+    expect(dialog.overBudget).toBe(true);
+    let made = false;
+    dialog.planCreated.subscribe(() => (made = true));
+    dialog.savePlan();
+    expect(made).toBe(false);
+    // a payment of 150 is fine, and so is the limit itself
+    dialog.manualAmount = 150;
+    dialog.recalculate();
+    expect(dialog.overBudget).toBe(false);
+    dialog.manualAmount = 200;
+    dialog.recalculate();
+    expect(dialog.overBudget).toBe(false);
+    dialog.savePlan();
+    expect(made).toBe(true);
+  });
+
   it('keeps the end of a short month on its last day', () => {
     fixture.componentRef.setInput('gameDate', '2026-01-31');
     dialog.paydays = 2;

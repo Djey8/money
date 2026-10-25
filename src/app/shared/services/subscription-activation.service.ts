@@ -34,6 +34,13 @@ export class SubscriptionActivationService {
         return false;
       }
 
+      // In a game a plan may only take what the month has free: it must never push the cashflow into the red
+      const room = CashflowGameService.fundingRoom(plan.title);
+      if (room !== null && plan.amount > room + 0.005) {
+        console.warn('The month cannot carry this plan', plan.amount, room);
+        return false;
+      }
+
       // Create a real subscription from the plan
       // IMPORTANT: Amount is negative because money leaves the account to fund buckets
       const subscription: Subscription = {

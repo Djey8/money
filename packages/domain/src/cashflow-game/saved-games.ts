@@ -120,3 +120,26 @@ export function savedGameStatus(
 export function sortSavedGames(games: SavedGameSummary[]): SavedGameSummary[] {
   return [...games].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
+
+/**
+ * How much of the month is still free for funding plans (JFK, 2026-10-25): the monthly cashflow of the game minus what the running
+ * plans already pay every Payday. A plan may never take more than this - paying for a dream must not push the month into the red.
+ * `except` leaves one plan out (the one being changed).
+ */
+export function fundingRoomMinor(
+  state: Pick<
+    CashflowGameState,
+    'gameSubscriptionTitles' | 'fundingSubscriptionTitles' | 'virtualDate'
+  >,
+  subscriptions: { title: string; amountMinor: number; endDate?: string }[],
+  except?: string,
+): number {
+  const date = state.virtualDate ?? '';
+  const committed = (state.fundingSubscriptionTitles ?? [])
+    .filter((title) => title !== except && !state.gameSubscriptionTitles.includes(title))
+    .map((title) => subscriptions.find((sub) => sub.title === title))
+    .filter((sub) => sub !== undefined && (!sub.endDate || date <= sub.endDate))
+    .reduce((sum, sub) => sum + Math.abs(sub!.amountMinor), 0);
+  const month = summarizeGameFinances(state, subscriptions).monthlyCashflowMinor;
+  return Math.max(0, month - committed);
+}

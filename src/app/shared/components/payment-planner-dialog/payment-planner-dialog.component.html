@@ -206,6 +206,10 @@
               <td>{{ 'PaymentPlannerDialog.paydaysNeeded' | translate }}</td>
               <td class="amount">{{ paydaysNeeded }}</td>
             </tr>
+            <tr *ngIf="maxPayment !== null">
+              <td>{{ 'PaymentPlannerDialog.affordable' | translate }}</td>
+              <td class="amount" [class.amount--over]="overBudget">{{ maxPayment | appNumber }}</td>
+            </tr>
           </ng-container>
         </table>
       </div>
@@ -260,12 +264,16 @@
         </div>
       </div>
 
+      <p class="error-message" *ngIf="overBudget" role="alert">
+        {{ 'PaymentPlannerDialog.tooMuch' | translate }}
+      </p>
+
       <!-- Action Buttons -->
       <div class="dialog-actions">
         <button type="button" class="btn-cancel" (click)="cancel()">
           {{ 'PaymentPlannerDialog.cancel' | translate }}
         </button>
-        <button type="button" class="btn-primary" (click)="savePlan()">
+        <button type="button" class="btn-primary" [disabled]="overBudget" (click)="savePlan()">
           {{
             (existingPlan ? 'PaymentPlannerDialog.updatePlan' : 'PaymentPlannerDialog.createPlan')
               | translate

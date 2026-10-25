@@ -765,3 +765,13 @@ input::placeholder {
   background: rgba(147, 51, 234, 0.1);
   border: 1px solid rgba(147, 51, 234, 0.3);
 }
+
+.amount--over {
+  color: var(--color-danger, #c0392b);
+  font-weight: 700;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
