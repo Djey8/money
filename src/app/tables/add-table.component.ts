@@ -19,6 +19,7 @@ import { hallTexts, type HallTexts } from './hall.texts';
 import { WheelPickerComponent } from './wheel-picker.component';
 import {
   APP_LANGUAGES,
+  GAME_LANGUAGES,
   LanguageService,
   type AppLanguage,
 } from '../shared/services/language.service';
@@ -631,7 +632,7 @@ export class AddTableComponent implements OnInit {
   rtl = false;
   busy = false;
   error: string | null = null;
-  readonly languages = APP_LANGUAGES;
+  readonly languages = GAME_LANGUAGES;
   readonly nickname = accountName();
   initials = savedInitials();
   form = {
@@ -674,7 +675,9 @@ export class AddTableComponent implements OnInit {
     this.h = hallTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
     if (this.existing) this.fillFrom(this.existing);
-    this.form.language = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
+    const own = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
+    // only the languages the game is offered in; anything else starts as English
+    this.form.language = GAME_LANGUAGES.some((game) => game.code === own) ? own : 'en';
     this.suggestionIndex = Math.floor(Math.random() * this.a.suggestions.length);
     this.suggestion = this.a.suggestions[this.suggestionIndex];
   }

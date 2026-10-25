@@ -136,9 +136,15 @@ describe('TablesLobbyComponent', () => {
     expect(cards().map((c) => c.querySelector('h4')!.textContent)).toEqual(['Timed one']);
     click('.tl-reset');
     expect(cards()).toHaveLength(3);
+    // the game is offered in English and German for now
+    expect(
+      Array.from(element.querySelectorAll('button.tl-flag[title]')).map((e) =>
+        e.getAttribute('title'),
+      ),
+    ).toEqual(['English', 'Deutsch']);
     // no table fits: it says so, not that nobody is playing
-    (element.querySelector('button.tl-flag[title="Français"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    (element.querySelector('button.tl-flag[title="Deutsch"]') as HTMLButtonElement).click();
+    click('.tl-filter .tl-seg button', 'Ranked');
     expect(element.textContent).toContain('No open table fits these filters.');
   });
 

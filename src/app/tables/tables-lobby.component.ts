@@ -28,6 +28,7 @@ import { seatToPlayer } from './seat-stats';
 import { defaultInitials, saveInitials, savedInitials } from './token-initials';
 import {
   APP_LANGUAGES,
+  GAME_LANGUAGES,
   LanguageService,
   type AppLanguage,
 } from '../shared/services/language.service';
@@ -753,7 +754,7 @@ export class TablesLobbyComponent implements OnInit {
   /** My own place on the leaderboard (rating, picture), once known. */
   me: GamePlayer | null = null;
   code = '';
-  readonly languages = APP_LANGUAGES;
+  readonly languages = GAME_LANGUAGES;
   filters: TableFilters = savedFilters();
   showFilters = false;
   /** The player whose leaderboard stats are open. */

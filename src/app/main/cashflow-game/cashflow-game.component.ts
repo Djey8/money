@@ -51,7 +51,7 @@ import {
 import { CashflowCardPlanText } from 'src/app/shared/services/cashflow-game.service';
 import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import {
-  APP_LANGUAGES,
+  GAME_LANGUAGES,
   AppLanguage,
   LanguageService,
 } from 'src/app/shared/services/language.service';
@@ -777,7 +777,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * the choice switches the whole app and its Settings, and the names the game hands out - property
    * labels, Grow projects, card texts - follow it for the rest of the game.
    */
-  readonly gameLanguages = APP_LANGUAGES;
+  readonly gameLanguages = GAME_LANGUAGES;
   choosingCharacter = false;
 
   /** The language the app currently speaks - preselected when the question opens. */

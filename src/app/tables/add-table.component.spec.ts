@@ -19,6 +19,11 @@ describe('AddTableComponent', () => {
     fixture.detectChanges();
   });
 
+  it('offers the game in English and German only, for now', () => {
+    expect(fixture.componentInstance.languages.map((lang) => lang.code)).toEqual(['en', 'de']);
+    expect(fixture.nativeElement.querySelectorAll('.tl-flag')).toHaveLength(2);
+  });
+
   it('opens a table with the form and says which one', () => {
     const component = fixture.componentInstance;
     const created = jest.fn();

@@ -22,6 +22,15 @@ export const APP_LANGUAGES: AppLanguage[] = [
   { code: 'ar', flag: 'assets/flags/tu.png', label: 'AR', name: 'العربية' },
 ];
 
+/**
+ * The languages the game (solo and multiplayer) is offered in (JFK, 2026-10-25): English and German while the terms are being
+ * settled; the other four stay fully supported by the app and are added here, all at once, when their texts are done.
+ */
+export const GAME_LANGUAGE_CODES: AppLanguage['code'][] = ['en', 'de'];
+export const GAME_LANGUAGES: AppLanguage[] = APP_LANGUAGES.filter((lang) =>
+  GAME_LANGUAGE_CODES.includes(lang.code),
+);
+
 /** Where Settings keeps the choice: one true/false flag per language. */
 const STORAGE_KEYS: Record<AppLanguage['code'], string> = {
   en: 'isEng',
