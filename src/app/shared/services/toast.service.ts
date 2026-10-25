@@ -16,8 +16,15 @@ export class ToastService {
   toast$ = this.toastSubject.asObservable();
   dismiss$ = this.dismissSubject.asObservable();
 
+  /**
+   * Set by a screen that wants the small confirmations quiet while it is open (the game with others: a button below a toast is hard
+   * to press on a phone). Errors always show - a failed save must never be silent.
+   */
+  static quiet: (() => boolean) | null = null;
+
   show(message: string, type: 'success' | 'error' | 'info' | 'update' | 'delete' = 'success') {
     const id = ++this.counter;
+    if (type !== 'error' && ToastService.quiet?.()) return id;
     this.toastSubject.next({ message, type, id });
     return id;
   }

@@ -32,6 +32,15 @@ function readMessages(): boolean {
   }
 }
 
+const TOASTS_KEY = 'mm.tables.toasts';
+function readToasts(): boolean {
+  try {
+    return localStorage.getItem(TOASTS_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const money = (minor: number): string =>
@@ -93,6 +102,16 @@ export class TablePresenter {
     if (!on) this.stage.set(null);
     try {
       localStorage.setItem(MESSAGES_KEY, on ? '1' : '0');
+    } catch {
+      // a convenience only
+    }
+  }
+  /** Whether the small confirmations of the app (saved, done ...) show while a game with others is on the screen. */
+  readonly toasts = signal(readToasts());
+  setToasts(on: boolean): void {
+    this.toasts.set(on);
+    try {
+      localStorage.setItem(TOASTS_KEY, on ? '1' : '0');
     } catch {
       // a convenience only
     }

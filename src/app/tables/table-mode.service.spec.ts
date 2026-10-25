@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { signal, type WritableSignal } from '@angular/core';
 import type { GameBooks, TableView } from '@money/domain';
+import { ToastService } from '../shared/services/toast.service';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import type { TableSessionService } from './table-session.service';
 import { AppStateService } from '../shared/services/app-state.service';
@@ -385,6 +386,7 @@ describe('TableModeService', () => {
     expect(menu.title).toBe('Settings');
     expect(menu.items.map((i) => i.id)).toEqual([
       'messages',
+      'toasts',
       'autoplay',
       'page',
       'lobby',
@@ -403,7 +405,17 @@ describe('TableModeService', () => {
     // the bell on the game screen is the same switch as the first menu entry
     expect(mode.quickToggles()).toEqual([
       expect.objectContaining({ id: 'messages', icon: '🔔', on: true }),
+      expect.objectContaining({ id: 'toasts', icon: '💬', on: true }),
     ]);
+    // switched off, the small confirmations stay quiet - but an error always shows
+    mode.presenter.setToasts(false);
+    const toast = TestBed.inject(ToastService);
+    const seen: string[] = [];
+    toast.toast$.subscribe((t) => seen.push(t.type));
+    toast.show('saved', 'success');
+    toast.show('failed', 'error');
+    expect(seen).toEqual(['error']);
+    mode.presenter.setToasts(true);
   });
 
   it('keeps showing the other player on my own turn while their move is still being told', () => {

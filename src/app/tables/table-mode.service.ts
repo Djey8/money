@@ -16,6 +16,7 @@ import { AppStateService } from '../shared/services/app-state.service';
 import { DatabaseService } from '../shared/services/database.service';
 import { IncomeStatementService } from '../shared/services/income-statement.service';
 import { LocalService } from '../shared/services/local.service';
+import { ToastService } from '../shared/services/toast.service';
 import type { BoardToken } from '../main/cashflow-game/rat-race-board.component';
 import {
   RemoteGameHook,
@@ -212,6 +213,8 @@ export class TableModeService {
     RemoteGameHook.tokens = (mine) => this.tokens(mine);
     session.onEvents = (lines, view) => this.presenter.push(lines, view);
     this.active.set(true);
+    // the small confirmations (saved, done ...) can be switched off while playing: they sit over the buttons on a phone
+    ToastService.quiet = () => !this.presenter.toasts();
     document.body.classList.add('table-mode');
     const view = session.view();
     if (view && view.youSeat !== null) this.show(view, view.youSeat);
@@ -245,6 +248,7 @@ export class TableModeService {
     open?.close();
     this.session.set(null);
     this.active.set(false);
+    ToastService.quiet = null;
     this.seat.set(null);
     this.looking.set(null);
     reload();
@@ -334,6 +338,7 @@ export class TableModeService {
     const away = !!view.players[view.youSeat]?.away;
     const items: RemoteMenuItem[] = [
       { id: 'messages', label: this.presenter.messages() ? words.messagesOn : words.messagesOff },
+      { id: 'toasts', label: this.presenter.toasts() ? words.toastsOn : words.toastsOff },
     ];
     // going away on purpose: the table plays my turns passively, like a timeout, so nobody waits for me
     if (view.phase === 'playing') {
@@ -368,12 +373,19 @@ export class TableModeService {
         title: on ? words.messagesOn : words.messagesOff,
         on,
       },
+      {
+        id: 'toasts',
+        icon: this.presenter.toasts() ? '💬' : '🚫',
+        title: this.presenter.toasts() ? words.toastsOn : words.toastsOff,
+        on: this.presenter.toasts(),
+      },
     ];
   }
 
   async runTableMenu(id: string): Promise<void> {
     const view = this.view();
     if (id === 'messages') this.presenter.setMessages(!this.presenter.messages());
+    else if (id === 'toasts') this.presenter.setToasts(!this.presenter.toasts());
     else if (id === 'autoplay') {
       const away = !!view?.players[view.youSeat ?? -1]?.away;
       await this.session()?.play({ type: away ? 'back' : 'away' });
