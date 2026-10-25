@@ -61,7 +61,11 @@ const SPACING = 100;
 const TILE = 76;
 /** Room round the track for half a tile and the START marker. */
 const MARGIN = 70;
-const START_REACH = 150;
+/** The pad the tokens wait on before the first roll: above the map, in the middle. */
+const START_HEIGHT = 84;
+const START_GAP = 24;
+/** A token stands at the corner of its tile, so the tile's picture stays in view. */
+const TOKEN_CORNER = TILE / 2 - 4;
 /** What the header, the start of the page and the roll bar take of the height of the screen. */
 const HEIGHT_TAKEN = 400;
 
@@ -148,7 +152,19 @@ const HEIGHT_TAKEN = 400;
         </ng-container>
       </g>
       <g class="db-start" *ngIf="atStart">
-        <text [attr.x]="layout.start.x" [attr.y]="layout.start.y + 54" class="db-start-text">
+        <rect
+          class="db-start-pad"
+          [attr.x]="layout.start.x - layout.startWidth / 2"
+          [attr.y]="layout.start.y - START_HEIGHT / 2"
+          [attr.width]="layout.startWidth"
+          [attr.height]="START_HEIGHT"
+          rx="22"
+        />
+        <text
+          [attr.x]="layout.start.x"
+          [attr.y]="layout.start.y - START_HEIGHT / 2 + 18"
+          class="db-start-text"
+        >
           START
         </text>
       </g>
@@ -166,8 +182,8 @@ const HEIGHT_TAKEN = 400;
         [style.stroke]="color(here.kind)"
       />
       <g class="db-token" [style.transform]="tokenTransform">
-        <circle r="26" class="db-token-body" />
-        <circle r="10" class="db-token-dot" />
+        <circle r="15" class="db-token-body" />
+        <circle r="6" class="db-token-dot" />
       </g>
     </svg>
   `,
@@ -221,9 +237,16 @@ const HEIGHT_TAKEN = 400;
         dominant-baseline: central;
         pointer-events: none;
       }
+      .db-start-pad {
+        fill: color-mix(in srgb, var(--color-primary, #2c3e50) 8%, var(--color-surface, #fff));
+        stroke: var(--color-border, #ccc);
+        stroke-width: 4;
+        stroke-dasharray: 8 8;
+      }
       .db-start-text {
-        font-size: 30px;
+        font-size: 20px;
         font-weight: 700;
+        letter-spacing: 0.12em;
         text-anchor: middle;
         dominant-baseline: central;
         fill: var(--color-text-secondary, #666);
@@ -238,7 +261,7 @@ const HEIGHT_TAKEN = 400;
       .db-token-body {
         fill: var(--color-primary, #2c3e50);
         stroke: var(--color-surface, #fff);
-        stroke-width: 8;
+        stroke-width: 5;
       }
       .db-token-dot {
         fill: var(--color-surface, #fff);
@@ -258,10 +281,8 @@ export class DreamBoardComponent {
   @Input({ required: true }) map!: DreamfundBoard;
   /** The tile the token stands on; null at START. */
   @Input() position: number | null = null;
-  /** `auto`: a wide map stands up on a portrait screen. */
-  @Input() orientation: 'auto' | 'landscape' | 'portrait' = 'auto';
-
   readonly tileSize = TILE;
+  readonly START_HEIGHT = START_HEIGHT;
   readonly icons = TILE_ICONS;
   readonly sprout = SPROUT_PATH;
 
@@ -277,61 +298,35 @@ export class DreamBoardComponent {
     this.cdr.markForCheck();
   }
 
-  /**
-   * Whether the map stands up. A wide map (the rectangle, the infinity) lies down or stands up, whichever gives the bigger tiles in
-   * the room the screen leaves: its width, and its height under the header and above the roll bar.
-   */
-  private get standing(): boolean {
-    if (!this.map.standsUp) return false;
-    if (this.orientation !== 'auto') return this.orientation === 'portrait';
-    if (typeof window === 'undefined') return false;
-    const width = Math.min(window.innerWidth - 40, 600);
-    const height = Math.max(150, window.innerHeight - HEIGHT_TAKEN);
-    const lying = Math.min(width / this.map.aspect, height);
-    const upright = Math.min(width, height / this.map.aspect);
-    return upright > lying;
-  }
-
   get atStart(): boolean {
     return this.position === null;
   }
 
   /** Everything the picture needs, made again only when the map, the orientation or the START marker changes. */
   get layout(): Layout {
-    const standing = this.standing;
-    const key = `${this.map.setup.shape}/${this.map.setup.size}/${this.map.setup.seed}/${standing}/${this.atStart}`;
+    const key = `${this.map.setup.shape}/${this.map.setup.size}/${this.map.setup.seed}/${this.atStart}`;
     if (this.cache?.key === key) return this.cache.value;
     const scale = SPACING / this.map.spacing;
-    const raw = this.map.points.map((p) => (standing ? { x: p.y, y: p.x } : { x: p.x, y: p.y }));
-    const width = (standing ? 1 : this.map.aspect) * scale;
-    const height = (standing ? this.map.aspect : 1) * scale;
+    // the map is always drawn as it is shown in the choice of the maps: an infinity lies down, whatever the screen
+    const width = this.map.aspect * scale;
+    const height = scale;
     const tiles: DrawnTile[] = this.map.board.map((space, index) => ({
       index,
       kind: space.kind as DreamfundTile,
-      x: raw[index].x * scale + MARGIN,
-      y: raw[index].y * scale + MARGIN,
+      x: this.map.points[index].x * scale + MARGIN,
+      y: this.map.points[index].y * scale + MARGIN,
     }));
-    // START waits outside the track, on the side of the first tile that faces away from the middle of the map
-    const first = tiles[0];
-    const centre = { x: MARGIN + width / 2, y: MARGIN + height / 2 };
-    const away = Math.hypot(first.x - centre.x, first.y - centre.y) || 1;
-    const start = {
-      x: first.x + ((first.x - centre.x) / away) * START_REACH * 0.7,
-      y: first.y + ((first.y - centre.y) / away) * START_REACH * 0.7,
-    };
-    let minX = 0;
-    let minY = 0;
-    let maxX = width + 2 * MARGIN;
-    let maxY = height + 2 * MARGIN;
-    if (this.atStart) {
-      minX = Math.min(minX, start.x - MARGIN);
-      minY = Math.min(minY, start.y - MARGIN);
-      maxX = Math.max(maxX, start.x + MARGIN);
-      maxY = Math.max(maxY, start.y + MARGIN);
-    }
+    // START is a pad above the map, in the middle: the tokens wait there side by side until the first roll
+    const startWidth = Math.min(width + 2 * MARGIN - 20, 300);
+    const start = { x: MARGIN + width / 2, y: -START_GAP - START_HEIGHT / 2 };
+    const minX = 0;
+    const minY = this.atStart ? -START_GAP - START_HEIGHT - 8 : 0;
+    const maxX = width + 2 * MARGIN;
+    const maxY = height + 2 * MARGIN;
     const value: Layout = {
       tiles,
       start,
+      startWidth,
       viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`,
       trackPoints: tiles.map((t) => `${t.x},${t.y}`).join(' '),
       ratio: (maxX - minX) / (maxY - minY),
@@ -346,8 +341,12 @@ export class DreamBoardComponent {
 
   /** Where the token stands: on its tile, or at START outside the track. */
   get tokenTransform(): string {
-    const at = this.position === null ? this.layout.start : this.layout.tiles[this.position];
-    return `translate(${at.x}px, ${at.y}px)`;
+    if (this.position === null) {
+      const at = this.layout.start;
+      return `translate(${at.x}px, ${at.y + 8}px)`;
+    }
+    const at = this.layout.tiles[this.position];
+    return `translate(${at.x + TOKEN_CORNER}px, ${at.y + TOKEN_CORNER}px)`;
   }
 
   get ariaLabel(): string {
@@ -377,6 +376,7 @@ export class DreamBoardComponent {
 interface Layout {
   tiles: DrawnTile[];
   start: { x: number; y: number };
+  startWidth: number;
   viewBox: string;
   trackPoints: string;
   /** Width over height of the picture. */

@@ -1,4 +1,4 @@
-import { gameTradeStep, parseGrowComment } from '@money/domain';
+import { gameTradeStep, hasGameTag, parseGrowComment } from '@money/domain';
 import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import { bucketCapacity } from 'src/app/shared/bucket.utils';
 import {
@@ -1784,9 +1784,8 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           // carries the game's marker: each Payday then ages it back a month like the rest.
           comment:
             AddComponent.commentTextField +
-            (CashflowGameService.isCashflowGame() &&
-            !AddComponent.commentTextField.includes('#cashflow')
-              ? '\n#cashflow'
+            (CashflowGameService.isCashflowGame() && !hasGameTag(AddComponent.commentTextField)
+              ? '\n#dreamfund'
               : ''),
         };
         const bookedLocationId = this.locationId;

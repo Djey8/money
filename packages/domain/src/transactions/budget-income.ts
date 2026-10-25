@@ -1,3 +1,4 @@
+import { hasGameTag } from '../cashflow-game/game-tag';
 /**
  * The income the Budget chart draws as its green line (JFK, 2026-10-19): what was actually earned in a month - the salary, the
  * income of positive subscriptions, the bonus of a Multi-Level-Marketing card, the interest of a loan to a relative, a one-time
@@ -25,7 +26,7 @@ export function isActualIncome(transaction: IncomeCandidate): boolean {
   if (transaction.account !== 'Income' || !(transaction.amountMinor > 0)) return false;
   if (SALE_COMMENT.test(transaction.comment ?? '')) return false;
   const category = (transaction.category ?? '').replace(/^@/, '').trim().toLowerCase();
-  if (STARTING_SAVINGS.includes(category) && /#cashflow/.test(transaction.comment ?? '')) {
+  if (STARTING_SAVINGS.includes(category) && hasGameTag(transaction.comment)) {
     return false;
   }
   return true;

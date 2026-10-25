@@ -498,22 +498,30 @@ const DAV_ARTICLE =
 const COURSE_PROVIDER = 'https://www.alpinewelten.com/unternehmen/bergfuehrer-werden';
 
 const DUAL_STUDENT_EXPENSES: CashflowExpenseLine[] = [
+  // Where it is paid from (JFK, 2026-10-25): the income splits 60 Daily / 10 Splurge / 10 Smile / 20 Fire. Daily carries tax, pension,
+  // rent, bills and groceries (1.693 of 1.700), Splurge the treats (269 of 283), Fire the insurances (371 of 567, the rest is for the
+  // Mojo reserve); Smile stays free for the dream.
   // what the state and the social insurances take from the gross salary: 845 €
   { title: 'Lohnsteuer', amountMinor: 23500, key: 'incomeTax' }, // 235 €
   { title: 'Rentenversicherung', amountMinor: 26300, key: 'pension' }, // 263 € (9,3 %)
-  { title: 'Krankenversicherung', amountMinor: 24200, key: 'healthInsurance' }, // 242 €
-  { title: 'Pflegeversicherung', amountMinor: 6800, key: 'careInsurance' }, // 68 €
-  { title: 'Arbeitslosenversicherung', amountMinor: 3700, key: 'unemploymentInsurance' }, // 37 € (1,3 %)
+  { title: 'Krankenversicherung', amountMinor: 24200, key: 'healthInsurance', account: 'Fire' }, // 242 €
+  { title: 'Pflegeversicherung', amountMinor: 6800, key: 'careInsurance', account: 'Fire' }, // 68 €
+  {
+    title: 'Arbeitslosenversicherung',
+    amountMinor: 3700,
+    key: 'unemploymentInsurance',
+    account: 'Fire',
+  }, // 37 € (1,3 %)
   // fixed costs: 919 €
   { title: 'Miete', amountMinor: 80000, key: 'rent' }, // 800 €
-  { title: 'Versicherungen', amountMinor: 2400, key: 'insurance' }, // 24 €
+  { title: 'Versicherungen', amountMinor: 2400, key: 'insurance', account: 'Fire' }, // 24 €
   { title: 'Nebenkosten & Telekom', amountMinor: 7100, key: 'utilities' }, // 71 €: internet, phone, electricity, broadcasting fee
   { title: 'Abos', amountMinor: 2400, key: 'subscriptions' }, // 24 €
   // daily living: 395 €
   { title: 'Lebensmittel', amountMinor: 30000, key: 'groceries' }, // 300 €
-  { title: 'Essen to go', amountMinor: 5000, key: 'takeaway' }, // 50 €
-  { title: 'Drogerie & Hygiene', amountMinor: 3000, key: 'hygiene' }, // 30 €
-  { title: 'Friseur', amountMinor: 1500, key: 'haircut' }, // 15 €
+  { title: 'Essen to go', amountMinor: 5000, key: 'takeaway', account: 'Splurge' }, // 50 €
+  { title: 'Drogerie & Hygiene', amountMinor: 3000, key: 'hygiene', account: 'Splurge' }, // 30 €
+  { title: 'Friseur', amountMinor: 1500, key: 'haircut', account: 'Splurge' }, // 15 €
   // hobbies and going out: 174 €
   { title: 'Restaurant', amountMinor: 6000, key: 'restaurant', account: 'Splurge' }, // 60 €
   { title: 'Klettern', amountMinor: 4500, key: 'climbing', account: 'Splurge' }, // 45 €

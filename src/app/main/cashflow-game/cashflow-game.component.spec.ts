@@ -768,7 +768,7 @@ describe('CashflowGameComponent', () => {
       startDate: '2026-10-01',
       endDate: '',
       category: '',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: 'monthly',
     });
 

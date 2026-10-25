@@ -122,6 +122,17 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
     }
   });
 
+  it('pays every account from its own share of the salary, none of them into the red (60 / 10 / 20, Smile stays free)', () => {
+    const paid = (account: string) =>
+      student.expenses
+        .filter((line) => (line.account ?? 'Daily') === account)
+        .reduce((sum, line) => sum + line.amountMinor, 0);
+    expect(paid('Daily')).toBeLessThanOrEqual(student.salaryMinor * 0.6);
+    expect(paid('Splurge')).toBeLessThanOrEqual(student.salaryMinor * 0.1);
+    expect(paid('Fire')).toBeLessThan(student.salaryMinor * 0.2);
+    expect(paid('Smile')).toBe(0);
+  });
+
   it('keeps 500 euros a month: 34.000 a year gross, 845 of it for tax and the social insurances', () => {
     expect(student.salaryMinor).toBe(283300);
     expect(computeCashflowProfessionMonthlyCashflowMinor(student)).toBe(50000);
@@ -319,7 +330,7 @@ describe('runCashflowPayday', () => {
     expect(state.history).toHaveLength(1);
   });
 
-  it('marks every created transaction with the #cashflow tag', () => {
+  it('marks every created transaction with the #dreamfund tag', () => {
     const { state: started } = pickCashflowProfession(
       CASHFLOW_GAME_SETS,
       'placeholder',
@@ -327,7 +338,7 @@ describe('runCashflowPayday', () => {
       '2026-09-25',
     );
     const { transactions } = runCashflowPayday(started, gameSubscriptions);
-    expect(transactions.every((t) => t.comment.includes('#cashflow'))).toBe(true);
+    expect(transactions.every((t) => t.comment.includes('#dreamfund'))).toBe(true);
   });
 
   it('refuses to run before a profession is picked', () => {

@@ -625,7 +625,7 @@ export function startGameAction(
   effects.appendedTransactions = result.startingTransactions.map((record) => ({
     ...record,
     category: `@${savingsWord}`,
-    comment: `${text('CashflowGame.savingsTransactionComment', { profession: professionTitle })}\n#cashflow`,
+    comment: `${text('CashflowGame.savingsTransactionComment', { profession: professionTitle })}\n#dreamfund`,
   }));
   effects.subscriptionUpserts = result.subscriptions.map((sub, index) => ({
     title: titles[index],
@@ -634,7 +634,7 @@ export function startGameAction(
     startDate: nextSmartDate(usedDays, deps.clock.todayIso()),
     endDate: '',
     category: index === 0 ? `@${salaryWord}` : `@${titles[index]}`,
-    comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
+    comment: sub.comment ? `${sub.comment}\n#dreamfund` : '#dreamfund',
     frequency: sub.frequency,
   }));
   effects.assetUpserts = (kit.assets ?? []).map((asset) => ({

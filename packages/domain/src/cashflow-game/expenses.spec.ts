@@ -50,7 +50,7 @@ function books(cashMinor: number): GameBooks {
       startDate: `2026-09-${index === 0 ? '01' : '03'}`,
       endDate: '',
       category: sub.category ?? '',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: sub.frequency,
     })),
     transactions: cashMinor

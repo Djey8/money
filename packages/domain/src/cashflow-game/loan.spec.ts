@@ -44,7 +44,7 @@ function books(extra: Partial<LoanBooks> = {}): LoanBooks {
     startDate: `2026-09-${index === 0 ? '01' : '03'}`,
     endDate: '',
     category: sub.category ?? '',
-    comment: '#cashflow',
+    comment: '#dreamfund',
     frequency: sub.frequency,
   }));
   return {
@@ -71,7 +71,7 @@ describe('playBankLoan: borrowing', () => {
       account: 'Daily',
       amountMinor: -Math.round(0.1 * 2 * STEP),
       category: '@Bank loan',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       startDate: '2026-10-05', // the 1st and 3rd are the profession's own
     });
     expect(effects.appendedTransactions).toHaveLength(1);
@@ -95,7 +95,7 @@ describe('playBankLoan: borrowing', () => {
       startDate: '2026-09-17',
       endDate: '',
       category: '@Bank loan',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: 'monthly',
     });
     const effects = playBankLoan(b, STEP, deps);

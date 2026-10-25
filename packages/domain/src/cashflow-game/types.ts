@@ -54,8 +54,8 @@ export interface CashflowExpenseLine {
   amountMinor: number;
   /** Stable, language-independent id for this line — lets the frontend look up a translated label without changing `title` itself, which stays the literal value used to build the real Subscription's title/category (todo/cashflow-game.md decision 48). Optional: a game set with no translations authored yet just falls back to `title` as-is. */
   key?: string;
-  /** The account the monthly payment is booked to (default `Daily`): leisure belongs to `Splurge`. */
-  account?: 'Daily' | 'Splurge';
+  /** The account the monthly payment is booked to (default `Daily`): leisure belongs to `Splurge`, insurances to `Fire`. */
+  account?: 'Daily' | 'Splurge' | 'Fire';
 }
 
 /** The Smile project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */

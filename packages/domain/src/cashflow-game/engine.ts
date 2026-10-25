@@ -123,7 +123,7 @@ export function pickCashflowProfession(
       date: today,
       time: '',
       category: '@Savings',
-      comment: `${profession.title} savings\n#cashflow`,
+      comment: `${profession.title} savings\n#dreamfund`,
     },
   ];
 
@@ -204,7 +204,7 @@ function cashflowTransaction(
     date,
     time: '',
     category,
-    comment: comment ? `${comment}\n#cashflow` : '#cashflow',
+    comment: comment ? `${comment}\n#dreamfund` : '#dreamfund',
   };
 }
 

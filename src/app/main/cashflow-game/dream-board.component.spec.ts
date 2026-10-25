@@ -6,11 +6,10 @@ import { DreamBoardComponent } from './dream-board.component';
 describe('DreamBoardComponent', () => {
   let fixture: ComponentFixture<DreamBoardComponent>;
 
-  const render = (shape: BoardShape, position: number | null = null, orientation = 'landscape') => {
+  const render = (shape: BoardShape, position: number | null = null) => {
     fixture = TestBed.createComponent(DreamBoardComponent);
     fixture.componentRef.setInput('map', buildDreamfundBoard({ shape, size: 'medium', seed: 2 }));
     fixture.componentRef.setInput('position', position);
-    fixture.componentRef.setInput('orientation', orientation);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   };
@@ -50,33 +49,42 @@ describe('DreamBoardComponent', () => {
     expect(moved.querySelector('.db-here')).not.toBeNull();
     const token = moved.querySelector('.db-token') as HTMLElement;
     const tile = moved.querySelectorAll('.db-tile rect')[5] as SVGRectElement;
-    const centre = Number(tile.getAttribute('x')) + Number(tile.getAttribute('width')) / 2;
-    expect(token.style.transform).toContain(`${centre}px`);
+    // the token stands at the corner of its tile, so the picture of the tile stays in view
+    const right = Number(tile.getAttribute('x')) + Number(tile.getAttribute('width'));
+    const x = Number(/translate\(([\d.]+)px/.exec(token.style.transform)![1]);
+    expect(x).toBeGreaterThan(right - 12);
+    expect(x).toBeLessThan(right + 12);
   });
 
-  it('a wide map stands up on a portrait screen, so its tiles come out bigger', () => {
-    const landscape = render('infinity', 1, 'landscape')
+  it('is always drawn as in the choice of maps: an infinity lies down on any screen', () => {
+    const [, , w, h] = render('infinity', 1)
       .querySelector('svg')!
-      .getAttribute('viewBox')!;
-    const portrait = render('infinity', 1, 'portrait')
+      .getAttribute('viewBox')!
+      .split(' ')
+      .map(Number);
+    expect(w / h).toBeGreaterThan(1.3);
+  });
+
+  it('START is a pad above the map, in the middle, and the token waits on it', () => {
+    const element = render('rectangle', null);
+    const [minX, minY, w] = element
       .querySelector('svg')!
-      .getAttribute('viewBox')!;
-    const ratio = (box: string) => {
-      const [, , w, h] = box.split(' ').map(Number);
-      return w / h;
-    };
-    expect(ratio(landscape)).toBeGreaterThan(1.3);
-    expect(ratio(portrait)).toBeLessThan(0.9);
-    // a ring is as it is in either
-    const ring = (o: string) =>
-      ratio(render('ring', 1, o).querySelector('svg')!.getAttribute('viewBox')!);
-    expect(Math.abs(ring('landscape') - ring('portrait'))).toBeLessThan(0.01);
+      .getAttribute('viewBox')!
+      .split(' ')
+      .map(Number);
+    const pad = element.querySelector('.db-start-pad') as SVGRectElement;
+    const padCentre = Number(pad.getAttribute('x')) + Number(pad.getAttribute('width')) / 2;
+    expect(padCentre).toBeCloseTo(minX + w / 2, 0);
+    expect(Number(pad.getAttribute('y')) + Number(pad.getAttribute('height'))).toBeLessThan(0);
+    expect(minY).toBeLessThan(0);
+    const firstTile = element.querySelector('.db-tile rect') as SVGRectElement;
+    expect(Number(firstTile.getAttribute('y'))).toBeGreaterThan(0);
   });
 
   it('every shape fits its viewBox: all tiles inside', () => {
     for (const shape of ['ring', 'infinity', 'rectangle', 'square', 'mountain'] as BoardShape[]) {
-      for (const orientation of ['landscape', 'portrait']) {
-        const element = render(shape, 3, orientation);
+      {
+        const element = render(shape, 3);
         const [minX, minY, w, h] = element
           .querySelector('svg')!
           .getAttribute('viewBox')!

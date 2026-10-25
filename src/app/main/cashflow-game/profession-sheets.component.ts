@@ -94,11 +94,15 @@ export interface ProfessionSheetNumbers {
             <tbody>
               <tr *ngFor="let line of sortedExpenses" class="ps-row">
                 <td>{{ line.name }}</td>
-                <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
+                <td class="ps-negative">
+                  −{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}
+                </td>
               </tr>
               <tr class="ps-row ps-row--total">
                 <td>{{ 'CashflowGame.total' | translate }}</td>
-                <td>{{ expensesTotal | appNumber: '1.2-2' : false }} {{ currency }}</td>
+                <td class="ps-negative">
+                  −{{ expensesTotal | appNumber: '1.2-2' : false }} {{ currency }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -224,7 +228,7 @@ export interface ProfessionSheetNumbers {
         margin-bottom: 0;
       }
       .ps-negative {
-        color: var(--color-danger);
+        color: var(--color-danger, #c0392b);
       }
       /* the blue box of the Income Statement and the Balance Sheet, with the white card of rows inside */
       .ps-box {

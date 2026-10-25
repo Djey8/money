@@ -10,7 +10,7 @@ import {
 
 describe('gameTradeStep', () => {
   it('names a Grow trade after its position, whatever else the comment says', () => {
-    expect(gameTradeStep('Buy Share OK4U 250 x 10;\n#cashflow', '@OK4U')).toEqual({
+    expect(gameTradeStep('Buy Share OK4U 250 x 10;\n#dreamfund', '@OK4U')).toEqual({
       kind: 'buyShare',
       detail: 'OK4U',
     });

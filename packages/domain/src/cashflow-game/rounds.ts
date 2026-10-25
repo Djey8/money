@@ -1,3 +1,4 @@
+import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
 import {
   emptyEffects,
@@ -108,7 +109,7 @@ export function placeOneOffTransactions(
 /**
  * Creates or updates a Subscription by title - the "recomputed every time, never hand-edited" pattern Baby and the
  * bank loan share. An existing one keeps its own date and takes the new account, amount and frequency (and the
- * category, when one is given); a new one is dated on the next free day slot. Either way it carries `#cashflow`.
+ * category, when one is given); a new one is dated on the next free day slot. Either way it carries `#dreamfund`.
  */
 export function upsertBookSubscription(
   subscriptions: BookSubscription[],
@@ -123,11 +124,11 @@ export function upsertBookSubscription(
       amountMinor: upsert.amountMinor,
       frequency: upsert.frequency,
       category: upsert.category ?? existing.category,
-      comment: existing.comment.includes('#cashflow')
+      comment: hasGameTag(existing.comment)
         ? existing.comment
         : existing.comment
-          ? `${existing.comment}\n#cashflow`
-          : '#cashflow',
+          ? `${existing.comment}\n#dreamfund`
+          : '#dreamfund',
     };
   }
   return {
@@ -137,7 +138,7 @@ export function upsertBookSubscription(
     startDate: nextSmartDate(gameSubscriptionDays(subscriptions), today),
     endDate: '',
     category: upsert.category ?? '',
-    comment: upsert.comment ? `${upsert.comment}\n#cashflow` : '#cashflow',
+    comment: upsert.comment ? `${upsert.comment}\n#dreamfund` : '#dreamfund',
     frequency: upsert.frequency,
   };
 }

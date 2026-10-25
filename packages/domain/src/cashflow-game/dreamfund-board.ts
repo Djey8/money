@@ -58,20 +58,21 @@ const mix = (
 
 /** How many tiles of each kind a map has, by size and difficulty: easy holds more chances, hard more emergencies. */
 export const TILE_MIX: Record<BoardSize, Record<BoardDifficulty, Mix>> = {
+  // payday, opportunity, harvest, dream, emergency, life, career - a Career tile is rare (it changes the income): one or two a map
   small: {
-    easy: mix(3, 6, 3, 3, 2, 3, 4),
-    medium: mix(3, 5, 3, 3, 3, 4, 3),
-    hard: mix(3, 4, 3, 2, 5, 5, 2),
+    easy: mix(3, 8, 6, 2, 1, 3, 1),
+    medium: mix(3, 7, 5, 2, 2, 4, 1),
+    hard: mix(3, 6, 4, 2, 4, 4, 1),
   },
   medium: {
-    easy: mix(4, 9, 5, 5, 3, 5, 5),
-    medium: mix(4, 8, 5, 4, 5, 6, 4),
-    hard: mix(4, 6, 5, 3, 8, 7, 3),
+    easy: mix(4, 12, 9, 3, 2, 5, 1),
+    medium: mix(4, 10, 8, 3, 3, 7, 1),
+    hard: mix(4, 9, 7, 3, 5, 7, 1),
   },
   large: {
-    easy: mix(6, 12, 7, 6, 5, 6, 6),
-    medium: mix(6, 10, 7, 5, 7, 8, 5),
-    hard: mix(6, 8, 7, 4, 10, 9, 4),
+    easy: mix(6, 15, 12, 4, 3, 6, 2),
+    medium: mix(6, 13, 10, 4, 4, 9, 2),
+    hard: mix(6, 12, 9, 4, 7, 8, 2),
   },
 };
 

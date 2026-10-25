@@ -174,7 +174,7 @@ function payForCard(
         date: '',
         time: '',
         category: `@${name} card purchase`,
-        comment: `${textOrFallback(deps.text, 'CashflowGame.cardPurchaseComment', `Bought the ${name} card from a friend`)}\n#cashflow`,
+        comment: `${textOrFallback(deps.text, 'CashflowGame.cardPurchaseComment', `Bought the ${name} card from a friend`)}\n#dreamfund`,
       },
     ],
     working,

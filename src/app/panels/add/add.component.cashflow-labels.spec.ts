@@ -172,7 +172,7 @@ describe('Cashflow-game property labels through the Add dialog (plan -> buy -> s
       // the deposit left the books under the label
       const payment = state.allTransactions.find((t) => t.category === `@${label}`);
       expect(payment?.amount).toBeLessThan(0);
-      expect(payment?.comment).toContain('#cashflow');
+      expect(payment?.comment).toContain('#dreamfund');
 
       // it appears by name in the live passive income
       const passive = state.allSubscriptions.filter(

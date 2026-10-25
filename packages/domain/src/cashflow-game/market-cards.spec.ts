@@ -470,7 +470,7 @@ describe('playBoostCard', () => {
     startDate: '2026-09-07',
     endDate: '',
     category: '',
-    comment: '#cashflow',
+    comment: '#dreamfund',
     frequency: 'monthly',
   });
 
@@ -504,7 +504,7 @@ describe('playBoostCard', () => {
     expect(effects.subscriptionUpserts[0]).toMatchObject({
       title: 'EFH Cashflow',
       startDate: '2026-10-01',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       account: 'Income',
     });
     expect(effects.state.gameSubscriptionTitles).toEqual(['Salary', 'EFH Cashflow']);

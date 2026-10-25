@@ -935,7 +935,7 @@ export class CashflowGameService {
         category: `@${savingsWord}`,
         comment: `${this.translate.instant('CashflowGame.savingsTransactionComment', {
           profession: professionTitle,
-        })}\n#cashflow`,
+        })}\n#dreamfund`,
       });
       this.bookOnGameLocation(transaction);
       state.allTransactions.push(transaction);
@@ -951,7 +951,7 @@ export class CashflowGameService {
         startDate: this.nextSmartSubscriptionDate(usedDays),
         endDate: '',
         category: index === 0 ? `@${salaryWord}` : `@${translatedTitle}`,
-        comment: sub.comment ? `${sub.comment}\n#cashflow` : '#cashflow',
+        comment: sub.comment ? `${sub.comment}\n#dreamfund` : '#dreamfund',
         frequency: sub.frequency,
         locationId: GAME_BANK_LOCATION_ID,
       };
@@ -1408,7 +1408,7 @@ export class CashflowGameService {
     }
     state.cashflowGame = effects.state;
   }
-  /** Every day-of-month a `#cashflow` Subscription recurs on (see `gameSubscriptionDays`). */
+  /** Every day-of-month a `#dreamfund` Subscription recurs on (see `gameSubscriptionDays`). */
   private currentMonthGameSubscriptionDays(): Set<number> {
     return gameSubscriptionDays(AppStateService.instance.allSubscriptions);
   }
