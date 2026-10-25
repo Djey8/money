@@ -444,7 +444,10 @@ describe('purity and replay', () => {
             ? pending.kind === 'doodad'
               ? { type: 'pay_doodad', cardId: pending.offered.cardId }
               : { type: 'pass_card' }
-            : { type: 'draw_card', deck: pending.kind === 'deal' ? 'dealSmall' : pending.kind }
+            : {
+                type: 'draw_card',
+                deck: pending.kind === 'deal' ? 'dealSmall' : (pending.kind as 'market' | 'doodad'),
+              }
           : { type: 'roll' };
         table = applyCommand(table, who, command, ctx).table;
       }

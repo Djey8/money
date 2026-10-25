@@ -1,3 +1,4 @@
+import type { BoardSetup } from './dreamfund-board';
 import type { GameRules } from './rules';
 /**
  * Types for the Cashflow (board game) MVP — see todo/cashflow-game.md for the
@@ -304,8 +305,18 @@ export interface CashflowAssetDeal {
 }
 
 /** A card space the token landed on, waiting for the player to deal with its card (or pass). */
+type DreamfundTileKind = 'dream' | 'emergency' | 'opportunity' | 'harvest' | 'life' | 'career';
+
 export interface CashflowPendingDecision {
-  kind: 'deal' | 'market' | 'doodad';
+  /**
+   * `story`: a tile of a Dreamfund map (dream, emergency, opportunity, harvest, life, career) - its card is read and ticked off;
+   * what the tiles do comes with their cards (`tile` says which).
+   */
+  kind: 'deal' | 'market' | 'doodad' | 'story';
+  /** With `story`: which tile it is. */
+  tile?: DreamfundTileKind;
+  /** With `story`: the card drawn from the tile's stack. */
+  storyCardId?: string;
   /** The ring index of the space. A Deals space leaves the pile (Small or Big) to the player. */
   spaceIndex: number;
   /**
@@ -379,6 +390,8 @@ export interface CashflowGameState {
    * they are never part of the monthly picture (`summarizeGameFinances` reads `gameSubscriptionTitles` only).
    */
   fundingSubscriptionTitles?: string[];
+  /** The map of a Dreamfund game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
+  boardSetup?: BoardSetup;
   /** Card ids drawn since the deck's last reshuffle, per deck — the "discard pile" a random draw skips and a reshuffle clears. */
   drawnCardIds: Record<CashflowDeckKind, string[]>;
   history: CashflowLogEntry[];

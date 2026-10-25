@@ -181,6 +181,49 @@
         </p>
       </section>
 
+      <!-- The map: its shape and its size, each shown with its tiles in their colours (JFK, 2026-10-25) -->
+      <section class="cf-group" *ngIf="showBoardChoice">
+        <h4>{{ 'CashflowGame.board.title' | translate }}</h4>
+        <div class="cf-shapes" role="radiogroup">
+          <button
+            *ngFor="let shape of boardShapes"
+            type="button"
+            role="radio"
+            class="cf-shape"
+            [class.cf-shape--on]="boardShape === shape"
+            [attr.aria-checked]="boardShape === shape"
+            (click)="chooseBoardShape(shape)"
+          >
+            <app-board-thumb
+              [shape]="shape"
+              [size]="boardSize"
+              [seed]="boardSeed"
+            ></app-board-thumb>
+            <span>{{ 'CashflowGame.board.shape.' + shape | translate }}</span>
+          </button>
+        </div>
+        <div class="cf-seg" role="radiogroup">
+          <button
+            *ngFor="let size of boardSizes"
+            type="button"
+            role="radio"
+            [class.cf-seg--on]="boardSize === size"
+            [attr.aria-checked]="boardSize === size"
+            (click)="chooseBoardSize(size)"
+          >
+            {{ 'CashflowGame.board.size.' + size | translate }} · {{ tileCount(size) }}
+          </button>
+        </div>
+        <p class="cf-hint">
+          {{ 'CashflowGame.board.shape.' + boardShape | translate }} ·
+          {{ 'CashflowGame.board.size.' + boardSize | translate }} ·
+          {{ 'CashflowGame.board.tiles' | translate: { count: tileCount(boardSize) } }}
+          <button type="button" class="cf-advanced-btn" (click)="anotherLayout()">
+            ↻ {{ 'CashflowGame.board.another' | translate }}
+          </button>
+        </p>
+      </section>
+
       <section class="cf-group">
         <h4>{{ 'CashflowGame.rules.title' | translate }}</h4>
         <div class="cf-seg" role="radiogroup">
@@ -820,12 +863,19 @@
             </p>
           </div>
           <div class="cf-solo-board">
-            <div class="cf-ring">
-              <app-rat-race-board
-                [board]="board"
+            <div class="cf-ring" [class.cf-ring--map]="!!boardMap">
+              <app-dream-board
+                *ngIf="boardMap as map; else classicBoard"
+                [map]="map"
                 [position]="tokenPosition"
-                [tokens]="boardTokens"
-              ></app-rat-race-board>
+              ></app-dream-board>
+              <ng-template #classicBoard>
+                <app-rat-race-board
+                  [board]="board"
+                  [position]="tokenPosition"
+                  [tokens]="boardTokens"
+                ></app-rat-race-board>
+              </ng-template>
               <!-- The messages (a Payday, a kept MLM card, a Market card that did not apply, what the others do) are laid in the -->
               <!-- middle of the wheel: they cover nothing that matters, and each can be closed with its x (JFK, 2026-10-18). -->
               <div class="cf-ring-overlay">
@@ -1071,7 +1121,7 @@
 
               <div
                 class="cf-solo-decision"
-                *ngIf="soloTurn.phase === 'decide' && !walking && !diceActionOpen"
+                *ngIf="soloTurn.phase === 'decide' && !walking && !diceActionOpen && !pendingStory"
                 role="group"
               >
                 <div class="cf-solo-decision-head">
@@ -1116,6 +1166,41 @@
                   <p class="cf-solo-hint" *ngIf="mustPayDoodad" role="status">
                     {{ 'CashflowGame.rules.doodadMustPay' | translate }}
                   </p>
+                </div>
+              </div>
+              <!-- A tile of a Dreamfund map: its card is read and ticked off (the cards of the stacks come one by one) -->
+              <div
+                class="cf-solo-decision cf-story"
+                *ngIf="
+                  soloTurn.phase === 'decide' &&
+                  !walking &&
+                  !diceActionOpen &&
+                  pendingStory as story
+                "
+                role="group"
+                [style.--tc]="tileColor(story.tile)"
+              >
+                <div class="cf-story-card">
+                  <header class="cf-story-head">
+                    <span class="cf-story-icon" aria-hidden="true">
+                      <img *ngIf="tileImageOf(story.tile)" [src]="tileImageOf(story.tile)" alt="" />
+                      <svg *ngIf="story.tile === 'opportunity'" viewBox="0 0 24 24">
+                        <path [attr.d]="sproutPath" />
+                      </svg>
+                      <span *ngIf="tileGlyphOf(story.tile)">{{ tileGlyphOf(story.tile) }}</span>
+                    </span>
+                    <strong>{{ tileLabelKey(story.tile) | translate }}</strong>
+                  </header>
+                  <p>{{ 'CashflowGame.tile.' + story.tile + '.filler' | translate }}</p>
+                </div>
+                <div class="cf-actions">
+                  <button
+                    class="btn btn--primary"
+                    [disabled]="isBusy"
+                    (click)="finishSoloDecision('done')"
+                  >
+                    {{ 'CashflowGame.solo.done' | translate }}
+                  </button>
                 </div>
               </div>
               <!-- a roll in progress (the decision waits for the totem): the dice stay in view -->

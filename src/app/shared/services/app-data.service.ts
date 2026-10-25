@@ -676,6 +676,26 @@ export class AppDataService {
             },
           }
         : {}),
+      ...(raw.boardSetup != null
+        ? {
+            boardSetup: {
+              shape: str(raw.boardSetup.shape) as NonNullable<
+                CashflowGameState['boardSetup']
+              >['shape'],
+              size: str(raw.boardSetup.size) as NonNullable<
+                CashflowGameState['boardSetup']
+              >['size'],
+              seed: num(raw.boardSetup.seed),
+              ...(raw.boardSetup.difficulty != null
+                ? {
+                    difficulty: str(raw.boardSetup.difficulty) as NonNullable<
+                      CashflowGameState['boardSetup']
+                    >['difficulty'],
+                  }
+                : {}),
+            },
+          }
+        : {}),
       ...(raw.rules != null
         ? {
             rules: {

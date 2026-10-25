@@ -12,6 +12,13 @@ import {
   CashflowMarketCard,
   CashflowProfession,
   CashflowProfileTexts,
+  BOARD_SHAPES,
+  BOARD_SIZES,
+  TILE_COUNTS,
+  type BoardShape,
+  type BoardSize,
+  type BoardSetup,
+  type DreamfundTile,
   computeCashflowProfessionMonthlyCashflowMinor,
   fromMinorUnits,
   maxRepayableMinor,
@@ -63,6 +70,14 @@ import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-save
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { type ProfessionSheetNumbers } from './profession-sheets.component';
 import { CharacterSheetComponent } from './character-sheet.component';
+import {
+  DreamBoardComponent,
+  TILE_COLORS,
+  TILE_ICONS,
+  TILE_LABEL_KEYS,
+  SPROUT_PATH,
+} from './dream-board.component';
+import { BoardThumbComponent } from './board-thumb.component';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { RatRaceBoardComponent, SPACE_GLYPHS, type BoardToken } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
@@ -137,6 +152,8 @@ const DICE_DECISION_REST_MS = 900;
     TranslateModule,
     AppNumberPipe,
     CharacterSheetComponent,
+    DreamBoardComponent,
+    BoardThumbComponent,
     AppDatePipe,
     RatRaceBoardComponent,
   ],
@@ -785,6 +802,69 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     );
   }
 
+  // ── the map of a game (JFK, 2026-10-25) ──
+
+  readonly boardShapes = BOARD_SHAPES;
+  readonly boardSizes = BOARD_SIZES;
+  boardShape: BoardShape = 'ring';
+  boardSize: BoardSize = 'medium';
+  /** The layout of the tiles: the same seed is the same map. */
+  boardSeed = Math.floor(Math.random() * 1_000_000_000);
+
+  /** The maps are for the app's own edition played in the app: the physical board and the classic ring have theirs. */
+  get showBoardChoice(): boolean {
+    return this.playMode === 'solo' && this.selectedGameSet?.edition === 'custom';
+  }
+
+  get boardSetup(): BoardSetup {
+    return { shape: this.boardShape, size: this.boardSize, seed: this.boardSeed };
+  }
+
+  tileCount(size: BoardSize): number {
+    return TILE_COUNTS[size];
+  }
+
+  chooseBoardShape(shape: BoardShape): void {
+    this.boardShape = shape;
+  }
+
+  chooseBoardSize(size: BoardSize): void {
+    this.boardSize = size;
+  }
+
+  /** The same shape and size with the tiles dealt out again. */
+  anotherLayout(): void {
+    this.boardSeed = Math.floor(Math.random() * 1_000_000_000);
+  }
+
+  // ── the tiles of a Dreamfund map ──
+
+  /** The tile the turn waits on, with the card drawn from its stack (a filler card for now). */
+  get pendingStory(): { tile: DreamfundTile; cardId: string } | null {
+    const pending = this.soloTurn.pending;
+    return pending?.kind === 'story' && pending.tile
+      ? { tile: pending.tile as DreamfundTile, cardId: pending.storyCardId ?? '' }
+      : null;
+  }
+
+  tileColor(tile: DreamfundTile): string {
+    return TILE_COLORS[tile];
+  }
+
+  tileLabelKey(tile: DreamfundTile): string {
+    return TILE_LABEL_KEYS[tile];
+  }
+
+  tileGlyphOf(tile: DreamfundTile): string {
+    return TILE_ICONS[tile].glyph ?? '';
+  }
+
+  tileImageOf(tile: DreamfundTile): string {
+    return TILE_ICONS[tile].image ?? '';
+  }
+
+  readonly sproutPath = SPROUT_PATH;
+
   /** The balance item (a liability) opens in the Info panel, from where it can be paid back. */
   async openLiability(index: number): Promise<void> {
     const liability = this.appState.liabilities[index];
@@ -1010,6 +1090,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       mode,
       rules,
+      this.showBoardChoice ? this.boardSetup : undefined,
     );
   }
 
@@ -1098,7 +1179,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return whyCannotDraw(this.appState.cashflowGame);
   }
 
-  readonly board = this.cashflowGameService.board;
+  /** The track the token walks (the classic ring, or the map of the game). */
+  get board() {
+    return this.cashflowGameService.board;
+  }
+
+  /** Where the tiles of a Dreamfund map stand; null on the classic ring. */
+  get boardMap() {
+    return this.cashflowGameService.boardMap;
+  }
 
   /** The dice of the last roll, for the die faces on the dashboard. */
   lastDice: number[] = [];
@@ -1257,6 +1346,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       doodad: 'CashflowGame.deckDoodad',
       market: 'CashflowGame.deckMarket',
     };
+    const story = this.pendingStory;
+    if (story) return this.translate.instant(TILE_LABEL_KEYS[story.tile]);
     return kind ? this.translate.instant(key[kind]) : '';
   }
 

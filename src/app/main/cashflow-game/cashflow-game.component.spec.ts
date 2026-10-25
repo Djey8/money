@@ -2068,6 +2068,8 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       expect.any(Object),
       'solo',
       expect.objectContaining({ preset: 'free', cardChoice: 'free', sell: 'always' }),
+      // the custom edition played in the app has a map: the ring, medium, unless another is chosen
+      expect.objectContaining({ shape: 'ring', size: 'medium' }),
     );
     const companion = soloComponent();
     companion.component.setPlayMode('companion');
@@ -2494,6 +2496,28 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       '2026-10-25T10:00:00.000Z',
     );
     expect(project.dream).toBe(true);
+  });
+
+  it('the map is chosen after the edition: shape and size, only for the custom edition in the app, and goes with the start', () => {
+    const { component, cashflowGameService } = soloComponent();
+    expect(component.showBoardChoice).toBe(true);
+    component.chooseBoardShape('mountain');
+    component.chooseBoardSize('large');
+    expect(component.tileCount('large')).toBe(48);
+    const seed = component.boardSeed;
+    component.anotherLayout();
+    expect(component.boardSeed).not.toBe(seed);
+    component.startGame();
+    expect(cashflowGameService.pickProfession.mock.calls[0][5]).toMatchObject({
+      shape: 'mountain',
+      size: 'large',
+    });
+    // the physical board and the classic edition have no map to choose
+    component.setPlayMode('companion');
+    expect(component.showBoardChoice).toBe(false);
+    component.setPlayMode('solo');
+    component.chooseEdition('cashflow');
+    expect(component.showBoardChoice).toBe(false);
   });
 
   it('a card action that takes a moment raises the spinner, and takes it down when it is done', () => {

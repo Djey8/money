@@ -5,6 +5,7 @@
  * `CashflowGameService` applies its output to `AppStateService`. See
  * todo/cashflow-game.md.
  */
+import type { BoardSetup } from './dreamfund-board';
 import type { GameRules } from './rules';
 import {
   CashflowGameSet,
@@ -86,6 +87,7 @@ export function pickCashflowProfession(
   today: string,
   mode: 'companion' | 'solo' = 'companion',
   rules?: GameRules,
+  boardSetup?: BoardSetup,
 ): PickProfessionResult {
   const gameSet = findCashflowGameSet(gameSets, gameSetId);
   const profession = findCashflowProfession(gameSet, professionId);
@@ -132,6 +134,7 @@ export function pickCashflowProfession(
       professionId,
       mode,
       ...(rules ? { rules } : {}),
+      ...(boardSetup ? { boardSetup } : {}),
       boardPosition: null, // a solo token starts at START, just before space 0
       ...(mode === 'solo' ? { turn: { phase: 'roll' as const, count: 0 } } : {}),
       virtualDate: today,

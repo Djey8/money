@@ -114,6 +114,9 @@ import {
   playDownsizedPaying,
   type PaidWithLoan,
   CLASSIC_RAT_RACE_BOARD,
+  buildDreamfundBoard,
+  type BoardSetup,
+  type DreamfundBoard,
   playTurn,
   settleDecision as settleDecisionRule,
   whyCannotRoll,
@@ -884,6 +887,7 @@ export class CashflowGameService {
     callbacks: CashflowGameCallbacks,
     mode: 'companion' | 'solo' = 'companion',
     rules?: Partial<GameRules>,
+    boardSetup?: BoardSetup,
   ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
@@ -895,6 +899,7 @@ export class CashflowGameService {
         this.clock.todayIso(),
         mode,
         rules ? normalizeRules(rules) : undefined,
+        boardSetup,
       );
     } catch (err: unknown) {
       callbacks.onError(errorMessage(err, 'Could not start the game.'));
@@ -1415,8 +1420,17 @@ export class CashflowGameService {
 
   // ── Solo mode: the token walks the rat-race ring (todo/cashflow-game-pro.md, Phase C) ──────────────
 
-  /** The ring the token walks. */
-  readonly board: RatRaceBoard = CLASSIC_RAT_RACE_BOARD;
+  /** The track the token walks: the map of a Dreamfund game (shape, size, seed), or the classic ring. */
+  get board(): RatRaceBoard {
+    const setup = AppStateService.instance.cashflowGame.boardSetup;
+    return setup ? buildDreamfundBoard(setup).board : CLASSIC_RAT_RACE_BOARD;
+  }
+
+  /** Where the tiles of a Dreamfund map stand, for the picture; null on the classic ring. */
+  get boardMap(): DreamfundBoard | null {
+    const setup = AppStateService.instance.cashflowGame.boardSetup;
+    return setup ? buildDreamfundBoard(setup) : null;
+  }
 
   /** Whether the running game is a solo game. */
   get isSolo(): boolean {

@@ -146,6 +146,20 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
     case 'doodad':
       pending = { kind: CARD_SPACES[move.landed.kind], spaceIndex: move.landed.index };
       break;
+    case 'dream':
+    case 'emergency':
+    case 'opportunity':
+    case 'harvest':
+    case 'life':
+    case 'career':
+      // the tiles of a Dreamfund map draw a card from their stack; for now each stack holds one filler card
+      pending = {
+        kind: 'story',
+        tile: move.landed.kind,
+        storyCardId: `${move.landed.kind}-filler`,
+        spaceIndex: move.landed.index,
+      };
+      break;
     case 'payday':
       break; // paid above, as one of the Paydays entered
   }

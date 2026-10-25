@@ -9,7 +9,20 @@
  * the pile when landing (JFK, 2026-10-05), so that choice is part of the turn's pending decision, not of the board.
  */
 export type RatRaceSpaceKind =
-  'deal' | 'doodad' | 'payday' | 'market' | 'charity' | 'downsized' | 'baby';
+  | 'deal'
+  | 'doodad'
+  | 'payday'
+  | 'market'
+  | 'charity'
+  | 'downsized'
+  | 'baby'
+  // the tiles of a Dreamfund map (dreamfund-board.ts)
+  | 'dream'
+  | 'emergency'
+  | 'opportunity'
+  | 'harvest'
+  | 'life'
+  | 'career';
 
 export interface RatRaceSpace {
   /** Position on the ring: 0 is the space next to START, counted clockwise. */
@@ -29,7 +42,32 @@ const PRINTED: Record<RatRaceSpaceKind, string> = {
   charity: 'Wohltätigkeit',
   downsized: 'Arbeitslos',
   baby: 'Baby',
+  dream: 'Traum',
+  emergency: 'Notfall',
+  opportunity: 'Chance',
+  harvest: 'Ernte',
+  life: 'Leben',
+  career: 'Karriere',
 };
+
+const CLASSIC_KINDS: RatRaceSpaceKind[] = [
+  'deal',
+  'doodad',
+  'payday',
+  'market',
+  'charity',
+  'downsized',
+  'baby',
+];
+const DREAMFUND_KINDS: RatRaceSpaceKind[] = [
+  'payday',
+  'dream',
+  'emergency',
+  'opportunity',
+  'harvest',
+  'life',
+  'career',
+];
 
 /** The Classic board's 24 spaces, clockwise from START, in the order of the picture. */
 const CLASSIC_LAYOUT: RatRaceSpaceKind[] = [
@@ -75,7 +113,11 @@ export function validateRatRaceBoard(board: RatRaceBoard): string[] {
     if (space.index !== index) problems.push(`Space ${index} has index ${space.index}.`);
   });
   const present = new Set(board.map((space) => space.kind));
-  for (const kind of Object.keys(PRINTED) as RatRaceSpaceKind[]) {
+  // a Dreamfund map has its own tiles, the classic ring its own
+  const family = DREAMFUND_KINDS.some((kind) => kind !== 'payday' && present.has(kind))
+    ? DREAMFUND_KINDS
+    : CLASSIC_KINDS;
+  for (const kind of family) {
     if (!present.has(kind)) problems.push(`The board has no ${kind} space.`);
   }
   return problems;
