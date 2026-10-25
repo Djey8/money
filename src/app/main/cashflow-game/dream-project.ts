@@ -11,6 +11,7 @@ export function dreamToSmile(project: CashflowDreamProject, nowIso: string): Smi
   return {
     title: project.title,
     sub: project.sub,
+    dream: true,
     phase: 'planning',
     description: project.description,
     buckets: project.buckets.map((bucket) => ({

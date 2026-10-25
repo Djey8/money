@@ -1674,6 +1674,8 @@
   "CashflowGame.setup.edition": "Edition",
   "CashflowGame.setup.editionHint": "Mit welchen Figuren und Karten du spielst.",
   "CashflowGame.setup.editionPhysical": "Das echte Brett spielt nur die Classic Edition.",
+  "CashflowGame.setup.currency": "Währung",
+  "CashflowGame.setup.currencyHint": "Traumtaler (TT) ist das Geld des Spiels, auf Englisch Dream Taler (DT). Die anderen sind echtes Geld.",
   "CashflowGame.setup.next": "Figur wählen",
   "CashflowGame.setup.character": "Deine Figur",
   "CashflowGame.setup.background": "Wer sie sind",

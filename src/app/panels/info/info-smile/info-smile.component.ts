@@ -1284,7 +1284,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
     });
   }
 
+  /** The dream of a character is never deleted: it is the point of the game. */
+  get isDream(): boolean {
+    return !!AppStateService.instance.allSmileProjects[InfoSmileComponent.index]?.dream;
+  }
+
   deleteSmile(index: number) {
+    if (AppStateService.instance.allSmileProjects[index]?.dream) return;
     this.confirmService.confirm(this.translate.instant('Confirm.deleteSmile'), () => {
       // Save title before deleting
       const deletedTitle = AppStateService.instance.allSmileProjects[index].title;

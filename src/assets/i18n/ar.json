@@ -1649,6 +1649,8 @@
   "CashflowGame.setup.edition": "الإصدار",
   "CashflowGame.setup.editionHint": "بأي شخصيات وبطاقات تلعب.",
   "CashflowGame.setup.editionPhysical": "اللوحة الفعلية تلعب الإصدار الكلاسيكي فقط.",
+  "CashflowGame.setup.currency": "العملة",
+  "CashflowGame.setup.currencyHint": "Dream Taler (DT) هو نقد اللعبة، وبالألمانية Traumtaler (TT). الباقي نقود حقيقية.",
   "CashflowGame.setup.next": "اختر شخصيتك",
   "CashflowGame.setup.character": "شخصيتك",
   "CashflowGame.setup.background": "من هم",

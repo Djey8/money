@@ -1674,6 +1674,8 @@
   "CashflowGame.setup.edition": "版本",
   "CashflowGame.setup.editionHint": "使用哪些角色和卡牌。",
   "CashflowGame.setup.editionPhysical": "实体棋盘只能玩经典版。",
+  "CashflowGame.setup.currency": "货币",
+  "CashflowGame.setup.currencyHint": "Dream Taler（DT）是游戏的货币，德语为 Traumtaler（TT）。其余是真实货币。",
   "CashflowGame.setup.next": "选择角色",
   "CashflowGame.setup.character": "你的角色",
   "CashflowGame.setup.background": "他们是谁",

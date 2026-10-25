@@ -4,6 +4,7 @@ import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
+import { dreamToSmile } from './dream-project';
 import { CashflowGameComponent } from './cashflow-game.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
@@ -2459,6 +2460,40 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     state.cashflowGame = { ...state.cashflowGame, professionId: undefined } as never;
     (component as any).applyGameCurrency('de');
     expect(state.currency).toBe('€');
+  });
+
+  it("the currency is chosen in the setup: the money of the game by default, or a real one - and the account's own comes back", () => {
+    const { component } = soloComponent();
+    const state = component.appState;
+    state.currency = '€';
+    expect(component.currencyChoice).toBe('game');
+    expect(component.currencyChoices.map((option) => option.label)).toEqual([
+      'DT',
+      '€',
+      '$',
+      '£',
+      '¥',
+      'CHF',
+    ]);
+    component.toCharacter();
+    expect(state.currency).toBe('DT');
+    component.backToSetup();
+    expect(state.currency).toBe('€');
+    component.setCurrency('$');
+    component.toCharacter();
+    expect(state.currency).toBe('$');
+    component.backToSetup();
+    expect(state.currency).toBe('€');
+  });
+
+  it("the dream project is marked as the character's dream, which cannot be deleted", () => {
+    const project = dreamToSmile(
+      CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories')!.professions[0].profile!.texts[
+        'en'
+      ].dream.project!,
+      '2026-10-25T10:00:00.000Z',
+    );
+    expect(project.dream).toBe(true);
   });
 
   it('a card action that takes a moment raises the spinner, and takes it down when it is done', () => {

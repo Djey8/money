@@ -1674,6 +1674,8 @@
   "CashflowGame.setup.edition": "Édition",
   "CashflowGame.setup.editionHint": "Avec quels personnages et cartes tu joues.",
   "CashflowGame.setup.editionPhysical": "Le plateau physique ne joue que l’édition classique.",
+  "CashflowGame.setup.currency": "Devise",
+  "CashflowGame.setup.currencyHint": "Dream Taler (DT) est la monnaie du jeu, Traumtaler (TT) en allemand. Les autres sont de l’argent réel.",
   "CashflowGame.setup.next": "Choisis ton personnage",
   "CashflowGame.setup.character": "Ton personnage",
   "CashflowGame.setup.background": "Qui ils sont",

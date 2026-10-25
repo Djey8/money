@@ -1508,7 +1508,7 @@
 
     <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
     <button id="addbtn" (click)="updateSmileProject()">{{ 'Info.update' | translate }}</button>
-    <button id="deletebtn" (click)="deleteSmile(classReference.index)">
+    <button id="deletebtn" *ngIf="!isDream" (click)="deleteSmile(classReference.index)">
       {{ 'Info.delete' | translate }}
     </button>
     <button id="canclebtn" (click)="cancel()">{{ 'Info.cancel' | translate }}</button>

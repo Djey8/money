@@ -3048,3 +3048,12 @@
   width: 6rem;
   text-align: end;
 }
+
+.cf-seg--wrap {
+  flex-wrap: wrap;
+}
+
+.cf-seg--wrap button {
+  flex: 1 1 4rem;
+  border-bottom: 1px solid var(--color-border, #ddd);
+}

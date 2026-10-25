@@ -111,6 +111,23 @@
       </section>
 
       <section class="cf-group">
+        <h4>{{ 'CashflowGame.setup.currency' | translate }}</h4>
+        <div class="cf-seg cf-seg--wrap" role="radiogroup">
+          <button
+            *ngFor="let option of currencyChoices"
+            type="button"
+            role="radio"
+            [class.cf-seg--on]="currencyChoice === option.id"
+            [attr.aria-checked]="currencyChoice === option.id"
+            (click)="setCurrency(option.id)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <p class="cf-hint">{{ 'CashflowGame.setup.currencyHint' | translate }}</p>
+      </section>
+
+      <section class="cf-group">
         <h4>{{ 'CashflowGame.solo.modeTitle' | translate }}</h4>
         <div class="cf-seg" role="radiogroup">
           <button

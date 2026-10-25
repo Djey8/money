@@ -109,6 +109,7 @@ const BUSY_SPINNER_MS = 250;
 
 /** Where the account's own currency waits while the game plays in its own. */
 const CURRENCY_BEFORE_KEY = 'currencyBeforeGame';
+const CURRENCY_CHOICE_KEY = 'gameCurrencyChoice';
 
 /** How long the big Payday popup stays before it steps aside for the small Latest line. */
 const PAYDAY_POPUP_MS = 3500;
@@ -237,6 +238,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     private local: LocalService,
   ) {
     CashflowGameComponent.instance = this;
+    this.currencyChoice = this.local.getData(CURRENCY_CHOICE_KEY) || 'game';
     // the game's money is Dream Taler or Traumtaler, whichever language the game speaks
     this.translate.onLangChange.subscribe((event) => this.applyGameCurrency(event.lang));
     document.addEventListener('click', this.onAnyClick, true);
@@ -851,6 +853,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.choosingCharacter = true;
     this.characterChosen = false;
+    this.previewCurrency(true);
   }
 
   /** Back: from a character to the grid, from the grid to the setup. */
@@ -898,16 +901,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The money the numbers of the chosen character are shown in: Dream Taler / Traumtaler for the custom edition, as it will be in the game. */
   get setupCurrency(): string {
-    return this.selectedGameSet?.edition === 'custom'
-      ? this.language.current === 'de'
-        ? 'TT'
-        : 'DT'
-      : this.appState.currency;
+    return (
+      this.currencyFor(this.language.current, this.selectedGameSet?.edition === 'custom') ??
+      this.appState.currency
+    );
   }
 
   pickCharacter(option: { setId: string; profession: CashflowProfession }): void {
     this.selectedGameSetId = option.setId;
-    this.previewCurrency(this.selectedGameSet?.edition === 'custom');
+    this.previewCurrency(true);
     this.selectedProfessionId = option.profession.id;
     this.characterChosen = true;
   }
@@ -1783,11 +1785,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   private applyGameCurrency(lang: string = this.language.current): void {
     const game = this.appState.cashflowGame;
     const set = this.gameSets.find((candidate) => candidate.id === game.gameSetId);
-    if (!game.professionId || set?.edition !== 'custom') {
+    const code = this.currencyFor(lang, set?.edition === 'custom');
+    if (!game.professionId || !code) {
       this.restoreCurrency();
       return;
     }
-    const code = lang === 'de' ? 'TT' : 'DT';
     if (this.appState.currency === code) return;
     if (
       !['DT', 'TT'].includes(this.appState.currency) &&
@@ -1799,14 +1801,40 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.local.saveData('currency', code);
   }
 
+  /**
+   * The money of a game, chosen in the setup after the language (JFK, 2026-10-25): the money of the game - Dream Taler (DT), in German
+   * Traumtaler (TT) - or a real one. The money of the game is the custom edition's own; the classic edition keeps the account's.
+   */
+  currencyChoice = 'game';
+  readonly realCurrencies = ['€', '$', '£', '¥', 'CHF'];
+
+  get currencyChoices(): { id: string; label: string }[] {
+    return [
+      { id: 'game', label: this.language.current === 'de' ? 'TT' : 'DT' },
+      ...this.realCurrencies.map((symbol) => ({ id: symbol, label: symbol })),
+    ];
+  }
+
+  setCurrency(choice: string): void {
+    this.currencyChoice = choice;
+    this.local.saveData(CURRENCY_CHOICE_KEY, choice);
+  }
+
+  private currencyFor(lang: string, custom: boolean): string | null {
+    if (this.currencyChoice !== 'game') return this.currencyChoice;
+    return custom ? (lang === 'de' ? 'TT' : 'DT') : null;
+  }
+
   /** While a character of the custom edition is looked at (before the game), the numbers are in its money; leaving brings the account's own back. */
   private previewCurrency(on: boolean): void {
     if (this.hasActiveGame) return;
-    if (!on) {
+    const code = on
+      ? this.currencyFor(this.language.current, this.selectedGameSet?.edition === 'custom')
+      : null;
+    if (!code) {
       this.restoreCurrency();
       return;
     }
-    const code = this.language.current === 'de' ? 'TT' : 'DT';
     if (this.appState.currency === code) return;
     if (
       !['DT', 'TT'].includes(this.appState.currency) &&
