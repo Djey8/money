@@ -2620,8 +2620,17 @@ export class CashflowGameService {
     const isProperty = kind === 'property';
     // At a table only the card in hand can be bought: a stock price card somebody else drew lets the holder SELL at that price, never
     // buy (JFK, 2026-10-19) - so its offer is not looked at for a purchase (the Buy button is hidden, the table refuses it anyway).
+    // The card I drew myself is the exception (JFK, 2026-10-25): its price is mine to buy at as well as to sell at.
     const state = AppStateService.instance.cashflowGame;
-    const game = RemoteGameHook.current ? { ...state, marketOffers: [] } : state;
+    const drawn = state.turn?.pending?.offered?.cardId;
+    const game = RemoteGameHook.current
+      ? {
+          ...state,
+          marketOffers: (state.marketOffers ?? []).filter(
+            (offer) => !!drawn && offer.cardId === drawn,
+          ),
+        }
+      : state;
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
     // Owned: in the balance sheet - which is only there once the balance data has been loaded - or, as it is always loaded
     // with the Grow projects, a project that has been bought (phase execute / monitor) and not sold since.
