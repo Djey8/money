@@ -116,6 +116,9 @@ interface ProfessionSheetNumbers {
   liabilitiesTotal: number;
 }
 
+/** How long a card action may take before the spinner comes up (shorter waits just happen). */
+const BUSY_SPINNER_MS = 250;
+
 /** How long the big Payday popup stays before it steps aside for the small Latest line. */
 const PAYDAY_POPUP_MS = 3500;
 
@@ -159,7 +162,46 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   selectedGameSetId = this.playableGameSets[0]?.id ?? '';
   selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
-  isBusy = false;
+  /**
+   * A card action is under way (JFK, 2026-10-25: a press that shows nothing for a while is a press that gets pressed twice). Once the
+   * wait is long enough to be noticed the app's spinner comes up over everything, so it is plain that the player has to wait - the
+   * dice and the walking token show their own progress, so they keep the spinner away.
+   */
+  private busyFlag = false;
+  private busyTimer: ReturnType<typeof setTimeout> | undefined;
+  private busySpinnerShown = false;
+
+  get isBusy(): boolean {
+    return this.busyFlag;
+  }
+
+  set isBusy(busy: boolean) {
+    this.busyFlag = busy;
+    clearTimeout(this.busyTimer);
+    if (busy) {
+      this.busyTimer = setTimeout(() => this.raiseBusySpinner(), BUSY_SPINNER_MS);
+    } else {
+      this.dropBusySpinner();
+    }
+  }
+
+  private raiseBusySpinner(): void {
+    if (!this.busyFlag) return;
+    if (this.walking || this.diceTumbling || this.decisionRolling) {
+      // an animation is its own feedback: look again once it is over
+      this.busyTimer = setTimeout(() => this.raiseBusySpinner(), BUSY_SPINNER_MS);
+      return;
+    }
+    if (!this.appState.isSaving) {
+      this.appState.isSaving = true;
+      this.busySpinnerShown = true;
+    }
+  }
+
+  private dropBusySpinner(): void {
+    if (this.busySpinnerShown) this.appState.isSaving = false;
+    this.busySpinnerShown = false;
+  }
   loanIncrements = 1;
 
   /** The full profession card, shown at selection time and reopenable during the game (todo/cashflow-game.md decision 18). */
@@ -1275,6 +1317,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     clearTimeout(this.paydayTimer);
+    clearTimeout(this.busyTimer);
+    this.dropBusySpinner();
     document.removeEventListener('click', this.onAnyClick, true);
     this.fitObserver?.disconnect();
     if (RemoteGameHook.ringVisible) RemoteGameHook.ringVisible = null;
@@ -1490,13 +1534,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The card was dealt with (or there was nothing to do): the next roll is open. */
   finishSoloDecision(how: 'done' | 'passed'): void {
+    // the card closes at once and the spinner says the table is working on it (JFK, 2026-10-25)
     if (this.remote) {
-      void this.remoteMove((remote) => (how === 'passed' ? remote.pass() : remote.finish())).then(
-        () => this.backToMain(),
-      );
+      this.backToMain();
+      void this.remoteMove((remote) => (how === 'passed' ? remote.pass() : remote.finish()));
       return;
     }
     this.isBusy = true;
+    this.backToMain();
     this.cashflowGameService.settleSoloDecision(how, {
       onSuccess: () => {
         this.isBusy = false;
@@ -2029,6 +2074,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
       },
     );
+    this.backToMain();
   }
 
   /** A stock card (as opposed to a property) — has a ticker symbol and a trading range. */
@@ -2760,6 +2806,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (this.remote) {
       const card = this.activeCard;
       // as in the solo game: the card becomes a planned Grow project, which is bought (and its share count set) over there
+      this.backToMain();
       void this.remoteMove((remote) => remote.plan(card.id)).then((events) => {
         const played = events?.find((event) => event.type === 'card_played');
         if (!played) return;
@@ -2778,11 +2825,12 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       this.updateActiveSharePrice();
       return;
     }
+    const plannedCard = this.isDealDeck ? (this.activeCard as CashflowDealCard) : null;
     const callbacks = {
       onSuccess: (plannedTitle?: string) => {
         this.isBusy = false;
         this.toastService.show(this.translate.instant('CashflowGame.cardApplied'), 'success');
-        const planned = this.isDealDeck ? (this.activeCard as CashflowDealCard) : null;
+        const planned = plannedCard;
         this.backToMain();
         if (planned) {
           void this.openPlannedInGrow(
@@ -2803,6 +2851,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         callbacks,
         this.planText(this.activeCard as CashflowDealCard),
       );
+      // the card closes at once; the spinner says the plan is being made
+      this.backToMain();
     } else {
       this.isBusy = false;
     }
@@ -2891,6 +2941,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
       },
     );
+    this.backToMain();
   }
 
   /** Plays the open stock split card: with the share a dice decision opens, without it the card does not apply. */
@@ -2924,6 +2975,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
       },
     );
+    this.backToMain();
   }
 
   /** Plays the open cashflow boost card: raises the cashflow of every investment under its limit. */

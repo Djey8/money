@@ -2383,6 +2383,29 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
+  it('a card action that takes a moment raises the spinner, and takes it down when it is done', () => {
+    jest.useFakeTimers();
+    try {
+      const { component } = soloComponent();
+      component.isBusy = true;
+      jest.advanceTimersByTime(100);
+      expect(component.appState.isSaving).toBe(false); // short waits just happen
+      jest.advanceTimersByTime(300);
+      expect(component.appState.isSaving).toBe(true);
+      component.isBusy = false;
+      expect(component.appState.isSaving).toBe(false);
+      // the dice and the walking token are their own feedback: no spinner over them
+      component.walking = true;
+      component.isBusy = true;
+      jest.advanceTimersByTime(600);
+      expect(component.appState.isSaving).toBe(false);
+      component.isBusy = false;
+      component.walking = false;
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('the big Payday popup steps aside after a few seconds and leaves the small Latest line, until the next roll', () => {
     jest.useFakeTimers();
     try {

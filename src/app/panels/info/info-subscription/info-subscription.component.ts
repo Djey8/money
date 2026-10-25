@@ -1,3 +1,4 @@
+import { nextPaint } from 'src/app/shared/next-paint';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -376,6 +377,20 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
       return;
     }
 
+    // The window closes and the spinner shows while the transactions are worked out and stored (JFK, 2026-10-25): it takes a while,
+    // and an update window that just sits there looks like nothing has happened.
+    InfoSubscriptionComponent.isInfo = false;
+    this.isEdit = false;
+    AppStateService.instance.isSaving = true;
+    await nextPaint();
+    try {
+      await this.applySubscriptionUpdate();
+    } finally {
+      AppStateService.instance.isSaving = false;
+    }
+  }
+
+  private async applySubscriptionUpdate() {
     const subscriptions = AppStateService.instance.allSubscriptions;
     const subscription = subscriptions[InfoSubscriptionComponent.index];
     const before = { ...subscription };
@@ -542,52 +557,58 @@ export class InfoSubscriptionComponent extends BaseInfoComponent implements OnIn
    * @param index - The index of the transaction to be deleted.
    */
   deleteSubscription(index: number) {
-    this.confirmService.confirm(this.translate.instant('Confirm.deleteSubscription'), () => {
-      // eslint-disable-next-line no-useless-assignment -- initial 0 is a default that's always overwritten before read; pre-existing, out of scope for lint setup
-      let deletedTransactionsCount = 0;
+    this.confirmService.confirm(this.translate.instant('Confirm.deleteSubscription'), async () => {
+      // the window closes and the spinner shows while the transactions it made are taken out and the data is stored
+      InfoSubscriptionComponent.isInfo = false;
+      AppStateService.instance.isSaving = true;
+      await nextPaint();
+      try {
+        let deletedTransactionsCount = 0;
 
-      // Save data before deleting
-      const deletedTitle = AppStateService.instance.allSubscriptions[index].title;
+        // Save data before deleting
+        const deletedTitle = AppStateService.instance.allSubscriptions[index].title;
 
-      // Only delete transactions if checkbox is ticked: the ones this subscription generated
-      if (InfoSubscriptionComponent.isRefresh) {
-        deletedTransactionsCount = this.subscriptionProcessing.reconcileGeneratedTransactions(
-          AppStateService.instance.allSubscriptions[index],
-          null,
-        ).removed;
-        InfoSubscriptionComponent.isRefresh = false;
+        // Only delete transactions if checkbox is ticked: the ones this subscription generated
+        if (InfoSubscriptionComponent.isRefresh) {
+          deletedTransactionsCount = this.subscriptionProcessing.reconcileGeneratedTransactions(
+            AppStateService.instance.allSubscriptions[index],
+            null,
+          ).removed;
+          InfoSubscriptionComponent.isRefresh = false;
 
-        // Recalculate income statement from remaining transactions
-        if (deletedTransactionsCount > 0) {
-          this.incomeStatement.recalculate();
+          // Recalculate income statement from remaining transactions
+          if (deletedTransactionsCount > 0) {
+            this.incomeStatement.recalculate();
+          }
         }
-      }
 
-      // Delete Subscription
-      AppStateService.instance.allSubscriptions.splice(index, 1);
-      SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
-      SubscriptionComponent.activeDataSource.data = SubscriptionComponent.allSubscriptions;
-      SubscriptionComponent.activeDataSource.data = SubscriptionComponent.activeDataSource.data.map(
-        (subscription, index) => {
-          return { ...subscription, id: index };
-        },
-      );
-      SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.allSubscriptions;
-      SubscriptionComponent.inactiveDataSource.data =
-        SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
-          return { ...subscription, id: index };
+        // Delete Subscription
+        AppStateService.instance.allSubscriptions.splice(index, 1);
+        SubscriptionComponent.allSubscriptions = AppStateService.instance.allSubscriptions;
+        SubscriptionComponent.activeDataSource.data = SubscriptionComponent.allSubscriptions;
+        SubscriptionComponent.activeDataSource.data =
+          SubscriptionComponent.activeDataSource.data.map((subscription, index) => {
+            return { ...subscription, id: index };
+          });
+        SubscriptionComponent.inactiveDataSource.data = SubscriptionComponent.allSubscriptions;
+        SubscriptionComponent.inactiveDataSource.data =
+          SubscriptionComponent.inactiveDataSource.data.map((subscription, index) => {
+            return { ...subscription, id: index };
+          });
+
+        // Log user activity
+        this.frontendLogger.logActivity('delete_subscription', 'info', {
+          title: deletedTitle,
+          index: index,
         });
 
-      // Log user activity
-      this.frontendLogger.logActivity('delete_subscription', 'info', {
-        title: deletedTitle,
-        index: index,
-      });
-
-      // WRITE to Storage
-      this.updateStorage();
-      this.toastService.show('Subscription deleted', 'delete');
-      this.isEdit = false;
+        // WRITE to Storage
+        await this.updateStorage();
+        this.toastService.show('Subscription deleted', 'delete');
+        this.isEdit = false;
+      } finally {
+        AppStateService.instance.isSaving = false;
+      }
     });
   }
 
