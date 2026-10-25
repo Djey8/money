@@ -883,6 +883,92 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       : null;
   }
 
+  /** The insurances of the running game, for the character view (rebuilt only when something changes, so the rows are not drawn again). */
+  private insuranceCache: {
+    key: string;
+    rows: { kind: string; premium: number; held: boolean; heldNext: boolean }[];
+  } | null = null;
+  get insuranceRows(): { kind: string; premium: number; held: boolean; heldNext: boolean }[] {
+    const rows = this.cashflowGameService.insurances.map((offer) => ({
+      kind: offer.kind,
+      premium: this.cashflowGameService.insurancePremium(offer),
+      held: offer.held,
+      heldNext: offer.heldNext,
+    }));
+    const key = JSON.stringify(rows);
+    if (this.insuranceCache?.key !== key) this.insuranceCache = { key, rows };
+    return this.insuranceCache.rows;
+  }
+
+  toggleInsurance(change: { kind: string; on: boolean }): void {
+    this.cashflowGameService.setInsurance(change.kind, change.on, {
+      onSuccess: () => undefined,
+      onError: (message) => this.toastService.show(message, 'error'),
+    });
+  }
+
+  // ── the Emergency tile (JFK, 2026-10-25) ──
+
+  /** The game has an Emergency stack (the custom edition): its tile draws a card instead of showing the filler. */
+  get emergencyDeckReady(): boolean {
+    return !this.remote && this.cashflowGameService.emergencyCards.length > 0;
+  }
+
+  get emergency() {
+    return this.pendingStory?.tile === 'emergency' ? this.cashflowGameService.emergencyView : null;
+  }
+
+  get emergencyLang(): 'en' | 'de' {
+    return this.translate.currentLang === 'de' ? 'de' : 'en';
+  }
+
+  /** Every card, to pick one to look at instead of drawing at random. */
+  get emergencyCardOptions() {
+    return this.cashflowGameService.emergencyCards;
+  }
+
+  private emergencyCallbacks = {
+    onSuccess: () => (this.isBusy = false),
+    onError: (message: string) => {
+      this.isBusy = false;
+      this.toastService.show(message, 'error');
+    },
+  };
+
+  drawEmergency(cardId?: string): void {
+    this.cashflowGameService.drawEmergency(this.emergencyCallbacks, cardId || undefined);
+  }
+
+  chooseEmergency(choiceId: string): void {
+    this.cashflowGameService.chooseEmergencyOption(choiceId, this.emergencyCallbacks);
+  }
+
+  rollEmergency(key: string): void {
+    this.cashflowGameService.rollEmergencyDie(key, this.emergencyCallbacks);
+  }
+
+  rerollEmergency(): void {
+    this.cashflowGameService.rerollEmergency(this.emergencyCallbacks);
+  }
+
+  /** `months` absent: pay at once. */
+  payEmergency(months?: number): void {
+    this.isBusy = true;
+    this.cashflowGameService.payEmergency({ months }, this.emergencyCallbacks);
+  }
+
+  /** The dice rolled on the open card, as one line ("4" or "4 and 2"). */
+  rolledOf(view: { selection: { rolls?: Record<string, number> } }): string {
+    return Object.values(view.selection.rolls ?? {}).join(' · ');
+  }
+
+  /** Some plan fits the monthly cashflow: the ones that do not are then not offered. */
+  hasAffordablePlan(view: { plans: { affordable: boolean }[] }): boolean {
+    return view.plans.some((plan) => plan.affordable);
+  }
+
+  trackMonths = (_index: number, plan: { months: number }): number => plan.months;
+
   tileColor(tile: DreamfundTile): string {
     return TILE_COLORS[tile];
   }

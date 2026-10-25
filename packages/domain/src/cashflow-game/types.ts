@@ -1,3 +1,4 @@
+import type { EmergencyCard, EmergencyDeckState, InsuranceKind } from './emergency-deck';
 import type { BoardSetup } from './dreamfund-board';
 import type { GameRules } from './rules';
 /**
@@ -56,6 +57,8 @@ export interface CashflowExpenseLine {
   key?: string;
   /** The account the monthly payment is booked to (default `Daily`): leisure belongs to `Splurge`, insurances to `Fire`. */
   account?: 'Daily' | 'Splurge' | 'Fire';
+  /** The line is the premium of this insurance (liability, household...): it is paid while the insurance is held and stops when it is dropped. */
+  insurance?: InsuranceKind;
 }
 
 /** The Smile project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
@@ -233,6 +236,8 @@ export interface CashflowMarketOffer {
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
 
 export interface CashflowDecks {
+  /** The Emergency stack of a Dreamfund game (the Fire tile). */
+  emergency?: EmergencyCard[];
   dealSmall?: CashflowDealCard[];
   dealBig?: CashflowDealCard[];
   market?: CashflowMarketCard[];
@@ -315,6 +320,20 @@ export interface CashflowPendingDecision {
    * what the tiles do comes with their cards (`tile` says which).
    */
   kind: 'deal' | 'market' | 'doodad' | 'story';
+  /**
+   * With an Emergency tile: the card that was drawn and what has been picked and rolled on it so far (it is kept with the game, so
+   * the card stays as it is when the game is closed and opened again).
+   */
+  emergency?: {
+    cardId: string;
+    choiceId?: string;
+    rolls?: Record<string, number>;
+    rerolled?: boolean;
+    /** Cards that did not apply on the way (lucky: nothing happened). */
+    skipped?: string[];
+    /** The Fire project the card became. */
+    projectTitle?: string;
+  };
   /** With `story`: which tile it is. */
   tile?: DreamfundTileKind;
   /** With `story`: the card drawn from the tile's stack. */
@@ -394,6 +413,23 @@ export interface CashflowGameState {
   fundingSubscriptionTitles?: string[];
   /** The map of a Dreamfund game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
   boardSetup?: BoardSetup;
+  /** The Emergency stack: what was drawn since the last reshuffle, and what is out of the game for good. */
+  emergencyDeck?: EmergencyDeckState;
+  /**
+   * The insurances of the character (JFK, 2026-10-25): which are held, the premium line each one pays, and the changes waiting for the
+   * next Payday (hop in, hop out - they take effect with the next Payday, for the premium and for the cover alike).
+   */
+  insurance?: {
+    active: string[];
+    premiums: Record<string, string>;
+    pending: { kind: string; on: boolean }[];
+  };
+  /** What the character owns that cards ask for: `car`, `pet`. */
+  possessions?: string[];
+  /** What is true of the character (a complete bonus booklet, a side gig); cards read it. */
+  traits?: string[];
+  /** One-off effects waiting to be used (skip the next Career card). */
+  flags?: string[];
   /** Card ids drawn since the deck's last reshuffle, per deck — the "discard pile" a random draw skips and a reshuffle clears. */
   drawnCardIds: Record<CashflowDeckKind, string[]>;
   history: CashflowLogEntry[];

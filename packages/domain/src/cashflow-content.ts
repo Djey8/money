@@ -3,6 +3,7 @@
  * package's main entry (`index.ts`): the Firebase edition builds with an empty stand-in for this module, so
  * none of it ships to the public site (JFK, 2026-10-05; src/app/shared/cashflow-content.ts).
  */
+import { EMERGENCY_CARDS } from './cashflow-emergency-cards';
 import { CLASSIC_DEAL_BIG } from './cashflow-game/classic-deal-big';
 import { CLASSIC_DEAL_SMALL } from './cashflow-game/classic-deal-small';
 import { CLASSIC_DOODAD } from './cashflow-game/classic-doodad';
@@ -514,7 +515,21 @@ const DUAL_STUDENT_EXPENSES: CashflowExpenseLine[] = [
   }, // 37 € (1,3 %)
   // fixed costs: 919 €
   { title: 'Miete', amountMinor: 80000, key: 'rent' }, // 800 €
-  { title: 'Versicherungen', amountMinor: 2400, key: 'insurance', account: 'Fire' }, // 24 €
+  // the two insurances of the stack of emergencies (premiums 8,39 and 15,61 = 24 €): while they are held an insured card costs 500 at most
+  {
+    title: 'Haftpflichtversicherung',
+    amountMinor: 839,
+    key: 'liabilityInsurance',
+    account: 'Fire',
+    insurance: 'liability',
+  }, // 8,39 €
+  {
+    title: 'Hausratversicherung',
+    amountMinor: 1561,
+    key: 'householdInsurance',
+    account: 'Fire',
+    insurance: 'household',
+  }, // 15,61 €
   { title: 'Nebenkosten & Telekom', amountMinor: 7100, key: 'utilities' }, // 71 €: internet, phone, electricity, broadcasting fee
   { title: 'Abos', amountMinor: 2400, key: 'subscriptions' }, // 24 €
   // daily living: 395 €
@@ -828,7 +843,8 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
     dealBig: CLASSIC_DEAL_BIG,
     doodad: CLASSIC_DOODAD,
     market: CLASSIC_MARKET,
-  }, // same card piles as Classic until this set gets its own
+    emergency: EMERGENCY_CARDS,
+  }, // the Emergency stack is its own; the other piles are the classic ones until this set gets its own
   professions: [
     {
       id: 'dual-student-informatik',

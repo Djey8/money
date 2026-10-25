@@ -16,6 +16,7 @@ import {
   CashflowTransactionRecord,
   initialCashflowGameState,
 } from './types';
+import { applyInsuranceChanges, droppedPremiumTitles, initialInsurance } from './insurance';
 import { findCashflowGameSet, findCashflowProfession } from './game-sets';
 
 function formatIsoDate(date: Date): string {
@@ -139,6 +140,9 @@ export function pickCashflowProfession(
       ...(mode === 'solo' ? { turn: { phase: 'roll' as const, count: 0 } } : {}),
       virtualDate: today,
       gameSubscriptionTitles,
+      ...(initialInsurance(profession.expenses)
+        ? { insurance: initialInsurance(profession.expenses) }
+        : {}),
     },
     profession,
     subscriptions,
@@ -164,7 +168,9 @@ export function ownedGameSubscriptions(
   subscriptions: CashflowGameSubscription[],
 ): CashflowGameSubscription[] {
   const byTitle = new Map(subscriptions.map((sub) => [sub.title, sub]));
+  const dropped = droppedPremiumTitles(state);
   return state.gameSubscriptionTitles
+    .filter((title) => !dropped.has(title))
     .map((title) => byTitle.get(title))
     .filter((sub): sub is CashflowGameSubscription => sub !== undefined);
 }
@@ -229,9 +235,11 @@ export interface PaydayResult {
  * see `clearCashflowStatus`.
  */
 export function runCashflowPayday(
-  state: CashflowGameState,
+  stateBefore: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): PaydayResult {
+  // the insurances the player hopped in or out of take effect now, before this Payday posts its premiums
+  const state = applyInsuranceChanges(stateBefore);
   const date = requireStarted(state, 'running Payday');
   const transactions: CashflowTransactionRecord[] = paydaySubscriptions(state, subscriptions).map(
     (sub) =>

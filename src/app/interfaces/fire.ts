@@ -56,6 +56,8 @@ export interface Fire {
 
   /** The emergency reserve of a character of the game (JFK, 2026-10-25): it can be funded and used, but not deleted. */
   reserve?: boolean;
+  /** The Emergency card this project came from (a Dreamfund game): it counts as open until its buckets are full. */
+  emergencyCardId?: string;
 
   // Payment Plans (optional - multiple payment plans supported)
   plannedSubscriptions?: PlannedSubscription[]; // Array of payment plans for this emergency fund

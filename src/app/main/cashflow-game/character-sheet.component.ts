@@ -88,6 +88,47 @@ type SheetId = 'cashflow' | 'income' | 'balance';
       </section>
     </ng-container>
 
+    <!-- the insurances: hop in or hop out, effective with the next Payday (a running game only) -->
+    <section class="cs-group cs-group--insurance" *ngIf="insurances.length">
+      <h4>{{ 'CashflowGame.insurance.title' | translate }}</h4>
+      <p class="cs-story">{{ 'CashflowGame.insurance.intro' | translate }}</p>
+      <ul class="cs-insurance">
+        <li *ngFor="let row of insurances; trackBy: trackKind">
+          <span class="cs-insurance-text">
+            <strong>{{ 'CashflowGame.insurance.kind.' + row.kind | translate }}</strong>
+            <small
+              >{{
+                'CashflowGame.insurance.perMonth'
+                  | translate
+                    : { amount: (row.premium | appNumber: '1.2-2' : false), currency: currency }
+              }}
+              ·
+              {{
+                (row.held === row.heldNext
+                  ? row.held
+                    ? 'CashflowGame.insurance.held'
+                    : 'CashflowGame.insurance.dropped'
+                  : row.heldNext
+                    ? 'CashflowGame.insurance.takeNext'
+                    : 'CashflowGame.insurance.dropNext'
+                ) | translate
+              }}</small
+            >
+          </span>
+          <button
+            type="button"
+            class="cs-insurance-btn"
+            (click)="insuranceToggle.emit({ kind: row.kind, on: !row.heldNext })"
+          >
+            {{
+              (row.heldNext ? 'CashflowGame.insurance.hopOut' : 'CashflowGame.insurance.hopIn')
+                | translate
+            }}
+          </button>
+        </li>
+      </ul>
+    </section>
+
     <!-- the numbers: three panels, only the Cashflow is open at first -->
     <h4 class="cs-numbers" *ngIf="sheets">{{ 'CashflowGame.setup.numbers' | translate }}</h4>
     <ng-container *ngIf="sheets as numbers">
@@ -195,6 +236,35 @@ type SheetId = 'cashflow' | 'income' | 'balance';
         font-weight: 600;
         cursor: pointer;
       }
+      .cs-insurance {
+        margin: 6px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+      .cs-insurance li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .cs-insurance-text {
+        display: grid;
+      }
+      .cs-insurance-text small {
+        opacity: 0.8;
+      }
+      .cs-insurance-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: var(--radius-md, 8px);
+        background: var(--color-surface, #fff);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+      }
       .cs-group--reserve {
         border-color: var(--color-warning, #d98e04);
       }
@@ -294,6 +364,10 @@ export class CharacterSheetComponent {
   @Output() dreamOpen = new EventEmitter<void>();
   /** The emergency reserve project was asked for. */
   @Output() reserveOpen = new EventEmitter<void>();
+  /** The insurances of a running game, with what waits for the next Payday. */
+  @Input() insurances: { kind: string; premium: number; held: boolean; heldNext: boolean }[] = [];
+  @Output() insuranceToggle = new EventEmitter<{ kind: string; on: boolean }>();
+  trackKind = (_index: number, row: { kind: string }): string => row.kind;
 
   /** What the reserve has to hold in all (three monthly expenses), in the game's money. */
   get reserveTotal(): number {

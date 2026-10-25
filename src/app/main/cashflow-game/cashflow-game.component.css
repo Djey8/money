@@ -3143,3 +3143,119 @@
   font-size: 0.9rem;
   line-height: 1.35;
 }
+
+/* The Emergency tile: a card to draw, read, roll for and pay (JFK, 2026-10-25). */
+.cf-em-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0 4px;
+  font-size: 1rem;
+}
+
+.cf-em-tier {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--tc, #d9362b);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cf-em-lucky {
+  font-weight: 600;
+}
+
+.cf-em-choices {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.cf-em-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 2px solid var(--color-border, #d9dde3);
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-surface, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cf-em-choice--on {
+  border-color: var(--tc, #d9362b);
+}
+
+.cf-em-roll,
+.cf-em-reroll,
+.cf-em-draw {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.cf-em-rolled {
+  font-weight: 700;
+}
+
+.cf-em-buckets {
+  margin: 8px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.cf-em-buckets li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--color-border-light, #eee);
+  font-size: 0.88rem;
+}
+
+.cf-em-insured {
+  color: var(--color-success, #2e7d32);
+  font-weight: 600;
+}
+
+.cf-em-uninsured,
+.cf-em-forced {
+  color: var(--color-danger, #c0392b);
+  font-weight: 600;
+}
+
+.cf-em-insurance-note {
+  opacity: 0.8;
+  font-size: 0.82rem;
+}
+
+.cf-em-pay {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cf-em-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.cf-em-pick select {
+  max-width: 14rem;
+}
+
+.cf-em-paid {
+  color: var(--color-success, #2e7d32);
+  font-weight: 700;
+}

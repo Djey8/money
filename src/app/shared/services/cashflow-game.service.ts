@@ -36,6 +36,19 @@ import {
   CashflowProfession,
   CashflowTransactionRecord,
   cashOnHandMinor,
+  activeInsurances,
+  addMonthsToIsoDate,
+  drawEmergencyCard,
+  emptyEmergencyDeck,
+  insuranceOffers,
+  planQuote,
+  queueInsuranceChange,
+  quoteEmergency,
+  type EmergencyCard,
+  type EmergencyContext,
+  type EmergencyQuote,
+  type EmergencySelection,
+  type InsuranceOffer,
   blankGameData,
   captureGameSnapshot as captureSnapshot,
   GAME_BANK_LOCATION_ID,
@@ -1015,9 +1028,19 @@ export class CashflowGameService {
         .map((sub) => sub.category),
     );
     const since = shiftMonth(this.clock.todayIso().slice(0, 7), -2);
+    // an insurance's premium line has the title it was given in this language
+    const insurance = result.state.insurance;
+    const translatedPremiums: Record<string, string> = {};
+    if (insurance) {
+      for (const [kind, title] of Object.entries(insurance.premiums)) {
+        const at = nonZeroExpenses.findIndex((line) => line.title === title);
+        translatedPremiums[kind] = at >= 0 ? subscriptionTitles[at + 1] : title;
+      }
+    }
     state.cashflowGame = {
       ...result.state,
       gameSubscriptionTitles: subscriptionTitles,
+      ...(insurance ? { insurance: { ...insurance, premiums: translatedPremiums } } : {}),
       budgetPlan: [],
     };
     // a new game starts without the plan of the last one
@@ -1427,6 +1450,390 @@ export class CashflowGameService {
   /** The next free day-of-month slot of this real month, dated (see `nextSmartDate`). */
   private nextSmartSubscriptionDate(usedDays: Set<number>): string {
     return nextSmartDate(usedDays, this.clock.todayIso());
+  }
+
+  // ── The Emergency stack (JFK, 2026-10-25): the Fire tile draws a card that has to be paid, now or on a plan ──────────
+
+  /** The Emergency cards of the running game's set (none: the tile only shows its filler). */
+  get emergencyCards(): EmergencyCard[] {
+    return this.currentGameSet()?.decks?.emergency ?? [];
+  }
+
+  private get emergencyLang(): 'en' | 'de' {
+    return this.translate.currentLang === 'de' ? 'de' : 'en';
+  }
+
+  /** Emergencies that are still being paid off: they make a dunning letter dearer. */
+  private get openEmergencyCount(): number {
+    return AppStateService.instance.allFireEmergencies.filter(
+      (fire) =>
+        fire.emergencyCardId &&
+        !fire.buckets.every((bucket) => Number(bucket.amount) + 0.005 >= Number(bucket.target)),
+    ).length;
+  }
+
+  private get emergencyContext(): EmergencyContext {
+    const game = AppStateService.instance.cashflowGame;
+    return {
+      insurances: activeInsurances(game),
+      traits: game.traits ?? [],
+      openEmergencies: this.openEmergencyCount,
+    };
+  }
+
+  /** The card of the Emergency tile the token stands on, with what is picked and rolled and what it costs this player. */
+  get emergencyView(): {
+    card: EmergencyCard;
+    selection: EmergencySelection;
+    quote: EmergencyQuote;
+    projectTitle?: string;
+    skipped: string[];
+    plans: {
+      months: number;
+      percent: number;
+      perMonth: number;
+      total: number;
+      affordable: boolean;
+    }[];
+    canPayNow: boolean;
+    /** The card cannot be paid now (not enough cash) or says it cannot be spread: the plan is the way. */
+    forcedPlan: boolean;
+  } | null {
+    const game = AppStateService.instance.cashflowGame;
+    const emergency = game.turn?.pending?.emergency;
+    const card =
+      emergency && this.emergencyCards.find((candidate) => candidate.id === emergency.cardId);
+    if (!emergency || !card) return null;
+    const selection: EmergencySelection = {
+      choiceId: emergency.choiceId,
+      rolls: emergency.rolls,
+      rerolled: emergency.rerolled,
+    };
+    const quote = quoteEmergency(card, selection, this.emergencyContext);
+    const room = CashflowGameService.fundingRoom();
+    const plans = quote.ready
+      ? [3, 6, 12].map((months) => {
+          const plan = planQuote(quote.payMinor, months);
+          const perMonth = fromMinorUnits(plan.perMonthMinor);
+          return {
+            months,
+            percent: plan.percent,
+            perMonth,
+            total: fromMinorUnits(plan.totalMinor),
+            affordable: room === null || perMonth <= room + 0.005,
+          };
+        })
+      : [];
+    const cashEnough = quote.ready && fromMinorUnits(quote.payMinor) <= this.cash + 0.005;
+    return {
+      card,
+      selection,
+      quote,
+      projectTitle: emergency.projectTitle,
+      skipped: emergency.skipped ?? [],
+      plans,
+      canPayNow: cashEnough,
+      // a loan is not reworked yet: what cannot be paid at once goes on a plan, as the loan will later
+      forcedPlan: quote.ready && !cashEnough,
+    };
+  }
+
+  /**
+   * The token is on an Emergency tile: the card is drawn from the stack (at random, or the one named - to look at a card) and kept with
+   * the turn, so it stays as it is when the game is closed.
+   */
+  drawEmergency(callbacks: CashflowGameCallbacks, cardId?: string): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    const cards = this.emergencyCards;
+    if (!pending || pending.kind !== 'story' || pending.tile !== 'emergency' || pending.emergency) {
+      callbacks.onError('There is no emergency to draw.');
+      return;
+    }
+    if (cards.length === 0) {
+      callbacks.onError('This game has no emergency cards.');
+      return;
+    }
+    const deck = game.emergencyDeck ?? emptyEmergencyDeck();
+    const named = cardId ? cards.find((candidate) => candidate.id === cardId) : undefined;
+    const draw = named
+      ? {
+          card: named,
+          skipped: [] as string[],
+          deck: { ...deck, seen: [...deck.seen.filter((id) => id !== named.id), named.id] },
+        }
+      : drawEmergencyCard(cards, deck, game.possessions ?? [], this.rng);
+    state.cashflowGame = {
+      ...game,
+      emergencyDeck: draw.deck,
+      turn: {
+        ...game.turn!,
+        pending: { ...pending, emergency: { cardId: draw.card.id, skipped: draw.skipped } },
+      },
+    };
+    this.persistAll('cashflow_emergency_draw', { card: draw.card.id }, callbacks, { quiet: true });
+  }
+
+  /** Records what was picked or rolled on the open card. */
+  private updateEmergency(
+    change: (
+      current: NonNullable<NonNullable<CashflowGameState['turn']>['pending']>['emergency'],
+    ) => NonNullable<NonNullable<CashflowGameState['turn']>['pending']>['emergency'],
+    callbacks: CashflowGameCallbacks,
+    logEvent: string,
+  ): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!pending?.emergency || pending.emergency.projectTitle) {
+      callbacks.onError('There is no open emergency.');
+      return;
+    }
+    state.cashflowGame = {
+      ...game,
+      turn: { ...game.turn!, pending: { ...pending, emergency: change(pending.emergency) } },
+    };
+    this.persistAll(logEvent, {}, callbacks, { quiet: true });
+  }
+
+  chooseEmergencyOption(choiceId: string, callbacks: CashflowGameCallbacks): void {
+    this.updateEmergency(
+      (current) => ({ ...current!, choiceId }),
+      callbacks,
+      'cashflow_emergency_choice',
+    );
+  }
+
+  /** Rolls one of the card's dice (`main`, `bucket:<id>`, `extra`, `reroll`): a die once rolled stays rolled. */
+  rollEmergencyDie(key: string, callbacks: CashflowGameCallbacks): number | null {
+    const emergency = AppStateService.instance.cashflowGame.turn?.pending?.emergency;
+    if (!emergency || emergency.rolls?.[key] !== undefined) return null;
+    const roll = rollDieRule(this.rng);
+    this.updateEmergency(
+      (current) => ({ ...current!, rolls: { ...(current!.rolls ?? {}), [key]: roll } }),
+      callbacks,
+      'cashflow_emergency_roll',
+    );
+    return roll;
+  }
+
+  /** The offer to roll again (the tenants' association): it is taken, the second die is rolled next. */
+  rerollEmergency(callbacks: CashflowGameCallbacks): void {
+    this.updateEmergency(
+      (current) => ({ ...current!, rerolled: true }),
+      callbacks,
+      'cashflow_emergency_reroll',
+    );
+  }
+
+  /** Hop in or hop out of an insurance: it takes effect with the next Payday. */
+  setInsurance(kind: string, on: boolean, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const next = queueInsuranceChange(state.cashflowGame, kind, on);
+    if (next === state.cashflowGame) {
+      callbacks.onSuccess();
+      return;
+    }
+    state.cashflowGame = next;
+    this.persistAll('cashflow_insurance', { kind, on }, callbacks, { quiet: true });
+  }
+
+  get insurances(): InsuranceOffer[] {
+    return insuranceOffers(AppStateService.instance.cashflowGame);
+  }
+
+  /** What the premium of an insurance costs a month (the amount of its premium line), in the game's money. */
+  insurancePremium(offer: InsuranceOffer): number {
+    const line = AppStateService.instance.allSubscriptions.find(
+      (sub) => sub.title === offer.premiumTitle,
+    );
+    return line ? Math.abs(Number(line.amount)) : 0;
+  }
+
+  /**
+   * Pays the open card: now, out of the Fire account, or on a plan of 3, 6 or 12 Paydays with its surcharge. Either way the card is a
+   * Fire project of the game (its buckets, links, tasks and notes), so it can be followed on the Fire page. A card that cannot be paid
+   * at once goes on the shortest plan - the stand-in for the bank loan, until that is reworked.
+   */
+  payEmergency(how: { months?: number }, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const view = this.emergencyView;
+    const pending = game.turn?.pending;
+    if (!view || !pending?.emergency || view.projectTitle || !view.quote.ready) {
+      callbacks.onError('This emergency cannot be paid now.');
+      return;
+    }
+    const { card, quote } = view;
+    const planMonths = how.months ?? (view.forcedPlan ? 3 : 0);
+    if (planMonths === 0 && !view.canPayNow) {
+      callbacks.onError(this.translate.instant('CashflowGame.emergency.notEnoughCash'));
+      return;
+    }
+    if (planMonths > 0 && card.payment === 'pay_now' && view.canPayNow) {
+      callbacks.onError('This card has to be paid at once.');
+      return;
+    }
+    const lang = this.emergencyLang;
+    const now = new Date().toISOString();
+    const gameDate = game.virtualDate ?? this.clock.todayIso();
+    const title = `${card.title[lang]} · M${String(game.round).padStart(2, '0')}`;
+    const plan = planMonths > 0 ? planQuote(quote.payMinor, planMonths) : null;
+
+    const buckets = quote.buckets.map((bucket) => ({
+      id: `${title}-${bucket.id}`,
+      title: bucket.title[lang],
+      target: fromMinorUnits(bucket.amountMinor),
+      amount: 0,
+      notes: '',
+      ...(bucket.dueInMonths > 0
+        ? { targetDate: addMonthsToIsoDate(gameDate, bucket.dueInMonths) }
+        : {}),
+    }));
+    if (plan && plan.surchargeMinor > 0) {
+      buckets.push({
+        id: `${title}-surcharge`,
+        title: this.translate.instant('CashflowGame.emergency.surcharge', {
+          percent: plan.percent,
+        }),
+        target: fromMinorUnits(plan.surchargeMinor),
+        amount: 0,
+        notes: '',
+      });
+    }
+    const insuranceNote = quote.insured
+      ? this.translate.instant('CashflowGame.emergency.insuredNote', {
+          saved: fromMinorUnits(quote.savedMinor),
+          currency: state.currency,
+        })
+      : card.insurance
+        ? this.translate.instant('CashflowGame.emergency.uninsuredNote')
+        : '';
+    const notes = [
+      ...(card.stat ? [card.stat[lang]] : []),
+      ...(card.insuranceNote ? [card.insuranceNote[lang]] : []),
+      ...(insuranceNote ? [insuranceNote] : []),
+      ...(card.refund ? [card.refund.note[lang]] : []),
+    ].map((text) => ({ text, createdAt: now }));
+    const project: Fire = {
+      title,
+      sub: `${this.translate.instant(`CashflowGame.emergency.tier.${card.tier}`)} · ${card.category}`,
+      phase: plan ? 'saving' : 'ready',
+      description: card.story[lang],
+      buckets,
+      links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
+      actionItems: card.actions.map((action) => ({
+        text: action.text[lang],
+        done: false,
+        priority: action.priority,
+      })),
+      notes,
+      emergencyCardId: card.id,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const day = this.clock.todayIso();
+    const subscriptionTitles = [...game.gameSubscriptionTitles];
+    let fundingTitles = game.fundingSubscriptionTitles ?? [];
+    this.ensureGameLocation();
+    if (!plan) {
+      // paid now: every bucket out of the Fire account
+      for (const bucket of buckets) {
+        const transaction: Transaction = {
+          account: 'Fire',
+          amount: -bucket.target,
+          date: day,
+          time: '',
+          category: `@${title}`,
+          comment: `${card.title[lang]}\n#bucket:${bucket.title}:${bucket.target.toFixed(2)}\n#dreamfund`,
+        };
+        this.bookOnGameLocation(transaction);
+        state.allTransactions.push(transaction);
+      }
+    } else {
+      // on a plan: one payment at every Payday from the next one, with the surcharge on top
+      const planTitle = `${title} (${planMonths})`;
+      const endDate = addMonthsToIsoDate(gameDate, planMonths - 1);
+      const subscription: Subscription = {
+        title: planTitle,
+        account: 'Fire',
+        amount: -fromMinorUnits(plan.perMonthMinor),
+        startDate: gameDate,
+        endDate,
+        category: `@${title}`,
+        comment: '#dreamfund',
+        frequency: 'monthly',
+        locationId: GAME_BANK_LOCATION_ID,
+      };
+      state.allSubscriptions.push(subscription);
+      fundingTitles = [...fundingTitles.filter((candidate) => candidate !== planTitle), planTitle];
+      project.plannedSubscriptions = [
+        {
+          id: `${title}-plan`,
+          title: planTitle,
+          status: 'active',
+          projectType: 'fire',
+          projectTitle: title,
+          account: 'Fire',
+          amount: fromMinorUnits(plan.perMonthMinor),
+          startDate: gameDate,
+          endDate,
+          category: `@${title}`,
+          comment: '#dreamfund',
+          frequency: 'monthly',
+          targetDate: endDate,
+          targetBucketIds: [],
+          originalCalculatedAmount: fromMinorUnits(plan.perMonthMinor),
+          manuallyAdjusted: false,
+          createdAt: now,
+          updatedAt: now,
+          activatedAt: now,
+        },
+      ];
+    }
+    state.allFireEmergencies = [...state.allFireEmergencies, project];
+
+    // what the card leaves behind: a monthly cost for good or for a while
+    if (quote.afterEffect) {
+      const line = quote.afterEffect.line[lang];
+      const lineTitle = `${line} (${card.id})`;
+      state.allSubscriptions.push({
+        title: lineTitle,
+        account: 'Daily',
+        amount: -fromMinorUnits(quote.afterEffect.monthlyMinor),
+        startDate: gameDate,
+        endDate: quote.afterEffect.months
+          ? addMonthsToIsoDate(gameDate, quote.afterEffect.months - 1)
+          : '',
+        category: `@${lineTitle}`,
+        comment: '#dreamfund',
+        frequency: 'monthly',
+        locationId: GAME_BANK_LOCATION_ID,
+      });
+      subscriptionTitles.push(lineTitle);
+    }
+
+    state.cashflowGame = {
+      ...game,
+      gameSubscriptionTitles: subscriptionTitles,
+      fundingSubscriptionTitles: fundingTitles,
+      flags: quote.sideEffect ? [...(game.flags ?? []), quote.sideEffect] : game.flags,
+      turn: {
+        ...game.turn!,
+        pending: {
+          ...pending,
+          played: true,
+          emergency: { ...pending.emergency, projectTitle: title },
+        },
+      },
+    };
+    state.transactionsUpdated$.next();
+    this.persistAll('cashflow_emergency_pay', { card: card.id, months: planMonths }, callbacks, {
+      includeSubscriptions: true,
+      quiet: true,
+    });
   }
 
   // ── Solo mode: the token walks the rat-race ring (todo/cashflow-game-pro.md, Phase C) ──────────────

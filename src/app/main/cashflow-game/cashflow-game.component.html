@@ -71,6 +71,8 @@
         [tagline]="profileOf(profession)?.tagline ?? professionTitle(profession)"
         [story]="profileOf(profession)"
         [checks]="professionCardView === 'live' && hasActiveGame ? goalChecks : null"
+        [insurances]="professionCardView === 'live' && hasActiveGame ? insuranceRows : []"
+        (insuranceToggle)="toggleInsurance($event)"
         [sheets]="professionSheets"
         [currency]="appState.currency"
         (liabilityOpen)="openLiability($event)"
@@ -1196,9 +1198,192 @@
                     </span>
                     <strong>{{ tileLabelKey(story.tile) | translate }}</strong>
                   </header>
-                  <p>{{ 'CashflowGame.tile.' + story.tile + '.filler' | translate }}</p>
+                  <ng-container
+                    *ngIf="story.tile === 'emergency' && emergencyDeckReady; else fillerText"
+                  >
+                    <ng-container *ngIf="emergency as e; else emergencyDraw">
+                      <p class="cf-em-lucky" *ngIf="e.skipped.length">
+                        🍀 {{ 'CashflowGame.emergency.lucky' | translate }}
+                      </p>
+                      <h4 class="cf-em-title">
+                        {{ e.card.title[emergencyLang] }}
+                        <small class="cf-em-tier cf-em-tier--{{ e.card.tier }}">{{
+                          'CashflowGame.emergency.tier.' + e.card.tier | translate
+                        }}</small>
+                      </h4>
+                      <p>{{ e.card.story[emergencyLang] }}</p>
+
+                      <!-- a choice between two ways out -->
+                      <div
+                        class="cf-em-choices"
+                        *ngIf="e.card.type === 'choice' && !e.projectTitle"
+                      >
+                        <button
+                          *ngFor="let option of e.card.choices; trackBy: trackById"
+                          type="button"
+                          class="cf-em-choice"
+                          [class.cf-em-choice--on]="e.selection.choiceId === option.id"
+                          (click)="chooseEmergency(option.id)"
+                        >
+                          <span>{{ option.label[emergencyLang] }}</span>
+                          <strong>{{
+                            toDisplayAmount(option.amountMinor) | appNumber: '1.2-2' : false
+                          }}</strong>
+                        </button>
+                      </div>
+
+                      <!-- the die the cost is rolled with -->
+                      <div
+                        class="cf-em-roll"
+                        *ngIf="!e.projectTitle && e.quote.needsRolls[0] as key"
+                      >
+                        <button
+                          type="button"
+                          class="btn btn--primary"
+                          [disabled]="isBusy"
+                          (click)="rollEmergency(key)"
+                        >
+                          🎲 {{ 'CashflowGame.emergency.rollFor' | translate }}
+                        </button>
+                      </div>
+                      <p class="cf-em-rolled" *ngIf="rolledOf(e) as rolled">🎲 {{ rolled }}</p>
+                      <div
+                        class="cf-em-reroll"
+                        *ngIf="!e.projectTitle && e.quote.canReroll && e.card.reroll"
+                      >
+                        <button
+                          type="button"
+                          class="btn btn--sm"
+                          [disabled]="isBusy"
+                          (click)="rerollEmergency()"
+                        >
+                          {{ e.card.reroll.label[emergencyLang] }}:
+                          {{
+                            'CashflowGame.emergency.rerollOffer'
+                              | translate
+                                : {
+                                    cost:
+                                      (toDisplayAmount(e.card.reroll.costMinor)
+                                      | appNumber: '1.2-2' : false),
+                                  }
+                          }}
+                        </button>
+                      </div>
+
+                      <!-- what it costs this player -->
+                      <ng-container *ngIf="e.quote.ready">
+                        <ul class="cf-em-buckets">
+                          <li *ngFor="let bucket of e.quote.buckets; trackBy: trackById">
+                            <span>{{ bucket.title[emergencyLang] }}</span>
+                            <strong
+                              >{{
+                                toDisplayAmount(bucket.amountMinor) | appNumber: '1.2-2' : false
+                              }}
+                              {{ appState.currency }}</strong
+                            >
+                          </li>
+                        </ul>
+                        <p class="cf-em-insured" *ngIf="e.quote.insured && e.quote.savedMinor > 0">
+                          🛡️
+                          {{
+                            'CashflowGame.emergency.insuredSaved'
+                              | translate
+                                : {
+                                    saved:
+                                      (toDisplayAmount(e.quote.savedMinor)
+                                      | appNumber: '1.2-2' : false),
+                                    currency: appState.currency,
+                                  }
+                          }}
+                        </p>
+                        <p class="cf-em-uninsured" *ngIf="!e.quote.insured && e.card.insurance">
+                          ⚠️ {{ 'CashflowGame.emergency.notInsured' | translate }}
+                        </p>
+                        <p class="cf-em-insurance-note" *ngIf="e.card.insuranceNote">
+                          {{ e.card.insuranceNote[emergencyLang] }}
+                        </p>
+                      </ng-container>
+
+                      <!-- paying: now, or on a plan of Paydays (a loan is not reworked yet: what cannot be paid at once goes on a plan) -->
+                      <div class="cf-em-pay" *ngIf="e.quote.ready && !e.projectTitle">
+                        <p class="cf-em-forced" *ngIf="e.forcedPlan">
+                          {{ 'CashflowGame.emergency.forcedPlan' | translate }}
+                        </p>
+                        <button
+                          type="button"
+                          class="btn btn--primary"
+                          [disabled]="isBusy || !e.canPayNow"
+                          (click)="payEmergency()"
+                        >
+                          {{ 'CashflowGame.emergency.payNow' | translate }}
+                          {{ toDisplayAmount(e.quote.payMinor) | appNumber: '1.2-2' : false }}
+                          {{ appState.currency }}
+                        </button>
+                        <ng-container *ngIf="e.card.payment === 'plan_ok' || e.forcedPlan">
+                          <button
+                            *ngFor="let plan of e.plans; trackBy: trackMonths"
+                            type="button"
+                            class="btn"
+                            [disabled]="
+                              isBusy ||
+                              (!plan.affordable && !e.forcedPlan && hasAffordablePlan(e)) ||
+                              (e.forcedPlan &&
+                                plan.months !== 3 &&
+                                hasAffordablePlan(e) &&
+                                !plan.affordable)
+                            "
+                            (click)="payEmergency(plan.months)"
+                          >
+                            {{
+                              'CashflowGame.emergency.plan'
+                                | translate: { months: plan.months, percent: plan.percent }
+                            }}
+                            · {{ plan.perMonth | appNumber: '1.2-2' : false }}
+                            {{ appState.currency }} / Payday
+                          </button>
+                        </ng-container>
+                      </div>
+                      <p class="cf-em-paid" *ngIf="e.projectTitle">
+                        ✓
+                        {{ 'CashflowGame.emergency.paid' | translate: { project: e.projectTitle } }}
+                      </p>
+                    </ng-container>
+                    <ng-template #emergencyDraw>
+                      <p>{{ 'CashflowGame.emergency.intro' | translate }}</p>
+                      <div class="cf-em-draw">
+                        <button
+                          type="button"
+                          class="btn btn--primary"
+                          [disabled]="isBusy"
+                          (click)="drawEmergency()"
+                        >
+                          🔥 {{ 'CashflowGame.emergency.draw' | translate }}
+                        </button>
+                        <label class="cf-em-pick">
+                          <span>{{ 'CashflowGame.emergency.orChoose' | translate }}</span>
+                          <select #pick (change)="drawEmergency(pick.value); pick.value = ''">
+                            <option value="">…</option>
+                            <option
+                              *ngFor="let card of emergencyCardOptions; trackBy: trackById"
+                              [value]="card.id"
+                            >
+                              {{ card.id }} · {{ card.title[emergencyLang] }}
+                            </option>
+                          </select>
+                        </label>
+                      </div>
+                    </ng-template>
+                  </ng-container>
+                  <ng-template #fillerText>
+                    <p>{{ 'CashflowGame.tile.' + story.tile + '.filler' | translate }}</p>
+                  </ng-template>
                 </div>
-                <div class="cf-actions">
+                <div
+                  class="cf-actions"
+                  *ngIf="
+                    !(story.tile === 'emergency' && emergencyDeckReady) || emergency?.projectTitle
+                  "
+                >
                   <button
                     class="btn btn--primary"
                     [disabled]="isBusy"

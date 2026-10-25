@@ -1,3 +1,4 @@
+import { applyInsuranceChanges } from './insurance';
 import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
 import {
@@ -155,7 +156,8 @@ export function professionTitleText(text: GameText, profession: CashflowProfessi
  * always runs - Charity and Downsized never gate it. Throws if no profession has been picked yet.
  */
 export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
-  const { state } = books;
+  // the insurances the player hopped in or out of take effect with this Payday: the premiums posted follow them
+  const state = applyInsuranceChanges(books.state);
   const subscriptions = engineSubscriptions(books.subscriptions);
   const result = runCashflowPayday(state, subscriptions);
   const owned = paydaySubscriptions(state, subscriptions);

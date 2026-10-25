@@ -45,6 +45,8 @@ export * from './cashflow-game/scheduling';
 export * from './cashflow-game/effects';
 export * from './cashflow-game/books';
 export * from './cashflow-game/rounds';
+export * from './cashflow-game/emergency-deck';
+export * from './cashflow-game/insurance';
 export * from './cashflow-game/steps';
 export * from './cashflow-game/card-reference';
 export * from './cashflow-game/market-cards';
