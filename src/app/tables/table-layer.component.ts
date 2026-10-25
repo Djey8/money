@@ -45,7 +45,6 @@ import { TablesApiService } from './tables-api.service';
         >
       </div>
 
-      <p class="tl-connection" *ngIf="lost()" role="alert">{{ t.connectionLost }}</p>
       <div class="tl-away" *ngIf="iAmAway()" role="status">
         <span>{{ t.awayNote }}</span>
         <button type="button" class="tx-btn tx-btn--primary tx-btn--small" (click)="comeBack()">
@@ -63,12 +62,6 @@ import { TablesApiService } from './tables-api.service';
           {{ t.resumeButton }}
         </button>
       </p>
-      <div class="tl-hold" *ngIf="holdText() as hold" role="status">
-        <span>{{ hold }}</span>
-      </div>
-
-      <p class="tl-problem" *ngIf="problem() as problem" role="alert">{{ problem }}</p>
-
       <div
         class="tl-offers"
         *ngIf="offers().length"
@@ -174,6 +167,35 @@ import { TablesApiService } from './tables-api.service';
             {{ t.no }}
           </button>
         </ng-container>
+      </div>
+
+      <!-- the short notices (who the table waits for, a refusal, a lost connection) hang over the wheel with an x: they never push it down -->
+      <div class="tl-float-slot">
+        <div class="tl-float">
+          <p class="tl-connection" *ngIf="lost()" role="alert">{{ t.connectionLost }}</p>
+          <div class="tl-hold" *ngIf="floatHold() as hold" role="status">
+            <span>{{ hold }}</span>
+            <button
+              type="button"
+              class="tl-float-x"
+              [attr.aria-label]="t.hide"
+              (click)="hide(hold)"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="tl-problem" *ngIf="floatProblem() as problem" role="alert">
+            <span>{{ problem }}</span>
+            <button
+              type="button"
+              class="tl-float-x"
+              [attr.aria-label]="t.hide"
+              (click)="hide(problem)"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- what the others do floats over the dashboard: telling a move never pushes the screen about -->
@@ -433,6 +455,56 @@ import { TablesApiService } from './tables-api.service';
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      .tl-float-slot {
+        position: relative;
+        height: 0;
+        z-index: 7;
+        overflow: visible;
+      }
+      .tl-float {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        pointer-events: none;
+      }
+      .tl-float > * {
+        pointer-events: auto;
+        margin: 0;
+        box-shadow: var(--shadow-lg, 0 6px 18px rgba(0, 0, 0, 0.25));
+      }
+      .tl-float .tl-hold,
+      .tl-float .tl-problem {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: var(--color-surface, #fff);
+        border: 1px solid var(--color-border, #ddd);
+      }
+      .tl-float .tl-problem {
+        border-color: var(--color-danger, #c0392b);
+      }
+      .tl-float .tl-hold > span,
+      .tl-float .tl-problem > span {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .tl-float-x {
+        flex: none;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 1.1rem;
+        line-height: 1;
+        padding: 2px 6px;
+        cursor: pointer;
+      }
       .tl-overlay-slot {
         position: sticky;
         top: 0;
@@ -642,6 +714,21 @@ export class TableLayerComponent implements OnDestroy {
   }
 
   readonly problem = computed(() => this.mode.session()?.problem() ?? null);
+
+  /** The notice the player hid (by its text): it stays hidden until the text changes. */
+  private readonly hidden = signal('');
+  readonly floatHold = computed(() => {
+    const text = this.holdText();
+    return text && text !== this.hidden() ? text : null;
+  });
+  readonly floatProblem = computed(() => {
+    const text = this.problem();
+    return text && text !== this.hidden() ? text : null;
+  });
+
+  hide(text: string): void {
+    this.hidden.set(text);
+  }
 
   private money(minor: number): string {
     return (minor / 100).toLocaleString(undefined, { maximumFractionDigits: 0 });

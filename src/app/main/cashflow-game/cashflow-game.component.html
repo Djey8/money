@@ -648,15 +648,17 @@
         </ng-template>
         <div class="cf-card cf-solo" *ngIf="isSolo">
           <!-- What the last Payday paid, small: the big popup has gone, the numbers stay until the next roll. -->
-          <p class="cf-latest" *ngIf="paydayLatest as latest" role="status">
-            <span>💰 {{ 'CashflowGame.solo.latest' | translate }}</span>
-            <b>{{ 'CashflowGame.solo.passedPayday' | translate }}</b>
-            <span class="cf-payday-in">{{ signedCardAmount(latest.incomeMinor) }}</span>
-            <span class="cf-payday-out">{{ signedCardAmount(-latest.expensesMinor) }}</span>
-            <b [class.cf-negative]="latest.netMinor < 0"
-              >= {{ signedCardAmount(latest.netMinor) }}</b
-            >
-          </p>
+          <div class="cf-latest-slot">
+            <p class="cf-latest" *ngIf="paydayLatest as latest" role="status">
+              <span class="cf-latest-label">💰 {{ 'CashflowGame.solo.latest' | translate }}</span>
+              <b>{{ 'CashflowGame.solo.passedPayday' | translate }}</b>
+              <span class="cf-payday-in">{{ signedCardAmount(latest.incomeMinor) }}</span>
+              <span class="cf-payday-out">{{ signedCardAmount(-latest.expensesMinor) }}</span>
+              <b [class.cf-negative]="latest.netMinor < 0"
+                >= {{ signedCardAmount(latest.netMinor) }}</b
+              >
+            </p>
+          </div>
           <div class="cf-solo-board">
             <div class="cf-ring">
               <app-rat-race-board

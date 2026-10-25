@@ -2787,16 +2787,39 @@
   color: var(--color-danger);
 }
 
-/* The small line that keeps what the last Payday paid once its big popup has gone. */
+/*
+ * The small line that keeps what the last Payday paid once its big popup has gone (JFK, 2026-10-25). Its place is always there, one
+ * line high even when empty, so the wheel never moves when it comes or goes; the line itself never wraps, it only gets smaller on a
+ * small phone.
+ */
+.cf-latest-slot {
+  height: 2rem;
+  margin: 0 0 6px;
+}
+
 .cf-latest {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
-  gap: 4px 10px;
-  margin: 0 0 8px;
-  padding: 6px 10px;
+  gap: 0 8px;
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 10px;
+  overflow: hidden;
+  white-space: nowrap;
   border-radius: 8px;
   background: var(--color-primary-light, #e3f0fd);
-  font-size: 0.9rem;
+  font-size: clamp(0.62rem, 3.1vw, 0.9rem);
+  line-height: 2rem;
   animation: cf-payday-pop 0.28s ease-out;
+}
+
+.cf-latest > * {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.cf-latest-label {
+  opacity: 0.75;
 }

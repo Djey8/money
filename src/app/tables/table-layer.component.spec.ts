@@ -172,6 +172,21 @@ describe('TableLayerComponent', () => {
     jest.useRealTimers();
   });
 
+  it('a refusal hangs over the wheel with an x instead of pushing the page down, and stays hidden once hidden', () => {
+    const { fixture, session } = render(view());
+    (session.problem as unknown as ReturnType<typeof signal<string | null>>).set('Not your turn.');
+    fixture.detectChanges();
+    const float = fixture.nativeElement.querySelector('.tl-float') as HTMLElement;
+    expect(float.textContent).toContain('Not your turn.');
+    (float.querySelector('.tl-float-x') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tl-problem')).toBeNull();
+    // a different refusal shows again
+    (session.problem as unknown as ReturnType<typeof signal<string | null>>).set('Too late.');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tl-problem')).not.toBeNull();
+  });
+
   it('lists the buyers waiting for me and sells into one', () => {
     const mine = {
       state: {
