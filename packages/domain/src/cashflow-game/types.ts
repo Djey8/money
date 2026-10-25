@@ -57,6 +57,25 @@ export interface CashflowExpenseLine {
   account?: 'Daily' | 'Splurge';
 }
 
+/** The Smile project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
+export interface CashflowDreamProject {
+  /** The project's name: also the category its payments carry. */
+  title: string;
+  sub: string;
+  description: string;
+  buckets: {
+    id: string;
+    title: string;
+    targetMinor: number;
+    notes: string;
+    links?: { label: string; url: string }[];
+  }[];
+  links: { label: string; url: string }[];
+  actionItems: { text: string; priority: 'low' | 'medium' | 'high' }[];
+  /** What the character thinks and finds on the way, as notes of the project. */
+  notes: string[];
+}
+
 /** The conditions of winning a character has; each is ticked off once it is met. */
 export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'independence';
 
@@ -72,7 +91,7 @@ export interface CashflowProfileTexts {
   goal: string;
   goalItems: { id: CashflowGoalId; text: string }[];
   /** The dream the character starts with (their first Smile project). */
-  dream: { title: string; summary: string };
+  dream: { title: string; summary: string; project?: CashflowDreamProject };
 }
 
 /** The story of a character of a custom edition, by language code; a language without an entry falls back to `en`. */
@@ -354,6 +373,12 @@ export interface CashflowGameState {
   unemployedRoundsLeft: number;
   /** Which real Subscription titles belong to this game — Payday only ever acts on these. */
   gameSubscriptionTitles: string[];
+  /**
+   * Payment plans that fund a Smile project or a Fire emergency (JFK, 2026-10-25): Payday posts them like the game's own
+   * subscriptions - one payment per Payday, from the plan's start to its end in game dates - but they are savings, not expenses, so
+   * they are never part of the monthly picture (`summarizeGameFinances` reads `gameSubscriptionTitles` only).
+   */
+  fundingSubscriptionTitles?: string[];
   /** Card ids drawn since the deck's last reshuffle, per deck — the "discard pile" a random draw skips and a reshuffle clears. */
   drawnCardIds: Record<CashflowDeckKind, string[]>;
   history: CashflowLogEntry[];

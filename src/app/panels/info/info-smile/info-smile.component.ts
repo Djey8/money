@@ -1,3 +1,4 @@
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -104,7 +105,19 @@ export class InfoSmileComponent extends BaseInfoComponent {
   // Current detail tab
   static activeTab: 'overview' | 'buckets' | 'actions' | 'notes' | 'paymentPlans' = 'overview';
 
+  /** The project is only looked at (a character's dream before the game starts): nothing can be changed or saved. */
+  static preview = false;
+
+  /** Shows a project that is not in the account (yet), read only, above whatever is open. */
+  static openPreview(project: Smile, zIndex: number) {
+    InfoSmileComponent.setInfoSmileComponent(-1, project);
+    InfoSmileComponent.preview = true;
+    InfoSmileComponent.zIndex = zIndex;
+    InfoSmileComponent.isInfo = true;
+  }
+
   static setInfoSmileComponent(id: number, project: Smile) {
+    InfoSmileComponent.preview = false;
     InfoSmileComponent.index = id;
     InfoSmileComponent.title = project.title;
     InfoSmileComponent.sub = project.sub || '';
@@ -175,11 +188,20 @@ export class InfoSmileComponent extends BaseInfoComponent {
   editingActionPriority: 'low' | 'medium' | 'high' = 'medium';
   editingActionDueDate = '';
 
+  /** In a game the payment plans run in Paydays: the date of the next one (empty outside a game). */
+  get gameDate(): string {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && game.professionId
+      ? (game.virtualDate ?? '')
+      : '';
+  }
+
   // Payment Plans
   isPaymentPlannerOpen = false;
   editingPlanIndex: number | null = null;
 
   get notesList(): SmileNote[] {
+    if (InfoSmileComponent.preview) return InfoSmileComponent.notes;
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     return project?.notes || [];
   }
@@ -1159,6 +1181,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
   }
 
   override closeWindow() {
+    InfoSmileComponent.preview = false;
     InfoSmileComponent.isInfo = false;
     InfoSmileComponent.isEdit = false;
   }

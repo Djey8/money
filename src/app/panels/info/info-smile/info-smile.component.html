@@ -1,5 +1,6 @@
 <div
   id="infoTransaction-Container"
+  [class.preview]="classReference.preview"
   role="dialog"
   aria-modal="true"
   appTrapFocus
@@ -1520,6 +1521,7 @@
   [projectType]="'smile'"
   [projectTitle]="classReference.title"
   [projectTargetDate]="classReference.targetDate"
+  [gameDate]="gameDate"
   [buckets]="classReference.buckets"
   [existingPlan]="
     editingPlanIndex !== null ? classReference.plannedSubscriptions[editingPlanIndex] : undefined

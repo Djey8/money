@@ -109,59 +109,77 @@
         </div>
       </div>
 
-      <!-- Schedule -->
-      <div class="form-group schedule-section">
-        <h5>{{ 'PaymentPlannerDialog.schedule' | translate }}</h5>
-
-        <div class="form-row">
-          <div class="form-col">
-            <label for="startDate"
-              >{{ 'PaymentPlannerDialog.startDate' | translate }}
-              <span class="required">*</span></label
-            >
-            <input
-              type="date"
-              id="startDate"
-              name="startDate"
-              [(ngModel)]="startDate"
-              (change)="recalculate()"
-              required
-            />
-          </div>
-
-          <div class="form-col">
-            <label for="targetDate"
-              >{{ 'PaymentPlannerDialog.targetDate' | translate }}
-              <span class="required">*</span></label
-            >
-            <input
-              type="date"
-              id="targetDate"
-              name="targetDate"
-              [(ngModel)]="targetDate"
-              (change)="recalculate()"
-              required
-            />
-          </div>
-        </div>
+      <!-- A game: the plan runs for a number of Paydays (rounds), each pays once -->
+      <div class="form-group schedule-section" *ngIf="gameMode">
+        <h5>{{ 'PaymentPlannerDialog.paydays' | translate }}</h5>
+        <input
+          type="number"
+          id="paydays"
+          name="paydays"
+          min="1"
+          max="240"
+          step="1"
+          [(ngModel)]="paydays"
+          (ngModelChange)="recalculate()"
+        />
+        <small class="help-text">{{ 'PaymentPlannerDialog.paydaysHelp' | translate }}</small>
       </div>
 
-      <!-- Frequency -->
-      <div class="form-group">
-        <h5>{{ 'PaymentPlannerDialog.frequency' | translate }}</h5>
-        <div class="frequency-options">
-          <label *ngFor="let freq of frequencies" class="frequency-option">
-            <input
-              type="radio"
-              name="frequency"
-              [value]="freq"
-              [(ngModel)]="frequency"
-              (change)="recalculate()"
-            />
-            <span>{{ freq | titlecase }}</span>
-          </label>
+      <ng-container *ngIf="!gameMode">
+        <!-- Schedule -->
+        <div class="form-group schedule-section">
+          <h5>{{ 'PaymentPlannerDialog.schedule' | translate }}</h5>
+
+          <div class="form-row">
+            <div class="form-col">
+              <label for="startDate"
+                >{{ 'PaymentPlannerDialog.startDate' | translate }}
+                <span class="required">*</span></label
+              >
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                [(ngModel)]="startDate"
+                (change)="recalculate()"
+                required
+              />
+            </div>
+
+            <div class="form-col">
+              <label for="targetDate"
+                >{{ 'PaymentPlannerDialog.targetDate' | translate }}
+                <span class="required">*</span></label
+              >
+              <input
+                type="date"
+                id="targetDate"
+                name="targetDate"
+                [(ngModel)]="targetDate"
+                (change)="recalculate()"
+                required
+              />
+            </div>
+          </div>
         </div>
-      </div>
+
+        <!-- Frequency -->
+        <div class="form-group">
+          <h5>{{ 'PaymentPlannerDialog.frequency' | translate }}</h5>
+          <div class="frequency-options">
+            <label *ngFor="let freq of frequencies" class="frequency-option">
+              <input
+                type="radio"
+                name="frequency"
+                [value]="freq"
+                [(ngModel)]="frequency"
+                (change)="recalculate()"
+              />
+              <span>{{ freq | titlecase }}</span>
+            </label>
+          </div>
+        </div>
+      </ng-container>
 
       <!-- Calculation Summary -->
       <div class="calculation-summary">
@@ -179,6 +197,16 @@
             <td>{{ 'PaymentPlannerDialog.suggestedAmount' | translate }}</td>
             <td class="amount suggested">{{ calculatedAmount | appNumber }} / {{ frequency }}</td>
           </tr>
+          <ng-container *ngIf="gameMode">
+            <tr>
+              <td>{{ 'PaymentPlannerDialog.planCost' | translate }}</td>
+              <td class="amount">{{ planCost | appNumber }}</td>
+            </tr>
+            <tr>
+              <td>{{ 'PaymentPlannerDialog.paydaysNeeded' | translate }}</td>
+              <td class="amount">{{ paydaysNeeded }}</td>
+            </tr>
+          </ng-container>
         </table>
       </div>
 

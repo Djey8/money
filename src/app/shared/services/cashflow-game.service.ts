@@ -1,3 +1,4 @@
+import { dreamToSmile } from 'src/app/main/cashflow-game/dream-project';
 import { RemoteGameHook } from './remote-game';
 import { MoneyLocation } from '../../interfaces/location';
 import { reconcileLocationBooking } from '../location-balance';
@@ -975,6 +976,17 @@ export class CashflowGameService {
         credit: 0,
       }),
     );
+
+    // the character's dream is a Smile project from the first day (JFK, 2026-10-25), in the language of the game
+    const story = result.profession.profile?.texts;
+    const dream = (story?.[this.translate.currentLang] ?? story?.['en'])?.dream.project;
+    if (dream) {
+      const project = dreamToSmile(dream, new Date().toISOString());
+      state.allSmileProjects = [
+        ...state.allSmileProjects.filter((existing) => existing.title !== project.title),
+        project,
+      ];
+    }
 
     const planOfLastGame = state.cashflowGame.budgetPlan ?? [];
     // a new game starts with a clean plan: rows of its own categories left in the last months (by an earlier game or version) go

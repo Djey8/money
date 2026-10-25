@@ -74,6 +74,7 @@
         [sheets]="professionSheets"
         [currency]="appState.currency"
         (liabilityOpen)="openLiability($event)"
+        (dreamOpen)="openDream(profession)"
       ></app-character-sheet>
 
       <!-- Before a game: start it from here, below the info, after shuffling or viewing a profession. -->
@@ -466,6 +467,7 @@
           [story]="profileOf(profession)"
           [sheets]="setupSheets"
           [currency]="setupCurrency"
+          (dreamOpen)="openDream(profession)"
         ></app-character-sheet>
 
         <button
@@ -2393,3 +2395,8 @@
     </div>
   </div>
 </div>
+
+<!-- The dream of a character, looked at before the game: the Smile info panel of the app, read only, over the game panel. -->
+<ng-container *ngIf="dreamPreview as preview"
+  ><ng-container *ngComponentOutlet="preview"
+/></ng-container>

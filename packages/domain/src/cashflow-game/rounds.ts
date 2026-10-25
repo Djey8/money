@@ -6,7 +6,7 @@ import {
   type GameEffects,
 } from './effects';
 import {
-  ownedGameSubscriptions,
+  paydaySubscriptions,
   resolveCashflowBaby,
   resolveCashflowCharity,
   resolveCashflowDownsized,
@@ -74,6 +74,8 @@ function engineSubscriptions(subscriptions: BookSubscription[]) {
     amountMinor: sub.amountMinor,
     category: sub.category,
     comment: sub.comment,
+    startDate: sub.startDate,
+    endDate: sub.endDate,
   }));
 }
 
@@ -155,7 +157,7 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   const { state } = books;
   const subscriptions = engineSubscriptions(books.subscriptions);
   const result = runCashflowPayday(state, subscriptions);
-  const owned = ownedGameSubscriptions(state, subscriptions);
+  const owned = paydaySubscriptions(state, subscriptions);
   const byTitle = new Map(books.subscriptions.map((sub) => [sub.title, sub]));
   const today = deps.clock.todayIso();
 

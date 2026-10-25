@@ -41,6 +41,8 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   @Input() projectTargetDate = ''; // Project target date to prefill
   @Input() buckets: (SmileBucket | FireBucket)[] = [];
   @Input() existingPlan?: PlannedSubscription; // For editing
+  /** The date of the game's next Payday: given, the plan is made in Paydays (rounds), not in calendar dates (JFK, 2026-10-25). */
+  @Input() gameDate = '';
 
   @Output() planCreated = new EventEmitter<PlannedSubscription>();
   @Output() planUpdated = new EventEmitter<PlannedSubscription>();
@@ -61,6 +63,8 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   account = '';
   manualAmount: number | null = null;
 
+  /** Game: how many Paydays the plan runs. */
+  paydays = 12;
   // Calculated values
   totalMissing = 0;
   numberOfPeriods = 0;
@@ -95,6 +99,33 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     }
   }
 
+  get gameMode(): boolean {
+    return this.gameDate !== '';
+  }
+
+  /** Game: the Paydays the buckets would need at the chosen payment (0 without a payment). */
+  get paydaysNeeded(): number {
+    const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
+    return payment > 0 ? Math.ceil(this.totalMissing / payment) : 0;
+  }
+
+  /** Game: what the plan costs in all, paid over its Paydays. */
+  get planCost(): number {
+    const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
+    return Math.round(payment * this.paydays * 100) / 100;
+  }
+
+  /** A date some months on (the game's calendar moves by whole months). */
+  private addMonths(date: string, months: number): string {
+    const [year, month, day] = date.split('-').map(Number);
+    const target = new Date(Date.UTC(year, month - 1 + months, 1));
+    const last = new Date(
+      Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    target.setUTCDate(Math.min(day, last));
+    return target.toISOString().split('T')[0];
+  }
+
   ngOnInit(): void {
     // Initialize accounts with the same options as subscriptions
     this.accounts = ['Daily', 'Splurge', 'Smile', 'Fire', 'Income', 'Mojo'];
@@ -123,9 +154,9 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       this.selectedBucketIds = [];
       this.selectedSingleBucketId = '';
 
-      // Set start date to today
+      // Set start date to today (in a game: the next Payday)
       const today = new Date();
-      this.startDate = today.toISOString().split('T')[0];
+      this.startDate = this.gameMode ? this.gameDate : today.toISOString().split('T')[0];
 
       // Prefill target date from project if available
       if (this.projectTargetDate && this.projectTargetDate.trim() !== '') {
@@ -156,6 +187,12 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     this.targetDate = this.existingPlan.targetDate.split('T')[0];
     this.frequency = this.existingPlan.frequency;
     this.account = this.existingPlan.account;
+    if (this.gameMode) {
+      // the plan's end is its last Payday: the Paydays are the months from the start to the end, and one
+      const [sy, sm] = this.existingPlan.startDate.split('-').map(Number);
+      const [ey, em] = this.existingPlan.endDate.split('-').map(Number);
+      this.paydays = Math.max(1, (ey - sy) * 12 + (em - sm) + 1);
+    }
 
     // Determine bucket selection mode
     if (this.existingPlan.targetBucketIds.length === 0) {
@@ -188,7 +225,13 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     );
 
     // Calculate number of periods
-    if (this.startDate && this.targetDate) {
+    if (this.gameMode) {
+      this.frequency = 'monthly';
+      this.paydays = Math.max(1, Math.min(240, Math.round(Number(this.paydays) || 1)));
+      this.startDate = this.gameDate;
+      this.targetDate = this.addMonths(this.gameDate, this.paydays);
+      this.numberOfPeriods = this.paydays;
+    } else if (this.startDate && this.targetDate) {
       this.numberOfPeriods = this.paymentPlannerService.calculateNumberOfPeriods(
         this.startDate,
         this.targetDate,
@@ -300,6 +343,9 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       account: this.account,
       manualAmount: this.manualAmount !== null ? this.manualAmount : undefined,
     });
+
+    // In a game the plan pays once at each of its Paydays: it ends on the last of them
+    if (this.gameMode) plan.endDate = this.addMonths(this.startDate, this.paydays - 1);
 
     // Validate plan
     const validation = this.paymentPlannerService.validatePaymentPlan(plan);

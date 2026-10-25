@@ -1,3 +1,4 @@
+import { summarizeGameFinances } from './saved-games';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import {
   addMonthsToIsoDate,
@@ -5,6 +6,7 @@ import {
   clearCashflowStatus,
   computeCashflowProfessionMonthlyCashflowMinor,
   computeMonthlyCashflowMinor,
+  paydaySubscriptions,
   pickCashflowProfession,
   resolveCashflowBaby,
   resolveCashflowCharity,
@@ -14,6 +16,48 @@ import {
 } from './engine';
 import { CashflowGameSubscription } from './engine';
 import { initialCashflowGameState } from './types';
+
+describe('funding plans at Payday (JFK, 2026-10-25)', () => {
+  const started = (virtualDate: string) => ({
+    ...initialCashflowGameState(),
+    professionId: 'p',
+    gameSetId: 'g',
+    virtualDate,
+    gameSubscriptionTitles: ['Salary'],
+    fundingSubscriptionTitles: ['Save for the guide'],
+  });
+  const subs = [
+    { title: 'Salary', account: 'Income', amountMinor: 100000 },
+    {
+      title: 'Save for the guide',
+      account: 'Daily',
+      amountMinor: -30000,
+      category: '@Mountain guide',
+      comment: '#bucket:Equipment:300.00',
+      startDate: '2026-11-15',
+      endDate: '2027-01-15', // three paydays: 15 Nov, 15 Dec, 15 Jan
+    },
+  ];
+
+  it('are posted on the Paydays between their start and their end - and only on those', () => {
+    const dates = ['2026-10-15', '2026-11-15', '2026-12-15', '2027-01-15', '2027-02-15'];
+    const counts = dates.map((date) => paydaySubscriptions(started(date), subs).length);
+    expect(counts).toEqual([1, 2, 2, 2, 1]);
+  });
+
+  it('carry their bucket tag and category into the transaction, and are not part of the monthly picture', () => {
+    const state = started('2026-12-15');
+    const { transactions } = runCashflowPayday(state, subs);
+    expect(transactions).toHaveLength(2);
+    expect(transactions[1]).toMatchObject({
+      amountMinor: -30000,
+      category: '@Mountain guide',
+    });
+    expect(transactions[1].comment).toContain('#bucket:Equipment:300.00');
+    // the monthly picture reads the game's own subscriptions only
+    expect(summarizeGameFinances(state, subs).expensesMinor).toBe(0);
+  });
+});
 
 describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
   const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories')!;
@@ -50,6 +94,22 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
       .filter((line) => deductions.includes(line.key ?? ''))
       .reduce((sum, line) => sum + line.amountMinor, 0);
     expect(taken).toBe(84500);
+  });
+
+  it('starts with the dream as a Smile project: eight buckets, about 24.500, with notes, links and tasks, in both languages', () => {
+    for (const lang of ['en', 'de']) {
+      const project = student.profile!.texts[lang].dream.project!;
+      expect(project.buckets).toHaveLength(8);
+      expect(project.buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0)).toBe(2450000);
+      expect(project.buckets.every((bucket) => bucket.notes.length > 20)).toBe(true);
+      expect(project.links.length).toBeGreaterThan(2);
+      expect(project.actionItems.length).toBeGreaterThan(5);
+      expect(project.title).toBeTruthy();
+    }
+    const ids = student.profile!.texts['en'].dream.project!.buckets.map((bucket) => bucket.id);
+    expect(student.profile!.texts['de'].dream.project!.buckets.map((bucket) => bucket.id)).toEqual(
+      ids,
+    );
   });
 
   it('books leisure to Splurge and the rest to Daily, and starts with two small debts (3.000 together) and almost no assets', () => {

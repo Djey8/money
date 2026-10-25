@@ -71,6 +71,8 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     removeData: (key: string) => void stored.delete(key),
   };
 
+  // the account's books have been read (a game saves its Smile project on top of them)
+  AppStateService.instance.tier2Loaded = true;
   const component = new CashflowGameComponent(
     router as any,
     appData as any,
@@ -2389,6 +2391,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
 
   it('the character step: a grid with the example characters first, then the chosen one with its numbers', () => {
     const { component } = soloComponent();
+    component.appState.currency = '€';
     component.toCharacter();
     expect(component.characterChosen).toBe(false);
     const names = component.characterOptions.map((option) => option.name);
@@ -2411,12 +2414,15 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       815,
     );
 
+    // looking at a character of the custom edition shows its money; leaving brings the account's own back
+    expect(component.appState.currency).toBe('DT');
     // back goes to the grid first, then to the setup
     component.backToSetup();
     expect(component.characterChosen).toBe(false);
     expect(component.choosingCharacter).toBe(true);
     component.backToSetup();
     expect(component.choosingCharacter).toBe(false);
+    expect(component.appState.currency).toBe('€');
   });
 
   it('the winning list is ticked off once the debts are paid, and the game plays in Dream Taler or Traumtaler', () => {

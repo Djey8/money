@@ -1,3 +1,4 @@
+import { CashflowGameService } from './cashflow-game.service';
 import { Injectable } from '@angular/core';
 import { PlannedSubscription } from '../../interfaces/planned-subscription';
 import { Subscription } from '../../interfaces/subscription';
@@ -48,6 +49,32 @@ export class SubscriptionActivationService {
 
       // Add to main subscriptions list
       AppStateService.instance.allSubscriptions.push(subscription);
+
+      // In a game the plan is paid at the Paydays (one payment each, from its start to its end in game dates) - it is registered
+      // with the game, but as saving, not as a monthly expense
+      if (
+        CashflowGameService.isCashflowGame() &&
+        AppStateService.instance.cashflowGame.professionId
+      ) {
+        const game = AppStateService.instance.cashflowGame;
+        AppStateService.instance.cashflowGame = {
+          ...game,
+          fundingSubscriptionTitles: [
+            ...(game.fundingSubscriptionTitles ?? []).filter((title) => title !== plan.title),
+            plan.title,
+          ],
+        };
+        this.persistence.writeAndSync({
+          tag: 'cashflowGame',
+          data: AppStateService.instance.cashflowGame,
+          localStorageKey: 'cashflowGame',
+          logEvent: 'activate_payment_plan_game',
+          logMetadata: { title: plan.title },
+          onSuccess: () => undefined,
+          onError: (error) =>
+            console.error('Failed to save the game with its funding plan:', error),
+        });
+      }
 
       // Update plan status to active
       plan.status = 'active';
@@ -104,9 +131,13 @@ export class SubscriptionActivationService {
       );
 
       if (subscriptionIndex !== -1) {
-        // Set end date to today instead of deleting
+        // Set end date to today instead of deleting (in a game: the day before the next Payday, so no more is paid)
         const subscription = AppStateService.instance.allSubscriptions[subscriptionIndex];
-        subscription.endDate = new Date().toISOString().split('T')[0];
+        const gameDate = AppStateService.instance.cashflowGame.virtualDate;
+        subscription.endDate =
+          CashflowGameService.isCashflowGame() && gameDate
+            ? new Date(Date.parse(gameDate) - 86_400_000).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
       }
 
       // Update plan status to inactive

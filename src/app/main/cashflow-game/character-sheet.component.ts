@@ -46,6 +46,15 @@ type SheetId = 'cashflow' | 'income' | 'balance';
           <strong>{{ story.dream.title }}</strong
           ><br />{{ story.dream.summary }}
         </p>
+        <!-- the dream is a Smile project of the app itself: looked at here, and opened in the Smile page once the game runs -->
+        <button
+          type="button"
+          class="cs-dream-btn"
+          *ngIf="story.dream.project"
+          (click)="dreamOpen.emit()"
+        >
+          {{ 'CashflowGame.setup.openDream' | translate }} ›
+        </button>
       </section>
       <!-- what it takes to win: a checklist, ticked in the running game as each one is met -->
       <section class="cs-group">
@@ -155,6 +164,18 @@ type SheetId = 'cashflow' | 'income' | 'balance';
       .cs-group--dream {
         border-color: var(--color-primary, #2a7de1);
       }
+      .cs-dream-btn {
+        margin-top: 10px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 0;
+        border-radius: var(--radius-md, 8px);
+        background: var(--color-primary, #2a7de1);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
       .cs-story {
         margin: 0;
         line-height: 1.4;
@@ -242,6 +263,8 @@ export class CharacterSheetComponent {
   @Input() sheets: ProfessionSheetNumbers | null = null;
   @Input() currency = '';
   @Output() liabilityOpen = new EventEmitter<number>();
+  /** The dream project was asked for. */
+  @Output() dreamOpen = new EventEmitter<void>();
 
   /** The panel that is open: the Cashflow, at first. */
   open: SheetId | null = 'cashflow';

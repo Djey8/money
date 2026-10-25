@@ -1,4 +1,5 @@
-import { AfterViewChecked, Component, OnDestroy } from '@angular/core';
+import { dreamToSmile } from './dream-project';
+import { AfterViewChecked, Component, OnDestroy, Type } from '@angular/core';
 import { CommonModule, formatNumber } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -304,6 +305,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   closeWindow(): void {
+    this.previewCurrency(false);
     this.showStartGames = false;
     this.rollResult = null;
     // A one-time message (e.g. a market card that did not apply) is gone once the panel is closed.
@@ -748,6 +750,39 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.goalChecksCache.value;
   }
 
+  /**
+   * The dream of the character, as the app's own Smile project: before the game it is only looked at (every tab, nothing to change),
+   * in the running game it opens in the Smile page, where it is the real project that is funded.
+   */
+  /** The Smile info panel, drawn here while a dream is only looked at (before the game). */
+  dreamPreview: Type<unknown> | null = null;
+
+  async openDream(profession: CashflowProfession): Promise<void> {
+    const project = this.profileOf(profession)?.dream.project;
+    if (!project) return;
+    const { InfoSmileComponent } =
+      await import('src/app/panels/info/info-smile/info-smile.component');
+    const index = this.appState.allSmileProjects.findIndex(
+      (entry) => entry.title === project.title,
+    );
+    if (this.hasActiveGame && index >= 0) {
+      // the Smile page has the info panel itself: the one drawn here for the preview must not be there twice
+      this.dreamPreview = null;
+      this.closeWindow();
+      await this.router.navigate(['/smileprojects']);
+      InfoSmileComponent.setInfoSmileComponent(index, this.appState.allSmileProjects[index]);
+      return;
+    }
+    // the info panel lives on the Smile page; here it is drawn beside the game panel, over it
+    this.dreamPreview = InfoSmileComponent;
+    // the panel is made by the next check, and making it resets its flags: it is filled once it is there
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    InfoSmileComponent.openPreview(
+      dreamToSmile(project, new Date().toISOString()),
+      CashflowGameComponent.zIndex + 2,
+    );
+  }
+
   /** The balance item (a liability) opens in the Info panel, from where it can be paid back. */
   async openLiability(index: number): Promise<void> {
     const liability = this.appState.liabilities[index];
@@ -825,6 +860,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       return;
     }
     this.choosingCharacter = false;
+    this.previewCurrency(false);
   }
 
   /** The grid of characters is gone and one is shown. */
@@ -871,6 +907,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   pickCharacter(option: { setId: string; profession: CashflowProfession }): void {
     this.selectedGameSetId = option.setId;
+    this.previewCurrency(this.selectedGameSet?.edition === 'custom');
     this.selectedProfessionId = option.profession.id;
     this.characterChosen = true;
   }
@@ -891,6 +928,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   chooseEdition(gameSetId: string): void {
+    this.previewCurrency(false);
     this.selectedGameSetId = gameSetId;
     this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
     this.characterChosen = false;
@@ -927,6 +965,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   startGame(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
+    // the account's Smile projects must have been read before the dream is added to them (saving earlier would replace them)
+    if (!this.appState.tier2Loaded) {
+      this.isBusy = true;
+      void this.appData.loadTier2().finally(() => {
+        this.isBusy = false;
+        this.startGame();
+      });
+      return;
+    }
     this.isBusy = true;
     const mode = this.playMode;
     let rules: GameRules;
@@ -944,6 +991,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         onSuccess: () => {
           this.isBusy = false;
           this.choosingCharacter = false;
+          this.dreamPreview = null;
           this.applyGameCurrency();
           this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
           this.closeWindow();
@@ -1749,6 +1797,24 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
     this.appState.currency = code;
     this.local.saveData('currency', code);
+  }
+
+  /** While a character of the custom edition is looked at (before the game), the numbers are in its money; leaving brings the account's own back. */
+  private previewCurrency(on: boolean): void {
+    if (this.hasActiveGame) return;
+    if (!on) {
+      this.restoreCurrency();
+      return;
+    }
+    const code = this.language.current === 'de' ? 'TT' : 'DT';
+    if (this.appState.currency === code) return;
+    if (
+      !['DT', 'TT'].includes(this.appState.currency) &&
+      !this.local.getData(CURRENCY_BEFORE_KEY)
+    ) {
+      this.local.saveData(CURRENCY_BEFORE_KEY, this.appState.currency);
+    }
+    this.appState.currency = code;
   }
 
   private restoreCurrency(): void {

@@ -620,6 +620,9 @@ export class AppDataService {
       gameSubscriptionTitles: Array.isArray(raw.gameSubscriptionTitles)
         ? raw.gameSubscriptionTitles.map((t: any) => str(t))
         : [],
+      ...(Array.isArray(raw.fundingSubscriptionTitles)
+        ? { fundingSubscriptionTitles: raw.fundingSubscriptionTitles.map((t: any) => str(t)) }
+        : {}),
       drawnCardIds: {
         dealSmall: drawnIds('dealSmall'),
         dealBig: drawnIds('dealBig'),

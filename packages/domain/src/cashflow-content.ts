@@ -7,7 +7,7 @@ import { CLASSIC_DEAL_BIG } from './cashflow-game/classic-deal-big';
 import { CLASSIC_DEAL_SMALL } from './cashflow-game/classic-deal-small';
 import { CLASSIC_DOODAD } from './cashflow-game/classic-doodad';
 import { CLASSIC_MARKET } from './cashflow-game/classic-market';
-import type { CashflowGameSet } from './cashflow-game/types';
+import type { CashflowDreamProject, CashflowGameSet } from './cashflow-game/types';
 
 /**
  * Exactly one placeholder game set, with obviously-fake numbers, so the MVP
@@ -486,6 +486,215 @@ const CUSTOM_JFK_GAME_SET: CashflowGameSet = {
   ],
 };
 
+const VDBS_PAGE = 'https://www.vdbs.de/werden/bergfuehrer-werden.html';
+const VDBS_INFO_PDF =
+  'https://www.alpinewelten.com/cdn/uploads/information-zur-berg-skifhrer-ausbild-ung-2026.pdf';
+const DAV_ARTICLE =
+  'https://www.alpenverein.de/artikel/bergfuehrer-berufsbild-im-wandel_48dd1c30-e9e1-45f6-bd65-da76f921c559';
+const COURSE_PROVIDER = 'https://www.alpinewelten.com/unternehmen/bergfuehrer-werden';
+
+/**
+ * The dream of the dual student: to become a state-certified mountain and ski guide (staatlich geprüfter Berg- und Skiführer,
+ * VDBS, Germany). The structure follows the VDBS information of April 2025; the costs are estimates in game money - the course
+ * fees are about 17.000 (VDBS), a commercial provider names 25.660 with the voluntary preparation and at least 32.000 with travel,
+ * lodging and equipment - and are said so in the project's notes.
+ */
+function mountainGuideProject(lang: 'en' | 'de'): CashflowDreamProject {
+  const en = lang === 'en';
+  const t = (english: string, german: string) => (en ? english : german);
+  return {
+    title: t('Mountain guide', 'Bergführer'),
+    sub: t(
+      'State-certified mountain and ski guide (VDBS)',
+      'Staatlich geprüfter Berg- und Skiführer (VDBS)',
+    ),
+    description: t(
+      'The way to the guide licence in Germany: first the proof that you can do it (three years of tours, climbing level, first aid), then the entrance exams, then about three years of courses in rock, ice, ski and avalanche rescue with an internship of 36 days, and the state exams at the TU München. Every bucket is one part of the way; the project is done when all of them are full.',
+      'Der Weg zur Führerlizenz in Deutschland: zuerst der Nachweis, dass du es kannst (drei Jahre Touren, Kletterniveau, Erste Hilfe), dann die Eignungsprüfungen, dann rund drei Jahre Kurse in Fels, Eis, Ski und Lawinenrettung mit einem Praktikum von 36 Tagen und die Staatsprüfungen an der TU München. Jeder Topf ist ein Stück des Weges; das Projekt ist fertig, wenn alle voll sind.',
+    ),
+    buckets: [
+      {
+        id: 'equipment',
+        title: t('Equipment', 'Ausrüstung'),
+        targetMinor: 350000,
+        notes: t(
+          'Rock, ice and ski-touring kit: harness, helmet, ropes, quickdraws, ice axes, crampons, touring skis with skins, avalanche transceiver, probe and shovel. The organisers send the list for each course about four weeks before. The price is an estimate.',
+          'Ausrüstung für Fels, Eis und Skitour: Gurt, Helm, Seile, Expressen, Eisgeräte, Steigeisen, Tourenski mit Fellen, Lawinen-Verschüttetensuchgerät, Sonde und Schaufel. Die Veranstalter schicken die Liste zu jedem Kurs etwa vier Wochen vorher. Der Preis ist eine Schätzung.',
+        ),
+        links: [{ label: t('VDBS: becoming a guide', 'VDBS: Bergführer werden'), url: VDBS_PAGE }],
+      },
+      {
+        id: 'preparation',
+        title: t('Tours & preparation', 'Touren & Vorbereitung'),
+        targetMinor: 180000,
+        notes: t(
+          'A tour report of at least three years split into rock, ice and ski, and the level for the entrance exams: sport routes 6b+, alpine 6a to 6b, mixed up to M5-M6, water ice up to WI5. Voluntary preparation courses (for example the ski preparation course for the entrance exam, about 545) and travel to the tours belong here.',
+          'Ein Tourenbericht über mindestens drei Jahre, aufgeteilt in Fels, Eis und Ski, und das Niveau für die Eignungsprüfungen: Plaisir-Routen 6b+, alpin 6a bis 6b, Mixed bis M5-M6, Wassereis bis WI5. Freiwillige Vorbereitungslehrgänge (zum Beispiel der Ski-Vorbereitungslehrgang für die Eignungsprüfung, etwa 545) und die Anreise zu den Touren gehören hierher.',
+        ),
+        links: [
+          {
+            label: t(
+              'Information on the training (VDBS, PDF)',
+              'Information zur Ausbildung (VDBS, PDF)',
+            ),
+            url: VDBS_INFO_PDF,
+          },
+        ],
+      },
+      {
+        id: 'papers',
+        title: t('Papers & first aid', 'Papiere & Erste Hilfe'),
+        targetMinor: 45000,
+        notes: t(
+          'A first-aid course of 16 units (not older than one year), a medical certificate and a police clearance certificate (Führungszeugnis), both not older than three months, and the application with the tour report. The application is open all year, the deadline for the exams of next year is 31 October.',
+          'Ein Erste-Hilfe-Kurs mit 16 Unterrichtseinheiten (höchstens ein Jahr alt), ein ärztliches Attest und ein Führungszeugnis, beide höchstens drei Monate alt, und der Antrag mit dem Tourenbericht. Die Bewerbung ist ganzjährig möglich, Frist für die Prüfungen des nächsten Jahres ist der 31. Oktober.',
+        ),
+      },
+      {
+        id: 'entrance',
+        title: t('Entrance exams', 'Eignungsprüfungen'),
+        targetMinor: 195000,
+        notes: t(
+          'Ice (2 days), ski (2.5 to 3 days) and rock/ice (8 days). Passing all three makes you a candidate, and the membership in the VDBS is then mandatory. Lodging and food in the organised quarters are paid on top of the fees.',
+          'Eis (2 Tage), Ski (2,5 bis 3 Tage) und Fels/Eis (8 Tage). Wer alle drei besteht, ist Kandidat, danach ist die Mitgliedschaft im VDBS Pflicht. Unterkunft und Verpflegung in den organisierten Quartieren kommen zu den Gebühren dazu.',
+        ),
+      },
+      {
+        id: 'year1',
+        title: t('Courses, year 1', 'Kurse, Jahr 1'),
+        targetMinor: 520000,
+        notes: t(
+          'Rock climbing methods (7-8 days), mountain rescue (7), alpine rock (13) and theory I (3): about 30 days. Alpine rock and the ice and ski courses of year 2 give you the status of aspirant.',
+          'Felsklettern Methodik (7-8 Tage), Bergrettung (7), Fels alpin (13) und Theorie I (3): rund 30 Tage. Fels alpin und die Eis- und Skikurse des 2. Jahres bringen den Aspirantenstatus.',
+        ),
+      },
+      {
+        id: 'year2',
+        title: t('Courses, year 2', 'Kurse, Jahr 2'),
+        targetMinor: 630000,
+        notes: t(
+          'Avalanches (8 days), ski tour (7-8), ice climbing (5), ski technique (7), off-piste skiing (6), personal skills exams (3), ice/combination (10) and theory II (4): the biggest year.',
+          'Lawinen (8 Tage), Skitour (7-8), Eisfallklettern (5), Skitechnik (7), Variantenskilauf (6), Prüfung Persönliches Können (3), Eis/Kombi (10) und Theorie II (4): das größte Jahr.',
+        ),
+      },
+      {
+        id: 'year3',
+        title: t('Year 3 & internship', 'Jahr 3 & Praktikum'),
+        targetMinor: 370000,
+        notes: t(
+          'Ski high tours (7 days) and winter mountaineering (7), and an internship of at least 36 days with a guide in rock, ice/high tours and ski, which pays only a small honorarium. A lot of lost earnings come on top, and they are the main hurdle.',
+          'Skihochtouren (7 Tage) und Winterbergsteigen (7) sowie ein Praktikum von mindestens 36 Tagen bei einem Bergführer in Fels, Eis/Hochtour und Ski, das nur ein kleines Honorar bringt. Dazu kommt viel entgangener Verdienst, und der ist die größte Hürde.',
+        ),
+        links: [
+          {
+            label: t('Berufsbild im Wandel (DAV)', 'Berufsbild im Wandel (DAV)'),
+            url: DAV_ARTICLE,
+          },
+        ],
+      },
+      {
+        id: 'exams',
+        title: t('State exams', 'Staatsprüfungen'),
+        targetMinor: 160000,
+        notes: t(
+          'Four exams run by the TU München: rock, ice/high tour, ski high tour and theory (12 days in summer, 6 in winter and 2 for the theory). Each can be repeated twice.',
+          'Vier Prüfungen der TU München: Fels, Eis/Hochtour, Skihochtour und Theorie (12 Tage im Sommer, 6 im Winter und 2 für die Theorie). Jede kann zweimal wiederholt werden.',
+        ),
+      },
+    ],
+    links: [
+      { label: t('VDBS: becoming a guide', 'VDBS: Bergführer werden'), url: VDBS_PAGE },
+      {
+        label: t(
+          'Information on the training (VDBS, PDF, April 2025)',
+          'Information zur Ausbildung (VDBS, PDF, April 2025)',
+        ),
+        url: VDBS_INFO_PDF,
+      },
+      {
+        label: t('Course provider: becoming a guide', 'Kursanbieter: Bergführer werden'),
+        url: COURSE_PROVIDER,
+      },
+      {
+        label: t('DAV: the guide profession is changing', 'DAV: Das Berufsbild im Wandel'),
+        url: DAV_ARTICLE,
+      },
+    ],
+    actionItems: [
+      {
+        text: t(
+          'Write the tour report: rock, ice and ski of three years',
+          'Den Tourenbericht schreiben: Fels, Eis und Ski aus drei Jahren',
+        ),
+        priority: 'high',
+      },
+      {
+        text: t(
+          'Reach the climbing level of the entrance exams (6b+)',
+          'Das Kletterniveau der Eignungsprüfung erreichen (6b+)',
+        ),
+        priority: 'high',
+      },
+      {
+        text: t(
+          'Take the first-aid course of 16 units',
+          'Den Erste-Hilfe-Kurs mit 16 Einheiten machen',
+        ),
+        priority: 'medium',
+      },
+      {
+        text: t(
+          'Get the medical certificate and the Führungszeugnis',
+          'Das ärztliche Attest und das Führungszeugnis besorgen',
+        ),
+        priority: 'medium',
+      },
+      {
+        text: t(
+          'Apply before 31 October of the year before the exams',
+          'Bewerben bis zum 31. Oktober des Jahres vor den Prüfungen',
+        ),
+        priority: 'high',
+      },
+      {
+        text: t(
+          'Pass the entrance exams: ice, ski and rock/ice',
+          'Die Eignungsprüfungen bestehen: Eis, Ski und Fels/Eis',
+        ),
+        priority: 'high',
+      },
+      {
+        text: t('Join the VDBS as a candidate', 'Dem VDBS als Kandidat beitreten'),
+        priority: 'medium',
+      },
+      {
+        text: t(
+          'Do the courses of the three years and the 36-day internship',
+          'Die Kurse der drei Jahre und das Praktikum von 36 Tagen machen',
+        ),
+        priority: 'medium',
+      },
+      {
+        text: t(
+          'Pass the four state exams at the TU München',
+          'Die vier Staatsprüfungen an der TU München bestehen',
+        ),
+        priority: 'high',
+      },
+    ],
+    notes: [
+      t(
+        'The costs here are estimates in game money. The course fees alone are about 17.000 (VDBS); a course provider names about 25.700 with the voluntary preparation and says to plan at least 32.000 with travel, lodging and equipment. Austria trains for less (about 15.000). Check before you pay.',
+        'Die Kosten hier sind Schätzungen in Spielgeld. Allein die Kursgebühren liegen bei etwa 17.000 (VDBS); ein Kursanbieter nennt rund 25.700 mit der freiwilligen Vorbereitung und rät zu mindestens 32.000 mit Reise, Unterkunft und Ausrüstung. Österreich bildet günstiger aus (etwa 15.000). Prüfe es, bevor du zahlst.',
+      ),
+      t(
+        'Only about 100 guides in Germany live from guiding alone; most work part-time next to another job. That is fine: this is a dream first and a job second.',
+        'Nur etwa 100 Bergführer in Deutschland leben allein vom Führen; die meisten arbeiten nebenbei in einem anderen Beruf. Das ist in Ordnung: Es ist zuerst ein Traum und danach ein Beruf.',
+      ),
+    ],
+  };
+}
+
 /**
  * The custom edition (JFK, 2026-10-25): characters with a story and a dream, built from real lives - the first is a dual student
  * in computer science whose dream is the mountains. Numbers are the monthly picture of a real budget, grouped into a few lines
@@ -574,6 +783,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
               title: 'Certified mountain guide',
               summary:
                 'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 DT. In this game it is his first Smile project.',
+              project: mountainGuideProject('en'),
             },
           },
           de: {
@@ -603,6 +813,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
               title: 'Staatlich geprüfter Berg- und Skiführer',
               summary:
                 'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 TT. Im Spiel ist es sein erstes Smile-Projekt.',
+              project: mountainGuideProject('de'),
             },
           },
         },

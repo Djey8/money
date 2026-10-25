@@ -150,6 +150,9 @@ export interface CashflowGameSubscription {
   amountMinor: number;
   category?: string;
   comment?: string;
+  /** Game dates: a funding plan pays from its start to its end (both inclusive). */
+  startDate?: string;
+  endDate?: string;
 }
 
 /** The real Subscriptions matching `state.gameSubscriptionTitles`, in that order — what Payday/Charity/Downsized act on. */
@@ -161,6 +164,28 @@ export function ownedGameSubscriptions(
   return state.gameSubscriptionTitles
     .map((title) => byTitle.get(title))
     .filter((sub): sub is CashflowGameSubscription => sub !== undefined);
+}
+
+/**
+ * What Payday posts: the game's own subscriptions, then the funding plans that run on this Payday's date. A plan is there from its
+ * start date to its end date (the dates of the game's calendar), so a plan for N paydays pays exactly N times.
+ */
+export function paydaySubscriptions(
+  state: CashflowGameState,
+  subscriptions: CashflowGameSubscription[],
+): CashflowGameSubscription[] {
+  const date = state.virtualDate ?? '';
+  const byTitle = new Map(subscriptions.map((sub) => [sub.title, sub]));
+  const funding = (state.fundingSubscriptionTitles ?? [])
+    .filter((title) => !state.gameSubscriptionTitles.includes(title))
+    .map((title) => byTitle.get(title))
+    .filter(
+      (sub): sub is CashflowGameSubscription =>
+        sub !== undefined &&
+        (!sub.startDate || sub.startDate <= date) &&
+        (!sub.endDate || date <= sub.endDate),
+    );
+  return [...ownedGameSubscriptions(state, subscriptions), ...funding];
 }
 
 function cashflowTransaction(
@@ -205,17 +230,15 @@ export function runCashflowPayday(
   subscriptions: CashflowGameSubscription[],
 ): PaydayResult {
   const date = requireStarted(state, 'running Payday');
-  const transactions: CashflowTransactionRecord[] = ownedGameSubscriptions(
-    state,
-    subscriptions,
-  ).map((sub) =>
-    cashflowTransaction(
-      sub.account,
-      sub.amountMinor,
-      date,
-      sub.comment ? sub.comment : '',
-      sub.category ?? '',
-    ),
+  const transactions: CashflowTransactionRecord[] = paydaySubscriptions(state, subscriptions).map(
+    (sub) =>
+      cashflowTransaction(
+        sub.account,
+        sub.amountMinor,
+        date,
+        sub.comment ? sub.comment : '',
+        sub.category ?? '',
+      ),
   );
 
   const nextRound = state.round + 1;
