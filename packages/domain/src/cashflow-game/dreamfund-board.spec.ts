@@ -27,6 +27,24 @@ describe('the Dreamfund maps', () => {
     }
   });
 
+  it('Opportunity is the most common tile, careers are several, and the tiles that cost money stay a fifth of the map or less (not on hard)', () => {
+    for (const size of BOARD_SIZES) {
+      for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+        const mix = TILE_MIX[size][difficulty];
+        const others = (Object.keys(mix) as (keyof typeof mix)[]).filter(
+          (k) => k !== 'opportunity',
+        );
+        for (const kind of others) expect(mix.opportunity).toBeGreaterThan(mix[kind]);
+        expect(mix.career).toBeGreaterThanOrEqual(2);
+        expect(mix.harvest).toBeGreaterThanOrEqual(3);
+        expect(mix.life).toBeGreaterThanOrEqual(3);
+        if (difficulty !== 'hard') {
+          expect((mix.dream + mix.emergency) / TILE_COUNTS[size]).toBeLessThanOrEqual(1 / 5);
+        }
+      }
+    }
+  });
+
   it('every shape in every size is a valid board with exactly the mix of its size', () => {
     for (const shape of BOARD_SHAPES) {
       for (const size of BOARD_SIZES) {
