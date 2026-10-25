@@ -1742,6 +1742,7 @@
   "CashflowGame.solo.rolled": "你掷出了 {{total}}",
   "CashflowGame.solo.skipAnimation": "跳过",
   "CashflowGame.solo.passedPayday": "发薪日!",
+  "CashflowGame.solo.latest": "最新",
   "CashflowGame.solo.decisionTitle": "你停在了 {{space}}",
   "CashflowGame.solo.decisionHint": "先处理这张卡再点“完成”,或者放弃它。在此之前不能再掷骰子。",
   "CashflowGame.solo.openCard": "打开卡片",

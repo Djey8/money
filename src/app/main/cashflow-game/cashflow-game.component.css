@@ -512,29 +512,68 @@
 /* Switches between Starting/Live instead of showing both stacked (JFK, 2026-09-29). */
 .cf-scenario-toggle {
   display: flex;
-  gap: 4px;
-  margin: 4px 0 16px;
-  background-color: var(--color-background);
-  border-radius: var(--radius-md);
-  padding: 4px;
+  margin: 4px 0 14px;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: var(--color-surface);
 }
 
 .cf-scenario-toggle-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   background: none;
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 8px;
+  border-inline-start: 1px solid var(--color-border, #ddd);
+  padding: 9px 6px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: inherit;
   cursor: pointer;
 }
 
+.cf-scenario-toggle-btn:first-child {
+  border-inline-start: 0;
+}
+
 .cf-scenario-toggle-btn--active {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--color-primary, #2a7de1);
+  color: #fff;
+}
+
+/* The way on to the projects of the player whose books are on screen: three big buttons. */
+.cf-project-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cf-project-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 4.2rem;
+  padding: 10px 6px;
+  border: 0;
+  border-radius: var(--radius-lg, 12px);
+  background-color: var(--color-primary, #2a7de1);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cf-project-link span {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.cf-project-link:hover {
+  filter: brightness(1.08);
 }
 
 /* The same widget the app's own Cashflow/Subscriptions pages use (.cashflowBox/.TextLable/
@@ -2746,4 +2785,18 @@
 }
 .cf-payday-tile--net b.cf-negative {
   color: var(--color-danger);
+}
+
+/* The small line that keeps what the last Payday paid once its big popup has gone. */
+.cf-latest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-primary-light, #e3f0fd);
+  font-size: 0.9rem;
+  animation: cf-payday-pop 0.28s ease-out;
 }

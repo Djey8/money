@@ -2383,6 +2383,26 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
+  it('the big Payday popup steps aside after a few seconds and leaves the small Latest line, until the next roll', () => {
+    jest.useFakeTimers();
+    try {
+      const { component } = soloComponent();
+      const summary = { count: 1, incomeMinor: 300000, expensesMinor: 270000, netMinor: 30000 };
+      (component as any).paydaySummary = summary;
+      (component as any).showPayday();
+      expect(component.paydayBanner).toEqual(summary);
+      expect(component.paydayLatest).toBeNull();
+      jest.advanceTimersByTime(4000);
+      expect(component.paydayBanner).toBeNull();
+      expect(component.paydayLatest).toEqual(summary);
+      // the next roll starts: the last Payday is history
+      (component as any).clearPayday();
+      expect(component.paydayLatest).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('info banners go with the next thing the player does: any click clears them, the click’s own notice stays', () => {
     const { component } = soloComponent();
     component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };

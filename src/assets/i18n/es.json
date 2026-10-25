@@ -1686,6 +1686,7 @@
   "CashflowGame.solo.rolled": "Sacaste {{total}}",
   "CashflowGame.solo.skipAnimation": "Omitir",
   "CashflowGame.solo.passedPayday": "¡Día de pago!",
+  "CashflowGame.solo.latest": "Último",
   "CashflowGame.solo.decisionTitle": "Caíste en {{space}}",
   "CashflowGame.solo.decisionHint": "Ocúpate de la carta y pulsa Hecho, o pásala. No puedes tirar otra vez antes.",
   "CashflowGame.solo.openCard": "Abrir la carta",

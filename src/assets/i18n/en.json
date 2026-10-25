@@ -1717,6 +1717,7 @@
   "CashflowGame.solo.rolled": "You rolled {{total}}",
   "CashflowGame.solo.skipAnimation": "Skip",
   "CashflowGame.solo.passedPayday": "Payday!",
+  "CashflowGame.solo.latest": "Latest",
   "CashflowGame.solo.decisionTitle": "You landed on {{space}}",
   "CashflowGame.solo.decisionHint": "Deal with the card, then press Done - or pass it. You cannot roll again before.",
   "CashflowGame.solo.openCard": "Open the card",

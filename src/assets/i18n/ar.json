@@ -1717,6 +1717,7 @@
   "CashflowGame.solo.rolled": "حصلت على {{total}}",
   "CashflowGame.solo.skipAnimation": "تخطَّ",
   "CashflowGame.solo.passedPayday": "يوم الراتب!",
+  "CashflowGame.solo.latest": "الأحدث",
   "CashflowGame.solo.decisionTitle": "توقفت عند {{space}}",
   "CashflowGame.solo.decisionHint": "تعامل مع البطاقة ثم اضغط تم، أو تجاوزها. لا يمكنك الرمي مجددًا قبل ذلك.",
   "CashflowGame.solo.openCard": "افتح البطاقة",

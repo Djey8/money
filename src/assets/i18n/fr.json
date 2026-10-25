@@ -1742,6 +1742,7 @@
   "CashflowGame.solo.rolled": "Vous avez fait {{total}}",
   "CashflowGame.solo.skipAnimation": "Passer",
   "CashflowGame.solo.passedPayday": "Jour de paie !",
+  "CashflowGame.solo.latest": "Dernier",
   "CashflowGame.solo.decisionTitle": "Vous êtes tombé sur {{space}}",
   "CashflowGame.solo.decisionHint": "Occupez-vous de la carte puis appuyez sur Terminé, ou passez-la. Vous ne pouvez pas relancer avant.",
   "CashflowGame.solo.openCard": "Ouvrir la carte",

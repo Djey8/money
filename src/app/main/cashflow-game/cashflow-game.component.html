@@ -69,206 +69,43 @@
         </button>
       </div>
 
-      <!-- Starting scenario: the card's own printed numbers. -->
-      <ng-container *ngIf="professionCardView === 'start'">
-        <!-- Same widget the app's own Cashflow/Subscriptions pages use (Cashflow.Income/Expenses/title), just small. -->
-        <div class="cf-mini-cashflow-box">
-          <h5 class="cf-mini-text-label">{{ 'Cashflow.Income' | translate }}</h5>
-          <div class="cf-mini-amount">
-            {{ toDisplayAmount(profession.salaryMinor) | appNumber }} {{ appState.currency }}
-          </div>
-          <h5 class="cf-mini-text-label">{{ 'CashflowGame.passiveIncome' | translate }}</h5>
-          <div class="cf-mini-amount">
-            {{ professionStartingPassive | appNumber }} {{ appState.currency }}
-          </div>
-          <div class="cf-mini-operation">−</div>
-          <h5 class="cf-mini-text-label">{{ 'Cashflow.Expenses' | translate }}</h5>
-          <div class="cf-mini-amount">
-            {{ professionTotalExpenses(profession) | appNumber }} {{ appState.currency }}
-          </div>
-          <h5 class="cf-mini-text-label">{{ 'Cashflow.title' | translate }}</h5>
-          <div
-            class="cf-mini-amount cf-mini-amount--total"
-            [class.cf-mini-amount--negative]="professionMonthlyCashflow(profession) < 0"
-          >
-            {{ professionMonthlyCashflow(profession) | appNumber }} {{ appState.currency }}
-          </div>
-        </div>
-
-        <h4>{{ 'CashflowGame.income' | translate }}</h4>
-        <ul class="cf-line-list">
-          <li>
-            <span>{{ 'CashflowGame.salary' | translate }}</span>
-            <span
-              >{{ toDisplayAmount(profession.salaryMinor) | appNumber }}
-              {{ appState.currency }}</span
-            >
-          </li>
-          <li class="cf-line-total">
-            <span>{{ 'CashflowGame.total' | translate }}</span>
-            <span
-              >{{ toDisplayAmount(profession.salaryMinor) | appNumber }}
-              {{ appState.currency }}</span
-            >
-          </li>
-        </ul>
-
-        <h4>{{ 'CashflowGame.expenses' | translate }}</h4>
-        <ul class="cf-line-list">
-          <li *ngFor="let line of profession.expenses">
-            <span>{{ expenseLineTitle(profession, line) }}</span>
-            <span>{{ toDisplayAmount(line.amountMinor) | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <li class="cf-line-total">
-            <span>{{ 'CashflowGame.total' | translate }}</span>
-            <span
-              >{{ professionTotalExpenses(profession) | appNumber }} {{ appState.currency }}</span
-            >
-          </li>
-        </ul>
-
-        <p class="cf-profession-card-note">
-          {{ 'CashflowGame.perChildExpense' | translate }}:
-          {{ toDisplayAmount(profession.perChildExpenseMinor) | appNumber }} {{ appState.currency }}
-        </p>
-
-        <h4>{{ 'CashflowGame.assets' | translate }}</h4>
-        <ul class="cf-line-list">
-          <li>
-            <span>{{ 'CashflowGame.savings' | translate }}</span>
-            <span
-              >{{ toDisplayAmount(profession.savingsMinor) | appNumber }}
-              {{ appState.currency }}</span
-            >
-          </li>
-          <li class="cf-line-total">
-            <span>{{ 'CashflowGame.total' | translate }}</span>
-            <span
-              >{{ toDisplayAmount(profession.savingsMinor) | appNumber }}
-              {{ appState.currency }}</span
-            >
-          </li>
-        </ul>
-
-        <ng-container *ngIf="profession.starterKit.liabilities?.length">
-          <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
-          <ul class="cf-line-list">
-            <li *ngFor="let liability of profession.starterKit.liabilities">
-              <span>{{ liabilityTag(profession, liability) }}</span>
-              <span
-                >{{ toDisplayAmount(liability.amountMinor) | appNumber }}
-                {{ appState.currency }}</span
-              >
-            </li>
-            <li class="cf-line-total">
-              <span>{{ 'CashflowGame.total' | translate }}</span>
-              <span
-                >{{ professionTotalLiabilities(profession) | appNumber }}
-                {{ appState.currency }}</span
-              >
-            </li>
-          </ul>
-        </ng-container>
+      <!-- The card's three sheets (JFK, 2026-10-25): the small Cashflow calculation, the Income Statement of a normal month and the -->
+      <!-- Balance Sheet, in the boxes of the app's own pages - of the printed start, or of the running game. -->
+      <ng-container *ngIf="professionSheets as sheets">
+        <app-profession-sheets
+          [currency]="appState.currency"
+          [cashIncome]="sheets.cashIncome"
+          [cashPassive]="sheets.cashPassive"
+          [cashExpenses]="sheets.cashExpenses"
+          [cashTotal]="sheets.cashTotal"
+          [revenue]="sheets.revenue"
+          [revenueTotal]="sheets.revenueTotal"
+          [expenses]="sheets.expenses"
+          [expensesTotal]="sheets.expensesTotal"
+          [assets]="sheets.assets"
+          [assetsTotal]="sheets.assetsTotal"
+          [liabilities]="sheets.liabilities"
+          [liabilitiesTotal]="sheets.liabilitiesTotal"
+          (liabilityOpen)="openLiability($event)"
+        ></app-profession-sheets>
       </ng-container>
+      <p class="cf-profession-card-note" *ngIf="professionCardView === 'start' || !hasActiveGame">
+        {{ 'CashflowGame.perChildExpense' | translate }}:
+        {{ toDisplayAmount(profession.perChildExpenseMinor) | appNumber }} {{ appState.currency }}
+      </p>
 
-      <!-- Live scenario: the same shape, read from the actual running game — salary/expenses may -->
-      <!-- have been edited, property cashflow may now count as passive, liabilities may be paid -->
-      <!-- down (JFK, 2026-09-26: "on a live game you can have more Incomes or more expenses..."). -->
-      <ng-container *ngIf="professionCardView === 'live' && hasActiveGame">
-        <div class="cf-mini-cashflow-box">
-          <h5 class="cf-mini-text-label">{{ 'Cashflow.Income' | translate }}</h5>
-          <div class="cf-mini-amount">
-            {{ liveTotalIncome | appNumber }} {{ appState.currency }}
-          </div>
-          <h5 class="cf-mini-text-label">{{ 'CashflowGame.passiveIncome' | translate }}</h5>
-          <div class="cf-mini-amount">
-            {{ livePassiveIncome | appNumber }} {{ appState.currency }}
-          </div>
-          <div class="cf-mini-operation">−</div>
-          <h5 class="cf-mini-text-label">{{ 'Cashflow.Expenses' | translate }}</h5>
-          <div class="cf-mini-amount">
-            {{ liveTotalExpenses | appNumber }} {{ appState.currency }}
-          </div>
-          <h5 class="cf-mini-text-label">{{ 'Cashflow.title' | translate }}</h5>
-          <div
-            class="cf-mini-amount cf-mini-amount--total"
-            [class.cf-mini-amount--negative]="liveCashflow < 0"
-          >
-            {{ liveCashflow | appNumber }} {{ appState.currency }}
-          </div>
-        </div>
-
-        <h4>{{ 'CashflowGame.income' | translate }}</h4>
-        <ul class="cf-line-list">
-          <li>
-            <span>{{ 'CashflowGame.salary' | translate }}</span>
-            <span>{{ liveSalary | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <li *ngIf="livePassiveIncome">
-            <span>{{ 'CashflowGame.passiveIncome' | translate }}</span>
-            <span>{{ livePassiveIncome | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <!-- Which investment pays how much -->
-          <li class="cf-line-sub" *ngFor="let line of livePassiveIncomeLines">
-            <span>{{ line.name }}</span>
-            <span>{{ line.amount | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <li class="cf-line-total">
-            <span>{{ 'CashflowGame.total' | translate }}</span>
-            <span>{{ liveTotalIncome | appNumber }} {{ appState.currency }}</span>
-          </li>
-        </ul>
-
-        <h4>{{ 'CashflowGame.expenses' | translate }}</h4>
-        <ul class="cf-line-list">
-          <li *ngFor="let line of liveExpenseLines">
-            <span>{{ line.title }}</span>
-            <span>{{ line.amount | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <li class="cf-line-total">
-            <span>{{ 'CashflowGame.total' | translate }}</span>
-            <span>{{ -liveTotalExpenses | appNumber }} {{ appState.currency }}</span>
-          </li>
-        </ul>
-
-        <h4>{{ 'CashflowGame.assets' | translate }}</h4>
-        <ul class="cf-line-list">
-          <li>
-            <span>{{ 'CashflowGame.cashOnHand' | translate }}</span>
-            <span>{{ cash | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <li *ngFor="let asset of liveAssetLines">
-            <span>{{ asset.name }}</span>
-            <span>{{ asset.amount | appNumber }} {{ appState.currency }}</span>
-          </li>
-          <li class="cf-line-total">
-            <span>{{ 'CashflowGame.total' | translate }}</span>
-            <span>{{ liveTotalAssets | appNumber }} {{ appState.currency }}</span>
-          </li>
-        </ul>
-
-        <ng-container *ngIf="liveLiabilities.length">
-          <h4>{{ 'CashflowGame.liabilities' | translate }}</h4>
-          <ul class="cf-line-list">
-            <!-- a row opens that balance item in the Info panel, where it can be paid back (JFK, 2026-10-19) -->
-            <li
-              *ngFor="let liability of liveLiabilities; let i = index"
-              class="cf-line-link"
-              tabindex="0"
-              role="button"
-              (click)="openLiability(i)"
-              (keydown.enter)="openLiability(i)"
-            >
-              <span>{{ liability.tag }}</span>
-              <span>{{ liability.amount | appNumber }} {{ appState.currency }}</span>
-            </li>
-            <li class="cf-line-total">
-              <span>{{ 'CashflowGame.total' | translate }}</span>
-              <span>{{ liveTotalLiabilities | appNumber }} {{ appState.currency }}</span>
-            </li>
-          </ul>
-        </ng-container>
-      </ng-container>
+      <!-- On to the projects: big, so the player is one press away from the status of Grow, Smile and Fire. -->
+      <nav class="cf-project-links" *ngIf="hasActiveGame" aria-label="Projects">
+        <button type="button" class="cf-project-link" (click)="goToProjects('/grow')">
+          <span aria-hidden="true">📈</span>{{ 'Menu.grow' | translate }}
+        </button>
+        <button type="button" class="cf-project-link" (click)="goToProjects('/smile')">
+          <span aria-hidden="true">😊</span>{{ 'Menu.smile' | translate }}
+        </button>
+        <button type="button" class="cf-project-link" (click)="goToProjects('/fire')">
+          <span aria-hidden="true">🔥</span>{{ 'Menu.fire' | translate }}
+        </button>
+      </nav>
 
       <!-- Before a game: start it from here, below the info, after shuffling or viewing a profession. -->
       <div class="cf-actions cf-profession-start" *ngIf="!hasActiveGame">
@@ -810,6 +647,16 @@
           </div>
         </ng-template>
         <div class="cf-card cf-solo" *ngIf="isSolo">
+          <!-- What the last Payday paid, small: the big popup has gone, the numbers stay until the next roll. -->
+          <p class="cf-latest" *ngIf="paydayLatest as latest" role="status">
+            <span>💰 {{ 'CashflowGame.solo.latest' | translate }}</span>
+            <b>{{ 'CashflowGame.solo.passedPayday' | translate }}</b>
+            <span class="cf-payday-in">{{ signedCardAmount(latest.incomeMinor) }}</span>
+            <span class="cf-payday-out">{{ signedCardAmount(-latest.expensesMinor) }}</span>
+            <b [class.cf-negative]="latest.netMinor < 0"
+              >= {{ signedCardAmount(latest.netMinor) }}</b
+            >
+          </p>
           <div class="cf-solo-board">
             <div class="cf-ring">
               <app-rat-race-board
@@ -855,7 +702,7 @@
                     type="button"
                     class="cf-friend-sale-close"
                     [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
-                    (click)="paydayBanner = null"
+                    (click)="dismissPayday()"
                   >
                     ✕
                   </button>
@@ -934,10 +781,20 @@
                 <div class="cf-actions">
                   <button
                     class="btn btn--primary"
-                    [disabled]="isBusy || !!decisionFaces"
+                    [disabled]="isBusy || !!decisionFaces || decisionRolling"
                     (click)="rollDecisionDice(deal)"
+                    aria-live="polite"
                   >
-                    🎲 {{ 'CashflowGame.diceRollButton' | translate }}
+                    🎲
+                    {{
+                      (decisionRolling
+                        ? 'CashflowGame.solo.rolling'
+                        : 'CashflowGame.diceRollButton'
+                      ) | translate
+                    }}
+                  </button>
+                  <button class="btn btn--sm" *ngIf="decisionRolling" (click)="skipWalk()">
+                    {{ 'CashflowGame.solo.skipAnimation' | translate }}
                   </button>
                 </div>
                 <div class="cf-actions cf-decision-real" *ngIf="!reportRollsForbidden">

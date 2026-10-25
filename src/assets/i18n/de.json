@@ -1742,6 +1742,7 @@
   "CashflowGame.solo.rolled": "Du hast {{total}} gewürfelt",
   "CashflowGame.solo.skipAnimation": "Überspringen",
   "CashflowGame.solo.passedPayday": "Zahltag!",
+  "CashflowGame.solo.latest": "Zuletzt",
   "CashflowGame.solo.decisionTitle": "Du bist auf {{space}} gelandet",
   "CashflowGame.solo.decisionHint": "Kümmere dich um die Karte und drücke dann Fertig - oder lass sie liegen. Vorher kannst du nicht erneut würfeln.",
   "CashflowGame.solo.openCard": "Karte öffnen",

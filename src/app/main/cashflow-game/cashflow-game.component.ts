@@ -58,6 +58,7 @@ import { ToastService } from 'src/app/shared/services/toast.service';
 import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
+import { ProfessionSheetsComponent, type SheetLine } from './profession-sheets.component';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { RatRaceBoardComponent, SPACE_GLYPHS, type BoardToken } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
@@ -99,6 +100,25 @@ interface CardTile {
 /** How a market card is filed in the quick filter. */
 type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 
+/** What the profession panel's sheets show (see ProfessionSheetsComponent). */
+interface ProfessionSheetNumbers {
+  cashIncome: number;
+  cashPassive: number;
+  cashExpenses: number;
+  cashTotal: number;
+  revenue: SheetLine[];
+  revenueTotal: number;
+  expenses: SheetLine[];
+  expensesTotal: number;
+  assets: SheetLine[];
+  assetsTotal: number;
+  liabilities: SheetLine[];
+  liabilitiesTotal: number;
+}
+
+/** How long the big Payday popup stays before it steps aside for the small Latest line. */
+const PAYDAY_POPUP_MS = 3500;
+
 /** How long the token rests on each space while it walks, and how long a Payday flashes. */
 const WALK_STEP_MS = 320;
 /** The dice tumble, then rest on their number for a beat, before the token moves. */
@@ -121,6 +141,7 @@ const DICE_DECISION_REST_MS = 900;
     RouterModule,
     TranslateModule,
     AppNumberPipe,
+    ProfessionSheetsComponent,
     AppDatePipe,
     RatRaceBoardComponent,
   ],
@@ -572,6 +593,88 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.appState.liabilities;
   }
 
+  /**
+   * The numbers of the profession panel's three sheets (Cashflow, Income Statement, Balance Sheet), for the card's printed start or
+   * the running game. One object per content, so the sheets are not drawn again on every check.
+   */
+  private sheetsCache: { key: string; value: ProfessionSheetNumbers } | null = null;
+
+  get professionSheets(): ProfessionSheetNumbers | null {
+    const profession = this.viewedProfession;
+    if (!profession) return null;
+    const value =
+      this.professionCardView === 'live' && this.hasActiveGame
+        ? this.liveSheets()
+        : this.startSheets(profession);
+    const key = JSON.stringify(value);
+    if (this.sheetsCache?.key !== key) this.sheetsCache = { key, value };
+    return this.sheetsCache.value;
+  }
+
+  private startSheets(profession: CashflowProfession): ProfessionSheetNumbers {
+    const salary = this.toDisplayAmount(profession.salaryMinor);
+    const expenses = this.professionTotalExpenses(profession);
+    const liabilities = (profession.starterKit.liabilities ?? []).map((line) => ({
+      name: this.liabilityTag(profession, line),
+      amount: this.toDisplayAmount(line.amountMinor),
+    }));
+    const savings = this.toDisplayAmount(profession.savingsMinor);
+    return {
+      cashIncome: salary,
+      cashPassive: this.professionStartingPassive,
+      cashExpenses: expenses,
+      cashTotal: this.professionMonthlyCashflow(profession),
+      revenue: [{ name: this.translate.instant('CashflowGame.salary'), amount: salary }],
+      revenueTotal: salary,
+      expenses: profession.expenses.map((line) => ({
+        name: this.expenseLineTitle(profession, line),
+        amount: this.toDisplayAmount(line.amountMinor),
+      })),
+      expensesTotal: expenses,
+      assets: [{ name: this.translate.instant('CashflowGame.savings'), amount: savings }],
+      assetsTotal: savings,
+      liabilities,
+      liabilitiesTotal: this.professionTotalLiabilities(profession),
+    };
+  }
+
+  private liveSheets(): ProfessionSheetNumbers {
+    const passive = this.livePassiveIncome;
+    return {
+      cashIncome: this.liveTotalIncome,
+      cashPassive: passive,
+      cashExpenses: this.liveTotalExpenses,
+      cashTotal: this.liveCashflow,
+      revenue: [
+        { name: this.translate.instant('CashflowGame.salary'), amount: this.liveSalary },
+        ...(passive
+          ? [{ name: this.translate.instant('CashflowGame.passiveIncome'), amount: passive }]
+          : []),
+        ...this.livePassiveIncomeLines.map((line) => ({ ...line, sub: true })),
+      ],
+      revenueTotal: this.liveTotalIncome,
+      expenses: this.liveExpenseLines.map((line) => ({ name: line.title, amount: line.amount })),
+      expensesTotal: -this.liveTotalExpenses,
+      assets: [
+        { name: this.translate.instant('CashflowGame.cashOnHand'), amount: this.cash },
+        ...this.liveAssetLines,
+      ],
+      assetsTotal: this.liveTotalAssets,
+      liabilities: this.liveLiabilities.map((liability, index) => ({
+        name: liability.tag,
+        amount: Number(liability.amount),
+        index,
+      })),
+      liabilitiesTotal: this.liveTotalLiabilities,
+    };
+  }
+
+  /** From the profession panel to the page of the projects (Grow, Smile, Fire): the game panel closes, the page shows the books on screen. */
+  goToProjects(path: '/grow' | '/smile' | '/fire'): void {
+    this.closeWindow();
+    void this.router.navigate([path]);
+  }
+
   /** The balance item (a liability) opens in the Info panel, from where it can be paid back. */
   async openLiability(index: number): Promise<void> {
     const liability = this.appState.liabilities[index];
@@ -797,6 +900,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     expensesMinor: number;
     netMinor: number;
   } | null = null;
+  /** The Payday popup is big and covers the board: after a few seconds it steps aside and this small "Latest" line above the board keeps the numbers (JFK, 2026-10-25). */
+  paydayLatest: typeof this.paydayBanner = null;
+  private paydayTimer: ReturnType<typeof setTimeout> | undefined;
   private paydaySummary: typeof this.paydayBanner = null;
   private skipWalking = false;
   /** Where the token is drawn while it walks; undefined means "where the game says it is". */
@@ -1015,7 +1121,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    */
   private async rollRemote(dice: 1 | 2): Promise<void> {
     const from = this.appState.cashflowGame.boardPosition;
-    this.paydayBanner = null;
+    this.clearPayday();
     RemoteGameHook.holdUpdates = true;
     this.walking = true;
     this.walkingAt = from;
@@ -1029,7 +1135,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       const total = Number(data['total'] ?? 0);
       this.isBusy = true;
       this.lastDice = faces;
-      this.paydayBanner = null;
+      this.clearPayday();
       await this.tumbleDice(faces.length || dice);
       // the dice are at rest: the history line may say what was rolled (where the token lands follows when it has landed)
       RemoteGameHook.diceRested = true;
@@ -1094,7 +1200,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     });
     if (!result) return;
     this.lastDice = result.roll.dice;
-    this.paydayBanner = null; // the last roll's Payday is done with once the next roll starts
+    this.clearPayday(); // the last roll's Payday is done with once the next roll starts
     this.paydaySummary = this.summarisePaydays(result);
     void this.walkTo(from, result);
   }
@@ -1102,6 +1208,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** Skips the rest of the walk. */
   skipWalk(): void {
     this.skipWalking = true;
+    this.decisionSkip = true;
   }
 
   private get reducedMotion(): boolean {
@@ -1118,7 +1225,24 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** Brings up the Payday banner (the roll's own numbers) - once the token enters a Payday space, or at the opening. */
   private showPayday(): void {
+    clearTimeout(this.paydayTimer);
+    this.paydayLatest = null;
     this.paydayBanner = this.paydaySummary;
+    this.paydayTimer = setTimeout(() => this.dismissPayday(), PAYDAY_POPUP_MS);
+  }
+
+  /** The big popup is done: the numbers stay as the small Latest line until the next roll. */
+  dismissPayday(): void {
+    clearTimeout(this.paydayTimer);
+    if (this.paydayBanner) this.paydayLatest = this.paydayBanner;
+    this.paydayBanner = null;
+  }
+
+  /** A new roll starts: the last Payday is history, in both forms. */
+  private clearPayday(): void {
+    clearTimeout(this.paydayTimer);
+    this.paydayBanner = null;
+    this.paydayLatest = null;
   }
 
   /**
@@ -1127,7 +1251,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * a notice that handler raises is not swept away by the same click.
    */
   dismissInfoBanners(): void {
-    this.paydayBanner = null;
+    this.dismissPayday();
     this.marketNotice = null;
     this.mlmBanner = null;
   }
@@ -1144,12 +1268,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** A Payday is on show and a kept MLM card is waiting for its roll. */
   private get mlmRollIsDue(): boolean {
     return (
-      this.paydayBanner !== null &&
+      (this.paydayBanner !== null || this.paydayLatest !== null) &&
       (this.cashflowGameService.openDecisions ?? []).some((deal) => deal.recurring && deal.rollDue)
     );
   }
 
   ngOnDestroy(): void {
+    clearTimeout(this.paydayTimer);
     document.removeEventListener('click', this.onAnyClick, true);
     this.fitObserver?.disconnect();
     if (RemoteGameHook.ringVisible) RemoteGameHook.ringVisible = null;
@@ -1441,7 +1566,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.spaceData = null;
     this.rollResult = null;
     this.marketNotice = null;
-    this.paydayBanner = null;
+    this.clearPayday();
     this.lastDice = [];
     this.diceTumbling = false;
     this.backToMain();
@@ -2018,8 +2143,25 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.isSolo ? [] : this.visibleDecisions;
   }
 
+  /**
+   * The die of a dice action is on its way (from the press of the button until it has come to rest): the button says so and a skip
+   * button shows, as at the normal roll (JFK, 2026-10-25) - there is no doubt whether it was pressed.
+   */
+  decisionRolling = false;
+  private decisionSkip = false;
+
   async rollDecisionDice(deal: CashflowAssetDeal): Promise<void> {
-    if (this.isBusy || this.decisionFaces) return;
+    if (this.isBusy || this.decisionFaces || this.decisionRolling) return;
+    this.decisionRolling = true;
+    this.decisionSkip = false;
+    try {
+      await this.rollDecisionDiceNow(deal);
+    } finally {
+      this.decisionRolling = false;
+    }
+  }
+
+  private async rollDecisionDiceNow(deal: CashflowAssetDeal): Promise<void> {
     if (this.remote) {
       const payoutTotal = (deal.payoutMinor ?? 0) * this.cashflowGameService.paydayRollCount(deal);
       this.rollingDecision = deal;
@@ -2028,7 +2170,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       const face = decided?.data?.['roll'];
       if (typeof face === 'number') {
         this.decisionFaces = [face];
-        this.skipWalking = false;
+        this.skipWalking = this.decisionSkip;
         await this.tumbleDice(1);
         await this.pause(DICE_DECISION_REST_MS);
         // as in the solo game: the die stays on its number, with what it came to, until the player continues
@@ -2040,7 +2182,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.isBusy = true;
     const roll = this.cashflowGameService.rollDie();
     this.decisionFaces = [roll];
-    this.skipWalking = false;
+    this.skipWalking = this.decisionSkip;
     await this.tumbleDice(1);
     await this.pause(DICE_DECISION_REST_MS);
     this.isBusy = false;
