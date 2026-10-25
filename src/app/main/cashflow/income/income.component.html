@@ -47,13 +47,6 @@
   />
 </div>
 
-<!-- Quick periods: month, quarter, year ... and back through the time series -->
-<app-period-filter
-  [filter]="classReference.currentFilter"
-  (apply)="quickFilterByDate()"
-  (clear)="clearAllFilters()"
-></app-period-filter>
-
 <!-- Original Income Statement (not filtered) -->
 <div id="incomeStatement" *ngIf="!classReference.isFiltered">
   <div

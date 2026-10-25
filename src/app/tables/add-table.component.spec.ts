@@ -98,8 +98,21 @@ describe('AddTableComponent', () => {
     expect(component.form.maxSeats).toBe(24);
   });
 
+  it('keeps the rules of play behind an Advanced button until they are asked for', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('input[name="spectators"]')).toBeNull();
+    (element.querySelector('.at-advanced') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('input[name="spectators"]')).not.toBeNull();
+    (element.querySelector('.at-advanced') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('input[name="spectators"]')).toBeNull();
+  });
+
   it('every setting says in a line what it does, and a switch flips its rule', () => {
     const component = fixture.componentInstance;
+    (fixture.nativeElement.querySelector('.at-advanced') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const rows = fixture.nativeElement.querySelectorAll('.at-row');
     expect(rows.length).toBeGreaterThan(10);
     for (const row of Array.from<HTMLElement>(rows)) {

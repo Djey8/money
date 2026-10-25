@@ -19,7 +19,6 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
-import { PeriodFilterComponent } from 'src/app/shared/components/period-filter/period-filter.component';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
 
 /**
@@ -34,7 +33,6 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
     AppDatePipe,
     AppNumberPipe,
     SharedFilterComponent,
-    PeriodFilterComponent,
     InfoInterestsComponent,
     InfoPropertiesComponent,
   ],

@@ -2,9 +2,41 @@
   <h4 class="filter-title">{{ 'Cashflow.Filter' | translate }}</h4>
   <hr class="filter-divider" />
 
-  <!-- Date Range (Always Visible) -->
+  <!-- The period, as in the statistics: week, month, quarter, year, all - and back through the time series; only Custom has dates to pick -->
   <div class="quick-filter-controls">
-    <div class="date-range-quick">
+    <div
+      class="chart-filter-periods"
+      role="radiogroup"
+      [attr.aria-label]="'ChartFilter.title' | translate"
+    >
+      <button
+        *ngFor="let period of periods"
+        type="button"
+        role="radio"
+        class="chart-filter-period-btn"
+        [class.active]="shown === period"
+        [attr.aria-checked]="shown === period"
+        (click)="choosePeriod(period)"
+      >
+        {{ (period === 'custom' ? 'BI.custom' : 'Period.' + period) | translate }}
+      </button>
+    </div>
+    <div class="chart-filter-nav" *ngIf="shown && shown !== 'all' && shown !== 'custom'">
+      <button type="button" class="chart-filter-nav-btn" aria-label="‹" (click)="stepPeriod(-1)">
+        &lt;
+      </button>
+      <span class="chart-filter-date-label">{{ periodLabel }}</span>
+      <button
+        type="button"
+        class="chart-filter-nav-btn"
+        aria-label="›"
+        [disabled]="periodIndex >= 0"
+        (click)="stepPeriod(1)"
+      >
+        &gt;
+      </button>
+    </div>
+    <div class="date-range-quick" *ngIf="shown === 'custom'">
       <label for="quickStartDate">{{ 'Cashflow.start' | translate }}</label>
       <input type="date" id="quickStartDate" [(ngModel)]="filter.startDate" />
 

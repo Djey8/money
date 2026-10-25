@@ -288,8 +288,17 @@ function accountName(): string {
             </div>
           </section>
 
-          <!-- the rules of play -->
-          <section class="at-group">
+          <!-- the rules of play: only on demand, so the panel stays short -->
+          <button
+            type="button"
+            class="at-advanced"
+            [attr.aria-expanded]="showAdvanced"
+            (click)="showAdvanced = !showAdvanced"
+          >
+            <span>{{ showAdvanced ? '▾' : '▸' }} {{ a.advanced }}</span>
+            <small>{{ a.advancedHint }}</small>
+          </button>
+          <section class="at-group" *ngIf="showAdvanced">
             <h3>{{ a.groupRules }}</h3>
             <div class="at-row" *ngFor="let rule of switches()">
               <div class="at-label">
@@ -530,6 +539,27 @@ function accountName(): string {
       .at-switch input:checked + .at-switch-track::after {
         transform: translateX(20px);
       }
+      .at-advanced {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px dashed var(--color-border, #bbb);
+        border-radius: 12px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+      }
+      .at-advanced span {
+        font-weight: 600;
+      }
+      .at-advanced small {
+        opacity: 0.7;
+      }
       .at-open {
         padding: 12px;
         font-size: 1.05rem;
@@ -566,6 +596,8 @@ export class AddTableComponent implements OnInit {
 
   t: TablesTexts = tablesTexts('en');
   a: AddTableTexts = addTableTexts('en');
+  /** The rules of play are only shown on demand. */
+  showAdvanced = false;
   /** The table name that is used when none is typed - a fresh one with the dice. */
   suggestion = '';
   private suggestionIndex = 0;
