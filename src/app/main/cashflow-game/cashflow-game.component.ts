@@ -10,6 +10,7 @@ import {
   CashflowDoodadCard,
   CashflowMarketCard,
   CashflowProfession,
+  CashflowProfileTexts,
   computeCashflowProfessionMonthlyCashflowMinor,
   fromMinorUnits,
   maxRepayableMinor,
@@ -160,7 +161,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   public appState = AppStateService.instance;
   public gameSets = this.cashflowGameService.gameSets;
 
-  selectedGameSetId = this.playableGameSets[0]?.id ?? '';
+  /** The custom edition is the default (JFK, 2026-10-25); the classic one is a switch away. */
+  selectedGameSetId =
+    (this.playableGameSets.find((set) => set.edition === 'custom') ?? this.playableGameSets[0])
+      ?.id ?? '';
   selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
   /**
    * A card action is under way (JFK, 2026-10-25: a press that shows nothing for a while is a press that gets pressed twice). Once the
@@ -277,7 +281,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** Opens the game dashboard on its main view, where the open dice decision stands out. */
   showOpenDecision(): void {
     this.viewedProfession = null;
-    this.choosingLanguage = false;
+    this.choosingCharacter = false;
     this.activeCard = null;
     this.dashboardView = 'main';
     CashflowGameComponent.open();
@@ -314,7 +318,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.marketNotice = null;
     this.pendingSpace = null;
     this.spaceData = null;
-    this.choosingLanguage = false;
+    this.choosingCharacter = false;
     CashflowGameComponent.isOpen = false;
     CashflowGameComponent.zIndex = 0;
     this.viewedProfession = null;
@@ -349,7 +353,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * profession" in this panel.
    */
   get playableGameSets() {
-    return this.gameSets.filter((set) => set.id !== 'placeholder');
+    // the classic cards and the custom edition: the other sets (a fixture, the test characters the table bots' champion book is built on) are not offered
+    return this.gameSets.filter((set) => set.id === 'cashflow' || set.edition === 'custom');
   }
 
   get selectedGameSet() {
@@ -756,7 +761,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   startFromCard(profession: CashflowProfession): void {
     this.selectedProfessionId = profession.id;
     this.closeProfessionCard();
-    this.askLanguage();
+    this.toCharacter();
   }
 
   /** "you pick one of the professions, or you shuffle for a profession" (JFK, 2026-09-26). */
@@ -765,7 +770,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (!professions.length) return;
     const pick = pickOne(professions, this.cashflowGameService.rng);
     this.selectedProfessionId = pick.id;
-    this.openProfessionCard(pick);
   }
 
   /**
@@ -774,20 +778,60 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * labels, Grow projects, card texts - follow it for the rest of the game.
    */
   readonly gameLanguages = APP_LANGUAGES;
-  choosingLanguage = false;
+  choosingCharacter = false;
 
   /** The language the app currently speaks - preselected when the question opens. */
   get gameLanguage(): string {
     return this.language.current;
   }
 
-  askLanguage(): void {
+  /** Step 2 of a new game: the character. */
+  toCharacter(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
-    this.choosingLanguage = true;
+    this.choosingCharacter = true;
   }
 
-  cancelLanguage(): void {
-    this.choosingLanguage = false;
+  backToSetup(): void {
+    this.choosingCharacter = false;
+  }
+
+  /** The editions on offer, the custom one first. The physical board only plays the classic one. */
+  get editionOptions() {
+    return [...this.playableGameSets].sort(
+      (a, b) => Number(b.edition === 'custom') - Number(a.edition === 'custom'),
+    );
+  }
+
+  setPlayMode(mode: 'companion' | 'solo'): void {
+    this.playMode = mode;
+    if (mode === 'companion') {
+      const classic = this.playableGameSets.find((set) => set.edition !== 'custom');
+      if (classic) this.chooseEdition(classic.id);
+    }
+  }
+
+  chooseEdition(gameSetId: string): void {
+    this.selectedGameSetId = gameSetId;
+    this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
+  }
+
+  /** Who a character is, in the language of the game (English where it has no text in that language). */
+  profileOf(profession: CashflowProfession | undefined | null): CashflowProfileTexts | null {
+    const texts = profession?.profile?.texts;
+    if (!texts) return null;
+    return texts[this.language.current] ?? texts['en'];
+  }
+
+  private setupSheetsCache: { key: string; value: ProfessionSheetNumbers } | null = null;
+
+  /** The chosen character's printed numbers, as the three sheets. */
+  get setupSheets(): ProfessionSheetNumbers | null {
+    const profession = this.selectedProfession;
+    if (!profession) return null;
+    const value = this.startSheets(profession);
+    const key = JSON.stringify(value);
+    if (this.setupSheetsCache?.key !== key) this.setupSheetsCache = { key, value };
+    return this.setupSheetsCache.value;
   }
 
   /** Switches at once (so the question and the whole app already speak it) and waits for its texts. */
@@ -818,7 +862,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       {
         onSuccess: () => {
           this.isBusy = false;
-          this.choosingLanguage = false;
+          this.choosingCharacter = false;
           this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
           this.closeWindow();
           // A plain router.navigate — no reload needed. Home and the other pages that hold their own
@@ -840,7 +884,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   // ── Solo mode: the app rolls and walks the token (todo/cashflow-game-pro.md, Phase C) ─────────────
 
   /** Chosen with the language when a game starts; a running game keeps the mode it began with. */
-  playMode: 'companion' | 'solo' = 'companion';
+  playMode: 'companion' | 'solo' = 'solo';
 
   // ── The rules a new game is played under (JFK, 2026-10-10) ─────────────────────────────────────
 
@@ -1605,7 +1649,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   private backToStartPanel(): void {
     this.dashboardView = 'main';
     this.viewedProfession = null;
-    this.choosingLanguage = false;
+    this.choosingCharacter = false;
     this.showStartGames = false;
     this.pendingSpace = null;
     this.spaceData = null;

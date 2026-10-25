@@ -28,15 +28,15 @@ export interface SheetLine {
       <h3 class="ps-heading">{{ 'Cashflow.title' | translate }}</h3>
       <div class="ps-cashflow">
         <h5 class="ps-label">{{ 'Cashflow.Income' | translate }}</h5>
-        <div class="ps-amount">{{ cashIncome | appNumber }} {{ currency }}</div>
+        <div class="ps-amount">{{ cashIncome | appNumber: '1.2-2' : false }} {{ currency }}</div>
         <h5 class="ps-label">{{ 'CashflowGame.passiveIncome' | translate }}</h5>
-        <div class="ps-amount">{{ cashPassive | appNumber }} {{ currency }}</div>
+        <div class="ps-amount">{{ cashPassive | appNumber: '1.2-2' : false }} {{ currency }}</div>
         <div class="ps-operation">−</div>
         <h5 class="ps-label">{{ 'Cashflow.Expenses' | translate }}</h5>
-        <div class="ps-amount">{{ cashExpenses | appNumber }} {{ currency }}</div>
+        <div class="ps-amount">{{ cashExpenses | appNumber: '1.2-2' : false }} {{ currency }}</div>
         <h5 class="ps-label">{{ 'Cashflow.title' | translate }}</h5>
         <div class="ps-amount ps-amount--total" [class.ps-negative]="cashTotal < 0">
-          {{ cashTotal | appNumber }} {{ currency }}
+          {{ cashTotal | appNumber: '1.2-2' : false }} {{ currency }}
         </div>
       </div>
     </section>
@@ -52,11 +52,11 @@ export interface SheetLine {
             <tbody>
               <tr *ngFor="let line of revenue" class="ps-row" [class.ps-row--sub]="line.sub">
                 <td>{{ line.name }}</td>
-                <td>{{ line.amount | appNumber }} {{ currency }}</td>
+                <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
               <tr class="ps-row ps-row--total">
                 <td>{{ 'CashflowGame.total' | translate }}</td>
-                <td>{{ revenueTotal | appNumber }} {{ currency }}</td>
+                <td>{{ revenueTotal | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
             </tbody>
           </table>
@@ -70,11 +70,11 @@ export interface SheetLine {
             <tbody>
               <tr *ngFor="let line of expenses" class="ps-row">
                 <td>{{ line.name }}</td>
-                <td>{{ line.amount | appNumber }} {{ currency }}</td>
+                <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
               <tr class="ps-row ps-row--total">
                 <td>{{ 'CashflowGame.total' | translate }}</td>
-                <td>{{ expensesTotal | appNumber }} {{ currency }}</td>
+                <td>{{ expensesTotal | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
             </tbody>
           </table>
@@ -93,11 +93,11 @@ export interface SheetLine {
             <tbody>
               <tr *ngFor="let line of assets" class="ps-row">
                 <td>{{ line.name }}</td>
-                <td>{{ line.amount | appNumber }} {{ currency }}</td>
+                <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
               <tr class="ps-row ps-row--total">
                 <td>{{ 'CashflowGame.total' | translate }}</td>
-                <td>{{ assetsTotal | appNumber }} {{ currency }}</td>
+                <td>{{ assetsTotal | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
             </tbody>
           </table>
@@ -120,11 +120,11 @@ export interface SheetLine {
                 (keydown.enter)="open(line)"
               >
                 <td>{{ line.name }}</td>
-                <td>{{ line.amount | appNumber }} {{ currency }}</td>
+                <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
               <tr class="ps-row ps-row--total">
                 <td>{{ 'CashflowGame.total' | translate }}</td>
-                <td>{{ liabilitiesTotal | appNumber }} {{ currency }}</td>
+                <td>{{ liabilitiesTotal | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
             </tbody>
           </table>

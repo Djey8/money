@@ -15,6 +15,42 @@ import {
 import { CashflowGameSubscription } from './engine';
 import { initialCashflowGameState } from './types';
 
+describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
+  const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories')!;
+  const student = set.professions.find(
+    (profession) => profession.id === 'dual-student-informatik',
+  )!;
+
+  it('is the only character of the edition, with a story in English and German', () => {
+    expect(set.edition).toBe('custom');
+    expect(set.professions.map((profession) => profession.id)).toEqual(['dual-student-informatik']);
+    expect(student.profile?.texts['en'].dream.title).toBeTruthy();
+    expect(student.profile?.texts['de'].goal).toBeTruthy();
+  });
+
+  it('keeps about 400 euros a month: 2.155 in, 1.732 out', () => {
+    expect(computeCashflowProfessionMonthlyCashflowMinor(student)).toBe(42300);
+    expect(student.expenses.reduce((sum, line) => sum + line.amountMinor, 0)).toBe(173200);
+  });
+
+  it('books leisure to Splurge and the rest to Daily, and starts with two small debts and almost no assets', () => {
+    const picked = pickCashflowProfession(
+      CASHFLOW_GAME_SETS,
+      'jfk-stories',
+      'dual-student-informatik',
+      '2026-10-25',
+      'solo',
+    );
+    const accounts = new Map(picked.subscriptions.map((sub) => [sub.title, sub.account]));
+    expect(accounts.get('Freizeit')).toBe('Splurge');
+    expect(accounts.get('Miete')).toBe('Daily');
+    expect(picked.starterKit.liabilities?.map((debt) => debt.amountMinor)).toEqual([
+      150000, 110700,
+    ]);
+    expect(picked.starterKit.shares?.[0]).toMatchObject({ tag: 'BMW', quantity: 1 });
+  });
+});
+
 describe('CASHFLOW_GAME_SETS profession data (todo/cashflow-game.md decision 49)', () => {
   it('every Classic/Custom-JFK profession\'s monthly cashflow matches its own card\'s printed "Monatlicher Cashflow" — catches a transcription slip in any single expense line', () => {
     // { gameSetId, professionId, expectedCashflowMinor } — expectedCashflowMinor is each card's own

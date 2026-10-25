@@ -101,7 +101,7 @@ export function pickCashflowProfession(
     .filter((line) => line.amountMinor !== 0)
     .map((line) => ({
       title: line.title,
-      account: 'Daily',
+      account: line.account ?? 'Daily',
       amountMinor: -line.amountMinor,
       frequency: 'monthly',
       category: `@${line.title}`,

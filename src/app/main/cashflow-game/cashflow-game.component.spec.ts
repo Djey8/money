@@ -114,16 +114,20 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('field defaults', () => {
-    it('pre-selects the first playable profession at construction time, independent of auth/profile timing', () => {
+    it('pre-selects the custom edition and its first character at construction time, independent of auth/profile timing', () => {
       // This component is hosted eagerly at app bootstrap (like every other panel), so its
       // constructor can run before login/profile data has loaded — defaults must not depend on
       // `ProfileComponent.mail`/`isCashflowGame()` being accurate yet.
       ProfileComponent.mail = '';
       const { component } = makeComponent();
 
-      const cashflowSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!;
-      expect(component.selectedGameSetId).toBe(cashflowSet.id);
-      expect(component.selectedProfessionId).toBe(cashflowSet.professions[0].id);
+      const customSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories')!;
+      expect(component.selectedGameSetId).toBe(customSet.id);
+      expect(component.selectedProfessionId).toBe(customSet.professions[0].id);
+      // the solo app is how it is played unless the physical board is asked for
+      expect(component.playMode).toBe('solo');
+      // the old test characters are not offered
+      expect(component.editionOptions.map((set) => set.id)).toEqual(['jfk-stories', 'cashflow']);
     });
   });
 
@@ -193,17 +197,7 @@ describe('CashflowGameComponent', () => {
       expect(component.professionCardView).toBe('live');
     });
 
-    it('shuffleProfession also opens the card on the correct default view', () => {
-      const { component } = makeComponent();
-      component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;
-
-      component.shuffleProfession();
-
-      expect(component.viewedProfession).not.toBeNull();
-      expect(component.professionCardView).toBe('start');
-    });
-
-    it('shuffleProfession picks a profession from the selected game set and opens its card', () => {
+    it('shuffleProfession picks a profession from the selected game set', () => {
       const { component } = makeComponent();
       component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;
 
@@ -213,7 +207,6 @@ describe('CashflowGameComponent', () => {
         (p) => p.id === component.selectedProfessionId,
       );
       expect(picked).toBeDefined();
-      expect(component.viewedProfession).toBe(picked);
     });
 
     it('professionStartingCash is savings plus one month of cashflow, in decimal', () => {
@@ -1101,17 +1094,18 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('starting from the profession card', () => {
-    it('shuffling opens the card, and Start there picks that profession and moves on to the language question', () => {
+    it('Start on a viewed card picks that profession and moves on to the character step', () => {
       const { component, cashflowGameService } = makeComponent();
+      component.chooseEdition('cashflow');
       component.selectedProfessionId = '';
       const lehrer = component.selectedGameSet!.professions[1];
 
-      component.openProfessionCard(lehrer); // what shuffle does after picking one
+      component.openProfessionCard(lehrer);
       component.startFromCard(lehrer);
 
       expect(component.selectedProfessionId).toBe(lehrer.id);
       expect(component.viewedProfession).toBeNull(); // the card closes
-      expect(component.choosingLanguage).toBe(true); // next step
+      expect(component.choosingCharacter).toBe(true); // next step
       expect(cashflowGameService.pickProfession).not.toHaveBeenCalled(); // not started yet
     });
   });
@@ -1120,17 +1114,17 @@ describe('CashflowGameComponent', () => {
     it('Start opens the question first - it does not start the game yet', () => {
       const { component, cashflowGameService } = makeComponent();
 
-      component.askLanguage();
+      component.toCharacter();
 
-      expect(component.choosingLanguage).toBe(true);
+      expect(component.choosingCharacter).toBe(true);
       expect(cashflowGameService.pickProfession).not.toHaveBeenCalled();
     });
 
     it('stays put when no profession is picked', () => {
       const { component } = makeComponent();
       component.selectedProfessionId = '';
-      component.askLanguage();
-      expect(component.choosingLanguage).toBe(false);
+      component.toCharacter();
+      expect(component.choosingCharacter).toBe(false);
     });
 
     it('picking a language switches the app and waits for it', async () => {
@@ -1144,14 +1138,14 @@ describe('CashflowGameComponent', () => {
 
     it('Back closes the question, and Start then starts the game and closes it', () => {
       const { component, cashflowGameService } = makeComponent();
-      component.askLanguage();
-      component.cancelLanguage();
-      expect(component.choosingLanguage).toBe(false);
+      component.toCharacter();
+      component.backToSetup();
+      expect(component.choosingCharacter).toBe(false);
 
-      component.askLanguage();
+      component.toCharacter();
       component.startGame();
       cashflowGameService.pickProfession.mock.calls[0][2].onSuccess();
-      expect(component.choosingLanguage).toBe(false);
+      expect(component.choosingCharacter).toBe(false);
     });
   });
 
@@ -2066,6 +2060,9 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       expect.objectContaining({ preset: 'free', cardChoice: 'free', sell: 'always' }),
     );
     const companion = soloComponent();
+    companion.component.setPlayMode('companion');
+    // the physical board plays the classic edition only
+    expect(companion.component.selectedGameSet?.edition).not.toBe('custom');
     companion.component.startGame();
     expect(companion.cashflowGameService.pickProfession.mock.calls[0][3]).toBe('companion');
   });

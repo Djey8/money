@@ -2823,3 +2823,146 @@
 .cf-latest-label {
   opacity: 0.75;
 }
+
+/* ───────── A new game: the groups of the new-table panel (JFK, 2026-10-25) ───────── */
+.cf-setup h3 {
+  margin: 0 0 10px;
+}
+
+.cf-group {
+  margin: 0 0 12px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--color-border, #d9dde3);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-background, #f6f7f9);
+}
+
+.cf-group h4 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.cf-group--dream {
+  border-color: var(--color-primary, #2a7de1);
+}
+
+.cf-group .cf-language-grid {
+  margin: 0;
+}
+
+.cf-seg {
+  display: flex;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-surface, #fff);
+}
+
+.cf-seg button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 6px;
+  border: 0;
+  border-inline-start: 1px solid var(--color-border, #ddd);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cf-seg button:first-child {
+  border-inline-start: 0;
+}
+
+.cf-seg .cf-seg--on {
+  background: var(--color-primary, #2a7de1);
+  color: #fff;
+  font-weight: 600;
+}
+
+.cf-hint {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.cf-advanced-btn {
+  margin-top: 8px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary, #2a7de1);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cf-people {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cf-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 2px solid var(--color-border, #d9dde3);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-surface, #fff);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cf-person--on {
+  border-color: var(--color-primary, #2a7de1);
+}
+
+.cf-person-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary, #2a7de1);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.cf-person-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cf-person-text small {
+  opacity: 0.75;
+}
+
+.cf-story {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.cf-values {
+  margin: 0;
+  padding-inline-start: 1.2em;
+  line-height: 1.4;
+}
+
+.cf-setup-numbers {
+  margin: 14px 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}

@@ -53,6 +53,27 @@ export interface CashflowExpenseLine {
   amountMinor: number;
   /** Stable, language-independent id for this line — lets the frontend look up a translated label without changing `title` itself, which stays the literal value used to build the real Subscription's title/category (todo/cashflow-game.md decision 48). Optional: a game set with no translations authored yet just falls back to `title` as-is. */
   key?: string;
+  /** The account the monthly payment is booked to (default `Daily`): leisure belongs to `Splurge`. */
+  account?: 'Daily' | 'Splurge';
+}
+
+/** What a character is about, in one language (JFK, 2026-10-25): shown when a character is chosen. */
+export interface CashflowProfileTexts {
+  name: string;
+  /** One line under the name. */
+  tagline: string;
+  background: string;
+  /** What matters to this character. */
+  values: string[];
+  /** What it takes to win. */
+  goal: string;
+  /** The dream the character starts with (their first Smile project). */
+  dream: { title: string; summary: string };
+}
+
+/** The story of a character of a custom edition, by language code; a language without an entry falls back to `en`. */
+export interface CashflowProfessionProfile {
+  texts: Record<string, CashflowProfileTexts> & { en: CashflowProfileTexts };
 }
 
 export interface CashflowProfession {
@@ -66,6 +87,8 @@ export interface CashflowProfession {
   /** "Ersparnisse" — the card's starting savings figure. Starting cash is computed, not stored: savings plus one month's cashflow (salary minus `expenses`) — JFK, 2026-09-26. */
   savingsMinor: number;
   starterKit: CashflowStarterKit;
+  /** Custom editions: who this is, what matters to them and what they dream of. The classic cards have none. */
+  profile?: CashflowProfessionProfile;
 }
 
 export interface CashflowLoanRule {
@@ -193,6 +216,8 @@ export interface CashflowDecks {
 export interface CashflowGameSet {
   id: string;
   title: string;
+  /** `custom`: JFK's own characters with a story and a dream; `classic`: the printed professions. Absent: classic. */
+  edition?: 'classic' | 'custom';
   loanRule: CashflowLoanRule;
   professions: CashflowProfession[];
   /**

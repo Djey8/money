@@ -486,8 +486,94 @@ const CUSTOM_JFK_GAME_SET: CashflowGameSet = {
   ],
 };
 
+/**
+ * The custom edition (JFK, 2026-10-25): characters with a story and a dream, built from real lives - the first is a dual student
+ * in computer science whose dream is the mountains. Numbers are the monthly picture of a real budget, grouped into a few lines
+ * (the habits behind them - when and how much - follow with the spending variation). The card piles are the classic ones until
+ * this edition gets its own.
+ */
+const JFK_STORIES_GAME_SET: CashflowGameSet = {
+  id: 'jfk-stories',
+  title: 'Custom JFK',
+  edition: 'custom',
+  loanRule: { incrementMinor: 100000, monthlyInterestPercent: 10 },
+  decks: {
+    dealSmall: CLASSIC_DEAL_SMALL,
+    dealBig: CLASSIC_DEAL_BIG,
+    doodad: CLASSIC_DOODAD,
+    market: CLASSIC_MARKET,
+  }, // same card piles as Classic until this set gets its own
+  professions: [
+    {
+      id: 'dual-student-informatik',
+      title: 'Dualer Student Informatik',
+      // net salary 1.955 € plus 200 € support from his parents: one income line of 2.155 €
+      salaryMinor: 215500,
+      expenses: [
+        { title: 'Miete', amountMinor: 80000, key: 'rent' }, // 800 €
+        { title: 'Deutschlandticket', amountMinor: 4300, key: 'transport' }, // 43 €
+        { title: 'Versicherungen', amountMinor: 2400, key: 'insurance' }, // 24 €
+        { title: 'Nebenkosten & Telekom', amountMinor: 7100, key: 'utilities' }, // 71 €: internet, phone, electricity, broadcasting fee
+        { title: 'Abos', amountMinor: 2400, key: 'subscriptions' }, // 24 €
+        { title: 'Lebenshaltung', amountMinor: 54000, key: 'living' }, // 540 €: groceries, bakery, drugstore
+        { title: 'Freizeit', amountMinor: 23000, key: 'leisure', account: 'Splurge' }, // 230 €: eating out, climbing, tennis
+      ],
+      perChildExpenseMinor: 30000, // 300 €
+      savingsMinor: 170000, // 1.700 €: what is on the bank accounts
+      starterKit: {
+        // a first share and a little crypto: almost nothing yet
+        shares: [{ tag: 'BMW', quantity: 1, priceMinor: 7928 }],
+        assets: [{ tag: 'IOTA', amountMinor: 10000, key: 'crypto' }],
+        liabilities: [
+          { tag: 'Eltern-Darlehen', amountMinor: 150000, key: 'parentsLoan' }, // 1.500 €, no monthly payment
+          { tag: 'Führerschein-Darlehen', amountMinor: 110700, key: 'licenceLoan' }, // 1.107 €, no monthly payment
+        ],
+      },
+      profile: {
+        texts: {
+          en: {
+            name: 'Jonas',
+            tagline: 'Dual student in computer science, dreaming of the mountains',
+            background:
+              'Jonas studies computer science and works half-time at an IT company. Money is tight: the rent takes most of his pay, the rest goes on groceries, the climbing gym and the odd gadget. He has no real savings yet - a little cash, one BMW share and a bit of crypto - and owes his parents and the driving school.',
+            values: [
+              'Independence: one day he wants to live from money that works for him',
+              'The mountains: every free weekend is climbing or a ski tour',
+              'Step by step: he saves for gear and courses instead of borrowing for them',
+            ],
+            goal: 'Become financially independent: passive income that covers all his monthly expenses - and live the dream on the way.',
+            dream: {
+              title: 'Certified mountain guide',
+              summary:
+                'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 euros. In this game it is his first Smile project.',
+            },
+          },
+          de: {
+            name: 'Jonas',
+            tagline: 'Dualer Student der Informatik, mit dem Kopf in den Bergen',
+            background:
+              'Jonas studiert Informatik und arbeitet halbtags in einem IT-Unternehmen. Das Geld ist knapp: die Miete frisst den größten Teil seines Gehalts, der Rest geht für Essen, die Kletterhalle und das eine oder andere Gadget drauf. Rücklagen hat er kaum - etwas Bargeld, eine BMW-Aktie und ein bisschen Krypto - und er schuldet seinen Eltern und der Fahrschule noch Geld.',
+            values: [
+              'Unabhängigkeit: eines Tages will er von Geld leben, das für ihn arbeitet',
+              'Die Berge: jedes freie Wochenende ist Klettern oder Skitour',
+              'Schritt für Schritt: er spart für Ausrüstung und Kurse, statt sich dafür zu verschulden',
+            ],
+            goal: 'Finanziell unabhängig werden: passives Einkommen, das alle monatlichen Ausgaben deckt - und unterwegs den Traum leben.',
+            dream: {
+              title: 'Staatlich geprüfter Berg- und Skiführer',
+              summary:
+                'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 Euro. Im Spiel ist es sein erstes Smile-Projekt.',
+            },
+          },
+        },
+      },
+    },
+  ],
+};
+
 export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [
   CASHFLOW_GAME_SET,
+  JFK_STORIES_GAME_SET,
   CUSTOM_JFK_GAME_SET,
   PLACEHOLDER_GAME_SET,
 ];
