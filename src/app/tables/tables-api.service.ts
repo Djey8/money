@@ -27,6 +27,37 @@ export interface TableSummary {
   hosting?: boolean;
   /** When the table was opened (ISO time). */
   createdAt?: string;
+  /** Who sits at the table (the lists carry it, so a player sees who is there before joining). */
+  seats?: TableSeat[];
+}
+
+/** One seat of a table with the public side of the person or bot who sits there (GET /game/rooms/{id}/seats, and `seats` of a list row). */
+export interface TableSeat {
+  seat: number;
+  name: string;
+  bot: boolean;
+  /** On the leaderboard (a bot always is); an unlisted person shows only the rating. */
+  listed: boolean;
+  rating: number;
+  ratedGames: number;
+  provisional?: boolean;
+  level?: BotLevel;
+  /** The leaderboard player: opens the stats panel (absent for a person who has none yet). */
+  playerId?: string;
+  pictureVersion?: number;
+  color?: string;
+  type?: 'human' | 'bot';
+  peakRating?: number;
+  baseRating?: number;
+  games?: number;
+  wins?: number;
+  losses?: number;
+  gaveUp?: number;
+  bankruptcies?: number;
+  escaped?: number;
+  winRate?: number;
+  avgPlace?: number | null;
+  bestPlace?: number | null;
 }
 
 /** A player of the leaderboard (GET /v1/game/leaderboard): a human who opted in, or a bot persona at a level. */
@@ -81,6 +112,8 @@ export interface BotInfo {
   description: string;
   /** What the bot is rated now at each skill level (the leaderboard's rating, or the measured start). */
   ratings?: Partial<Record<BotLevel, number>>;
+  /** The leaderboard player of each level: opens the bot's stats. */
+  playerIds?: Partial<Record<BotLevel, string>>;
 }
 
 export interface CreateTableInput {
@@ -134,9 +167,14 @@ export class TablesApiService {
   constructor(private http: HttpClient) {}
 
   /** The profile picture of a person on the leaderboard (the browser keeps it until the picture changes), or null. */
-  pictureUrl(player: { playerId: string; pictureVersion?: number }): string | null {
-    return player.pictureVersion
-      ? `${environment.selfhosted.apiUrl}/v1/game/players/${encodeURIComponent(player.playerId)}/picture?v=${player.pictureVersion}`
+  pictureUrl(
+    player: { playerId?: string; pictureVersion?: number },
+    tableId?: string,
+  ): string | null {
+    return player.playerId && player.pictureVersion
+      ? `${environment.selfhosted.apiUrl}/v1/game/players/${encodeURIComponent(player.playerId)}/picture?v=${player.pictureVersion}` +
+          // a person who is not listed has their picture seen by the table they sit at
+          (tableId ? `&table=${encodeURIComponent(tableId)}` : '')
       : null;
   }
 
@@ -147,6 +185,13 @@ export class TablesApiService {
   bots(): Observable<{ items: BotInfo[]; levels?: { id: BotLevel; mistakes: number }[] }> {
     return this.http.get<{ items: BotInfo[]; levels?: { id: BotLevel; mistakes: number }[] }>(
       `${this.base}/bots`,
+    );
+  }
+
+  /** Who sits at a table, with their rating and picture. */
+  seats(roomId: string): Observable<{ seats: TableSeat[] }> {
+    return this.http.get<{ seats: TableSeat[] }>(
+      `${this.base}/${encodeURIComponent(roomId)}/seats`,
     );
   }
 

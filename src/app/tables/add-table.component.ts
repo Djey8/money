@@ -3,16 +3,19 @@ import {
   ChangeDetectorRef,
   Component,
   EventEmitter,
+  Input,
   OnInit,
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
+import type { TableView } from '@money/domain';
 import { TablesApiService, type CreateTableInput } from './tables-api.service';
 import { ProfileComponent } from '../panels/profile/profile.component';
 import { tablesTexts, type TablesTexts } from './tables.texts';
 import { addTableTexts, type AddTableTexts } from './add-table.texts';
+import { hallTexts, type HallTexts } from './hall.texts';
 import { WheelPickerComponent } from './wheel-picker.component';
 import {
   APP_LANGUAGES,
@@ -39,15 +42,21 @@ function accountName(): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
-    <div class="at-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="a.title">
+    <div
+      class="at-backdrop"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="existing ? h.settingsEdit : a.title"
+    >
       <div class="at-panel" [attr.dir]="rtl ? 'rtl' : 'ltr'">
         <header class="at-head">
-          <h2>{{ a.title }}</h2>
+          <h2>{{ existing ? h.settingsEdit : a.title }}</h2>
           <button type="button" class="at-close" [attr.aria-label]="t.back" (click)="closed.emit()">
             ×
           </button>
         </header>
-        <p class="at-error" *ngIf="error" role="alert">{{ error }}</p>
+        <p class="at-error" *ngIf="error || problem" role="alert">{{ error || problem }}</p>
+        <p class="at-note" *ngIf="existing">{{ h.settingsResetNote }}</p>
         <form (ngSubmit)="create()" class="at-form">
           <!-- the table -->
           <section class="at-group">
@@ -77,7 +86,7 @@ function accountName(): string {
                 </button>
               </div>
             </div>
-            <div class="at-row">
+            <div class="at-row" *ngIf="!existing">
               <div class="at-label">
                 <strong>{{ a.language }}</strong>
                 <small>{{ a.languageHint }}</small>
@@ -97,7 +106,7 @@ function accountName(): string {
                 </button>
               </div>
             </div>
-            <div class="at-row">
+            <div class="at-row" *ngIf="!existing">
               <div class="at-label">
                 <strong>{{ a.initials }}</strong>
                 <small>{{ a.initialsHint }}</small>
@@ -349,7 +358,7 @@ function accountName(): string {
           </section>
 
           <button class="tx-btn tx-btn--primary at-open" type="submit" [disabled]="busy">
-            {{ a.open }}
+            {{ existing ? h.settingsSave : a.open }}
           </button>
         </form>
       </div>
@@ -398,6 +407,11 @@ function accountName(): string {
       }
       .at-error {
         color: var(--color-danger, #c00);
+      }
+      .at-note {
+        margin: 0 0 8px;
+        font-size: 0.85rem;
+        opacity: 0.75;
       }
       .at-form {
         display: flex;
@@ -593,9 +607,16 @@ export class AddTableComponent implements OnInit {
   /** The id of the table that was opened. */
   @Output() created = new EventEmitter<string | undefined>();
   @Output() closed = new EventEmitter<void>();
+  /** The settings of a table that is still in its lobby: the host changes them with this same panel. */
+  @Input() existing: TableView['settings'] | null = null;
+  /** The changed settings (existing tables only); the caller sends them to the table. */
+  @Output() saved = new EventEmitter<Record<string, unknown>>();
+  /** Why the table refused the changed settings (shown in the panel, which stays open). */
+  @Input() problem: string | null = null;
 
   t: TablesTexts = tablesTexts('en');
   a: AddTableTexts = addTableTexts('en');
+  h: HallTexts = hallTexts('en');
   /** The rules of play are only shown on demand. */
   showAdvanced = false;
   /** The table name that is used when none is typed - a fresh one with the dice. */
@@ -650,7 +671,9 @@ export class AddTableComponent implements OnInit {
     const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
     this.t = tablesTexts(lang);
     this.a = addTableTexts(lang);
+    this.h = hallTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
+    if (this.existing) this.fillFrom(this.existing);
     this.form.language = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
     this.suggestionIndex = Math.floor(Math.random() * this.a.suggestions.length);
     this.suggestion = this.a.suggestions[this.suggestionIndex];
@@ -771,7 +794,8 @@ export class AddTableComponent implements OnInit {
     });
   }
 
-  create(): void {
+  /** The form as the settings a table takes (opening a table, or changing one in its lobby). */
+  private settings(): CreateTableInput['settings'] {
     const f = this.form;
     const clock: CreateTableInput['settings']['clock'] =
       f.clock === 'per-move'
@@ -779,29 +803,64 @@ export class AddTableComponent implements OnInit {
         : f.clock === 'bank'
           ? { mode: 'bank', bankSeconds: f.bankSeconds, incrementSeconds: 0 }
           : { mode: 'none' };
+    return {
+      name: (f.name.trim() || this.suggestion).slice(0, 40),
+      visibility: f.visibility,
+      maxSeats: f.maxSeats,
+      professions: f.professions,
+      clock,
+      endCondition: f.endCondition,
+      ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
+      spectators: f.spectators,
+      allowRewind: f.allowUndo,
+      repayOffTurn: f.repayOffTurn,
+      leaveFreeRounds: f.leaveFreeRounds,
+      turnGate: f.turnGate,
+      pace: f.pace,
+      showProgress: f.showProgress,
+      ranked: f.ranked,
+      rules: { sellOfferRolls: f.offerRolls },
+    };
+  }
+
+  /** The panel shows the settings the table has now. */
+  private fillFrom(current: TableView['settings']): void {
+    const f = this.form;
+    f.name = current.name;
+    f.maxSeats = current.maxSeats;
+    f.visibility = current.visibility;
+    f.professions = current.professions;
+    f.endCondition = current.endCondition;
+    if (current.roundLimit) f.roundLimit = current.roundLimit;
+    f.spectators = current.spectators;
+    f.allowUndo = current.allowRewind;
+    f.repayOffTurn = current.repayOffTurn;
+    f.leaveFreeRounds = current.leaveFreeRounds;
+    f.turnGate = current.turnGate;
+    f.showProgress = current.showProgress;
+    f.ranked = current.ranked;
+    f.pace = current.pace;
+    f.offerRolls = current.rules.sellOfferRolls;
+    if (current.clock.mode === 'per-move') {
+      f.clock = 'per-move';
+      f.seconds = current.clock.secondsPerMove;
+    } else if (current.clock.mode === 'bank') {
+      f.clock = 'bank';
+      f.bankSeconds = current.clock.bankSeconds;
+    }
+  }
+
+  create(): void {
+    if (this.existing) {
+      this.saved.emit(this.settings() as unknown as Record<string, unknown>);
+      return;
+    }
     const letters = saveInitials(this.initials);
     const input: CreateTableInput = {
       nickname: this.nickname.trim(),
       ...(letters ? { initials: letters } : {}),
       language: this.form.language,
-      settings: {
-        name: (f.name.trim() || this.suggestion).slice(0, 40),
-        visibility: f.visibility,
-        maxSeats: f.maxSeats,
-        professions: f.professions,
-        clock,
-        endCondition: f.endCondition,
-        ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
-        spectators: f.spectators,
-        allowRewind: f.allowUndo,
-        repayOffTurn: f.repayOffTurn,
-        leaveFreeRounds: f.leaveFreeRounds,
-        turnGate: f.turnGate,
-        pace: f.pace,
-        showProgress: f.showProgress,
-        ranked: f.ranked,
-        rules: { sellOfferRolls: f.offerRolls },
-      },
+      settings: this.settings(),
     };
     this.busy = true;
     this.error = null;

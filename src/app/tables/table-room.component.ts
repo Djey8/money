@@ -21,6 +21,7 @@ import {
 } from '../main/cashflow-game/rat-race-board.component';
 import { TableCardsComponent } from './table-cards.component';
 import { TableInspectorComponent } from './table-inspector.component';
+import { TableWaitingRoomComponent } from './table-waiting-room.component';
 import { AppComponent } from '../app.component';
 import { ConfirmService } from '../shared/services/confirm.service';
 import {
@@ -31,7 +32,6 @@ import {
 import { tablesTexts } from './tables.texts';
 import { TableSessionService } from './table-session.service';
 import { TableModeService } from './table-mode.service';
-import { TablesApiService, type BotInfo, type BotLevel } from './tables-api.service';
 import { bankSeconds, clockReading, formatClock } from './table-clock';
 import { TurnAlert } from './table-turn-alert';
 import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
@@ -69,6 +69,7 @@ const money = (minor: number | null): string =>
     RatRaceBoardComponent,
     TableCardsComponent,
     TableInspectorComponent,
+    TableWaitingRoomComponent,
   ],
   providers: [TableSessionService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -120,125 +121,16 @@ const money = (minor: number | null): string =>
         {{ problem }}
       </p>
 
-      <!-- Before play: who is here, ready, start; then the profession pick. -->
-      <ng-container *ngIf="table.phase === 'lobby' || table.phase === 'picking'">
-        <section class="tr-card">
-          <h3>{{ t.seatsHeading }} ({{ table.players.length }}/{{ table.settings.maxSeats }})</h3>
-          <ul class="tr-players">
-            <li *ngFor="let row of rows()" class="tr-player">
-              <span class="tr-swatch" [style.background]="row.player.color"></span>
-              <span class="tr-name"
-                >{{ row.player.name }}
-                <small *ngIf="row.isYou">({{ t.you }})</small>
-                <small *ngIf="row.isHost">· {{ t.host }}</small>
-                <small *ngIf="row.player.bot">· 🤖 {{ t.botTag }}</small>
-                <small *ngIf="!row.online && !row.player.bot">· {{ t.offline }}</small></span
-              >
-              <button
-                *ngIf="row.player.bot && isHost() && table.phase === 'lobby'"
-                class="tx-btn tx-btn--small"
-                type="button"
-                [disabled]="session.busy()"
-                (click)="session.lobby('kick', { seat: row.player.seat })"
-              >
-                {{ t.removeBot }}
-              </button>
-              <span *ngIf="table.phase === 'lobby'">{{
-                row.player.ready ? '✓ ' + t.ready : t.notReady
-              }}</span>
-              <span *ngIf="table.phase === 'picking'">{{
-                row.player.hasPicked ? '✓ ' + t.picked : '…'
-              }}</span>
-            </li>
-          </ul>
-          <div class="tr-actions" *ngIf="table.phase === 'lobby'">
-            <button
-              class="tx-btn"
-              type="button"
-              [disabled]="session.busy()"
-              (click)="toggleReady()"
-            >
-              {{ myPlayer()?.ready ? t.notReady : t.ready }}
-            </button>
-            <button
-              *ngIf="isHost()"
-              class="tx-btn tx-btn--primary"
-              type="button"
-              [disabled]="session.busy() || !canStart()"
-              (click)="session.lobby('start')"
-            >
-              {{ t.start }}
-            </button>
-            <button class="tx-btn" type="button" (click)="leave()">{{ t.leave }}</button>
-          </div>
-          <div class="tr-bots" *ngIf="table.phase === 'lobby' && isHost() && botCatalog().length">
-            <h4>🤖 {{ t.addBot }}</h4>
-            <p class="tr-hint">{{ t.botHint }}</p>
-            <div class="tr-actions">
-              <select
-                class="tr-bot-select"
-                [value]="botChoice"
-                (change)="botChoice = $any($event.target).value"
-                [attr.aria-label]="t.addBot"
-              >
-                <option *ngFor="let bot of sortedBots()" [value]="bot.id">
-                  {{ bot.name }} - {{ level(bot) }}{{ ratingTag(bot) }}
-                </option>
-              </select>
-              <select
-                class="tr-bot-select"
-                [value]="botLevel"
-                (change)="botLevel = $any($event.target).value"
-                [attr.aria-label]="t.skillLabel"
-              >
-                <option *ngFor="let level of botLevels" [value]="level">{{ skill(level) }}</option>
-              </select>
-              <button
-                class="tx-btn"
-                type="button"
-                [disabled]="
-                  session.busy() ||
-                  table.players.length >= table.settings.maxSeats ||
-                  botSeated(table)
-                "
-                (click)="addBot()"
-              >
-                {{ t.addBot }}
-              </button>
-            </div>
-            <p class="tr-hint">{{ botDescription() }}</p>
-          </div>
-          <p class="tr-hint" *ngIf="table.phase === 'lobby' && isHost() && !canStart()">
-            {{ t.needPlayers }}
-          </p>
-        </section>
-
-        <section class="tr-card" *ngIf="table.phase === 'picking' && myPlayer() as me">
-          <h3>{{ t.pickProfession }}</h3>
-          <div class="tr-professions">
-            <button
-              *ngFor="let profession of professions()"
-              class="tx-btn"
-              type="button"
-              [class.tx-btn--primary]="me.pick === profession.id"
-              [disabled]="session.busy()"
-              (click)="session.lobby('profession', { professionId: profession.id })"
-            >
-              {{ profession.title }}
-            </button>
-            <button
-              class="tx-btn"
-              type="button"
-              [class.tx-btn--primary]="me.pick === 'random'"
-              [disabled]="session.busy()"
-              (click)="session.lobby('profession', { professionId: 'random' })"
-            >
-              🎲 {{ t.random }}
-            </button>
-          </div>
-          <p class="tr-hint">{{ t.waitingPicks }}</p>
-        </section>
-      </ng-container>
+      <!-- Before play: the settings, who is here, ready, start; then the profession pick. -->
+      <app-table-waiting-room
+        *ngIf="table.phase === 'lobby' || table.phase === 'picking'"
+        [table]="table"
+        [roomId]="roomId"
+        [inviteCode]="session.room()?.inviteCode ?? null"
+        [lang]="lang"
+        [presentSeats]="session.presence().seats"
+        (leaveRequested)="leave()"
+      ></app-table-waiting-room>
 
       <!-- Play. -->
       <ng-container *ngIf="table.phase === 'playing' || table.phase === 'finished'">
@@ -553,18 +445,6 @@ const money = (minor: number | null): string =>
         flex-wrap: wrap;
         gap: 4px 8px;
       }
-      .tr-bots {
-        margin-top: 16px;
-        border-top: 1px solid var(--color-border, #ddd);
-        padding-top: 8px;
-      }
-      .tr-bots h4 {
-        margin: 0 0 4px;
-      }
-      .tr-bot-select {
-        flex: 1 1 180px;
-        min-width: 0;
-      }
       .tr-hint {
         color: var(--color-text-secondary, #666);
         font-size: 0.9em;
@@ -618,7 +498,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   private languages = inject(LanguageService);
   private cdr = inject(ChangeDetectorRef);
   private confirmService = inject(ConfirmService);
-  private tablesApi = inject(TablesApiService);
   readonly tableMode = inject(TableModeService);
 
   t: TableRoomTexts = tableRoomTexts('en');
@@ -644,10 +523,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   readonly isMyTurn = computed(() => {
     const view = this.view();
     return !!view && view.youSeat !== null && view.youSeat === view.activeSeat;
-  });
-  readonly canStart = computed(() => {
-    const view = this.view();
-    return !!view && view.players.length >= 2 && view.players.every((p) => p.ready);
   });
   readonly professions = computed(() => {
     const view = this.view();
@@ -742,12 +617,14 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     this.heading = tablesTexts(lang).title;
     this.rtl = lang.toLowerCase().startsWith('ar');
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.session.open(id);
+    if (id) {
+      this.roomId = id;
+      this.session.open(id);
+    }
     this.timer = setInterval(() => this.now.set(Date.now()), 500);
   }
 
   ngOnDestroy(): void {
-    this.botFetch.destroy();
     this.entering.destroy();
     this.tableLanguage.destroy();
     if (this.timer) clearInterval(this.timer);
@@ -763,6 +640,8 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   fmt = money;
 
   readonly saved = signal(false);
+  /** The id of the table in the address. */
+  roomId = '';
 
   private enteredOnce = false;
 
@@ -786,83 +665,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     const view = this.view();
     if (!view || view.youSeat === null) return;
     this.tableMode.begin(this.session, this.lang);
-  }
-
-  /** The bots the host can seat, fetched once when the host sits in a lobby. */
-  readonly botCatalog = signal<BotInfo[]>([]);
-  botChoice = '';
-  botLevel: BotLevel = 'master';
-  readonly botLevels: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
-  private botsRequested = false;
-  private readonly botFetch = effect(() => {
-    const view = this.view();
-    if (view && view.phase === 'lobby' && this.isHost() && !this.botsRequested) {
-      this.botsRequested = true;
-      this.tablesApi.bots().subscribe({
-        next: (r) => {
-          this.botCatalog.set(r.items);
-          if (!this.botChoice && r.items.length) this.botChoice = this.sortedBots()[0].id;
-        },
-        error: () => (this.botsRequested = false),
-      });
-    }
-  });
-
-  level(bot: BotInfo): string {
-    switch (bot.difficulty) {
-      case 'easy':
-        return this.t.levelEasy;
-      case 'medium':
-        return this.t.levelMedium;
-      case 'hard':
-        return this.t.levelHard;
-      default:
-        return this.t.levelChampion;
-    }
-  }
-
-  /** The bots with the highest rating first, by their rating at the chosen skill level (those without one last, by name). */
-  sortedBots(): BotInfo[] {
-    const level = this.botLevel;
-    return [...this.botCatalog()].sort(
-      (a, b) =>
-        (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) || a.name.localeCompare(b.name),
-    );
-  }
-
-  /** " · 1650": what the bot is rated at the chosen skill level, so the host sees what they seat. */
-  ratingTag(bot: BotInfo): string {
-    const rating = bot.ratings?.[this.botLevel];
-    return rating === undefined ? '' : ` · ${rating}`;
-  }
-
-  botDescription(): string {
-    return this.botCatalog().find((bot) => bot.id === this.botChoice)?.description ?? '';
-  }
-
-  skill(level: BotLevel): string {
-    switch (level) {
-      case 'master':
-        return this.t.skillMaster;
-      case 'strong':
-        return this.t.skillStrong;
-      case 'casual':
-        return this.t.skillCasual;
-      default:
-        return this.t.skillBeginner;
-    }
-  }
-
-  /** The chosen strategy at the chosen level already sits at the table (it sits once: the leaderboard knows it as one player). */
-  botSeated(table: TableView): boolean {
-    const id = this.botLevel === 'master' ? this.botChoice : `${this.botChoice}--${this.botLevel}`;
-    return table.players.some((player) => player.bot?.policyId === id);
-  }
-
-  addBot(): void {
-    if (this.botChoice) {
-      void this.session.lobby('bots', { policyId: this.botChoice, level: this.botLevel });
-    }
   }
 
   async saveGame(): Promise<void> {
@@ -931,10 +733,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     const me = this.myPlayer();
     const books = me?.books as unknown as GameBooks | null | undefined;
     return !!books && books.state.charityRoundsLeft > 0;
-  }
-
-  toggleReady(): void {
-    void this.session.lobby('ready', { ready: !this.myPlayer()?.ready });
   }
 
   async leave(): Promise<void> {
