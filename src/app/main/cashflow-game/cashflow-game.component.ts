@@ -666,6 +666,19 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       amount: this.toDisplayAmount(line.amountMinor),
     }));
     const savings = this.toDisplayAmount(profession.savingsMinor);
+    const kit = profession.starterKit;
+    // what the character already owns besides the cash: shares at their price, plain assets
+    const owned = [
+      ...(kit.shares ?? []).map((share) => ({
+        name: `${share.tag} · ${share.quantity}`,
+        amount: this.toDisplayAmount(share.quantity * share.priceMinor),
+      })),
+      ...(kit.assets ?? []).map((asset) => ({
+        name: asset.tag,
+        amount: this.toDisplayAmount(asset.amountMinor),
+      })),
+    ];
+    const assetsTotal = savings + owned.reduce((sum, line) => sum + line.amount, 0);
     return {
       cashIncome: salary,
       cashPassive: this.professionStartingPassive,
@@ -678,8 +691,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         amount: this.toDisplayAmount(line.amountMinor),
       })),
       expensesTotal: expenses,
-      assets: [{ name: this.translate.instant('CashflowGame.savings'), amount: savings }],
-      assetsTotal: savings,
+      assets: [{ name: this.translate.instant('CashflowGame.savings'), amount: savings }, ...owned],
+      assetsTotal,
       liabilities,
       liabilitiesTotal: this.professionTotalLiabilities(profession),
     };
@@ -789,10 +802,76 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   toCharacter(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
     this.choosingCharacter = true;
+    this.characterChosen = false;
   }
 
+  /** Back: from a character to the grid, from the grid to the setup. */
   backToSetup(): void {
+    if (this.choosingCharacter && this.characterChosen) {
+      this.characterChosen = false;
+      return;
+    }
     this.choosingCharacter = false;
+  }
+
+  /** The grid of characters is gone and one is shown. */
+  characterChosen = false;
+  /** The financial panel that is open under a chosen character: the Cashflow, at first. */
+  openSheet: 'cashflow' | 'income' | 'balance' | null = 'cashflow';
+
+  /** Everybody to choose from: the custom edition's own characters, then the test characters as examples; or the classic professions. */
+  get characterOptions(): {
+    setId: string;
+    profession: CashflowProfession;
+    name: string;
+    tagline: string;
+  }[] {
+    const custom =
+      this.selectedGameSet?.edition === 'custom' || this.selectedGameSetId === 'custom-jfk';
+    const sets = custom
+      ? this.gameSets.filter((set) => set.edition === 'custom' || set.id === 'custom-jfk')
+      : this.gameSets.filter((set) => set.id === this.selectedGameSetId);
+    return sets.flatMap((set) =>
+      set.professions.map((profession) => {
+        const story = this.profileOf(profession);
+        const salary = `${this.toDisplayAmount(profession.salaryMinor).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
+        return {
+          setId: set.id,
+          profession,
+          name: story?.name ?? this.professionTitle(profession),
+          tagline: story?.tagline ?? salary,
+        };
+      }),
+    );
+  }
+
+  /** The lists are rebuilt on every check: the rows are told apart by what they are, so they are not drawn again each time. */
+  trackOption = (_index: number, option: { setId: string; profession: { id: string } }): string =>
+    `${option.setId}/${option.profession.id}`;
+  trackPanel = (_index: number, panel: { id: string }): string => panel.id;
+
+  pickCharacter(option: { setId: string; profession: CashflowProfession }): void {
+    this.selectedGameSetId = option.setId;
+    this.selectedProfessionId = option.profession.id;
+    this.characterChosen = true;
+    this.openSheet = 'cashflow';
+  }
+
+  toggleSheet(panel: 'cashflow' | 'income' | 'balance'): void {
+    this.openSheet = this.openSheet === panel ? null : panel;
+  }
+
+  /** The three panels with the one figure each shows when closed. */
+  detailPanels(sheets: ProfessionSheetNumbers): {
+    id: 'cashflow' | 'income' | 'balance';
+    title: string;
+    value: number;
+  }[] {
+    return [
+      { id: 'cashflow', title: 'Cashflow.title', value: sheets.cashTotal },
+      { id: 'income', title: 'Menu.statment', value: sheets.revenueTotal },
+      { id: 'balance', title: 'Menu.sheet', value: sheets.assetsTotal - sheets.liabilitiesTotal },
+    ];
   }
 
   /** The editions on offer, the custom one first. The physical board only plays the classic one. */
@@ -813,6 +892,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   chooseEdition(gameSetId: string): void {
     this.selectedGameSetId = gameSetId;
     this.selectedProfessionId = this.selectedGameSet?.professions[0]?.id ?? '';
+    this.characterChosen = false;
   }
 
   /** Who a character is, in the language of the game (English where it has no text in that language). */

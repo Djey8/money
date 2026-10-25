@@ -2380,6 +2380,36 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
+  it('the character step: a grid with the example characters first, then one character with only the Cashflow panel open', () => {
+    const { component } = soloComponent();
+    component.toCharacter();
+    expect(component.characterChosen).toBe(false);
+    const names = component.characterOptions.map((option) => option.name);
+    expect(names[0]).toBe('Jonas');
+    // the test characters are in the grid as examples
+    expect(names).toEqual(expect.arrayContaining(['Softwareentwickler/in', 'Freiberufler/in']));
+
+    component.pickCharacter(component.characterOptions[0]);
+    expect(component.characterChosen).toBe(true);
+    expect(component.selectedProfessionId).toBe('dual-student-informatik');
+    expect(component.openSheet).toBe('cashflow');
+    component.toggleSheet('income');
+    expect(component.openSheet).toBe('income');
+    component.toggleSheet('income');
+    expect(component.openSheet).toBeNull();
+    // the three panels show one figure each: the month's cashflow, the income, what is left after the debts
+    const panels = component.detailPanels(component.setupSheets!);
+    expect(panels.map((panel) => panel.id)).toEqual(['cashflow', 'income', 'balance']);
+    expect(panels[0].value).toBe(500);
+
+    // back goes to the grid first, then to the setup
+    component.backToSetup();
+    expect(component.characterChosen).toBe(false);
+    expect(component.choosingCharacter).toBe(true);
+    component.backToSetup();
+    expect(component.choosingCharacter).toBe(false);
+  });
+
   it('a card action that takes a moment raises the spinner, and takes it down when it is done', () => {
     jest.useFakeTimers();
     try {

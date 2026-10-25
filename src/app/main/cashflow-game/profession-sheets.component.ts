@@ -24,8 +24,12 @@ export interface SheetLine {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- CASHFLOW -->
-    <section class="ps-group">
-      <h3 class="ps-heading">{{ 'Cashflow.title' | translate }}</h3>
+    <section
+      class="ps-group"
+      [class.ps-group--bare]="only !== 'all'"
+      *ngIf="only === 'all' || only === 'cashflow'"
+    >
+      <h3 class="ps-heading" *ngIf="only === 'all'">{{ 'Cashflow.title' | translate }}</h3>
       <div class="ps-cashflow">
         <h5 class="ps-label">{{ 'Cashflow.Income' | translate }}</h5>
         <div class="ps-amount">{{ cashIncome | appNumber: '1.2-2' : false }} {{ currency }}</div>
@@ -42,8 +46,12 @@ export interface SheetLine {
     </section>
 
     <!-- Income Statement: the normal month -->
-    <section class="ps-group">
-      <h3 class="ps-heading">{{ 'Menu.statment' | translate }}</h3>
+    <section
+      class="ps-group"
+      [class.ps-group--bare]="only !== 'all'"
+      *ngIf="only === 'all' || only === 'income'"
+    >
+      <h3 class="ps-heading" *ngIf="only === 'all'">{{ 'Menu.statment' | translate }}</h3>
       <div class="ps-box">
         <h4 class="ps-box-title">{{ 'Income.Revenue' | translate }}</h4>
         <hr class="ps-rule" />
@@ -83,8 +91,12 @@ export interface SheetLine {
     </section>
 
     <!-- Balance Sheet: the state now -->
-    <section class="ps-group">
-      <h3 class="ps-heading">{{ 'Menu.sheet' | translate }}</h3>
+    <section
+      class="ps-group"
+      [class.ps-group--bare]="only !== 'all'"
+      *ngIf="only === 'all' || only === 'balance'"
+    >
+      <h3 class="ps-heading" *ngIf="only === 'all'">{{ 'Menu.sheet' | translate }}</h3>
       <div class="ps-box">
         <h4 class="ps-box-title">{{ 'Balance.Assets' | translate }}</h4>
         <hr class="ps-rule" />
@@ -145,6 +157,12 @@ export interface SheetLine {
         border-radius: var(--radius-lg, 12px);
         background: var(--color-background, #f6f7f9);
         padding: 10px 12px 12px;
+      }
+      /* inside a panel of its own the sheet needs no frame of its own */
+      .ps-group--bare {
+        border: 0;
+        background: none;
+        padding: 0;
       }
       .ps-heading {
         margin: 0 0 10px;
@@ -265,6 +283,8 @@ export interface SheetLine {
   ],
 })
 export class ProfessionSheetsComponent {
+  /** Which sheet to draw: all three, or one of them (the setup shows them behind panels). */
+  @Input() only: 'all' | 'cashflow' | 'income' | 'balance' = 'all';
   @Input() currency = '';
   /** The calculation: income, passive income, expenses and what is left of the month. */
   @Input() cashIncome = 0;

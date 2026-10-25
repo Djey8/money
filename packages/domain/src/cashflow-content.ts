@@ -507,26 +507,40 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
     {
       id: 'dual-student-informatik',
       title: 'Dualer Student Informatik',
-      // net salary 1.955 € plus 200 € support from his parents: one income line of 2.155 €
-      salaryMinor: 215500,
+      // 34.000 € a year before tax, 2.833 € a month; the German deductions are expense lines (estimates for a single person)
+      salaryMinor: 283300,
       expenses: [
+        // what the state and the social insurances take from the gross salary: 845 €
+        { title: 'Lohnsteuer', amountMinor: 23500, key: 'incomeTax' }, // 235 €
+        { title: 'Rentenversicherung', amountMinor: 26300, key: 'pension' }, // 263 € (9,3 %)
+        { title: 'Krankenversicherung', amountMinor: 24200, key: 'healthInsurance' }, // 242 €
+        { title: 'Pflegeversicherung', amountMinor: 6800, key: 'careInsurance' }, // 68 €
+        { title: 'Arbeitslosenversicherung', amountMinor: 3700, key: 'unemploymentInsurance' }, // 37 € (1,3 %)
+        // fixed costs: 919 €
         { title: 'Miete', amountMinor: 80000, key: 'rent' }, // 800 €
-        { title: 'Deutschlandticket', amountMinor: 4300, key: 'transport' }, // 43 €
         { title: 'Versicherungen', amountMinor: 2400, key: 'insurance' }, // 24 €
         { title: 'Nebenkosten & Telekom', amountMinor: 7100, key: 'utilities' }, // 71 €: internet, phone, electricity, broadcasting fee
         { title: 'Abos', amountMinor: 2400, key: 'subscriptions' }, // 24 €
-        { title: 'Lebenshaltung', amountMinor: 54000, key: 'living' }, // 540 €: groceries, bakery, drugstore
-        { title: 'Freizeit', amountMinor: 23000, key: 'leisure', account: 'Splurge' }, // 230 €: eating out, climbing, tennis
+        // daily living: 395 €
+        { title: 'Lebensmittel', amountMinor: 30000, key: 'groceries' }, // 300 €
+        { title: 'Essen to go', amountMinor: 5000, key: 'takeaway' }, // 50 €
+        { title: 'Drogerie & Hygiene', amountMinor: 3000, key: 'hygiene' }, // 30 €
+        { title: 'Friseur', amountMinor: 1500, key: 'haircut' }, // 15 €
+        // hobbies and going out: 174 €
+        { title: 'Restaurant', amountMinor: 6000, key: 'restaurant', account: 'Splurge' }, // 60 €
+        { title: 'Klettern', amountMinor: 4500, key: 'climbing', account: 'Splurge' }, // 45 €
+        { title: 'Tennis', amountMinor: 3000, key: 'tennis', account: 'Splurge' }, // 30 €
+        { title: 'Hobbys', amountMinor: 3900, key: 'hobbies', account: 'Splurge' }, // 39 €
       ],
       perChildExpenseMinor: 30000, // 300 €
-      savingsMinor: 170000, // 1.700 €: what is on the bank accounts
+      savingsMinor: 50000, // 500 €
       starterKit: {
         // a first share and a little crypto: almost nothing yet
         shares: [{ tag: 'BMW', quantity: 1, priceMinor: 7928 }],
         assets: [{ tag: 'IOTA', amountMinor: 10000, key: 'crypto' }],
         liabilities: [
           { tag: 'Eltern-Darlehen', amountMinor: 150000, key: 'parentsLoan' }, // 1.500 €, no monthly payment
-          { tag: 'Führerschein-Darlehen', amountMinor: 110700, key: 'licenceLoan' }, // 1.107 €, no monthly payment
+          { tag: 'Autokredit', amountMinor: 150000, key: 'carLoan' }, // 1.500 €, no monthly payment
         ],
       },
       profile: {
@@ -535,13 +549,13 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
             name: 'Jonas',
             tagline: 'Dual student in computer science, dreaming of the mountains',
             background:
-              'Jonas studies computer science and works half-time at an IT company. Money is tight: the rent takes most of his pay, the rest goes on groceries, the climbing gym and the odd gadget. He has no real savings yet - a little cash, one BMW share and a bit of crypto - and owes his parents and the driving school.',
+              'Jonas studies computer science and works half-time at an IT company. Money is tight: the rent takes most of his pay, the rest goes on groceries, the climbing gym and the odd gadget. He has no real savings yet - a little cash, one BMW share and a bit of crypto - and owes his parents and a car loan.',
             values: [
               'Independence: one day he wants to live from money that works for him',
               'The mountains: every free weekend is climbing or a ski tour',
               'Step by step: he saves for gear and courses instead of borrowing for them',
             ],
-            goal: 'Become financially independent: passive income that covers all his monthly expenses - and live the dream on the way.',
+            goal: 'Pay back your parents and the car loan (3,000 euros together), fund and complete the mountain-guide dream, and become financially independent: passive income that covers all monthly expenses.',
             dream: {
               title: 'Certified mountain guide',
               summary:
@@ -552,13 +566,13 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
             name: 'Jonas',
             tagline: 'Dualer Student der Informatik, mit dem Kopf in den Bergen',
             background:
-              'Jonas studiert Informatik und arbeitet halbtags in einem IT-Unternehmen. Das Geld ist knapp: die Miete frisst den größten Teil seines Gehalts, der Rest geht für Essen, die Kletterhalle und das eine oder andere Gadget drauf. Rücklagen hat er kaum - etwas Bargeld, eine BMW-Aktie und ein bisschen Krypto - und er schuldet seinen Eltern und der Fahrschule noch Geld.',
+              'Jonas studiert Informatik und arbeitet halbtags in einem IT-Unternehmen. Das Geld ist knapp: die Miete frisst den größten Teil seines Gehalts, der Rest geht für Essen, die Kletterhalle und das eine oder andere Gadget drauf. Rücklagen hat er kaum - etwas Bargeld, eine BMW-Aktie und ein bisschen Krypto - und er schuldet seinen Eltern und für das Auto noch Geld.',
             values: [
               'Unabhängigkeit: eines Tages will er von Geld leben, das für ihn arbeitet',
               'Die Berge: jedes freie Wochenende ist Klettern oder Skitour',
               'Schritt für Schritt: er spart für Ausrüstung und Kurse, statt sich dafür zu verschulden',
             ],
-            goal: 'Finanziell unabhängig werden: passives Einkommen, das alle monatlichen Ausgaben deckt - und unterwegs den Traum leben.',
+            goal: 'Zahle deine Eltern und den Autokredit zurück (zusammen 3.000 Euro), finanziere und erfülle den Traum vom Berg- und Skiführer und werde finanziell unabhängig: passives Einkommen, das alle monatlichen Ausgaben deckt.',
             dream: {
               title: 'Staatlich geprüfter Berg- und Skiführer',
               summary:

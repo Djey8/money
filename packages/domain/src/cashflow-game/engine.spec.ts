@@ -28,12 +28,23 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
     expect(student.profile?.texts['de'].goal).toBeTruthy();
   });
 
-  it('keeps about 400 euros a month: 2.155 in, 1.732 out', () => {
-    expect(computeCashflowProfessionMonthlyCashflowMinor(student)).toBe(42300);
-    expect(student.expenses.reduce((sum, line) => sum + line.amountMinor, 0)).toBe(173200);
+  it('keeps 500 euros a month: 34.000 a year gross, 845 of it for tax and the social insurances', () => {
+    expect(student.salaryMinor).toBe(283300);
+    expect(computeCashflowProfessionMonthlyCashflowMinor(student)).toBe(50000);
+    const deductions = [
+      'incomeTax',
+      'pension',
+      'healthInsurance',
+      'careInsurance',
+      'unemploymentInsurance',
+    ];
+    const taken = student.expenses
+      .filter((line) => deductions.includes(line.key ?? ''))
+      .reduce((sum, line) => sum + line.amountMinor, 0);
+    expect(taken).toBe(84500);
   });
 
-  it('books leisure to Splurge and the rest to Daily, and starts with two small debts and almost no assets', () => {
+  it('books leisure to Splurge and the rest to Daily, and starts with two small debts (3.000 together) and almost no assets', () => {
     const picked = pickCashflowProfession(
       CASHFLOW_GAME_SETS,
       'jfk-stories',
@@ -42,10 +53,11 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
       'solo',
     );
     const accounts = new Map(picked.subscriptions.map((sub) => [sub.title, sub.account]));
-    expect(accounts.get('Freizeit')).toBe('Splurge');
+    expect(accounts.get('Klettern')).toBe('Splurge');
+    expect(accounts.get('Restaurant')).toBe('Splurge');
     expect(accounts.get('Miete')).toBe('Daily');
     expect(picked.starterKit.liabilities?.map((debt) => debt.amountMinor)).toEqual([
-      150000, 110700,
+      150000, 150000,
     ]);
     expect(picked.starterKit.shares?.[0]).toMatchObject({ tag: 'BMW', quantity: 1 });
   });
