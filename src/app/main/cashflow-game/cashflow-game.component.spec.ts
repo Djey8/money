@@ -2402,6 +2402,8 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     // the numbers: the month's cashflow is 500, and the assets list the cash, the BMW share and the crypto held as shares
     const sheets = component.setupSheets!;
     expect(sheets.cashTotal).toBe(500);
+    // the numbers are shown in the money of the game: Dream Taler
+    expect(component.setupCurrency).toBe('DT');
     expect(sheets.assets.map((line) => line.name.split(' ')[0])).toEqual(
       expect.arrayContaining(['BMW', 'IOTA']),
     );

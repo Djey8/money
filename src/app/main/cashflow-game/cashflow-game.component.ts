@@ -860,6 +860,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     `${option.setId}/${option.profession.id}`;
   trackPanel = (_index: number, panel: { id: string }): string => panel.id;
 
+  /** The money the numbers of the chosen character are shown in: Dream Taler / Traumtaler for the custom edition, as it will be in the game. */
+  get setupCurrency(): string {
+    return this.selectedGameSet?.edition === 'custom'
+      ? this.language.current === 'de'
+        ? 'TT'
+        : 'DT'
+      : this.appState.currency;
+  }
+
   pickCharacter(option: { setId: string; profession: CashflowProfession }): void {
     this.selectedGameSetId = option.setId;
     this.selectedProfessionId = option.profession.id;
