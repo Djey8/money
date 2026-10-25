@@ -1,6 +1,7 @@
 import type { CashflowDreamProject } from '@money/domain';
 import { fromMinorUnits } from '@money/domain';
 import type { Smile } from 'src/app/interfaces/smile';
+import type { Fire } from 'src/app/interfaces/fire';
 
 /**
  * The dream of a character as the app's own Smile project (JFK, 2026-10-25): the static content of the character - buckets with what
@@ -12,6 +13,30 @@ export function dreamToSmile(project: CashflowDreamProject, nowIso: string): Smi
     title: project.title,
     sub: project.sub,
     dream: true,
+    phase: 'planning',
+    description: project.description,
+    buckets: project.buckets.map((bucket) => ({
+      id: `${project.title}-${bucket.id}`,
+      title: bucket.title,
+      target: fromMinorUnits(bucket.targetMinor),
+      amount: 0,
+      notes: bucket.notes,
+      links: (bucket.links ?? []).map((link) => ({ ...link })),
+    })),
+    links: project.links.map((link) => ({ ...link })),
+    actionItems: project.actionItems.map((item) => ({ ...item, done: false })),
+    notes: project.notes.map((text) => ({ text, createdAt: nowIso })),
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+}
+
+/** The emergency reserve of a character as the app's own Fire project: the same idea as the dream, in the Fire page. */
+export function reserveToFire(project: CashflowDreamProject, nowIso: string): Fire {
+  return {
+    title: project.title,
+    sub: project.sub,
+    reserve: true,
     phase: 'planning',
     description: project.description,
     buckets: project.buckets.map((bucket) => ({

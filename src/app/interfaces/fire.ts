@@ -54,6 +54,9 @@ export interface Fire {
   createdAt: string; // ISO timestamp
   updatedAt: string; // ISO timestamp
 
+  /** The emergency reserve of a character of the game (JFK, 2026-10-25): it can be funded and used, but not deleted. */
+  reserve?: boolean;
+
   // Payment Plans (optional - multiple payment plans supported)
   plannedSubscriptions?: PlannedSubscription[]; // Array of payment plans for this emergency fund
 }

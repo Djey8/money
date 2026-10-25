@@ -231,11 +231,11 @@ function savedFilters(): TableFilters {
               </button>
             </div>
           </div>
-          <div class="tl-filter" *ngFor="let group of filterGroups()">
+          <div class="tl-filter" *ngFor="let group of filterGroups(); trackBy: trackKey">
             <span class="tl-filter-label">{{ group.label }}</span>
             <div class="tl-seg" role="radiogroup" [attr.aria-label]="group.label">
               <button
-                *ngFor="let option of group.options"
+                *ngFor="let option of group.options; trackBy: trackValue"
                 type="button"
                 role="radio"
                 [class.tl-seg--on]="filters[group.key] === option.value"
@@ -851,6 +851,10 @@ export class TablesLobbyComponent implements OnInit {
       (f.end !== 'any' ? 1 : 0)
     );
   }
+
+  /** The filters are made again on every check: told apart by what they are, so the buttons are not drawn again under the press. */
+  trackKey = (_index: number, group: { key: string }): string => group.key;
+  trackValue = (_index: number, option: { value: string }): string => option.value;
 
   setFilter<K extends keyof TableFilters>(key: K, value: string): void {
     this.filters = { ...this.filters, [key]: value } as TableFilters;

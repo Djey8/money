@@ -56,6 +56,20 @@ type SheetId = 'cashflow' | 'income' | 'balance';
           {{ 'CashflowGame.setup.openDream' | translate }} ›
         </button>
       </section>
+      <!-- the emergency reserve every character has to build: a Fire project, looked at here and opened in the Fire page once the game runs -->
+      <section class="cs-group cs-group--reserve" *ngIf="story.reserve as reserve">
+        <h4>{{ 'CashflowGame.setup.reserve' | translate }}</h4>
+        <p class="cs-story">
+          <strong
+            >{{ reserve.project.title }}: {{ reserveTotal | appNumber: '1.0-0' : false }}
+            {{ currency }}</strong
+          ><br />{{ reserve.summary }}
+        </p>
+        <p class="cs-story cs-source">{{ 'CashflowGame.setup.reserveSource' | translate }}</p>
+        <button type="button" class="cs-dream-btn" (click)="reserveOpen.emit()">
+          {{ 'CashflowGame.setup.openReserve' | translate }} ›
+        </button>
+      </section>
       <!-- what it takes to win: a checklist, ticked in the running game as each one is met -->
       <section class="cs-group">
         <h4>{{ 'CashflowGame.setup.goal' | translate }}</h4>
@@ -63,7 +77,12 @@ type SheetId = 'cashflow' | 'income' | 'balance';
         <ul class="cs-check">
           <li *ngFor="let item of story.goalItems" [class.cs-check--done]="done(item.id)">
             <span class="cs-box" aria-hidden="true">{{ done(item.id) ? '☑' : '☐' }}</span>
-            <span>{{ item.text }}</span>
+            <span
+              >{{ item.text }}
+              <ng-container *ngIf="item.id === 'reserve' && reserveTotal"
+                >({{ reserveTotal | appNumber: '1.0-0' : false }} {{ currency }})</ng-container
+              ></span
+            >
           </li>
         </ul>
       </section>
@@ -176,6 +195,14 @@ type SheetId = 'cashflow' | 'income' | 'balance';
         font-weight: 600;
         cursor: pointer;
       }
+      .cs-group--reserve {
+        border-color: var(--color-warning, #d98e04);
+      }
+      .cs-source {
+        margin-top: 6px;
+        font-size: 0.85rem;
+        opacity: 0.8;
+      }
       .cs-story {
         margin: 0;
         line-height: 1.4;
@@ -265,6 +292,14 @@ export class CharacterSheetComponent {
   @Output() liabilityOpen = new EventEmitter<number>();
   /** The dream project was asked for. */
   @Output() dreamOpen = new EventEmitter<void>();
+  /** The emergency reserve project was asked for. */
+  @Output() reserveOpen = new EventEmitter<void>();
+
+  /** What the reserve has to hold in all (three monthly expenses), in the game's money. */
+  get reserveTotal(): number {
+    const buckets = this.story?.reserve?.project.buckets ?? [];
+    return buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0) / 100;
+  }
 
   /** The panel that is open: the Cashflow, at first. */
   open: SheetId | null = 'cashflow';

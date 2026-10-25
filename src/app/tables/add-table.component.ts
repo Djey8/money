@@ -144,7 +144,7 @@ function accountName(): string {
               </div>
               <div class="at-seg" role="radiogroup" [attr.aria-label]="a.visibility">
                 <button
-                  *ngFor="let option of visibilityOptions()"
+                  *ngFor="let option of visibilityOptions(); trackBy: trackValue"
                   type="button"
                   role="radio"
                   [class.at-seg--on]="form.visibility === option.value"
@@ -182,7 +182,7 @@ function accountName(): string {
               </div>
               <div class="at-seg" role="radiogroup" [attr.aria-label]="a.endCondition">
                 <button
-                  *ngFor="let option of endOptions()"
+                  *ngFor="let option of endOptions(); trackBy: trackValue"
                   type="button"
                   role="radio"
                   [class.at-seg--on]="form.endCondition === option.value"
@@ -214,7 +214,7 @@ function accountName(): string {
               </div>
               <div class="at-seg" role="radiogroup" [attr.aria-label]="a.professions">
                 <button
-                  *ngFor="let option of professionOptions()"
+                  *ngFor="let option of professionOptions(); trackBy: trackValue"
                   type="button"
                   role="radio"
                   [class.at-seg--on]="form.professions === option.value"
@@ -237,7 +237,7 @@ function accountName(): string {
               </div>
               <div class="at-seg" role="radiogroup" [attr.aria-label]="a.clock">
                 <button
-                  *ngFor="let option of clockOptions()"
+                  *ngFor="let option of clockOptions(); trackBy: trackValue"
                   type="button"
                   role="radio"
                   [class.at-seg--on]="form.clock === option.value"
@@ -285,7 +285,7 @@ function accountName(): string {
               </div>
               <div class="at-seg" role="radiogroup" [attr.aria-label]="a.pace">
                 <button
-                  *ngFor="let option of paceOptions()"
+                  *ngFor="let option of paceOptions(); trackBy: trackValue"
                   type="button"
                   role="radio"
                   [class.at-seg--on]="form.pace === option.value"
@@ -310,7 +310,7 @@ function accountName(): string {
           </button>
           <section class="at-group" *ngIf="showAdvanced">
             <h3>{{ a.groupRules }}</h3>
-            <div class="at-row" *ngFor="let rule of switches()">
+            <div class="at-row" *ngFor="let rule of switches(); trackBy: trackRule">
               <div class="at-label">
                 <strong>{{ rule.title }}</strong>
                 <small>{{ rule.hint }}</small>
@@ -688,6 +688,10 @@ export class AddTableComponent implements OnInit {
     this.suggestion = this.a.suggestions[this.suggestionIndex];
     this.form.name = '';
   }
+
+  /** The options are made again on every check: told apart by what they are, or the buttons are drawn again under the press. */
+  trackValue = (_index: number, option: { value: string }): string => option.value;
+  trackRule = (_index: number, rule: { key: string }): string => rule.key;
 
   visibilityOptions() {
     return [

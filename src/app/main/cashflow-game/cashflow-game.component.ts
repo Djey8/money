@@ -1,4 +1,4 @@
-import { dreamToSmile } from './dream-project';
+import { dreamToSmile, reserveToFire } from './dream-project';
 import { AfterViewChecked, Component, OnDestroy, Type } from '@angular/core';
 import { CommonModule, formatNumber } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -756,12 +756,22 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       ...raw,
       this.translate.instant(`CashflowGame.liabilityTag.${key}`),
     ];
+    // the dream and the reserve are met when every bucket of their project is full
+    const full = (project: { buckets: { amount: number; target: number }[] } | undefined) =>
+      !!project?.buckets.length &&
+      project.buckets.every((bucket) => Number(bucket.amount) + 0.005 >= Number(bucket.target));
+    const story = this.profileOf(this.selectedProfession);
+    const dreamTitle = story?.dream.project?.title;
+    const reserveTitle = story?.reserve?.project.title;
     const value = {
       parentsLoan: !open(
         alias('parentsLoan', 'Eltern-Darlehen', 'Loan from parents', 'Darlehen der Eltern'),
       ),
       carLoan: !open(alias('carLoan', 'Autokredit', 'Car Loan')),
-      dream: false,
+      dream: full(this.appState.allSmileProjects.find((project) => project.title === dreamTitle)),
+      reserve: full(
+        this.appState.allFireEmergencies.find((project) => project.title === reserveTitle),
+      ),
       independence: this.escapedRatRace,
     };
     const key = JSON.stringify(value);
@@ -798,6 +808,32 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     await new Promise<void>((resolve) => setTimeout(resolve));
     InfoSmileComponent.openPreview(
       dreamToSmile(project, new Date().toISOString()),
+      CashflowGameComponent.zIndex + 2,
+    );
+  }
+
+  /** The Fire info panel, drawn here while a reserve is only looked at (before the game). */
+  reservePreview: Type<unknown> | null = null;
+
+  /** The emergency reserve, as the Fire project: looked at before the game, opened in the Fire page in the running one. */
+  async openReserve(profession: CashflowProfession): Promise<void> {
+    const project = this.profileOf(profession)?.reserve?.project;
+    if (!project) return;
+    const { InfoFireComponent } = await import('src/app/panels/info/info-fire/info-fire.component');
+    const index = this.appState.allFireEmergencies.findIndex(
+      (entry) => entry.title === project.title,
+    );
+    if (this.hasActiveGame && index >= 0) {
+      this.reservePreview = null;
+      this.closeWindow();
+      await this.router.navigate(['/fireemergencies']);
+      InfoFireComponent.setInfoFireComponent(index, this.appState.allFireEmergencies[index]);
+      return;
+    }
+    this.reservePreview = InfoFireComponent;
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    InfoFireComponent.openPreview(
+      reserveToFire(project, new Date().toISOString()),
       CashflowGameComponent.zIndex + 2,
     );
   }
@@ -954,24 +990,34 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     profession: CashflowProfession;
     name: string;
     tagline: string;
+    /** What is left of a month (JFK, 2026-10-25): the grid shows the lowest first. */
+    cashflow: number;
+    cashflowText: string;
   }[] {
     const custom =
       this.selectedGameSet?.edition === 'custom' || this.selectedGameSetId === 'custom-jfk';
     const sets = custom
       ? this.gameSets.filter((set) => set.edition === 'custom' || set.id === 'custom-jfk')
       : this.gameSets.filter((set) => set.id === this.selectedGameSetId);
-    return sets.flatMap((set) =>
-      set.professions.map((profession) => {
-        const story = this.profileOf(profession);
-        const salary = `${this.toDisplayAmount(profession.salaryMinor).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
-        return {
-          setId: set.id,
-          profession,
-          name: story?.name ?? this.professionTitle(profession),
-          tagline: story?.tagline ?? salary,
-        };
-      }),
-    );
+    return sets
+      .flatMap((set) =>
+        set.professions.map((profession) => {
+          const story = this.profileOf(profession);
+          const cashflow = this.toDisplayAmount(
+            computeCashflowProfessionMonthlyCashflowMinor(profession),
+          );
+          const cashflowText = `${cashflow.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
+          return {
+            setId: set.id,
+            profession,
+            name: story?.name ?? this.professionTitle(profession),
+            tagline: story?.tagline ?? '',
+            cashflow,
+            cashflowText,
+          };
+        }),
+      )
+      .sort((a, b) => a.cashflow - b.cashflow);
   }
 
   /** The lists are rebuilt on every check: the rows are told apart by what they are, so they are not drawn again each time. */
@@ -1074,6 +1120,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
           this.isBusy = false;
           this.choosingCharacter = false;
           this.dreamPreview = null;
+          this.reservePreview = null;
           this.applyGameCurrency();
           this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
           this.closeWindow();
@@ -1905,6 +1952,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       ...this.realCurrencies.map((symbol) => ({ id: symbol, label: symbol })),
     ];
   }
+
+  /** The choices are made again on every check: they are told apart by what they are, or the buttons would be drawn again under the press. */
+  trackChoice = (_index: number, option: { id: string }): string => option.id;
 
   setCurrency(choice: string): void {
     this.currencyChoice = choice;

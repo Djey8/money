@@ -77,7 +77,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
           {{ showRules ? '▾ ' + h.fewerRules : '▸ ' + h.allRules }}
         </button>
         <ul class="wr-rules" *ngIf="showRules">
-          <li *ngFor="let rule of rules()">
+          <li *ngFor="let rule of rules(); trackBy: trackTitle">
             <span>{{ rule.title }}</span>
             <strong [class.wr-off]="rule.value === off">{{ rule.value }}</strong>
           </li>
@@ -101,7 +101,11 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
           </button>
         </header>
         <ul class="wr-seats">
-          <li *ngFor="let row of seatRows()" class="wr-seat" [class.wr-seat--you]="row.isYou">
+          <li
+            *ngFor="let row of seatRows(); trackBy: trackSeat"
+            class="wr-seat"
+            [class.wr-seat--you]="row.isYou"
+          >
             <button
               type="button"
               class="wr-seat-main"
@@ -796,6 +800,10 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   }
 
   // ── the seats ──
+
+  /** The cards are made again on every check: told apart by their seat, so a press is not lost to a card drawn anew. */
+  trackSeat = (_index: number, row: { player: { seat: number } }): number => row.player.seat;
+  trackTitle = (_index: number, rule: { title: string }): string => rule.title;
 
   seatRows(): {
     player: PlayerView;

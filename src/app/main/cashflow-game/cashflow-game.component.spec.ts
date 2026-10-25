@@ -2399,6 +2399,9 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.characterChosen).toBe(false);
     const names = component.characterOptions.map((option) => option.name);
     expect(names[0]).toBe('Jonas');
+    // lowest monthly cashflow first
+    const flows = component.characterOptions.map((option) => option.cashflow);
+    expect(flows).toEqual([...flows].sort((a, b) => a - b));
     // the test characters are in the grid as examples
     expect(names).toEqual(expect.arrayContaining(['Softwareentwickler/in', 'Freiberufler/in']));
 

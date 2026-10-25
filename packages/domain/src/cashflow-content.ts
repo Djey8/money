@@ -7,7 +7,11 @@ import { CLASSIC_DEAL_BIG } from './cashflow-game/classic-deal-big';
 import { CLASSIC_DEAL_SMALL } from './cashflow-game/classic-deal-small';
 import { CLASSIC_DOODAD } from './cashflow-game/classic-doodad';
 import { CLASSIC_MARKET } from './cashflow-game/classic-market';
-import type { CashflowDreamProject, CashflowGameSet } from './cashflow-game/types';
+import type {
+  CashflowDreamProject,
+  CashflowExpenseLine,
+  CashflowGameSet,
+} from './cashflow-game/types';
 
 /**
  * Exactly one placeholder game set, with obviously-fake numbers, so the MVP
@@ -493,6 +497,111 @@ const DAV_ARTICLE =
   'https://www.alpenverein.de/artikel/bergfuehrer-berufsbild-im-wandel_48dd1c30-e9e1-45f6-bd65-da76f921c559';
 const COURSE_PROVIDER = 'https://www.alpinewelten.com/unternehmen/bergfuehrer-werden';
 
+const DUAL_STUDENT_EXPENSES: CashflowExpenseLine[] = [
+  // what the state and the social insurances take from the gross salary: 845 €
+  { title: 'Lohnsteuer', amountMinor: 23500, key: 'incomeTax' }, // 235 €
+  { title: 'Rentenversicherung', amountMinor: 26300, key: 'pension' }, // 263 € (9,3 %)
+  { title: 'Krankenversicherung', amountMinor: 24200, key: 'healthInsurance' }, // 242 €
+  { title: 'Pflegeversicherung', amountMinor: 6800, key: 'careInsurance' }, // 68 €
+  { title: 'Arbeitslosenversicherung', amountMinor: 3700, key: 'unemploymentInsurance' }, // 37 € (1,3 %)
+  // fixed costs: 919 €
+  { title: 'Miete', amountMinor: 80000, key: 'rent' }, // 800 €
+  { title: 'Versicherungen', amountMinor: 2400, key: 'insurance' }, // 24 €
+  { title: 'Nebenkosten & Telekom', amountMinor: 7100, key: 'utilities' }, // 71 €: internet, phone, electricity, broadcasting fee
+  { title: 'Abos', amountMinor: 2400, key: 'subscriptions' }, // 24 €
+  // daily living: 395 €
+  { title: 'Lebensmittel', amountMinor: 30000, key: 'groceries' }, // 300 €
+  { title: 'Essen to go', amountMinor: 5000, key: 'takeaway' }, // 50 €
+  { title: 'Drogerie & Hygiene', amountMinor: 3000, key: 'hygiene' }, // 30 €
+  { title: 'Friseur', amountMinor: 1500, key: 'haircut' }, // 15 €
+  // hobbies and going out: 174 €
+  { title: 'Restaurant', amountMinor: 6000, key: 'restaurant', account: 'Splurge' }, // 60 €
+  { title: 'Klettern', amountMinor: 4500, key: 'climbing', account: 'Splurge' }, // 45 €
+  { title: 'Tennis', amountMinor: 3000, key: 'tennis', account: 'Splurge' }, // 30 €
+  { title: 'Hobbys', amountMinor: 3900, key: 'hobbies', account: 'Splurge' }, // 39 €
+];
+
+const MOJO_BOOK = 'https://www.barefootinvestor.com/';
+
+/**
+ * The Mojo of a character (JFK, 2026-10-25): the emergency reserve of three monthly expenses that every character has to build on
+ * their own to win. It is a Fire project from the first day; the advice follows the usual finance literature (three to six months
+ * of expenses in an easy-to-reach account, apart from the money for goals) and is said so in the notes.
+ */
+function reserveProject(lang: 'en' | 'de', monthlyExpensesMinor: number): CashflowDreamProject {
+  const en = lang === 'en';
+  const t = (english: string, german: string) => (en ? english : german);
+  const month = (n: number) => ({
+    id: `month${n}`,
+    title: t(`Month ${n}`, `Monat ${n}`),
+    targetMinor: monthlyExpensesMinor,
+    notes: t(
+      n === 1
+        ? 'The first month of expenses is the most important one: it covers the small emergencies (a broken phone, a repair, a dentist) so that they never need a loan.'
+        : n === 2
+          ? 'Two months bridge a short gap: a delayed salary, a bigger repair or a few weeks without work.'
+          : 'Three months of expenses is the minimum the finance books ask for before you invest: the time to find a new job without selling anything at a bad price.',
+      n === 1
+        ? 'Der erste Monat an Ausgaben ist der wichtigste: er deckt die kleinen Notfälle (ein kaputtes Handy, eine Reparatur, der Zahnarzt), damit dafür nie ein Kredit nötig wird.'
+        : n === 2
+          ? 'Zwei Monate überbrücken eine kurze Lücke: ein verspätetes Gehalt, eine größere Reparatur oder ein paar Wochen ohne Arbeit.'
+          : 'Drei Monate an Ausgaben sind das Minimum, das die Finanzbücher verlangen, bevor man investiert: die Zeit, eine neue Stelle zu finden, ohne etwas zu schlechten Kursen verkaufen zu müssen.',
+    ),
+  });
+  return {
+    title: t('Emergency reserve', 'Notgroschen'),
+    sub: t(
+      'Three months of expenses, for emergencies only',
+      'Drei Monatsausgaben, nur für Notfälle',
+    ),
+    description: t(
+      'An emergency reserve is money that waits for the day something goes wrong: a job lost, a repair, a medical bill. Almost every book on personal finance starts here, before investing and before big goals, because without it one bad month turns into debt. The usual rule is three to six months of your expenses in an account you can reach at once. Here the first goal is three. Fill it with payment plans, a little every Payday; use it when you really have to pay for an emergency, and fill it up again afterwards. The game is won only with the reserve full.',
+      'Ein Notgroschen ist Geld, das auf den Tag wartet, an dem etwas schiefgeht: ein verlorener Job, eine Reparatur, eine Arztrechnung. Fast jedes Buch über persönliche Finanzen beginnt hier, vor dem Investieren und vor großen Zielen, denn ohne ihn wird aus einem schlechten Monat Schulden. Die übliche Regel sind drei bis sechs Monatsausgaben auf einem Konto, an das man sofort herankommt. Hier ist das erste Ziel drei. Fülle ihn mit Zahlplänen, jeden Zahltag ein wenig; nutze ihn, wenn du wirklich einen Notfall bezahlen musst, und fülle ihn danach wieder auf. Das Spiel gewinnst du nur mit vollem Notgroschen.',
+    ),
+    buckets: [month(1), month(2), month(3)],
+    links: [
+      {
+        label: t(
+          'The Barefoot Investor (the Mojo account)',
+          'The Barefoot Investor (das Mojo-Konto)',
+        ),
+        url: MOJO_BOOK,
+      },
+    ],
+    actionItems: [
+      {
+        text: t(
+          'Set up a payment plan that fills the reserve over several Paydays',
+          'Richte einen Zahlplan ein, der den Notgroschen über mehrere Zahltage füllt',
+        ),
+        priority: 'high',
+      },
+      {
+        text: t(
+          'After an emergency, fill the reserve up again before anything else',
+          'Nach einem Notfall den Notgroschen zuerst wieder auffüllen',
+        ),
+        priority: 'medium',
+      },
+    ],
+    notes: [
+      t(
+        "Why three months: Ramit Sethi, Dave Ramsey, Suze Orman and Barefoot's Mojo all give the same advice - a cushion of several months of expenses (not of income) before you invest.",
+        'Warum drei Monate: Ramit Sethi, Dave Ramsey, Suze Orman und Barefoots Mojo geben denselben Rat - ein Polster von mehreren Monatsausgaben (nicht Einkommen), bevor man investiert.',
+      ),
+      t(
+        'The reserve is for emergencies, not for wishes: a sale or a holiday is not one.',
+        'Der Notgroschen ist für Notfälle, nicht für Wünsche: ein Angebot oder ein Urlaub sind keiner.',
+      ),
+    ],
+  };
+}
+
+/** What the expenses of a profession cost in a month. */
+function monthlyExpensesOf(expenses: CashflowExpenseLine[]): number {
+  return expenses.reduce((sum, line) => sum + line.amountMinor, 0);
+}
+
 /**
  * The dream of the dual student: to become a state-certified mountain and ski guide (staatlich geprüfter Berg- und Skiführer,
  * VDBS, Germany). The structure follows the VDBS information of April 2025; the costs are estimates in game money - the course
@@ -718,29 +827,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
       title: 'Dualer Student Informatik',
       // 34.000 € a year before tax, 2.833 € a month; the German deductions are expense lines (estimates for a single person)
       salaryMinor: 283300,
-      expenses: [
-        // what the state and the social insurances take from the gross salary: 845 €
-        { title: 'Lohnsteuer', amountMinor: 23500, key: 'incomeTax' }, // 235 €
-        { title: 'Rentenversicherung', amountMinor: 26300, key: 'pension' }, // 263 € (9,3 %)
-        { title: 'Krankenversicherung', amountMinor: 24200, key: 'healthInsurance' }, // 242 €
-        { title: 'Pflegeversicherung', amountMinor: 6800, key: 'careInsurance' }, // 68 €
-        { title: 'Arbeitslosenversicherung', amountMinor: 3700, key: 'unemploymentInsurance' }, // 37 € (1,3 %)
-        // fixed costs: 919 €
-        { title: 'Miete', amountMinor: 80000, key: 'rent' }, // 800 €
-        { title: 'Versicherungen', amountMinor: 2400, key: 'insurance' }, // 24 €
-        { title: 'Nebenkosten & Telekom', amountMinor: 7100, key: 'utilities' }, // 71 €: internet, phone, electricity, broadcasting fee
-        { title: 'Abos', amountMinor: 2400, key: 'subscriptions' }, // 24 €
-        // daily living: 395 €
-        { title: 'Lebensmittel', amountMinor: 30000, key: 'groceries' }, // 300 €
-        { title: 'Essen to go', amountMinor: 5000, key: 'takeaway' }, // 50 €
-        { title: 'Drogerie & Hygiene', amountMinor: 3000, key: 'hygiene' }, // 30 €
-        { title: 'Friseur', amountMinor: 1500, key: 'haircut' }, // 15 €
-        // hobbies and going out: 174 €
-        { title: 'Restaurant', amountMinor: 6000, key: 'restaurant', account: 'Splurge' }, // 60 €
-        { title: 'Klettern', amountMinor: 4500, key: 'climbing', account: 'Splurge' }, // 45 €
-        { title: 'Tennis', amountMinor: 3000, key: 'tennis', account: 'Splurge' }, // 30 €
-        { title: 'Hobbys', amountMinor: 3900, key: 'hobbies', account: 'Splurge' }, // 39 €
-      ],
+      expenses: DUAL_STUDENT_EXPENSES,
       perChildExpenseMinor: 30000, // 300 €
       savingsMinor: 50000, // 500 €
       starterKit: {
@@ -775,6 +862,10 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
                 text: 'Fund and complete the mountain-guide dream: every bucket of the project full',
               },
               {
+                id: 'reserve',
+                text: 'Build the emergency reserve: three monthly expenses in the Mojo',
+              },
+              {
                 id: 'independence',
                 text: 'Become financially independent: passive income covers all monthly expenses',
               },
@@ -784,6 +875,11 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
               summary:
                 'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 DT. In this game it is his first Smile project.',
               project: mountainGuideProject('en'),
+            },
+            reserve: {
+              summary:
+                'Every character has to build an emergency reserve of three monthly expenses on their own. It is a Fire project from the first day: fill it with payment plans, use it for emergencies, never delete it.',
+              project: reserveProject('en', monthlyExpensesOf(DUAL_STUDENT_EXPENSES)),
             },
           },
           de: {
@@ -804,6 +900,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
                 id: 'dream',
                 text: 'Finanziere und erfülle den Traum vom Berg- und Skiführer: jeder Topf des Projekts voll',
               },
+              { id: 'reserve', text: 'Baue den Notgroschen auf: drei Monatsausgaben im Mojo' },
               {
                 id: 'independence',
                 text: 'Werde finanziell unabhängig: passives Einkommen deckt alle monatlichen Ausgaben',
@@ -814,6 +911,11 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
               summary:
                 'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 TT. Im Spiel ist es sein erstes Smile-Projekt.',
               project: mountainGuideProject('de'),
+            },
+            reserve: {
+              summary:
+                'Jeder Charakter muss einen Notgroschen von drei Monatsausgaben aus eigener Kraft aufbauen. Er ist vom ersten Tag an ein Fire-Projekt: fülle ihn mit Zahlplänen, nutze ihn für Notfälle, lösche ihn nie.',
+              project: reserveProject('de', monthlyExpensesOf(DUAL_STUDENT_EXPENSES)),
             },
           },
         },

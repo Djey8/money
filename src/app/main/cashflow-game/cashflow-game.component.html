@@ -75,6 +75,7 @@
         [currency]="appState.currency"
         (liabilityOpen)="openLiability($event)"
         (dreamOpen)="openDream(profession)"
+        (reserveOpen)="openReserve(profession)"
       ></app-character-sheet>
 
       <!-- Before a game: start it from here, below the info, after shuffling or viewing a profession. -->
@@ -114,7 +115,7 @@
         <h4>{{ 'CashflowGame.setup.currency' | translate }}</h4>
         <div class="cf-seg cf-seg--wrap" role="radiogroup">
           <button
-            *ngFor="let option of currencyChoices"
+            *ngFor="let option of currencyChoices; trackBy: trackChoice"
             type="button"
             role="radio"
             [class.cf-seg--on]="currencyChoice === option.id"
@@ -514,7 +515,10 @@
             <span class="cf-person-avatar" aria-hidden="true">{{ option.name.charAt(0) }}</span>
             <span class="cf-person-text">
               <strong>{{ option.name }}</strong>
-              <small>{{ option.tagline }}</small>
+              <small *ngIf="option.tagline">{{ option.tagline }}</small>
+              <small class="cf-person-cashflow"
+                >{{ 'Cashflow.title' | translate }}: {{ option.cashflowText }}</small
+              >
             </span>
           </button>
         </div>
@@ -528,6 +532,7 @@
           [sheets]="setupSheets"
           [currency]="setupCurrency"
           (dreamOpen)="openDream(profession)"
+          (reserveOpen)="openReserve(profession)"
         ></app-character-sheet>
 
         <button
@@ -2500,5 +2505,8 @@
 
 <!-- The dream of a character, looked at before the game: the Smile info panel of the app, read only, over the game panel. -->
 <ng-container *ngIf="dreamPreview as preview"
+  ><ng-container *ngComponentOutlet="preview"
+/></ng-container>
+<ng-container *ngIf="reservePreview as preview"
   ><ng-container *ngComponentOutlet="preview"
 /></ng-container>

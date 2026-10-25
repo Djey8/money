@@ -3,6 +3,7 @@
   role="dialog"
   aria-modal="true"
   appTrapFocus
+  [class.preview]="classReference.preview"
   *ngIf="classReference.isInfo"
   (click)="highlight()"
   [style.z-index]="classReference.zIndex + 1001"
@@ -1464,7 +1465,7 @@
 
     <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
     <button id="addbtn" (click)="updateFireEmergencie()">{{ 'Info.update' | translate }}</button>
-    <button id="deletebtn" (click)="deleteFire(classReference.index)">
+    <button id="deletebtn" *ngIf="!isReserve" (click)="deleteFire(classReference.index)">
       {{ 'Info.delete' | translate }}
     </button>
     <button id="canclebtn" (click)="closeWindow()">{{ 'Info.cancel' | translate }}</button>
@@ -1476,6 +1477,8 @@
     [projectType]="'fire'"
     [projectTitle]="classReference.title"
     [projectTargetDate]="classReference.targetDate"
+    [gameDate]="gameDate"
+    [maxPayment]="maxPayment"
     [buckets]="classReference.buckets"
     [existingPlan]="
       editingPlanIndex !== null ? classReference.plannedSubscriptions[editingPlanIndex] : undefined

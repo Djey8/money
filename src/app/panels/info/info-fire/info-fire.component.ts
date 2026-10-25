@@ -1,3 +1,4 @@
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -114,7 +115,19 @@ export class InfoFireComponent extends BaseInfoComponent {
   // Current detail tab
   static activeTab: 'overview' | 'buckets' | 'paymentPlans' | 'actions' | 'notes' = 'overview';
 
+  /** The reserve is only looked at (a character's reserve before the game starts): nothing can be changed or saved. */
+  static preview = false;
+
+  /** Shows a project that is not in the account (yet), read only, above whatever is open. */
+  static openPreview(fire: Fire, zIndex: number) {
+    InfoFireComponent.setInfoFireComponent(-1, fire);
+    InfoFireComponent.preview = true;
+    InfoFireComponent.zIndex = zIndex;
+    InfoFireComponent.isInfo = true;
+  }
+
   static setInfoFireComponent(id: number, fire: Fire) {
+    InfoFireComponent.preview = false;
     InfoFireComponent.index = id;
     InfoFireComponent.title = fire.title;
     InfoFireComponent.sub = fire.sub || '';
@@ -159,6 +172,23 @@ export class InfoFireComponent extends BaseInfoComponent {
   newActionDueDate = '';
 
   // Payment Plans management
+  /** In a game the payment plans run in Paydays: the date of the next one (empty outside a game). */
+  get gameDate(): string {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && game.professionId
+      ? (game.virtualDate ?? '')
+      : '';
+  }
+
+  /** In a game: what the month has free for plans, the plan being changed left out (null outside a game). */
+  get maxPayment(): number | null {
+    const editing =
+      this.editingPlanIndex !== null
+        ? InfoFireComponent.plannedSubscriptions[this.editingPlanIndex]?.title
+        : undefined;
+    return CashflowGameService.fundingRoom(editing);
+  }
+
   isPaymentPlannerOpen = false;
   editingPlanIndex: number | null = null;
   newBucketTitle = '';
@@ -190,6 +220,7 @@ export class InfoFireComponent extends BaseInfoComponent {
   editingActionDueDate = '';
 
   get notesList(): FireNote[] {
+    if (InfoFireComponent.preview) return InfoFireComponent.notes;
     const fire = AppStateService.instance.allFireEmergencies[InfoFireComponent.index];
     return fire?.notes || [];
   }
@@ -478,6 +509,7 @@ export class InfoFireComponent extends BaseInfoComponent {
   }
 
   override closeWindow() {
+    InfoFireComponent.preview = false;
     InfoFireComponent.isEdit = false;
     super.closeWindow();
   }
@@ -1219,7 +1251,13 @@ export class InfoFireComponent extends BaseInfoComponent {
     }
   }
 
+  /** The emergency reserve of a character is never deleted: it is a condition of winning. */
+  get isReserve(): boolean {
+    return !!AppStateService.instance.allFireEmergencies[InfoFireComponent.index]?.reserve;
+  }
+
   deleteFire(index: number) {
+    if (AppStateService.instance.allFireEmergencies[index]?.reserve) return;
     this.confirmService.confirm(this.translate.instant('Confirm.deleteFire'), () => {
       const fire = AppStateService.instance.allFireEmergencies[index];
       const deletedTitle = fire.title;
@@ -1332,7 +1370,13 @@ export class InfoFireComponent extends BaseInfoComponent {
     this.confirmService.confirm(
       `Activate payment plan "${plan.title}"? This will create a recurring subscription.`,
       () => {
-        this.subscriptionActivationService.activatePlannedSubscription(plan, fire);
+        if (!this.subscriptionActivationService.activatePlannedSubscription(plan, fire)) {
+          this.toastService.show(
+            this.translate.instant('PaymentPlannerDialog.tooMuchToActivate'),
+            'error',
+          );
+          return;
+        }
         InfoFireComponent.plannedSubscriptions = fire.plannedSubscriptions || [];
         this.saveProject('Payment plan activated');
       },

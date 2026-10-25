@@ -1,4 +1,4 @@
-import { summarizeGameFinances } from './saved-games';
+import { fundingRoomMinor, summarizeGameFinances } from './saved-games';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import {
   addMonthsToIsoDate,
@@ -59,6 +59,36 @@ describe('funding plans at Payday (JFK, 2026-10-25)', () => {
   });
 });
 
+describe('what the month has free for funding plans', () => {
+  const state = {
+    ...initialCashflowGameState(),
+    professionId: 'p',
+    gameSetId: 'g',
+    virtualDate: '2026-12-15',
+    gameSubscriptionTitles: ['Salary', 'Rent'],
+    fundingSubscriptionTitles: ['Plan A', 'Plan B'],
+  };
+  const subs = [
+    { title: 'Salary', amountMinor: 283300 },
+    { title: 'Rent', amountMinor: -233300 },
+    { title: 'Plan A', amountMinor: -20000, endDate: '2027-06-15' },
+    { title: 'Plan B', amountMinor: -10000, endDate: '2026-11-15' }, // over
+  ];
+
+  it('is the cashflow of the month less what the running plans pay: a plan that is over takes nothing', () => {
+    expect(fundingRoomMinor(state, subs)).toBe(30000); // 500 - 200
+    expect(fundingRoomMinor(state, subs, 'Plan A')).toBe(50000); // changing Plan A: it is not counted against itself
+  });
+
+  it('is never below zero', () => {
+    const heavy = [
+      ...subs.slice(0, 2),
+      { title: 'Plan A', amountMinor: -900000, endDate: '2030-01-01' },
+    ];
+    expect(fundingRoomMinor(state, heavy)).toBe(0);
+  });
+});
+
 describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
   const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories')!;
   const student = set.professions.find(
@@ -75,8 +105,20 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
         'parentsLoan',
         'carLoan',
         'dream',
+        'reserve',
         'independence',
       ]);
+    }
+  });
+
+  it('has an emergency reserve of three monthly expenses as a Fire project in both languages', () => {
+    const monthly = student.expenses.reduce((sum, line) => sum + line.amountMinor, 0);
+    for (const lang of ['en', 'de']) {
+      const project = student.profile?.texts[lang].reserve?.project;
+      expect(project?.buckets).toHaveLength(3);
+      expect(project?.buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0)).toBe(
+        3 * monthly,
+      );
     }
   });
 

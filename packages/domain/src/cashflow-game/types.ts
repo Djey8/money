@@ -78,7 +78,7 @@ export interface CashflowDreamProject {
 }
 
 /** The conditions of winning a character has; each is ticked off once it is met. */
-export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'independence';
+export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'reserve' | 'independence';
 
 /** What a character is about, in one language (JFK, 2026-10-25): shown when a character is chosen. */
 export interface CashflowProfileTexts {
@@ -93,6 +93,8 @@ export interface CashflowProfileTexts {
   goalItems: { id: CashflowGoalId; text: string }[];
   /** The dream the character starts with (their first Smile project). */
   dream: { title: string; summary: string; project?: CashflowDreamProject };
+  /** The emergency reserve every character has to build (three monthly expenses): a Fire project from the first day. */
+  reserve?: { summary: string; project: CashflowDreamProject };
 }
 
 /** The story of a character of a custom edition, by language code; a language without an entry falls back to `en`. */

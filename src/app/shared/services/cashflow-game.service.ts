@@ -1,4 +1,4 @@
-import { dreamToSmile } from 'src/app/main/cashflow-game/dream-project';
+import { dreamToSmile, reserveToFire } from 'src/app/main/cashflow-game/dream-project';
 import { RemoteGameHook } from './remote-game';
 import { MoneyLocation } from '../../interfaces/location';
 import { reconcileLocationBooking } from '../location-balance';
@@ -114,6 +114,7 @@ import {
   playDownsizedPaying,
   type PaidWithLoan,
   CLASSIC_RAT_RACE_BOARD,
+  fundingRoomMinor,
   buildDreamfundBoard,
   type BoardSetup,
   type DreamfundBoard,
@@ -989,6 +990,16 @@ export class CashflowGameService {
       const project = dreamToSmile(dream, new Date().toISOString());
       state.allSmileProjects = [
         ...state.allSmileProjects.filter((existing) => existing.title !== project.title),
+        project,
+      ];
+    }
+
+    // and so is the emergency reserve of three monthly expenses, a Fire project
+    const reserve = (story?.[this.translate.currentLang] ?? story?.['en'])?.reserve?.project;
+    if (reserve) {
+      const project = reserveToFire(reserve, new Date().toISOString());
+      state.allFireEmergencies = [
+        ...state.allFireEmergencies.filter((existing) => existing.title !== project.title),
         project,
       ];
     }
@@ -2989,6 +3000,26 @@ export class CashflowGameService {
     const liabilities = AppStateService.instance.liabilities;
     const index = liabilities.findIndex((liability) => liability.tag === tag);
     if (index >= 0) liabilities.splice(index, 1);
+  }
+
+  /**
+   * What the funding plans may still take of the month, in the game's money (null outside a game): the monthly cashflow minus what
+   * the running plans pay. `except` is the plan being changed.
+   */
+  static fundingRoom(except?: string): number | null {
+    const state = AppStateService.instance;
+    if (!CashflowGameService.isCashflowGame() || !state.cashflowGame.professionId) return null;
+    return fromMinorUnits(
+      fundingRoomMinor(
+        state.cashflowGame,
+        state.allSubscriptions.map((sub) => ({
+          title: sub.title,
+          amountMinor: toMinorUnits(sub.amount),
+          endDate: sub.endDate,
+        })),
+        except,
+      ),
+    );
   }
 
   private gameSubscriptions(): CashflowGameSubscription[] {
