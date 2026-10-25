@@ -45,6 +45,28 @@ describe('ProfessionSheetsComponent', () => {
     expect(text).toContain('Mortgage');
   });
 
+  it('lists the biggest amount first in the income statement, a line under its parent staying there', () => {
+    fixture.componentRef.setInput('expenses', [
+      { name: 'Small', amount: 24 },
+      { name: 'Rent', amount: 800 },
+      { name: 'Food', amount: 300 },
+    ]);
+    fixture.componentRef.setInput('revenue', [
+      { name: 'Passive', amount: 100 },
+      { name: 'Rental', amount: 100, sub: true },
+      { name: 'Salary', amount: 3000 },
+    ]);
+    fixture.detectChanges();
+    const names = (box: number) =>
+      Array.from(
+        element
+          .querySelectorAll('.ps-box')
+          [box].querySelectorAll('.ps-row:not(.ps-row--total) td:first-child'),
+      ).map((cell) => cell.textContent!.trim());
+    expect(names(0)).toEqual(['Salary', 'Passive', 'Rental']);
+    expect(names(1)).toEqual(['Rent', 'Food', 'Small']);
+  });
+
   it('opens only the liabilities that have something behind them', () => {
     const opened: number[] = [];
     fixture.componentInstance.liabilityOpen.subscribe((index) => opened.push(index));

@@ -56,10 +56,12 @@ import {
   LanguageService,
 } from 'src/app/shared/services/language.service';
 import { ToastService } from 'src/app/shared/services/toast.service';
+import { LocalService } from 'src/app/shared/services/local.service';
 import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
-import { ProfessionSheetsComponent, type SheetLine } from './profession-sheets.component';
+import { type ProfessionSheetNumbers } from './profession-sheets.component';
+import { CharacterSheetComponent } from './character-sheet.component';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { RatRaceBoardComponent, SPACE_GLYPHS, type BoardToken } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
@@ -101,24 +103,11 @@ interface CardTile {
 /** How a market card is filed in the quick filter. */
 type MarketKind = 'percent' | 'amount' | 'price' | 'cost' | 'split' | 'boost';
 
-/** What the profession panel's sheets show (see ProfessionSheetsComponent). */
-interface ProfessionSheetNumbers {
-  cashIncome: number;
-  cashPassive: number;
-  cashExpenses: number;
-  cashTotal: number;
-  revenue: SheetLine[];
-  revenueTotal: number;
-  expenses: SheetLine[];
-  expensesTotal: number;
-  assets: SheetLine[];
-  assetsTotal: number;
-  liabilities: SheetLine[];
-  liabilitiesTotal: number;
-}
-
 /** How long a card action may take before the spinner comes up (shorter waits just happen). */
 const BUSY_SPINNER_MS = 250;
+
+/** Where the account's own currency waits while the game plays in its own. */
+const CURRENCY_BEFORE_KEY = 'currencyBeforeGame';
 
 /** How long the big Payday popup stays before it steps aside for the small Latest line. */
 const PAYDAY_POPUP_MS = 3500;
@@ -145,7 +134,7 @@ const DICE_DECISION_REST_MS = 900;
     RouterModule,
     TranslateModule,
     AppNumberPipe,
-    ProfessionSheetsComponent,
+    CharacterSheetComponent,
     AppDatePipe,
     RatRaceBoardComponent,
   ],
@@ -244,8 +233,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     private language: LanguageService,
     readonly savedGames: CashflowSavedGamesService,
     private confirm: ConfirmService,
+    private local: LocalService,
   ) {
     CashflowGameComponent.instance = this;
+    // the game's money is Dream Taler or Traumtaler, whichever language the game speaks
+    this.translate.onLangChange.subscribe((event) => this.applyGameCurrency(event.lang));
     document.addEventListener('click', this.onAnyClick, true);
     // the table layer floats its telling at the top only where the wheel is not there to hold it
     RemoteGameHook.ringVisible = () =>
@@ -729,10 +721,31 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     };
   }
 
-  /** From the profession panel to the page of the projects (Grow, Smile, Fire): the game panel closes, the page shows the books on screen. */
-  goToProjects(path: '/grow' | '/smile' | '/fire'): void {
-    this.closeWindow();
-    void this.router.navigate([path]);
+  private goalChecksCache: { key: string; value: Record<string, boolean> } | null = null;
+
+  /** What of the winning list of the character is met in the running game (the dream follows with the project). */
+  get goalChecks(): Record<string, boolean> {
+    const open = (aliases: string[]) =>
+      this.appState.liabilities.some(
+        (liability) =>
+          Number(liability.amount) > 0 &&
+          aliases.some((alias) => alias.toLowerCase() === liability.tag.toLowerCase()),
+      );
+    const alias = (key: string, ...raw: string[]) => [
+      ...raw,
+      this.translate.instant(`CashflowGame.liabilityTag.${key}`),
+    ];
+    const value = {
+      parentsLoan: !open(
+        alias('parentsLoan', 'Eltern-Darlehen', 'Loan from parents', 'Darlehen der Eltern'),
+      ),
+      carLoan: !open(alias('carLoan', 'Autokredit', 'Car Loan')),
+      dream: false,
+      independence: this.escapedRatRace,
+    };
+    const key = JSON.stringify(value);
+    if (this.goalChecksCache?.key !== key) this.goalChecksCache = { key, value };
+    return this.goalChecksCache.value;
   }
 
   /** The balance item (a liability) opens in the Info panel, from where it can be paid back. */
@@ -816,9 +829,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The grid of characters is gone and one is shown. */
   characterChosen = false;
-  /** The financial panel that is open under a chosen character: the Cashflow, at first. */
-  openSheet: 'cashflow' | 'income' | 'balance' | null = 'cashflow';
-
   /** Everybody to choose from: the custom edition's own characters, then the test characters as examples; or the classic professions. */
   get characterOptions(): {
     setId: string;
@@ -854,24 +864,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.selectedGameSetId = option.setId;
     this.selectedProfessionId = option.profession.id;
     this.characterChosen = true;
-    this.openSheet = 'cashflow';
-  }
-
-  toggleSheet(panel: 'cashflow' | 'income' | 'balance'): void {
-    this.openSheet = this.openSheet === panel ? null : panel;
-  }
-
-  /** The three panels with the one figure each shows when closed. */
-  detailPanels(sheets: ProfessionSheetNumbers): {
-    id: 'cashflow' | 'income' | 'balance';
-    title: string;
-    value: number;
-  }[] {
-    return [
-      { id: 'cashflow', title: 'Cashflow.title', value: sheets.cashTotal },
-      { id: 'income', title: 'Menu.statment', value: sheets.revenueTotal },
-      { id: 'balance', title: 'Menu.sheet', value: sheets.assetsTotal - sheets.liabilitiesTotal },
-    ];
   }
 
   /** The editions on offer, the custom one first. The physical board only plays the classic one. */
@@ -943,6 +935,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         onSuccess: () => {
           this.isBusy = false;
           this.choosingCharacter = false;
+          this.applyGameCurrency();
           this.toastService.show(this.translate.instant('CashflowGame.started'), 'success');
           this.closeWindow();
           // A plain router.navigate — no reload needed. Home and the other pages that hold their own
@@ -1726,7 +1719,39 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** Everything the page was showing about the finished game goes: the start panel is what is left. */
+  /**
+   * A game of the custom edition is played in Dream Taler (DT), in German in Traumtaler (TT) - the amounts everywhere show it while the
+   * game is on, and the currency of the account comes back when it is gone (JFK, 2026-10-25).
+   */
+  private applyGameCurrency(lang: string = this.language.current): void {
+    const game = this.appState.cashflowGame;
+    const set = this.gameSets.find((candidate) => candidate.id === game.gameSetId);
+    if (!game.professionId || set?.edition !== 'custom') {
+      this.restoreCurrency();
+      return;
+    }
+    const code = lang === 'de' ? 'TT' : 'DT';
+    if (this.appState.currency === code) return;
+    if (
+      !['DT', 'TT'].includes(this.appState.currency) &&
+      !this.local.getData(CURRENCY_BEFORE_KEY)
+    ) {
+      this.local.saveData(CURRENCY_BEFORE_KEY, this.appState.currency);
+    }
+    this.appState.currency = code;
+    this.local.saveData('currency', code);
+  }
+
+  private restoreCurrency(): void {
+    const before = this.local.getData(CURRENCY_BEFORE_KEY);
+    if (!before) return;
+    this.appState.currency = before;
+    this.local.saveData('currency', before);
+    this.local.removeData(CURRENCY_BEFORE_KEY);
+  }
+
   private backToStartPanel(): void {
+    this.applyGameCurrency();
     this.dashboardView = 'main';
     this.viewedProfession = null;
     this.choosingCharacter = false;

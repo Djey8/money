@@ -541,41 +541,6 @@
   color: #fff;
 }
 
-/* The way on to the projects of the player whose books are on screen: three big buttons. */
-.cf-project-links {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.cf-project-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 4.2rem;
-  padding: 10px 6px;
-  border: 0;
-  border-radius: var(--radius-lg, 12px);
-  background-color: var(--color-primary, #2a7de1);
-  color: #fff;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.cf-project-link span {
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
-.cf-project-link:hover {
-  filter: brightness(1.08);
-}
-
 /* The same widget the app's own Cashflow/Subscriptions pages use (.cashflowBox/.TextLable/
    .amountLable-positive/-negative), scaled down (JFK, 2026-09-29: "how we design it in the real
    app with its design I would like to add this in a small version"). */

@@ -63,7 +63,13 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
   };
   // The confirm dialog answers yes at once, so tests see what happens after "yes".
   const confirm = { confirm: jest.fn((_message: string, onConfirm: () => void) => onConfirm()) };
-  const translate = { instant: (key: string) => key };
+  const translate = { instant: (key: string) => key, onLangChange: { subscribe: jest.fn() } };
+  const stored = new Map<string, string>();
+  const local = {
+    getData: (key: string) => stored.get(key) ?? '',
+    saveData: (key: string, value: string) => void stored.set(key, value),
+    removeData: (key: string) => void stored.delete(key),
+  };
 
   const component = new CashflowGameComponent(
     router as any,
@@ -83,6 +89,7 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     { current: 'en', use: jest.fn(async () => undefined) } as any,
     savedGames as any,
     confirm as any,
+    local as any,
   );
   const language = (component as any).language;
   return {
@@ -2380,7 +2387,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
-  it('the character step: a grid with the example characters first, then one character with only the Cashflow panel open', () => {
+  it('the character step: a grid with the example characters first, then the chosen one with its numbers', () => {
     const { component } = soloComponent();
     component.toCharacter();
     expect(component.characterChosen).toBe(false);
@@ -2392,15 +2399,15 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     component.pickCharacter(component.characterOptions[0]);
     expect(component.characterChosen).toBe(true);
     expect(component.selectedProfessionId).toBe('dual-student-informatik');
-    expect(component.openSheet).toBe('cashflow');
-    component.toggleSheet('income');
-    expect(component.openSheet).toBe('income');
-    component.toggleSheet('income');
-    expect(component.openSheet).toBeNull();
-    // the three panels show one figure each: the month's cashflow, the income, what is left after the debts
-    const panels = component.detailPanels(component.setupSheets!);
-    expect(panels.map((panel) => panel.id)).toEqual(['cashflow', 'income', 'balance']);
-    expect(panels[0].value).toBe(500);
+    // the numbers: the month's cashflow is 500, and the assets list the cash, the BMW share and the crypto held as shares
+    const sheets = component.setupSheets!;
+    expect(sheets.cashTotal).toBe(500);
+    expect(sheets.assets.map((line) => line.name.split(' ')[0])).toEqual(
+      expect.arrayContaining(['BMW', 'IOTA']),
+    );
+    expect(Math.round(sheets.assets.find((line) => line.name.startsWith('IOTA'))!.amount)).toBe(
+      815,
+    );
 
     // back goes to the grid first, then to the setup
     component.backToSetup();
@@ -2408,6 +2415,42 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.choosingCharacter).toBe(true);
     component.backToSetup();
     expect(component.choosingCharacter).toBe(false);
+  });
+
+  it('the winning list is ticked off once the debts are paid, and the game plays in Dream Taler or Traumtaler', () => {
+    const { component } = soloComponent();
+    component.chooseEdition('jfk-stories');
+    const state = component.appState;
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      gameSetId: 'jfk-stories',
+      professionId: 'dual-student-informatik',
+    };
+    state.liabilities = [
+      { tag: 'Eltern-Darlehen', amount: 1500, investment: false, credit: 0 },
+      { tag: 'Autokredit', amount: 1500, investment: false, credit: 0 },
+    ] as never;
+    expect(component.goalChecks).toMatchObject({
+      parentsLoan: false,
+      carLoan: false,
+      dream: false,
+    });
+    state.liabilities = [
+      { tag: 'Autokredit', amount: 1500, investment: false, credit: 0 },
+    ] as never;
+    expect(component.goalChecks).toMatchObject({ parentsLoan: true, carLoan: false });
+    // the same object while nothing changes, so the list is not drawn again
+    expect(component.goalChecks).toBe(component.goalChecks);
+
+    state.currency = '€';
+    (component as any).applyGameCurrency('en');
+    expect(state.currency).toBe('DT');
+    (component as any).applyGameCurrency('de');
+    expect(state.currency).toBe('TT');
+    // the game is gone: the account's own currency comes back
+    state.cashflowGame = { ...state.cashflowGame, professionId: undefined } as never;
+    (component as any).applyGameCurrency('de');
+    expect(state.currency).toBe('€');
   });
 
   it('a card action that takes a moment raises the spinner, and takes it down when it is done', () => {

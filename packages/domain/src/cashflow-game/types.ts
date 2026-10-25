@@ -57,6 +57,9 @@ export interface CashflowExpenseLine {
   account?: 'Daily' | 'Splurge';
 }
 
+/** The conditions of winning a character has; each is ticked off once it is met. */
+export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'independence';
+
 /** What a character is about, in one language (JFK, 2026-10-25): shown when a character is chosen. */
 export interface CashflowProfileTexts {
   name: string;
@@ -65,8 +68,9 @@ export interface CashflowProfileTexts {
   background: string;
   /** What matters to this character. */
   values: string[];
-  /** What it takes to win. */
+  /** What it takes to win: a lead-in line, then the conditions as a checklist (all of them have to come true). */
   goal: string;
+  goalItems: { id: CashflowGoalId; text: string }[];
   /** The dream the character starts with (their first Smile project). */
   dream: { title: string; summary: string };
 }

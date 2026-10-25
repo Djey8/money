@@ -12,6 +12,22 @@ export interface SheetLine {
   index?: number;
 }
 
+/** What the three sheets show (a printed start, or the running game). */
+export interface ProfessionSheetNumbers {
+  cashIncome: number;
+  cashPassive: number;
+  cashExpenses: number;
+  cashTotal: number;
+  revenue: SheetLine[];
+  revenueTotal: number;
+  expenses: SheetLine[];
+  expensesTotal: number;
+  assets: SheetLine[];
+  assetsTotal: number;
+  liabilities: SheetLine[];
+  liabilitiesTotal: number;
+}
+
 /**
  * The three sheets of a profession (JFK, 2026-10-25): CASHFLOW, Income Statement and Balance Sheet, each in a small version of the
  * boxes the app's own pages use - the blue box with its white title and the white card with the rows inside. The numbers are the
@@ -58,7 +74,7 @@ export interface SheetLine {
         <div class="ps-card">
           <table class="ps-table">
             <tbody>
-              <tr *ngFor="let line of revenue" class="ps-row" [class.ps-row--sub]="line.sub">
+              <tr *ngFor="let line of sortedRevenue" class="ps-row" [class.ps-row--sub]="line.sub">
                 <td>{{ line.name }}</td>
                 <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
@@ -76,7 +92,7 @@ export interface SheetLine {
         <div class="ps-card">
           <table class="ps-table">
             <tbody>
-              <tr *ngFor="let line of expenses" class="ps-row">
+              <tr *ngFor="let line of sortedExpenses" class="ps-row">
                 <td>{{ line.name }}</td>
                 <td>{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}</td>
               </tr>
@@ -300,6 +316,20 @@ export class ProfessionSheetsComponent {
   @Input() liabilities: SheetLine[] = [];
   @Input() liabilitiesTotal = 0;
   @Output() liabilityOpen = new EventEmitter<number>();
+
+  /** The income statement lists the biggest amount first (JFK, 2026-10-25); a line that belongs to the one above stays under it. */
+  get sortedRevenue(): SheetLine[] {
+    const groups: SheetLine[][] = [];
+    for (const line of this.revenue) {
+      if (line.sub && groups.length) groups[groups.length - 1].push(line);
+      else groups.push([line]);
+    }
+    return groups.sort((a, b) => Math.abs(b[0].amount) - Math.abs(a[0].amount)).flat();
+  }
+
+  get sortedExpenses(): SheetLine[] {
+    return [...this.expenses].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+  }
 
   open(line: SheetLine): void {
     if (line.index !== undefined) this.liabilityOpen.emit(line.index);

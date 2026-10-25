@@ -48,10 +48,6 @@
       <button class="cf-back-btn" (click)="closeProfessionCard()">
         <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
       </button>
-      <div class="cf-profession-card-header">
-        <h3>{{ professionTitle(profession) }}</h3>
-      </div>
-
       <div class="cf-scenario-toggle" *ngIf="hasActiveGame">
         <button
           class="cf-scenario-toggle-btn"
@@ -69,43 +65,16 @@
         </button>
       </div>
 
-      <!-- The card's three sheets (JFK, 2026-10-25): the small Cashflow calculation, the Income Statement of a normal month and the -->
-      <!-- Balance Sheet, in the boxes of the app's own pages - of the printed start, or of the running game. -->
-      <ng-container *ngIf="professionSheets as sheets">
-        <app-profession-sheets
-          [currency]="appState.currency"
-          [cashIncome]="sheets.cashIncome"
-          [cashPassive]="sheets.cashPassive"
-          [cashExpenses]="sheets.cashExpenses"
-          [cashTotal]="sheets.cashTotal"
-          [revenue]="sheets.revenue"
-          [revenueTotal]="sheets.revenueTotal"
-          [expenses]="sheets.expenses"
-          [expensesTotal]="sheets.expensesTotal"
-          [assets]="sheets.assets"
-          [assetsTotal]="sheets.assetsTotal"
-          [liabilities]="sheets.liabilities"
-          [liabilitiesTotal]="sheets.liabilitiesTotal"
-          (liabilityOpen)="openLiability($event)"
-        ></app-profession-sheets>
-      </ng-container>
-      <p class="cf-profession-card-note" *ngIf="professionCardView === 'start' || !hasActiveGame">
-        {{ 'CashflowGame.perChildExpense' | translate }}:
-        {{ toDisplayAmount(profession.perChildExpenseMinor) | appNumber }} {{ appState.currency }}
-      </p>
-
-      <!-- On to the projects: big, so the player is one press away from the status of Grow, Smile and Fire. -->
-      <nav class="cf-project-links" *ngIf="hasActiveGame" aria-label="Projects">
-        <button type="button" class="cf-project-link" (click)="goToProjects('/grow')">
-          <span aria-hidden="true">📈</span>{{ 'Menu.grow' | translate }}
-        </button>
-        <button type="button" class="cf-project-link" (click)="goToProjects('/smile')">
-          <span aria-hidden="true">😊</span>{{ 'Menu.smile' | translate }}
-        </button>
-        <button type="button" class="cf-project-link" (click)="goToProjects('/fire')">
-          <span aria-hidden="true">🔥</span>{{ 'Menu.fire' | translate }}
-        </button>
-      </nav>
+      <!-- Who the character is, what it takes to win (ticked as it is met) and the three sheets behind panels: the same view as when a character is chosen. -->
+      <app-character-sheet
+        [name]="profileOf(profession)?.name ?? professionTitle(profession)"
+        [tagline]="profileOf(profession)?.tagline ?? professionTitle(profession)"
+        [story]="profileOf(profession)"
+        [checks]="professionCardView === 'live' && hasActiveGame ? goalChecks : null"
+        [sheets]="professionSheets"
+        [currency]="appState.currency"
+        (liabilityOpen)="openLiability($event)"
+      ></app-character-sheet>
 
       <!-- Before a game: start it from here, below the info, after shuffling or viewing a profession. -->
       <div class="cf-actions cf-profession-start" *ngIf="!hasActiveGame">
@@ -491,80 +460,13 @@
       </ng-container>
 
       <ng-container *ngIf="characterChosen && selectedProfession as profession">
-        <div class="cf-person cf-person--head">
-          <span class="cf-person-avatar" aria-hidden="true">{{
-            (profileOf(profession)?.name ?? professionTitle(profession)).charAt(0)
-          }}</span>
-          <span class="cf-person-text">
-            <strong>{{ profileOf(profession)?.name ?? professionTitle(profession) }}</strong>
-            <small>{{ profileOf(profession)?.tagline ?? professionTitle(profession) }}</small>
-          </span>
-        </div>
-
-        <ng-container *ngIf="profileOf(profession) as story">
-          <section class="cf-group">
-            <h4>{{ 'CashflowGame.setup.background' | translate }}</h4>
-            <p class="cf-story">{{ story.background }}</p>
-          </section>
-          <section class="cf-group">
-            <h4>{{ 'CashflowGame.setup.values' | translate }}</h4>
-            <ul class="cf-values">
-              <li *ngFor="let value of story.values">{{ value }}</li>
-            </ul>
-          </section>
-          <section class="cf-group cf-group--dream">
-            <h4>{{ 'CashflowGame.setup.dream' | translate }}</h4>
-            <p class="cf-story">
-              <strong>{{ story.dream.title }}</strong
-              ><br />{{ story.dream.summary }}
-            </p>
-          </section>
-          <section class="cf-group">
-            <h4>{{ 'CashflowGame.setup.goal' | translate }}</h4>
-            <p class="cf-story">{{ story.goal }}</p>
-          </section>
-        </ng-container>
-
-        <!-- the numbers: three panels, only the Cashflow is open at first -->
-        <h4 class="cf-setup-numbers">{{ 'CashflowGame.setup.numbers' | translate }}</h4>
-        <ng-container *ngIf="setupSheets as sheets">
-          <section
-            class="cf-detail"
-            *ngFor="let panel of detailPanels(sheets); trackBy: trackPanel"
-          >
-            <button
-              type="button"
-              class="cf-detail-head"
-              [attr.aria-expanded]="openSheet === panel.id"
-              (click)="toggleSheet(panel.id)"
-            >
-              <span class="cf-detail-title">{{ panel.title | translate }}</span>
-              <span class="cf-detail-figure" [class.cf-negative]="panel.value < 0"
-                >{{ panel.value | appNumber: '1.0-0' : false }} {{ appState.currency }}</span
-              >
-              <span class="cf-detail-chevron" aria-hidden="true">{{
-                openSheet === panel.id ? '▾' : '▸'
-              }}</span>
-            </button>
-            <app-profession-sheets
-              *ngIf="openSheet === panel.id"
-              [only]="panel.id"
-              [currency]="appState.currency"
-              [cashIncome]="sheets.cashIncome"
-              [cashPassive]="sheets.cashPassive"
-              [cashExpenses]="sheets.cashExpenses"
-              [cashTotal]="sheets.cashTotal"
-              [revenue]="sheets.revenue"
-              [revenueTotal]="sheets.revenueTotal"
-              [expenses]="sheets.expenses"
-              [expensesTotal]="sheets.expensesTotal"
-              [assets]="sheets.assets"
-              [assetsTotal]="sheets.assetsTotal"
-              [liabilities]="sheets.liabilities"
-              [liabilitiesTotal]="sheets.liabilitiesTotal"
-            ></app-profession-sheets>
-          </section>
-        </ng-container>
+        <app-character-sheet
+          [name]="profileOf(profession)?.name ?? professionTitle(profession)"
+          [tagline]="profileOf(profession)?.tagline ?? professionTitle(profession)"
+          [story]="profileOf(profession)"
+          [sheets]="setupSheets"
+          [currency]="appState.currency"
+        ></app-character-sheet>
 
         <button
           class="btn btn--primary cf-sticky-cta"

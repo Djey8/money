@@ -21,11 +21,19 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
     (profession) => profession.id === 'dual-student-informatik',
   )!;
 
-  it('is the only character of the edition, with a story in English and German', () => {
+  it('is the only character of the edition, with a story in English and German and a checklist to win', () => {
     expect(set.edition).toBe('custom');
     expect(set.professions.map((profession) => profession.id)).toEqual(['dual-student-informatik']);
     expect(student.profile?.texts['en'].dream.title).toBeTruthy();
     expect(student.profile?.texts['de'].goal).toBeTruthy();
+    for (const lang of ['en', 'de']) {
+      expect(student.profile?.texts[lang].goalItems.map((item) => item.id)).toEqual([
+        'parentsLoan',
+        'carLoan',
+        'dream',
+        'independence',
+      ]);
+    }
   });
 
   it('keeps 500 euros a month: 34.000 a year gross, 845 of it for tax and the social insurances', () => {
@@ -60,6 +68,10 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
       150000, 150000,
     ]);
     expect(picked.starterKit.shares?.[0]).toMatchObject({ tag: 'BMW', quantity: 1 });
+    // the crypto is held as shares: 3.705 coins at 0,22 are about 815
+    const iota = picked.starterKit.shares?.[1];
+    expect(iota?.tag).toBe('IOTA');
+    expect(Math.round(((iota?.quantity ?? 0) * (iota?.priceMinor ?? 0)) / 100)).toBe(815);
   });
 });
 

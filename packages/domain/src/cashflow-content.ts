@@ -535,9 +535,11 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
       perChildExpenseMinor: 30000, // 300 €
       savingsMinor: 50000, // 500 €
       starterKit: {
-        // a first share and a little crypto: almost nothing yet
-        shares: [{ tag: 'BMW', quantity: 1, priceMinor: 7928 }],
-        assets: [{ tag: 'IOTA', amountMinor: 10000, key: 'crypto' }],
+        // a first share and some crypto: almost nothing yet
+        shares: [
+          { tag: 'BMW', quantity: 1, priceMinor: 7928 }, // 79,28
+          { tag: 'IOTA', quantity: 3705, priceMinor: 22 }, // 3.705 coins at 0,22 = 815,10
+        ],
         liabilities: [
           { tag: 'Eltern-Darlehen', amountMinor: 150000, key: 'parentsLoan' }, // 1.500 €, no monthly payment
           { tag: 'Autokredit', amountMinor: 150000, key: 'carLoan' }, // 1.500 €, no monthly payment
@@ -555,11 +557,23 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
               'The mountains: every free weekend is climbing or a ski tour',
               'Step by step: he saves for gear and courses instead of borrowing for them',
             ],
-            goal: 'Pay back your parents and the car loan (3,000 euros together), fund and complete the mountain-guide dream, and become financially independent: passive income that covers all monthly expenses.',
+            goal: 'Everything on this list has to come true:',
+            goalItems: [
+              { id: 'parentsLoan', text: 'Pay back the loan from your parents (1,500 DT)' },
+              { id: 'carLoan', text: 'Pay back the car loan (1,500 DT)' },
+              {
+                id: 'dream',
+                text: 'Fund and complete the mountain-guide dream: every bucket of the project full',
+              },
+              {
+                id: 'independence',
+                text: 'Become financially independent: passive income covers all monthly expenses',
+              },
+            ],
             dream: {
               title: 'Certified mountain guide',
               summary:
-                'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 euros. In this game it is his first Smile project.',
+                'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 DT. In this game it is his first Smile project.',
             },
           },
           de: {
@@ -572,11 +586,23 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
               'Die Berge: jedes freie Wochenende ist Klettern oder Skitour',
               'Schritt für Schritt: er spart für Ausrüstung und Kurse, statt sich dafür zu verschulden',
             ],
-            goal: 'Zahle deine Eltern und den Autokredit zurück (zusammen 3.000 Euro), finanziere und erfülle den Traum vom Berg- und Skiführer und werde finanziell unabhängig: passives Einkommen, das alle monatlichen Ausgaben deckt.',
+            goal: 'Alles auf dieser Liste muss wahr werden:',
+            goalItems: [
+              { id: 'parentsLoan', text: 'Zahle das Darlehen deiner Eltern zurück (1.500 TT)' },
+              { id: 'carLoan', text: 'Zahle den Autokredit zurück (1.500 TT)' },
+              {
+                id: 'dream',
+                text: 'Finanziere und erfülle den Traum vom Berg- und Skiführer: jeder Topf des Projekts voll',
+              },
+              {
+                id: 'independence',
+                text: 'Werde finanziell unabhängig: passives Einkommen deckt alle monatlichen Ausgaben',
+              },
+            ],
             dream: {
               title: 'Staatlich geprüfter Berg- und Skiführer',
               summary:
-                'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 Euro. Im Spiel ist es sein erstes Smile-Projekt.',
+                'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 TT. Im Spiel ist es sein erstes Smile-Projekt.',
             },
           },
         },
