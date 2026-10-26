@@ -1,3 +1,4 @@
+import { fromMinorUnits } from '@money/domain';
 import { Router } from '@angular/router';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Grow, GrowPhase, GrowType } from 'src/app/interfaces/grow';
@@ -273,6 +274,13 @@ export class GrowComponent implements OnInit, AfterViewInit {
         project.investment ? 'property' : project.isAsset ? 'asset' : 'share',
       ) !== null
     );
+  }
+
+  /** What a saving of the game has saved so far (Cashflow game only). */
+  savedSoFarOf(project: Grow): { amount: number } | null {
+    if (!CashflowGameService.isCashflowGame()) return null;
+    const saved = CashflowGameService.savedSoFarFor(project.title);
+    return saved ? { amount: fromMinorUnits(saved.minor) } : null;
   }
 
   /** A Market card of this turn touched the project (an offer, a price move, a boost, a cost): look at it. */

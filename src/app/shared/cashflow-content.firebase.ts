@@ -6,3 +6,6 @@ import type { CashflowGameSet } from '@money/domain';
  * email says "cashflow". Swapped in by angular.json for the `firebase` and `production` builds.
  */
 export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [];
+
+/** No game, no card texts. */
+export const loadCardTextDe = (): Promise<Record<string, string>> => Promise.resolve({});

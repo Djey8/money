@@ -1,3 +1,4 @@
+import { gameError } from 'src/app/shared/game-error-text';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -13,6 +14,9 @@ import {
 import { CommonModule } from '@angular/common';
 import type {
   AssetKind,
+  HarvestCard,
+  HarvestFactorBand,
+  HarvestHolderEffect,
   HarvestTopics,
   OpportunityCard,
   OpportunityChoice,
@@ -21,6 +25,7 @@ import type {
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   assetKindOf,
+  cardText,
   dreamsForMoment,
   fromMinorUnits,
   keywordsOfCard,
@@ -48,6 +53,29 @@ const SHUFFLE_PICKED_MS = 350;
 
 /** How long the die tumbles before the result is shown. */
 const ROLL_MS = 1000;
+
+/** One row of a dice table: the numbers on the die, and what they do. */
+export interface DiceRowView {
+  range: string;
+  lines: string[];
+  tone: 'good' | 'bad' | 'neutral';
+}
+
+interface OpportunityRollLike {
+  cashflowMinor?: number;
+  monthlySavingsMinor?: number;
+  oneTimeMinor?: number;
+  assetValueMinor?: number;
+  extraCostPercent?: number;
+  laterCost?: { afterPaydays: number; minor: number };
+  rentCutPercent?: number;
+  paydays?: number;
+  capitalLossPercent?: number;
+}
+
+interface OpportunityBandLike extends OpportunityRollLike {
+  rollAgain?: { from: number; to: number; value: OpportunityRollLike }[];
+}
 
 /**
  * The body of a Dreamfund tile that has a stack of cards (JFK, 2026-10-26): Emergency, Life, Career, Dream. The flow is the same on all of
@@ -186,6 +214,21 @@ const ROLL_MS = 1000;
           <ng-container *ngIf="life as l; else lifeClosed">
             <h4 class="tc-title">{{ l.card.title[lang] }}</h4>
             <p>{{ l.card.story[lang] }}</p>
+            <section class="tc-dice-table" *ngIf="lifeDiceRows(l.card) as rows">
+              <ng-container *ngIf="rows.length > 0 && !l.outcome && !rolling">
+                <h5>{{ 'CashflowGame.dice.title' | translate }}</h5>
+                <div class="tc-dice-row" *ngFor="let row of rows" [attr.data-tone]="row.tone">
+                  <strong class="tc-dice-range">{{ row.range }}</strong>
+                  <span>
+                    <span
+                      *ngFor="let line of row.lines; trackBy: trackValue"
+                      class="tc-dice-line"
+                      >{{ line }}</span
+                    >
+                  </span>
+                </div>
+              </ng-container>
+            </section>
             <ng-container *ngIf="!l.outcome && !rolling">
               <ul class="tc-bullets" *ngIf="preview(l.card) as effect">
                 <li *ngFor="let line of effectLines(effect)">{{ line }}</li>
@@ -517,7 +560,30 @@ const ROLL_MS = 1000;
                   {{ 'CashflowGame.harvest.seeInGrow' | translate }} ›
                 </button>
               </section>
-              <p class="tc-note" *ngIf="c.realWorld">{{ c.realWorld }}</p>
+
+              <ng-container *ngFor="let table of harvestDiceTables(c); trackBy: trackTable">
+                <section class="tc-dice-table">
+                  <h5>
+                    {{ 'CashflowGame.dice.title' | translate
+                    }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
+                  </h5>
+                  <div
+                    class="tc-dice-row"
+                    *ngFor="let row of table.rows"
+                    [attr.data-tone]="row.tone"
+                  >
+                    <strong class="tc-dice-range">{{ row.range }}</strong>
+                    <span>
+                      <span
+                        *ngFor="let line of row.lines; trackBy: trackValue"
+                        class="tc-dice-line"
+                        >{{ line }}</span
+                      >
+                    </span>
+                  </div>
+                </section>
+              </ng-container>
+              <p class="tc-note" *ngIf="c.realWorld">{{ cardText(c.realWorld, lang) }}</p>
 
               <!-- a window to sell in: what you own in an open market -->
               <section class="tc-market" *ngIf="h.window.length">
@@ -699,6 +765,30 @@ const ROLL_MS = 1000;
                 <p class="tc-note" *ngIf="offer.card.estimate">
                   {{ 'CashflowGame.opportunity.estimate' | translate }}
                 </p>
+                <ng-container
+                  *ngFor="let table of opportunityDiceTables(offer.card); trackBy: trackTable"
+                >
+                  <section class="tc-dice-table">
+                    <h5>
+                      {{ 'CashflowGame.dice.title' | translate
+                      }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
+                    </h5>
+                    <div
+                      class="tc-dice-row"
+                      *ngFor="let row of table.rows"
+                      [attr.data-tone]="row.tone"
+                    >
+                      <strong class="tc-dice-range">{{ row.range }}</strong>
+                      <span>
+                        <span
+                          *ngFor="let line of row.lines; trackBy: trackValue"
+                          class="tc-dice-line"
+                          >{{ line }}</span
+                        >
+                      </span>
+                    </div>
+                  </section>
+                </ng-container>
                 <!-- the side hustles are full: one has to go -->
                 <ng-container *ngIf="quoteOf(offer.card) as quote">
                   <div class="tc-swap" *ngIf="quote.needsSwap">
@@ -1594,6 +1684,45 @@ const ROLL_MS = 1000;
         gap: 8px;
         padding: 3px 0;
       }
+      .tc-dice-table {
+        margin: 8px 0;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: var(--radius-md, 8px);
+      }
+      .tc-dice-table h5 {
+        margin: 0 0 4px;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .tc-dice-row {
+        display: grid;
+        grid-template-columns: 3.2em minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        padding: 4px 6px;
+        margin: 3px 0;
+        border-inline-start: 5px solid var(--color-border, #999);
+        border-radius: 6px;
+        font-size: 0.86rem;
+      }
+      .tc-dice-range {
+        font-variant-numeric: tabular-nums;
+      }
+      .tc-dice-line {
+        display: block;
+      }
+      .tc-dice-row[data-tone='good'] {
+        border-inline-start-color: #2e9e5b;
+        background: #e7f6ea;
+        color: #1b5e20;
+      }
+      .tc-dice-row[data-tone='bad'] {
+        border-inline-start-color: #d9362b;
+        background: #fdeceb;
+        color: #8c1d14;
+      }
       .tc-offer--card {
         border-width: 2px;
         border-left-width: 6px;
@@ -1754,7 +1883,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
     },
     onError: (message: string) => {
       this.busy = false;
-      this.toast.show(message, 'error');
+      this.toast.show(gameError(message, this.translate.currentLang), 'error');
       this.cdr.markForCheck();
     },
   };
@@ -2026,6 +2155,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
     this.service.passOpportunity(this.callbacks);
   }
 
+  readonly cardText = cardText;
+  trackTable = (_i: number, table: { title: string }): string => table.title;
   trackFact = (_i: number, fact: { label: string }): string => fact.label;
   trackInvolved = (_i: number, own: { title: string }): string => own.title;
 
@@ -2157,6 +2288,218 @@ export class TileCardComponent implements OnInit, OnDestroy {
     if (card.sideHustle) out.push(t('CashflowGame.opportunity.fact.sideHustle'));
     out.push(t('CashflowGame.opportunity.fact.risk', { score: card.riskScore }));
     return out;
+  }
+
+  // ── dice: what each number does, before the die is thrown (JFK, 2026-10-26) ──
+
+  private diceRange(from: number, to: number): string {
+    return from === to ? `${from}` : `${from}–${to}`;
+  }
+
+  private dt(key: string, params?: Record<string, unknown>): string {
+    return this.translate.instant(`CashflowGame.dice.${key}`, params);
+  }
+
+  private signedPercent(factor: number): string {
+    return `${factor >= 1 ? '+' : '−'}${Math.abs(Math.round((factor - 1) * 100))}%`;
+  }
+
+  /** The bands of a dice card of the Life stack: each number, what it brings. */
+  lifeDiceRows(card: LifeCard): DiceRowView[] {
+    const rows: DiceRowView[] = [];
+    for (const band of card.dice ?? []) {
+      const effect = band.value;
+      const lines = this.effectLines(effect);
+      if (effect?.schedule) {
+        const scheduled = this.service.lifeCards.find((c) => c.id === effect.schedule!.cardId);
+        lines.push(
+          this.translate.instant('CashflowGame.life.schedule', {
+            title: scheduled ? scheduled.title[this.lang] : effect.schedule.cardId,
+            count: effect.schedule.afterPaydays,
+          }),
+        );
+      }
+      rows.push({
+        range: this.diceRange(band.from, band.to),
+        lines: lines.length ? lines : [this.dt('nothing')],
+        tone: !effect
+          ? 'neutral'
+          : (effect.monthlyMinor ?? 0) > 0 || (effect.oneTimeMinor ?? 0) < 0
+            ? 'bad'
+            : (effect.incomeMonthlyMinor ?? 0) > 0 || (effect.oneTimeMinor ?? 0) > 0
+              ? 'good'
+              : 'neutral',
+      });
+    }
+    if (card.declineRoll) {
+      const follows = this.service.lifeCards.find((c) => c.id === card.declineRoll!.triggers);
+      rows.push({
+        range: `1–${card.declineRoll.upTo}`,
+        lines: [
+          this.dt('declineRoll', {
+            upTo: card.declineRoll.upTo,
+            title: follows ? follows.title[this.lang] : card.declineRoll.triggers,
+          }),
+        ],
+        tone: 'bad',
+      });
+    }
+    return rows;
+  }
+
+  private rollLines(roll: OpportunityRollLike): string[] {
+    const money = (minor: number) => `${this.amount(minor)} ${this.currency}`;
+    const lines: string[] = [];
+    if (roll.cashflowMinor !== undefined)
+      lines.push(this.dt('cashflow', { amount: money(roll.cashflowMinor) }));
+    if (roll.monthlySavingsMinor !== undefined)
+      lines.push(this.dt('savings', { amount: money(roll.monthlySavingsMinor) }));
+    if (roll.oneTimeMinor)
+      lines.push(
+        this.dt('once', {
+          amount: `${roll.oneTimeMinor < 0 ? '−' : '+'}${money(roll.oneTimeMinor)}`,
+        }),
+      );
+    if (roll.assetValueMinor !== undefined)
+      lines.push(this.dt('value', { amount: money(roll.assetValueMinor) }));
+    if (roll.extraCostPercent) lines.push(this.dt('extraCost', { percent: roll.extraCostPercent }));
+    if (roll.laterCost)
+      lines.push(
+        this.dt('laterCost', {
+          amount: money(roll.laterCost.minor),
+          count: roll.laterCost.afterPaydays,
+        }),
+      );
+    if (roll.rentCutPercent)
+      lines.push(this.dt('rentCut', { percent: roll.rentCutPercent, count: roll.paydays ?? 1 }));
+    if (roll.capitalLossPercent)
+      lines.push(this.dt('capitalLoss', { percent: roll.capitalLossPercent }));
+    return lines;
+  }
+
+  /** What each number does on an Opportunity card: the dice of the card, of the purchase, of every Payday. Never for a trap. */
+  opportunityDiceTables(card: OpportunityCard): { title: string; rows: DiceRowView[] }[] {
+    if (card.trap) return [];
+    const toRows = (
+      bands: readonly { from: number; to: number; value: OpportunityBandLike }[],
+    ): DiceRowView[] =>
+      bands.map(({ from, to, value }) => {
+        const lines = this.rollLines(value);
+        for (const inner of value.rollAgain ?? []) {
+          lines.push(
+            `${this.dt('again')} ${this.diceRange(inner.from, inner.to)}: ${this.rollLines(inner.value).join(', ')}`,
+          );
+        }
+        const bad =
+          (value.cashflowMinor ?? 1) <= 0 ||
+          (value.oneTimeMinor ?? 0) < 0 ||
+          !!value.rentCutPercent ||
+          !!value.capitalLossPercent ||
+          !!value.extraCostPercent ||
+          !!value.laterCost;
+        return {
+          range: this.diceRange(from, to),
+          lines: lines.length ? lines : [this.dt('nothing')],
+          tone: bad ? 'bad' : lines.length ? 'good' : 'neutral',
+        };
+      });
+    const tables: { title: string; rows: DiceRowView[] }[] = [];
+    if (card.dice) tables.push({ title: '', rows: toRows(card.dice as never) });
+    if (card.onBuy)
+      tables.push({ title: this.dt('whenBought'), rows: toRows(card.onBuy as never) });
+    if (card.eachPayday)
+      tables.push({ title: this.dt('eachPayday'), rows: toRows(card.eachPayday as never) });
+    return tables;
+  }
+
+  /** The dice of a Harvest card: what each number does to the market and to what you hold. */
+  harvestDiceTables(card: HarvestCard): { title: string; rows: DiceRowView[] }[] {
+    const tables: { title: string; rows: DiceRowView[] }[] = [];
+    const factorRows = (
+      bands: readonly HarvestFactorBand[],
+      key: 'factorMarket' | 'factorCashflow',
+      targets: string,
+    ): DiceRowView[] =>
+      bands.map((band) => {
+        const parts =
+          typeof band.value === 'number'
+            ? [band.value]
+            : band.value.rollAgain.map((inner) => inner.value as number);
+        const percents = parts.map((factor) => this.signedPercent(factor));
+        const first = parts[0];
+        return {
+          range: this.diceRange(band.from, band.to),
+          lines: [
+            this.dt(key, {
+              targets,
+              percent:
+                typeof band.value === 'number'
+                  ? percents[0]
+                  : `${this.dt('again')} ${percents.join(' / ')}`,
+            }),
+          ],
+          tone: first >= 1 ? 'good' : 'bad',
+        };
+      });
+    for (const op of card.ops) {
+      if (op.op === 'indexDice') {
+        tables.push({
+          title: '',
+          rows: factorRows(op.bands, 'factorMarket', op.markets.join(', ')),
+        });
+      } else if (op.op === 'cashflowDice') {
+        tables.push({
+          title: '',
+          rows: factorRows(op.bands, 'factorCashflow', op.groups.join(', ')),
+        });
+      } else if (op.op === 'holderDice') {
+        tables.push({
+          title: op.targets.join(', '),
+          rows: op.bands.map((band) => ({
+            range: this.diceRange(band.from, band.to),
+            lines: this.holderLines(band.value),
+            tone:
+              band.value.none || band.value.depositBack || (band.value.oneTimeMinor ?? 0) > 0
+                ? 'neutral'
+                : 'bad',
+          })),
+        });
+      }
+    }
+    return tables;
+  }
+
+  private holderLines(effect: HarvestHolderEffect): string[] {
+    const money = (minor: number) => `${this.amount(minor)} ${this.currency}`;
+    const lines: string[] = [];
+    const h = (key: string, params?: Record<string, unknown>) => this.dt(`holder.${key}`, params);
+    if (effect.none) lines.push(h('none'));
+    if (effect.pausePayoutsPaydays) lines.push(h('pause', { count: effect.pausePayoutsPaydays }));
+    if (effect.loseCapitalPercent)
+      lines.push(h('loseCapital', { percent: effect.loseCapitalPercent }));
+    if (effect.endsProject) lines.push(h('ends'));
+    if (effect.loseUnitsPercent) lines.push(h('loseUnits', { percent: effect.loseUnitsPercent }));
+    if (effect.noRentPaydays) lines.push(h('noRent', { count: effect.noRentPaydays }));
+    if (effect.legalCostMinor) lines.push(h('legal', { amount: money(effect.legalCostMinor) }));
+    if (effect.repairPercentOfPrice)
+      lines.push(h('repair', { percent: effect.repairPercentOfPrice }));
+    if (effect.noCashflowPaydays) lines.push(h('noCashflow', { count: effect.noCashflowPaydays }));
+    if (effect.cashflowFactor !== undefined)
+      lines.push(h('cashflow', { percent: this.signedPercent(effect.cashflowFactor) }));
+    if (effect.oneTimeMinor)
+      lines.push(
+        h('once', {
+          amount: `${effect.oneTimeMinor < 0 ? '−' : '+'}${money(effect.oneTimeMinor)}`,
+        }),
+      );
+    if (effect.valueFactor !== undefined)
+      lines.push(h('value', { percent: this.signedPercent(effect.valueFactor) }));
+    if (effect.sellAtFactor !== undefined) lines.push(h('sellAt', { factor: effect.sellAtFactor }));
+    if (effect.worthless) lines.push(h('worthless'));
+    if (effect.depositLost) lines.push(h('depositLost'));
+    if (effect.depositBack) lines.push(h('depositBack'));
+    if (effect.fakeItem) lines.push(h('fake'));
+    return lines.length ? lines : [this.dt('nothing')];
   }
 
   /** The numbers of a card, each as one short line: what it costs, what it pays, what it risks. */

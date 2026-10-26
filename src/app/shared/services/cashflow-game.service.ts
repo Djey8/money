@@ -15,7 +15,8 @@ import {
   type PlanRow,
 } from '../game-budget';
 import { translateRuleRefusal } from '../rule-refusal';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { ToastService } from './toast.service';
 import { Subject, auditTime, merge } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import {
@@ -51,6 +52,7 @@ import {
   difficultySettings,
   type DifficultySettings,
   activeEffects,
+  registerCardTextDe,
   drawHarvestCard,
   harvestTopics,
   involvedHoldings,
@@ -244,7 +246,7 @@ import {
   type RoundDeps,
   type SavedGameSummary,
 } from '@money/domain';
-import { CASHFLOW_GAME_SETS } from '../cashflow-content';
+import { CASHFLOW_GAME_SETS, loadCardTextDe } from '../cashflow-content';
 import { syncPaymentPlans } from '../payment-plan-sync';
 import { AppStateService } from './app-state.service';
 import { CashflowCardText } from './cashflow-card-text.service';
@@ -538,6 +540,7 @@ export class CashflowGameService {
   ) {
     CashflowGameService.translator = translate;
     CashflowGameService.current = this;
+    void loadCardTextDe().then(registerCardTextDe);
     // The game ends when the books say so, whichever action changed them.
     const state = AppStateService.instance;
     merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
@@ -547,6 +550,15 @@ export class CashflowGameService {
 
   /** Set when the service is created: the game rules' English refusals are shown in the player's language. */
   private static translator?: TranslateService;
+  /** Shows what a die decided when the purchase was booked in Grow (the roll is made there, so it is told there). */
+  private readonly toast: ToastService | null = (() => {
+    try {
+      return inject(ToastService);
+    } catch {
+      return null;
+    }
+  })();
+
   /** The running service, for the rules the Grow pages ask by a static call. */
   private static current?: CashflowGameService;
 
@@ -2504,6 +2516,14 @@ export class CashflowGameService {
     return activeEffects(AppStateService.instance.cashflowGame, this.emergencyLang);
   }
 
+  /** What a saving card has saved so far (JFK, 2026-10-26: to tell later what the savings bought): null for anything else. */
+  static savedSoFarFor(title: string): { minor: number; paydays: number } | null {
+    const holding = (AppStateService.instance.cashflowGame.holdings ?? []).find(
+      (entry) => entry.title === title && !!entry.monthlySavingsMinor,
+    );
+    return holding ? { minor: holding.savedMinor ?? 0, paydays: holding.paydays } : null;
+  }
+
   /** The words of everything the player owns of the Opportunity cards: markets, groups and kinds. */
   heldKeywords(): Set<string> {
     const game = AppStateService.instance.cashflowGame;
@@ -3016,6 +3036,10 @@ export class CashflowGameService {
       },
     );
     this.applyGameEffects(purchase.effects);
+    // a card with a die: the player sees what was rolled and what it did, as the card told before
+    if (light && (card.dice || card.onBuy) && purchase.told.length > 0) {
+      this.toast?.show(`🎲 ${card.title[lang]}: ${purchase.told.join(' · ')}`, 'info');
+    }
     if (AppStateService.instance.cashflowGame.turn?.pending?.opportunity) {
       this.updatePending((pending) => ({
         ...pending,

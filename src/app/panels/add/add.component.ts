@@ -1,3 +1,4 @@
+import { splitTrade } from 'src/app/shared/utils/split-trade';
 import { mirrorReserveToMojo } from 'src/app/shared/reserve-mirror';
 import { gameTradeStep, hasGameTag, parseGrowComment } from '@money/domain';
 import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
@@ -805,7 +806,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         }
 
         if (AddComponent.commentTextField.includes('Buy Asset')) {
-          const split = AddComponent.commentTextField.split(' ');
+          const split = splitTrade(AddComponent.commentTextField, 'Buy Asset', 3);
           const title = split[2];
           const quantity = split[3];
           const price = split[5];
@@ -847,7 +848,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         }
 
         if (AddComponent.commentTextField.includes('Sell Asset')) {
-          const split = AddComponent.commentTextField.split(' ');
+          const split = splitTrade(AddComponent.commentTextField, 'Sell Asset', 3);
           const title = split[2];
           const quantity = split[3];
           const price = split[5];
@@ -882,7 +883,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         }
 
         if (AddComponent.commentTextField.includes('Buy Share')) {
-          const split = AddComponent.commentTextField.split(' ');
+          const split = splitTrade(AddComponent.commentTextField, 'Buy Share', 3);
           const title = split[2];
           const quantity = split[3];
           const price = split[5];
@@ -940,7 +941,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         }
 
         if (AddComponent.commentTextField.includes('Dividende Share')) {
-          const split = AddComponent.commentTextField.split(' ');
+          const split = splitTrade(AddComponent.commentTextField, 'Dividende Share', 3);
           const title = split[2];
           const quantity = split[3];
           const price = split[5];
@@ -950,7 +951,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         }
 
         if (AddComponent.commentTextField.includes('Sell Share')) {
-          const split = AddComponent.commentTextField.split(' ');
+          const split = splitTrade(AddComponent.commentTextField, 'Sell Share', 3);
           const title = split[2];
           const quantity = split[3];
           const price = split[5];
@@ -982,7 +983,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         }
 
         if (AddComponent.commentTextField.includes('Buy Investment')) {
-          const split = AddComponent.commentTextField.split(' ');
+          const split = splitTrade(AddComponent.commentTextField, 'Buy Investment', 2);
           const title = split[2];
           const deposit = split[3];
           const mortage = split[4];
@@ -1313,7 +1314,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
             const clean_split = clean_comment.split('; ');
             clean_comment = clean_split[1];
           }
-          const split = clean_comment.split(' ');
+          const split = splitTrade(clean_comment, 'Sell Investment', 2);
           const title = split[2];
           const deposit = split[3];
           const mortage = split[4];

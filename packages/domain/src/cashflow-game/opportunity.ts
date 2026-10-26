@@ -15,6 +15,7 @@ import {
   type OpportunityRoll,
 } from './opportunity-deck';
 import { mortgageDeltaMinor, withLuck, type Difficulty } from './difficulty';
+import { cardText } from '../cashflow-card-text-de';
 import { marketOfTag } from './harvest-deck';
 import { planDeal, type DealDeps, type DealInput } from './deals';
 import { bookOneTime } from './payments-due';
@@ -34,20 +35,8 @@ export interface OpportunitySettings {
   maxSideHustles: number;
   /** Copies of each savings card in its pile. */
   savingsCardCopies: number;
-  /** The first card of a landing is one that pays every month (default: yes). */
-  incomeOffer?: boolean;
   /** Turns a planned card stays buyable: 1 = only in the turn it was drawn. */
   validTurns?: number;
-}
-
-/** Whether a card brings money in every month (a dividend, rent, a business, a hustle, a saving). */
-export function paysMonthly(card: OpportunityCard): boolean {
-  if (card.trap) return false;
-  if (card.share) return card.share.dividendMonthPerUnitMinor > 0;
-  if (card.savings) return card.savings.monthlySavingsMinor > 0;
-  if (card.property) return true;
-  if ((card.cashflowMinor ?? 0) > 0) return true;
-  return (card.dice ?? []).some((band) => (band.value.cashflowMinor ?? 0) > 0);
 }
 
 export const DEFAULT_OPPORTUNITY_SETTINGS: OpportunitySettings = {
@@ -194,13 +183,7 @@ export function drawOpportunityOffers(
       pool = usable(keys);
     }
     if (pool.length === 0) break;
-    // the first card of a landing is one that pays every month: a landing of nothing but gold bars and coins gives no way to grow
-    // the cash flow (JFK, 2026-10-26)
-    const paying =
-      offers.length === 0 && settings.incomeOffer !== false
-        ? pool.filter((entry) => paysMonthly(entry.card))
-        : [];
-    const entry = pickOne(paying.length ? paying : pool, rng);
+    const entry = pickOne(pool, rng);
     seen.push(entry.key);
     offers.push(entry.card);
   }
@@ -291,7 +274,11 @@ const SAVINGS_FROM: Record<string, string> = {
 };
 
 const note = (text: string, at: string) => ({ text, createdAt: at });
-const money = (minor: number) => (minor / 100).toLocaleString('en', { maximumFractionDigits: 2 });
+/** The language of the sentences being made: numbers follow it (set where a rule starts; the rules run one at a time). */
+let moneyLocale: 'en' | 'de' = 'en';
+const money = (minor: number) =>
+  (minor / 100).toLocaleString(moneyLocale, { maximumFractionDigits: 2 });
+const tx = (lang: EmergencyLang, en: string, de: string) => (lang === 'de' ? de : en);
 
 /** What the purchase decides by chance. */
 export interface OpportunityRolls {
@@ -371,6 +358,7 @@ export function buyOpportunity(
   },
 ): OpportunityPurchase {
   const { date, lang } = options;
+  moneyLocale = lang;
   const { state } = books;
   const at = `${date}T00:00:00.000Z`;
   const outcome = resolveOutcome(card, rolls);
@@ -395,7 +383,14 @@ export function buyOpportunity(
         updatedAt: at,
         notes: [
           ...(books.growProjects.find((project) => project.title === out.title)?.notes ?? []),
-          note(`Ended to make room for ${card.title[lang]}.`, at),
+          note(
+            tx(
+              lang,
+              `Ended to make room for ${card.title[lang]}.`,
+              `Beendet, um Platz für ${card.title[lang]} zu machen.`,
+            ),
+            at,
+          ),
         ],
       });
       effects.persist.subscriptions = true;
@@ -408,31 +403,19 @@ export function buyOpportunity(
       (active(holdings).find((holding) => holding.cardId === card.id)?.units ?? 0)
     : undefined;
   const subscriptionTitle = `${title} Cashflow`;
-  const growDetails: NonNullable<BookGrowUpdate['details']> = {
-    type: card.growType,
-    category: card.category,
-    pattern: card.pattern,
-    reasoning: card.reasoning,
-    risks: card.risks,
-    riskScore: card.riskScore,
-    insights: card.insights,
-    alternative: card.alternative,
-    alternativeCostMinor: card.alternativeCostMinor,
-    links: card.links,
-    actionItems: card.actions,
-  };
+  const growDetails = detailsOf(card, lang);
   const notes = [
     note(`${card.title[lang]}: ${card.story[lang]}`, at),
-    ...(card.note ? [note(card.note, at)] : []),
+    ...(card.note ? [note(cardText(card.note, lang), at)] : []),
   ];
   const update: BookGrowUpdate = {
     title,
     create: true,
     createdAt: at,
-    sub: card.category,
+    sub: cardText(card.category, lang),
     phase: 'execute',
     description: card.story[lang],
-    strategy: card.strategy,
+    strategy: cardText(card.strategy, lang),
     isAsset: card.kind === 'asset',
     amountMinor: 0,
     cashflowMinor: 0,
@@ -508,12 +491,22 @@ export function buyOpportunity(
     update.phase = 'execute';
     notes.push(
       note(
-        `Saving applied: ${money(wanted)} less every month${holding.savedFrom ? ` (taken off "${holding.savedFrom}")` : ''}. Together: ${money(wanted * 12)} a year.`,
+        tx(
+          lang,
+          `Saving applied: ${money(wanted)} less every month${holding.savedFrom ? ` (taken off "${holding.savedFrom}")` : ''}. Together: ${money(wanted * 12)} a year.`,
+          `Ersparnis angewendet: ${money(wanted)} weniger jeden Monat${holding.savedFrom ? ` (von „${holding.savedFrom}“ abgezogen)` : ''}. Zusammen: ${money(wanted * 12)} im Jahr.`,
+        ),
         at,
       ),
     );
     if (outcome.monthlySavingsMinor !== undefined && rolls.outcome !== undefined) {
-      told.push(`Roll ${rolls.outcome}: ${money(wanted)} a month.`);
+      told.push(
+        tx(
+          lang,
+          `Roll ${rolls.outcome}: ${money(wanted)} a month.`,
+          `Wurf ${rolls.outcome}: ${money(wanted)} im Monat.`,
+        ),
+      );
     }
   }
 
@@ -528,7 +521,16 @@ export function buyOpportunity(
     effects.shareUpserts.push({ tag: title, quantity: units, priceMinor: price });
     holding.units = units;
     cashflowMinor = units * card.share.dividendMonthPerUnitMinor;
-    notes.push(note(`Bought ${bought} units at ${money(price)} - ${units} in total.`, at));
+    notes.push(
+      note(
+        tx(
+          lang,
+          `Bought ${bought} units at ${money(price)} - ${units} in total.`,
+          `${bought} Anteile zu je ${money(price)} gekauft – insgesamt ${units}.`,
+        ),
+        at,
+      ),
+    );
     if (card.setsCar) next = { ...next, life: next.life ? { ...next.life, car: true } : next.life };
   }
 
@@ -541,7 +543,16 @@ export function buyOpportunity(
     if (loanMinor > 0) {
       effects.liabilityUpserts.push({ tag: title, amountMinor: loanMinor, investment: true });
       update.loan = { tag: title, amountMinor: loanMinor, creditMinor: 0, investment: true };
-      notes.push(note(`Financed with a loan of ${money(loanMinor)}.`, at));
+      notes.push(
+        note(
+          tx(
+            lang,
+            `Financed with a loan of ${money(loanMinor)}.`,
+            `Mit einem Kredit von ${money(loanMinor)} finanziert.`,
+          ),
+          at,
+        ),
+      );
     }
   } else if (!card.share && !isSaving && (card.kind === 'asset' || card.costMinor !== undefined)) {
     // a thing owned: collectibles, metals, equipment, a lent sum
@@ -558,43 +569,91 @@ export function buyOpportunity(
     }
     if (outcome.assetValueMinor !== undefined && rolls.outcome !== undefined) {
       told.push(
-        `Roll ${rolls.outcome}${rolls.outcomeAgain ? ` / ${rolls.outcomeAgain}` : ''}: worth ${money(outcome.assetValueMinor)}.`,
+        tx(
+          lang,
+          `Roll ${rolls.outcome}${rolls.outcomeAgain ? ` / ${rolls.outcomeAgain}` : ''}: worth ${money(outcome.assetValueMinor)}.`,
+          `Wurf ${rolls.outcome}${rolls.outcomeAgain ? ` / ${rolls.outcomeAgain}` : ''}: Wert ${money(outcome.assetValueMinor)}.`,
+        ),
       );
       notes.push(
-        note(`What it is really worth: ${money(outcome.assetValueMinor)} (the dice decided).`, at),
+        note(
+          tx(
+            lang,
+            `What it is really worth: ${money(outcome.assetValueMinor)} (the dice decided).`,
+            `Was es wirklich wert ist: ${money(outcome.assetValueMinor)} (der Würfel hat entschieden).`,
+          ),
+          at,
+        ),
       );
     }
   }
 
   // ── what the dice decided for the monthly money, and what a purchase brings by chance ──
   if (outcome.cashflowMinor !== undefined && rolls.outcome !== undefined) {
-    told.push(`Roll ${rolls.outcome}: ${money(outcome.cashflowMinor)} a month.`);
+    told.push(
+      tx(
+        lang,
+        `Roll ${rolls.outcome}: ${money(outcome.cashflowMinor)} a month.`,
+        `Wurf ${rolls.outcome}: ${money(outcome.cashflowMinor)} im Monat.`,
+      ),
+    );
     notes.push(
-      note(`Roll ${rolls.outcome}: cash flow ${money(outcome.cashflowMinor)} a month.`, at),
+      note(
+        tx(
+          lang,
+          `Roll ${rolls.outcome}: cash flow ${money(outcome.cashflowMinor)} a month.`,
+          `Wurf ${rolls.outcome}: Cashflow ${money(outcome.cashflowMinor)} im Monat.`,
+        ),
+        at,
+      ),
     );
   }
   if (card.onBuy && rolls.onBuy !== undefined) {
     if (buyRoll.oneTimeMinor) {
       next = bookOneTime(next, effects, card.title, buyRoll.oneTimeMinor, date, lang);
-      told.push(`Roll ${rolls.onBuy}: ${money(Math.abs(buyRoll.oneTimeMinor))} to pay.`);
+      told.push(
+        tx(
+          lang,
+          `Roll ${rolls.onBuy}: ${money(Math.abs(buyRoll.oneTimeMinor))} to pay.`,
+          `Wurf ${rolls.onBuy}: ${money(Math.abs(buyRoll.oneTimeMinor))} zu zahlen.`,
+        ),
+      );
     } else if (buyRoll.laterCost) {
       holding.laterCosts = [
         { inPaydays: buyRoll.laterCost.afterPaydays, minor: buyRoll.laterCost.minor },
       ];
-      told.push(`Roll ${rolls.onBuy}: a cost of ${money(buyRoll.laterCost.minor)} comes in time.`);
+      told.push(
+        tx(
+          lang,
+          `Roll ${rolls.onBuy}: a cost of ${money(buyRoll.laterCost.minor)} comes in time.`,
+          `Wurf ${rolls.onBuy}: Mit der Zeit kommen Kosten von ${money(buyRoll.laterCost.minor)}.`,
+        ),
+      );
     } else if (buyRoll.cashflowMinor !== undefined) {
       told.push(
-        `Roll ${rolls.onBuy}: the numbers were inflated - ${money(buyRoll.cashflowMinor)} a month.`,
+        tx(
+          lang,
+          `Roll ${rolls.onBuy}: the numbers were inflated - ${money(buyRoll.cashflowMinor)} a month.`,
+          `Wurf ${rolls.onBuy}: Die Zahlen waren aufgebläht – ${money(buyRoll.cashflowMinor)} im Monat.`,
+        ),
       );
     } else if (buyRoll.extraCostPercent) {
-      told.push(`Roll ${rolls.onBuy}: the renovation costs ${buyRoll.extraCostPercent}% more.`);
+      told.push(
+        tx(
+          lang,
+          `Roll ${rolls.onBuy}: the renovation costs ${buyRoll.extraCostPercent}% more.`,
+          `Wurf ${rolls.onBuy}: Die Renovierung kostet ${buyRoll.extraCostPercent} % mehr.`,
+        ),
+      );
     } else {
-      told.push(`Roll ${rolls.onBuy}: as expected.`);
+      told.push(
+        tx(lang, `Roll ${rolls.onBuy}: as expected.`, `Wurf ${rolls.onBuy}: wie erwartet.`),
+      );
     }
   }
   if (outcome.oneTimeMinor !== undefined && !isSaving) {
     next = bookOneTime(next, effects, card.title, outcome.oneTimeMinor, date, lang);
-    told.push(`Roll ${rolls.outcome}: ${money(outcome.oneTimeMinor)}.`);
+    told.push(`${tx(lang, 'Roll', 'Wurf')} ${rolls.outcome}: ${money(outcome.oneTimeMinor)}.`);
   }
   // the renovation of a fixer-upper is paid before rent starts
   if (card.property?.extraCostMinor) {
@@ -629,7 +688,11 @@ export function buyOpportunity(
     update.cashflowMinor = cashflowMinor;
     notes.push(
       note(
-        `Cash flow: ${money(cashflowMinor)} a month${card.rampPaydays ? ` after ${card.rampPaydays} Paydays` : ''}.`,
+        tx(
+          lang,
+          `Cash flow: ${money(cashflowMinor)} a month${card.rampPaydays ? ` after ${card.rampPaydays} Paydays` : ''}.`,
+          `Cashflow: ${money(cashflowMinor)} im Monat${card.rampPaydays ? ` nach ${card.rampPaydays} Zahltagen` : ''}.`,
+        ),
         at,
       ),
     );
@@ -649,7 +712,14 @@ export function buyOpportunity(
     holding.lockedLeft = card.lockedPaydays;
     holding.lockedReturnMinor = paid;
     notes.push(
-      note(`The money is locked for ${card.lockedPaydays} Paydays, then it comes back.`, at),
+      note(
+        tx(
+          lang,
+          `The money is locked for ${card.lockedPaydays} Paydays, then it comes back.`,
+          `Das Geld ist ${card.lockedPaydays} Zahltage gebunden, dann kommt es zurück.`,
+        ),
+        at,
+      ),
     );
   }
   if (card.trap?.ponzi) {
@@ -668,7 +738,16 @@ export function buyOpportunity(
   }
   if (card.trap?.collapseAfterPaydays) holding.collapseLeft = card.trap.collapseAfterPaydays;
   if (card.sideHustle)
-    notes.push(note('A side hustle: it takes your evenings (at most two run at a time).', at));
+    notes.push(
+      note(
+        tx(
+          lang,
+          'A side hustle: it takes your evenings (at most two run at a time).',
+          'Ein Nebenprojekt: Es nimmt deine Abende (höchstens zwei laufen gleichzeitig).',
+        ),
+        at,
+      ),
+    );
   if (card.setsCar && !card.share) {
     next = { ...next, life: next.life ? { ...next.life, car: true } : next.life };
   }
@@ -747,6 +826,7 @@ export function tickOpportunities(
   if (holdings.every((holding) => holding.ended)) return null;
   const rng = options.rng ?? systemRng;
   const { date, lang } = options;
+  moneyLocale = lang;
   const at = `${date}T00:00:00.000Z`;
   const effects = emptyEffects(state, null);
   const news: string[] = [];
@@ -805,14 +885,20 @@ export function tickOpportunities(
     // a saving counts what it has saved
     if (holding.monthlySavingsMinor) {
       holding.savedMinor = (holding.savedMinor ?? 0) + holding.monthlySavingsMinor;
-      const kept = notes().filter((n) => !n.text.startsWith('Total saved'));
+      const kept = notes().filter(
+        (n) => !n.text.startsWith('Total saved') && !n.text.startsWith('Bisher gespart'),
+      );
       effects.growUpdates.push({
         title: holding.title,
         updatedAt: at,
         notes: [
           ...kept,
           note(
-            `Total saved so far: ${money(holding.savedMinor)} (${holding.paydays} Paydays).`,
+            tx(
+              lang,
+              `Total saved so far: ${money(holding.savedMinor)} (${holding.paydays} Paydays).`,
+              `Bisher gespart: ${money(holding.savedMinor)} (${holding.paydays} Zahltage).`,
+            ),
             at,
           ),
         ],
@@ -829,8 +915,16 @@ export function tickOpportunities(
         end(
           holding,
           lost
-            ? `${holding.title} stopped paying: the money is gone.`
-            : `${holding.title}: you got out in time.`,
+            ? tx(
+                lang,
+                `${holding.title} stopped paying: the money is gone.`,
+                `${holding.title} zahlt nicht mehr: Das Geld ist weg.`,
+              )
+            : tx(
+                lang,
+                `${holding.title}: you got out in time.`,
+                `${holding.title}: Du bist rechtzeitig ausgestiegen.`,
+              ),
           lost ? 0 : (card.costMinor ?? 0),
         );
       }
@@ -840,7 +934,14 @@ export function tickOpportunities(
       holding.collapseLeft -= 1;
       if (holding.collapseLeft <= 0) {
         effects.shareRemovals.push(holding.title);
-        end(holding, `${holding.title} collapsed to nothing.`);
+        end(
+          holding,
+          tx(
+            lang,
+            `${holding.title} collapsed to nothing.`,
+            `${holding.title} ist in sich zusammengebrochen.`,
+          ),
+        );
         continue;
       }
     }
@@ -849,7 +950,15 @@ export function tickOpportunities(
     if (holding.lockedLeft !== undefined) {
       holding.lockedLeft -= 1;
       if (holding.lockedLeft <= 0) {
-        end(holding, `${holding.title}: the locked money is back.`, holding.lockedReturnMinor ?? 0);
+        end(
+          holding,
+          tx(
+            lang,
+            `${holding.title}: the locked money is back.`,
+            `${holding.title}: Das gebundene Geld ist zurück.`,
+          ),
+          holding.lockedReturnMinor ?? 0,
+        );
         continue;
       }
     }
@@ -858,11 +967,23 @@ export function tickOpportunities(
     if (holding.rampLeft) {
       holding.rampLeft -= 1;
       if (holding.rampLeft <= 0) {
-        news.push(`${holding.title} starts to pay.`);
+        news.push(
+          tx(lang, `${holding.title} starts to pay.`, `${holding.title} beginnt zu zahlen.`),
+        );
         effects.growUpdates.push({
           title: holding.title,
           updatedAt: at,
-          notes: [...notes(), note(`It runs now: ${money(holding.cashflowMinor)} a month.`, at)],
+          notes: [
+            ...notes(),
+            note(
+              tx(
+                lang,
+                `It runs now: ${money(holding.cashflowMinor)} a month.`,
+                `Es läuft jetzt: ${money(holding.cashflowMinor)} im Monat.`,
+              ),
+              at,
+            ),
+          ],
         });
         effects.persist.grow = true;
       }
@@ -881,7 +1002,11 @@ export function tickOpportunities(
         holding.rentCut = { percent: roll.rentCutPercent, paydaysLeft: roll.paydays ?? 1 };
         void cut;
         news.push(
-          `${holding.title}: rent is ${roll.rentCutPercent}% lower for ${roll.paydays ?? 1} Payday(s).`,
+          tx(
+            lang,
+            `${holding.title}: rent is ${roll.rentCutPercent}% lower for ${roll.paydays ?? 1} Payday(s).`,
+            `${holding.title}: Die Miete ist ${roll.rentCutPercent} % niedriger für ${roll.paydays ?? 1} Zahltag(e).`,
+          ),
         );
       } else if (roll.capitalLossPercent && holding.capitalMinor) {
         const loss = Math.round((holding.capitalMinor * roll.capitalLossPercent) / 100);
@@ -890,7 +1015,11 @@ export function tickOpportunities(
           holding.cashflowMinor * (1 - roll.capitalLossPercent / 100),
         );
         news.push(
-          `${holding.title}: a borrower defaulted, ${roll.capitalLossPercent}% of the capital is lost.`,
+          tx(
+            lang,
+            `${holding.title}: a borrower defaulted, ${roll.capitalLossPercent}% of the capital is lost.`,
+            `${holding.title}: Ein Kreditnehmer ist ausgefallen, ${roll.capitalLossPercent} % des Kapitals gehen verloren.`,
+          ),
         );
       }
     }
@@ -912,7 +1041,13 @@ export function tickOpportunities(
           date,
           lang,
         );
-        news.push(`${holding.title}: a big repair is due.`);
+        news.push(
+          tx(
+            lang,
+            `${holding.title}: a big repair is due.`,
+            `${holding.title}: Eine große Reparatur steht an.`,
+          ),
+        );
       }
     }
 
@@ -925,11 +1060,20 @@ export function tickOpportunities(
         .map((entry) => ({ ...entry, paydaysLeft: entry.paydaysLeft - 1 }))
         .filter((entry) => entry.paydaysLeft > 0);
       if (holding.temp.length < before)
-        over.push(`${holding.title}: a market card's effect on the cash flow is over.`);
+        over.push(
+          tx(
+            lang,
+            `${holding.title}: a market card's effect on the cash flow is over.`,
+            `${holding.title}: Der Effekt einer Marktkarte auf den Cashflow ist vorbei.`,
+          ),
+        );
     }
     if (holding.noCashflowLeft && holding.noCashflowLeft > 0) {
       holding.noCashflowLeft -= 1;
-      if (holding.noCashflowLeft === 0) over.push(`${holding.title}: it pays again.`);
+      if (holding.noCashflowLeft === 0)
+        over.push(
+          tx(lang, `${holding.title}: it pays again.`, `${holding.title}: Es zahlt wieder.`),
+        );
     }
     if (over.length) {
       news.push(...over);
@@ -983,6 +1127,27 @@ export function expectedCashflowMinor(card: OpportunityCard): number {
 export const projectTitleOf = (card: OpportunityCard, lang: EmergencyLang): string =>
   card.share ? card.share.ticker : card.title[lang];
 
+/** What a card tells about its project, in the language of the game. */
+function detailsOf(
+  card: OpportunityCard,
+  lang: EmergencyLang,
+): NonNullable<BookGrowUpdate['details']> {
+  const t = (text: string) => cardText(text, lang);
+  return {
+    type: card.growType,
+    category: t(card.category),
+    pattern: t(card.pattern),
+    reasoning: t(card.reasoning),
+    risks: t(card.risks),
+    riskScore: card.riskScore,
+    insights: t(card.insights),
+    alternative: t(card.alternative),
+    alternativeCostMinor: card.alternativeCostMinor,
+    links: card.links.map((link) => ({ ...link, label: t(link.label) })),
+    actionItems: card.actions.map((action) => ({ ...action, text: t(action.text) })),
+  };
+}
+
 /**
  * Taking a card is **planning** it: a Grow project in `plan` with everything the card tells, its numbers as the plan and a note that
  * says what the player has in cash and what they would have to borrow. The player sets how many units to buy (there is no limit on the
@@ -996,7 +1161,7 @@ export function planOpportunity(
 ): GameEffects {
   const { lang } = options;
   const title = projectTitleOf(card, lang);
-  const subtitle = card.category;
+  const subtitle = cardText(card.category, lang);
   const description = card.story[lang];
   const price = Math.round(
     ((card.share?.unitPriceMinor ?? 0) * (options.indexPercent ?? 100)) / 100,
@@ -1009,7 +1174,7 @@ export function planOpportunity(
         priceMinor: price,
         subtitle,
         description,
-        strategy: card.strategy,
+        strategy: cardText(card.strategy, lang),
       }
     : card.property || card.loan || card.kind === 'investment'
       ? {
@@ -1028,7 +1193,7 @@ export function planOpportunity(
           coins: 0,
           subtitle,
           description,
-          strategy: card.strategy,
+          strategy: cardText(card.strategy, lang),
         };
   const effects = planDeal(books, input, deps);
   const at = deps.clock.nowIso();
@@ -1036,26 +1201,23 @@ export function planOpportunity(
   effects.growUpdates = [
     {
       ...first,
-      strategy: card.strategy,
+      strategy: cardText(card.strategy, lang),
       isAsset: first.isAsset ?? (card.kind === 'asset' && !card.share ? true : undefined),
-      details: {
-        type: card.growType,
-        category: card.category,
-        pattern: card.pattern,
-        reasoning: card.reasoning,
-        risks: card.risks,
-        riskScore: card.riskScore,
-        insights: card.insights,
-        alternative: card.alternative,
-        alternativeCostMinor: card.alternativeCostMinor,
-        links: card.links,
-        actionItems: card.actions,
-      },
+      details: detailsOf(card, lang),
       notes: [
         ...(first.notes ?? []),
-        ...(card.note ? [note(card.note, at)] : []),
+        ...(card.note ? [note(cardText(card.note, lang), at)] : []),
         ...(card.sideHustle
-          ? [note('A side hustle: it takes your evenings (at most a few run at a time).', at)]
+          ? [
+              note(
+                tx(
+                  lang,
+                  'A side hustle: it takes your evenings (at most a few run at a time).',
+                  'Ein Nebenprojekt: Es nimmt deine Abende (nur einige laufen gleichzeitig).',
+                ),
+                at,
+              ),
+            ]
           : []),
       ],
     },

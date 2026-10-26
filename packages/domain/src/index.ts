@@ -96,3 +96,4 @@ export * from './cashflow-game/analysis/render';
 export * from './cashflow-game/analysis/benchmark';
 export * from './cashflow-game/analysis/progress';
 export * from './cashflow-game/table';
+export * from './cashflow-card-text-de';

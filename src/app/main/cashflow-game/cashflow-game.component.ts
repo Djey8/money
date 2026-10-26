@@ -1,3 +1,4 @@
+import { gameError } from 'src/app/shared/game-error-text';
 import { dreamToSmile, reserveToFire } from './dream-project';
 import { TileCardComponent } from './tile-card.component';
 import { AfterViewChecked, Component, OnDestroy, Type } from '@angular/core';
@@ -1046,7 +1047,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   toggleInsurance(change: { kind: string; on: boolean }): void {
     this.cashflowGameService.setInsurance(change.kind, change.on, {
       onSuccess: () => undefined,
-      onError: (message) => this.toastService.show(message, 'error'),
+      onError: (message) =>
+        this.toastService.show(gameError(message, this.language.current), 'error'),
     });
   }
 
@@ -1318,7 +1320,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     onSuccess: () => (this.isBusy = false),
     onError: (message: string) => {
       this.isBusy = false;
-      this.toastService.show(message, 'error');
+      this.toastService.show(gameError(message, this.language.current), 'error');
     },
   };
 
@@ -1457,7 +1459,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     onSuccess: () => (this.isBusy = false),
     onError: (message: string) => {
       this.isBusy = false;
-      this.toastService.show(message, 'error');
+      this.toastService.show(gameError(message, this.language.current), 'error');
     },
   };
 
@@ -1751,7 +1753,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
       mode,
@@ -2255,7 +2257,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       onSuccess: () => undefined,
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
     if (!result) return;
@@ -2467,7 +2469,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       });
     } catch (err: unknown) {
@@ -2583,7 +2585,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
   }
@@ -2626,7 +2628,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
           },
           onError: (message) => {
             this.isBusy = false;
-            this.toastService.show(message, 'error');
+            this.toastService.show(gameError(message, this.language.current), 'error');
           },
         });
       },
@@ -2746,7 +2748,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
   }
@@ -2786,7 +2788,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
   }
@@ -2969,7 +2971,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.cashflowGameService.clearStatus(status, {
       onSuccess: () =>
         this.toastService.show(this.translate.instant('CashflowGame.dismiss'), 'update'),
-      onError: (message) => this.toastService.show(message, 'error'),
+      onError: (message) =>
+        this.toastService.show(gameError(message, this.language.current), 'error'),
     });
   }
 
@@ -3183,7 +3186,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
     );
@@ -3232,7 +3235,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
       this.cardText.symbolFor((this.activeCard as CashflowDealCard).symbol),
@@ -3454,7 +3457,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         onError: (message) => {
           this.isBusy = false;
           this.decisionFaces = null;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
     );
@@ -3850,7 +3853,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.recordOpenCard();
     this.cashflowGameService.declineCard({
       onSuccess: () => this.backToMain(),
-      onError: (message) => this.toastService.show(message, 'error'),
+      onError: (message) =>
+        this.toastService.show(gameError(message, this.language.current), 'error'),
     });
   }
 
@@ -3890,7 +3894,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         onError: (message) => {
           this.isBusy = false;
           this.drawing = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
       { labelFor: (symbol) => this.cardText.symbolFor(symbol) },
@@ -3954,7 +3958,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message: string) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     };
     this.isBusy = true;
@@ -4050,7 +4054,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
     );
@@ -4084,7 +4088,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
     );
@@ -4127,7 +4131,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
     );
@@ -4294,7 +4298,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         },
         onError: (message) => {
           this.isBusy = false;
-          this.toastService.show(message, 'error');
+          this.toastService.show(gameError(message, this.language.current), 'error');
         },
       },
     );
@@ -4621,7 +4625,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
   }
@@ -4683,7 +4687,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
   }
@@ -4710,7 +4714,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       },
       onError: (message) => {
         this.isBusy = false;
-        this.toastService.show(message, 'error');
+        this.toastService.show(gameError(message, this.language.current), 'error');
       },
     });
   }

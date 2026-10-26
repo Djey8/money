@@ -151,6 +151,11 @@
             <strong>{{ 'Grow.annualSavings' | translate }}:</strong>
             {{ classReference.annualSavings | appNumber }} {{ currency }}
           </p>
+          <p *ngIf="savedSoFar as saved" class="savings-highlight">
+            <strong>{{ 'Grow.savedSoFar' | translate }}:</strong>
+            {{ saved.amount | appNumber }} {{ currency }} ({{ saved.paydays }}
+            {{ 'CashflowGame.effects.paydays' | translate }})
+          </p>
           <p *ngIf="classReference.alternative && classReference.type === 'subscription-action'">
             <strong>{{ 'Grow.alternative' | translate }}:</strong> {{ classReference.alternative }}
             <span

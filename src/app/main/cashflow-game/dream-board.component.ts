@@ -65,8 +65,7 @@ const MARGIN = 70;
 const START_HEIGHT = 84;
 const START_GAP = 24;
 /** The token's size and the space kept between it and its tile. */
-const TOKEN_RADIUS = 22;
-const TOKEN_GAP = 12;
+const TOKEN_DISTANCE = Math.round(TILE * 1.12);
 /** What the header, the start of the page and the roll bar take of the height of the screen. */
 const HEIGHT_TAKEN = 400;
 
@@ -183,6 +182,12 @@ const HEIGHT_TAKEN = 400;
         [style.stroke]="color(here.kind)"
       />
       <g class="db-token" [style.transform]="tokenTransform">
+        <polygon
+          *ngIf="tokenAngle !== null"
+          class="db-token-pointer"
+          points="19,-9 33,0 19,9"
+          [attr.transform]="'rotate(' + tokenAngle + ')'"
+        />
         <circle r="21" class="db-token-body" />
         <circle r="8" class="db-token-dot" />
       </g>
@@ -263,6 +268,12 @@ const HEIGHT_TAKEN = 400;
         fill: var(--color-primary, #2c3e50);
         stroke: var(--color-surface, #fff);
         stroke-width: 5;
+      }
+      .db-token-pointer {
+        fill: var(--color-primary, #2c3e50);
+        stroke: var(--color-surface, #fff);
+        stroke-width: 4;
+        stroke-linejoin: round;
       }
       .db-token-dot {
         fill: var(--color-surface, #fff);
@@ -353,6 +364,12 @@ export class DreamBoardComponent {
     return `translate(${at.x}px, ${at.y}px)`;
   }
 
+  /** The way the token points: at its tile (none while it waits at START). */
+  get tokenAngle(): number | null {
+    if (this.position === null) return null;
+    return this.layout.spots[this.position]?.angle ?? null;
+  }
+
   get ariaLabel(): string {
     return this.position === null
       ? `Dreamfund map: token at start`
@@ -380,7 +397,7 @@ export class DreamBoardComponent {
 interface Layout {
   tiles: DrawnTile[];
   /** Where the token stands when it is on a tile: inside the map, beside it. */
-  spots: { x: number; y: number }[];
+  spots: { x: number; y: number; angle: number }[];
   start: { x: number; y: number };
   startWidth: number;
   viewBox: string;
@@ -394,7 +411,9 @@ interface Layout {
  * side of the middle of the whole map - or, for a tile close to that middle (the crossing of an infinity), the middle of the loop
  * the tile is on, found from the tiles around it on the track.
  */
-export function tokenSpots(tiles: { x: number; y: number }[]): { x: number; y: number }[] {
+export function tokenSpots(
+  tiles: { x: number; y: number }[],
+): { x: number; y: number; angle: number }[] {
   const n = tiles.length;
   const centre = {
     x: tiles.reduce((sum, t) => sum + t.x, 0) / n,
@@ -437,29 +456,27 @@ export function tokenSpots(tiles: { x: number; y: number }[]): { x: number; y: n
     const dx = target.x - tile.x;
     const dy = target.y - tile.y;
     const length = Math.hypot(dx, dy) || 1;
-    // on the line from the middle through the middle of the tile, a gap beyond the edge or corner the line leaves the tile by (a
-    // square's edge is nearer on the straight than on the diagonal, so the distance follows the direction) - JFK, 2026-10-26
-    const exit = TILE / 2 / Math.max(Math.abs(dx / length), Math.abs(dy / length), 0.001);
-    const spot = (sign: number, gap: number) => ({
-      x: tile.x + sign * (dx / length) * (exit + TOKEN_RADIUS + gap),
-      y: tile.y + sign * (dy / length) * (exit + TOKEN_RADIUS + gap),
+    // like the token of the rat race at a table: on the line from the middle through the middle of the tile, always the same
+    // distance inside it (the classic board keeps 1.1 cells), so the tokens of a map stand on one circle-like track and each is
+    // clearly beside its own tile; where the map is narrow the distance shrinks, at the last the token stands outside (JFK, 2026-10-26)
+    const along = (sign: number, distance: number) => ({
+      x: tile.x + sign * (dx / length) * distance,
+      y: tile.y + sign * (dy / length) * distance,
     });
-    // clear of the other tiles: where the map is narrow the inner side can be crowded, then the gap shrinks, and at the last the
-    // token stands outside
     const room = (at: { x: number; y: number }) =>
       Math.min(
         ...tiles.filter((_, other) => other !== i).map((t) => Math.hypot(at.x - t.x, at.y - t.y)),
       );
-    for (const gap of [TOKEN_GAP, 8, 5, 2]) {
-      const inner = spot(1, gap);
-      if (room(inner) >= TILE / 2 + 4) return inner;
-    }
-    // the plain distance of old (a tile edge and a token beside it, straight on the line) is the last place to look
-    const plain = (sign: number) => ({
-      x: tile.x + sign * (dx / length) * (TILE / 2 + 26),
-      y: tile.y + sign * (dy / length) * (TILE / 2 + 26),
+    const facing = (at: { x: number; y: number }) => ({
+      ...at,
+      // the token points at its tile
+      angle: (Math.atan2(tile.y - at.y, tile.x - at.x) * 180) / Math.PI,
     });
-    const rest = [spot(1, 0), plain(1), plain(-1), spot(-1, TOKEN_GAP), spot(-1, 4), spot(-1, 0)];
-    return rest.reduce((best, at) => (room(at) > room(best) ? at : best), spot(1, 2));
+    for (const distance of [TOKEN_DISTANCE, 78, 70, 64]) {
+      const inner = along(1, distance);
+      if (room(inner) >= TILE / 2 + 4) return facing(inner);
+    }
+    const rest = [along(1, 58), along(-1, TOKEN_DISTANCE), along(-1, 70), along(-1, 58)];
+    return facing(rest.reduce((best, at) => (room(at) > room(best) ? at : best), along(1, 54)));
   });
 }

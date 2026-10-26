@@ -1181,6 +1181,13 @@ export function tickWorld(
   }));
   for (const entry of running.filter((candidate) => candidate.paydaysLeft <= 0)) {
     effects.subscriptionRemovals.push(entry.title);
+    news.push(
+      text(
+        `${entry.title}: the extra cost is over.`,
+        `${entry.title}: Die Zusatzkosten sind vorbei.`,
+        options.lang,
+      ),
+    );
     state = {
       ...state,
       gameSubscriptionTitles: state.gameSubscriptionTitles.filter((t) => t !== entry.title),
