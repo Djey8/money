@@ -239,6 +239,40 @@ describe('CashflowGameService: life, career and dreams', () => {
     ).toContain('Chance missed');
   });
 
+  it('a bought card with a die waits for the player to throw it: the turn cannot end before, the throw books what it decides', () => {
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    landOn('opportunity');
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      turn: {
+        ...state().cashflowGame.turn!,
+        pending: {
+          ...state().cashflowGame.turn!.pending!,
+          opportunity: { pile: 'seed', offers: ['S33'] },
+        },
+      },
+    };
+    service.takeOpportunity('S33', {}, ok());
+    const title = state().cashflowGame.opportunityPlans![0].title;
+    // the purchase is booked in Grow (a title of several words)
+    service.beforeGrowTrade(`Buy Asset ${title} 1 x 150;`, 0, undefined, `@${title}`, 150);
+    const pending = () => state().cashflowGame.turn!.pending!.opportunity!;
+    expect(pending().rollFor).toMatchObject({ cardId: 'S33', light: true });
+    expect(state().cashflowGame.holdings ?? []).toEqual([]);
+    // the die is the player's: Done is refused until it is thrown
+    const errors: string[] = [];
+    service.settleSoloDecision('done', {
+      onSuccess: () => undefined,
+      onError: (m) => errors.push(m),
+    });
+    expect(errors).toEqual(['Throw the die of your purchase first.']);
+    const faces = service.rollOpportunityPurchase(ok());
+    expect(faces.length).toBeGreaterThanOrEqual(1);
+    expect(pending().rollFor).toBeUndefined();
+    expect(state().cashflowGame.holdings!.some((holding) => holding.cardId === 'S33')).toBe(true);
+  });
+
   it('a Harvest card moves the market, prices what the player owns, and sells in its window; the Payday drifts the indices', () => {
     state().tier3BalanceLoaded = true;
     state().tier3GrowLoaded = true;

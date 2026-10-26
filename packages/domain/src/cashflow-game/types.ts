@@ -388,6 +388,15 @@ export interface CashflowPendingDecision {
     steps?: number;
     swapOut?: string;
     passed?: boolean;
+    /** The card is bought but its die has not been thrown: the player throws it (JFK, 2026-10-26: every die is the player's own). */
+    rollFor?: {
+      cardId: string;
+      units?: number;
+      steps?: number;
+      swapOut?: string;
+      indexPercent?: number;
+      light?: boolean;
+    };
     /** What the dice said, in words (kept so the card can be read again). */
     told?: string[];
     /** The card was bought and its project made (or planned in Grow: `planned`). */

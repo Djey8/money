@@ -841,6 +841,46 @@ interface OpportunityBandLike extends OpportunityRollLike {
               <p class="tc-note" *ngIf="o.paymentOpen">
                 {{ 'CashflowGame.opportunity.payFirst' | translate }}
               </p>
+              <!-- the die of the card: the player throws it - the golden dice, then what it decided -->
+              <section class="tc-roll" *ngIf="o.rollFor as rollCard">
+                <p>
+                  {{
+                    'CashflowGame.opportunity.rollFor' | translate: { title: rollCard.title[lang] }
+                  }}
+                </p>
+                <ng-container
+                  *ngFor="let table of opportunityDiceTables(rollCard); trackBy: trackTable"
+                >
+                  <section class="tc-dice-table">
+                    <h5>
+                      {{ 'CashflowGame.dice.title' | translate
+                      }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
+                    </h5>
+                    <div
+                      class="tc-dice-row"
+                      *ngFor="let row of table.rows"
+                      [attr.data-tone]="row.tone"
+                    >
+                      <strong class="tc-dice-range">{{ row.range }}</strong>
+                      <span>
+                        <span
+                          *ngFor="let line of row.lines; trackBy: trackValue"
+                          class="tc-dice-line"
+                          >{{ line }}</span
+                        >
+                      </span>
+                    </div>
+                  </section>
+                </ng-container>
+                <button
+                  type="button"
+                  class="tc-btn tc-btn--gold tc-btn--wide"
+                  [disabled]="busy || rolling"
+                  (click)="rollPurchase()"
+                >
+                  🎲 {{ 'CashflowGame.opportunity.rollButton' | translate }}
+                </button>
+              </section>
               <ng-container *ngIf="o.projectTitle as project">
                 <p class="tc-good" *ngIf="!o.planned">
                   ✓ {{ 'CashflowGame.opportunity.created' | translate: { project: project } }}
@@ -2156,6 +2196,11 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   readonly cardText = cardText;
+  /** The player throws the die of the card they bought. */
+  rollPurchase(): void {
+    void this.roll(() => this.service.rollOpportunityPurchase(this.callbacks));
+  }
+
   trackTable = (_i: number, table: { title: string }): string => table.title;
   trackFact = (_i: number, fact: { label: string }): string => fact.label;
   trackInvolved = (_i: number, own: { title: string }): string => own.title;

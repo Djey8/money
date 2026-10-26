@@ -124,7 +124,7 @@ describe('DreamBoardComponent', () => {
         x: Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2,
         y: Number(r.getAttribute('y')) + Number(r.getAttribute('height')) / 2,
       }));
-      const spots = tokenSpots(tiles);
+      const spots = tokenSpots(tiles, shape === 'infinity');
       spots.forEach((spot, index) => {
         tiles.forEach((tile, other) => {
           if (other === index) return;
@@ -133,5 +133,27 @@ describe('DreamBoardComponent', () => {
         });
       });
     }
+  });
+
+  it('on a ring every token stands on the line from the middle through its tile, inside it', () => {
+    const element = render('ring', 3);
+    const tiles = Array.from(element.querySelectorAll('.db-tile rect')).map((r) => ({
+      x: Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2,
+      y: Number(r.getAttribute('y')) + Number(r.getAttribute('height')) / 2,
+    }));
+    const centre = {
+      x: tiles.reduce((sum, t) => sum + t.x, 0) / tiles.length,
+      y: tiles.reduce((sum, t) => sum + t.y, 0) / tiles.length,
+    };
+    tokenSpots(tiles).forEach((spot, i) => {
+      const radial = { x: tiles[i].x - centre.x, y: tiles[i].y - centre.y };
+      const offset = { x: spot.x - tiles[i].x, y: spot.y - tiles[i].y };
+      const cross = radial.x * offset.y - radial.y * offset.x;
+      expect(Math.abs(cross) / Math.hypot(radial.x, radial.y)).toBeLessThan(1);
+      // inside the ring: nearer the middle than its tile
+      expect(Math.hypot(spot.x - centre.x, spot.y - centre.y)).toBeLessThan(
+        Math.hypot(radial.x, radial.y),
+      );
+    });
   });
 });

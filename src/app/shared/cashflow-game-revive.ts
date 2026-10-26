@@ -69,6 +69,7 @@ const BOOLEAN_FIELDS = new Set([
   'ended',
   'passed',
   'planned',
+  'light',
 ]);
 
 /** Fields whose parts are all numbers, whatever their own names are (the dice rolled on a card). */

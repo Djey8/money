@@ -335,6 +335,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     });
     // The list of saved games is small and always shown on the start screen.
     CashflowGameComponent.instance?.savedGames.refresh().catch(() => undefined);
+    // a bought card waits for its die: the card is what is shown (JFK, 2026-10-26)
+    if (instance?.cashflowGameService.opportunityView?.rollFor) instance.dashboardView = 'tile';
   }
 
   /** The list of saved games (solo and played with others), the same as the one in the solo game - for the multiplayer lobby. */

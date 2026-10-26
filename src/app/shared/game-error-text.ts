@@ -3,6 +3,8 @@
  * language of the game). A message that is not listed is shown as it is.
  */
 const GAME_ERRORS_DE: Record<string, string> = {
+  'Throw the die of your purchase first.': 'Wirf zuerst den Würfel für deinen Kauf.',
+  'There is no die to throw.': 'Es gibt keinen Würfel zu werfen.',
   'Could not adjust the bank loan.': 'Der Bankkredit konnte nicht angepasst werden.',
   'Could not complete this deal.': 'Dieser Handel konnte nicht abgeschlossen werden.',
   'Could not draw a card.': 'Es konnte keine Karte gezogen werden.',

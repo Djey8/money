@@ -84,6 +84,7 @@ import {
   type OpportunityChoice,
   type OpportunityContext,
   type OpportunityPile,
+  type OpportunityRolls,
   type OpportunityQuote,
   type OpportunitySettings,
   type CustomRules,
@@ -917,7 +918,7 @@ export class CashflowGameService {
       const bought = paid?.opportunity;
       const card = bought ? this.opportunityCards.find((c) => c.id === bought.cardId) : undefined;
       if (bought && card) {
-        this.completeOpportunity(card, {
+        this.completeOrAwaitRoll(card, {
           units: bought.units,
           steps: bought.steps,
           swapOut: bought.swapOut,
@@ -2831,6 +2832,8 @@ export class CashflowGameService {
     projectTitle?: string;
     planned: boolean;
     paymentOpen: boolean;
+    /** The card whose die has not been thrown yet. */
+    rollFor?: OpportunityCard;
   } | null {
     const game = AppStateService.instance.cashflowGame;
     const pending = game.turn?.pending;
@@ -2856,6 +2859,7 @@ export class CashflowGameService {
       projectTitle: entry?.projectTitle,
       planned: !!entry?.planned,
       paymentOpen: (game.paymentsDue ?? []).some((due) => !!due.opportunity),
+      rollFor: cards.find((card) => card.id === entry?.rollFor?.cardId),
     };
   }
 
@@ -3004,7 +3008,7 @@ export class CashflowGameService {
       this.persistAll('cashflow_opportunity_take', { card: card.id }, callbacks, { quiet: true });
       return;
     }
-    this.completeOpportunity(card, choice);
+    this.completeOrAwaitRoll(card, choice);
     this.persistAll('cashflow_opportunity_take', { card: card.id }, callbacks, {
       quiet: true,
       includeSubscriptions: true,
@@ -3014,32 +3018,97 @@ export class CashflowGameService {
   }
 
   /** The payment of a taken card was booked (or the card was free): the project, the position and the monthly lines are made. */
-  private completeOpportunity(
+  /**
+   * A card with a die waits for the player to throw it (the golden dice of the tile): the purchase is made, what the die decides is
+   * not. A card without a die is done at once.
+   */
+  private completeOrAwaitRoll(
     card: OpportunityCard,
     choice: OpportunityChoice,
     light = false,
   ): void {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    if ((card.dice || card.onBuy) && pending?.opportunity) {
+      this.updatePending((current) => ({
+        ...current,
+        opportunity: {
+          ...current.opportunity!,
+          rollFor: {
+            cardId: card.id,
+            ...(choice.units !== undefined ? { units: choice.units } : {}),
+            ...(choice.steps !== undefined ? { steps: choice.steps } : {}),
+            ...(choice.swapOut ? { swapOut: choice.swapOut } : {}),
+            ...(choice.indexPercent !== undefined ? { indexPercent: choice.indexPercent } : {}),
+            ...(light ? { light: true } : {}),
+          },
+        },
+      }));
+      AppStateService.instance.transactionsUpdated$.next();
+      return;
+    }
+    this.completeOpportunity(card, choice, light);
+  }
+
+  /** The player throws the die of the card they bought: what it decides is booked now. Returns the faces for the dice on the tile. */
+  rollOpportunityPurchase(callbacks: CashflowGameCallbacks): number[] {
+    const state = AppStateService.instance;
+    const wait = state.cashflowGame.turn?.pending?.opportunity?.rollFor;
+    const card = wait
+      ? this.opportunityCards.find((candidate) => candidate.id === wait.cardId)
+      : undefined;
+    if (!wait || !card) {
+      callbacks.onError('There is no die to throw.');
+      return [];
+    }
+    this.pushUndoSnapshot({
+      kind: 'buyDeal',
+      detail: card.title[this.emergencyLang],
+      cardId: card.id,
+      deck: 'opportunity',
+    });
+    this.updatePending((current) => {
+      const { rollFor: _gone, ...rest } = current.opportunity!;
+      void _gone;
+      return { ...current, opportunity: rest };
+    });
+    const rolls = this.completeOpportunity(
+      card,
+      {
+        units: wait.units,
+        steps: wait.steps,
+        swapOut: wait.swapOut,
+        indexPercent: wait.indexPercent,
+      },
+      !!wait.light,
+    );
+    this.persistAll('cashflow_opportunity_roll', { card: card.id }, callbacks, {
+      quiet: true,
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+    });
+    return [rolls.outcome, rolls.outcomeAgain, rolls.onBuy].filter(
+      (face): face is number => face !== undefined,
+    );
+  }
+
+  private completeOpportunity(
+    card: OpportunityCard,
+    choice: OpportunityChoice,
+    light = false,
+  ): OpportunityRolls {
     const lang = this.emergencyLang;
     const books = this.gameBooks();
-    const purchase = buyOpportunity(
-      books,
-      card,
-      choice,
-      rollsFor(card, this.rng, this.customRules?.difficulty),
-      {
-        difficulty: this.customRules?.difficulty,
-        date: this.gameDay,
-        lang,
-        context: this.opportunityContext(),
-        cards: this.opportunityCards,
-        light,
-      },
-    );
+    const rolls = rollsFor(card, this.rng, this.customRules?.difficulty);
+    const purchase = buyOpportunity(books, card, choice, rolls, {
+      difficulty: this.customRules?.difficulty,
+      date: this.gameDay,
+      lang,
+      context: this.opportunityContext(),
+      cards: this.opportunityCards,
+      light,
+    });
     this.applyGameEffects(purchase.effects);
-    // a card with a die: the player sees what was rolled and what it did, as the card told before
-    if (light && (card.dice || card.onBuy) && purchase.told.length > 0) {
-      this.toast?.show(`🎲 ${card.title[lang]}: ${purchase.told.join(' · ')}`, 'info');
-    }
     if (AppStateService.instance.cashflowGame.turn?.pending?.opportunity) {
       this.updatePending((pending) => ({
         ...pending,
@@ -3051,6 +3120,7 @@ export class CashflowGameService {
       }));
     }
     AppStateService.instance.transactionsUpdated$.next();
+    return rolls;
   }
 
   /** A purchase booked in Grow for a project that was planned from a card: the card's own work (rolls, monthly line, holding). */
@@ -3062,7 +3132,7 @@ export class CashflowGameService {
       : undefined;
     if (!plan || !card) return;
     const bought = parseGrowComment(comment).find((statement) => statement.kind === 'buyShare');
-    this.completeOpportunity(
+    this.completeOrAwaitRoll(
       card,
       {
         units: bought && 'quantity' in bought ? bought.quantity : undefined,
@@ -3764,6 +3834,11 @@ export class CashflowGameService {
     options: { paid?: boolean } = {},
   ): void {
     let settled: ReturnType<typeof settleDecisionRule>;
+    // the die of a bought card is the player's to throw before the turn goes on
+    if (AppStateService.instance.cashflowGame.turn?.pending?.opportunity?.rollFor) {
+      callbacks.onError('Throw the die of your purchase first.');
+      return;
+    }
     const refusal = options.paid
       ? null
       : whyCannotSkipCard(

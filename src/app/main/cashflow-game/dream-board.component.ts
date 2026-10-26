@@ -65,7 +65,7 @@ const MARGIN = 70;
 const START_HEIGHT = 84;
 const START_GAP = 24;
 /** The token's size and the space kept between it and its tile. */
-const TOKEN_DISTANCE = Math.round(TILE * 1.12);
+const TOKEN_DISTANCE = 74;
 /** What the header, the start of the page and the roll bar take of the height of the screen. */
 const HEIGHT_TAKEN = 400;
 
@@ -336,7 +336,7 @@ export class DreamBoardComponent {
     const maxX = width + 2 * MARGIN;
     const maxY = height + 2 * MARGIN;
     // a token stands inside the map, next to its tile, the way tokens do at a table
-    const spots = tokenSpots(tiles);
+    const spots = tokenSpots(tiles, this.map.setup.shape === 'infinity');
     const value: Layout = {
       tiles,
       spots,
@@ -413,6 +413,7 @@ interface Layout {
  */
 export function tokenSpots(
   tiles: { x: number; y: number }[],
+  infinity = false,
 ): { x: number; y: number; angle: number }[] {
   const n = tiles.length;
   const centre = {
@@ -430,7 +431,9 @@ export function tokenSpots(
     x: group.reduce((sum, t) => sum + t.x, 0) / group.length,
     y: group.reduce((sum, t) => sum + t.y, 0) / group.length,
   });
-  const loops = left.length >= 3 && right.length >= 3 ? [middleOf(left), middleOf(right)] : null;
+  // only an infinity has two loops; on every other map the token points to the middle of the whole map (a ring: the radius)
+  const loops =
+    infinity && left.length >= 3 && right.length >= 3 ? [middleOf(left), middleOf(right)] : null;
   return tiles.map((tile, i) => {
     let target = centre;
     if (Math.hypot(centre.x - tile.x, centre.y - tile.y) < SPACING * 1.6) {
@@ -472,7 +475,7 @@ export function tokenSpots(
       // the token points at its tile
       angle: (Math.atan2(tile.y - at.y, tile.x - at.x) * 180) / Math.PI,
     });
-    for (const distance of [TOKEN_DISTANCE, 78, 70, 64]) {
+    for (const distance of [TOKEN_DISTANCE, 70, 66, 62]) {
       const inner = along(1, distance);
       if (room(inner) >= TILE / 2 + 4) return facing(inner);
     }

@@ -210,12 +210,13 @@ export class ActiveEffectsComponent {
     const value = Math.abs(fromMinorUnits(minor)).toLocaleString(undefined, {
       maximumFractionDigits: 2,
     });
-    return `${minor < 0 ? '−' : '+'}${value}`;
+    return `${minor < 0 ? '−' : '+'}${value}${this.currency ? ' ' + this.currency : ''}`;
   }
 
   /** How long it lasts: `3 P` in the strip, `3 Paydays` in the list; nothing for what is for good. */
   left(effect: ActiveEffect, long = false): string {
-    if (effect.paydaysLeft === undefined) return '∞';
+    if (effect.paydaysLeft === undefined)
+      return long ? this.translate.instant('CashflowGame.effects.forGood') : '';
     if (!long) return `${effect.paydaysLeft}P`;
     return `${effect.paydaysLeft} ${this.translate.instant(effect.paydaysLeft === 1 ? 'CashflowGame.effects.payday' : 'CashflowGame.effects.paydays')}`;
   }
