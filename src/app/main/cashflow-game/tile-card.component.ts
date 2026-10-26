@@ -612,33 +612,6 @@ const ROLL_MS = 1000;
                 <p class="tc-note" *ngIf="offer.card.estimate">
                   {{ 'CashflowGame.opportunity.estimate' | translate }}
                 </p>
-                <!-- shares: how many units -->
-                <label class="tc-units" *ngIf="offer.card.share as share">
-                  <span>{{ 'CashflowGame.opportunity.units' | translate }}</span>
-                  <input
-                    type="number"
-                    min="1"
-                    [max]="share.maxUnits - offer.held"
-                    [value]="choiceOf(offer.card).units ?? 1"
-                    (input)="setUnits(offer.card, $any($event.target).value)"
-                  />
-                  <small>{{
-                    'CashflowGame.opportunity.unitsMax'
-                      | translate: { max: share.maxUnits - offer.held }
-                  }}</small>
-                </label>
-                <!-- a savings account: how many steps -->
-                <label class="tc-units" *ngIf="offer.card.stepMinor as step">
-                  <span>{{
-                    'CashflowGame.opportunity.steps' | translate: { step: amount(step) }
-                  }}</span>
-                  <input
-                    type="number"
-                    min="1"
-                    [value]="choiceOf(offer.card).steps ?? 1"
-                    (input)="setSteps(offer.card, $any($event.target).value)"
-                  />
-                </label>
                 <!-- the side hustles are full: one has to go -->
                 <ng-container *ngIf="quoteOf(offer.card) as quote">
                   <div class="tc-swap" *ngIf="quote.needsSwap">
@@ -665,9 +638,11 @@ const ROLL_MS = 1000;
                     (click)="take(offer.card)"
                   >
                     {{
-                      (quote.costMinor > 0
-                        ? 'CashflowGame.opportunity.takeFor'
-                        : 'CashflowGame.opportunity.take'
+                      (offer.card.growType === 'income-growth'
+                        ? 'CashflowGame.opportunity.plan'
+                        : quote.costMinor > 0
+                          ? 'CashflowGame.opportunity.takeFor'
+                          : 'CashflowGame.opportunity.take'
                       ) | translate: { cost: amount(quote.costMinor), currency: currency }
                     }}
                   </button>
@@ -690,8 +665,11 @@ const ROLL_MS = 1000;
                 {{ 'CashflowGame.opportunity.payFirst' | translate }}
               </p>
               <ng-container *ngIf="o.projectTitle as project">
-                <p class="tc-good">
+                <p class="tc-good" *ngIf="!o.planned">
                   ✓ {{ 'CashflowGame.opportunity.created' | translate: { project: project } }}
+                </p>
+                <p class="tc-good" *ngIf="o.planned">
+                  ✓ {{ 'CashflowGame.opportunity.planned' | translate: { project: project } }}
                 </p>
                 <ul class="tc-bullets tc-bullets--done" *ngIf="o.told.length">
                   <li *ngFor="let line of o.told; trackBy: trackValue">{{ line }}</li>
@@ -1859,7 +1837,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
         const o = this.opportunity;
         if (!o) return false;
         if (o.passed) return true;
-        return !!o.projectTitle && !o.paymentOpen;
+        return !!o.projectTitle && (o.planned || !o.paymentOpen);
       }
       case 'emergency':
         return !!this.emergency?.projectTitle;

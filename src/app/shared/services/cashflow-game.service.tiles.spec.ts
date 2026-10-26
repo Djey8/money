@@ -201,29 +201,31 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(saving.monthlySavings).toBe(7);
     expect(service.opportunityView!.projectTitle).toBe(saving.title);
 
-    // a share costs: it is a payment due first, and a project when it is paid
+    // a share is planned in Grow first: a project in plan with a note of cash and loan, nothing is bought yet
     offer(['S10']);
-    service.takeOpportunity('S10', { units: 2 }, ok());
-    expect(state().allGrowProjects.some((project) => project.title === 'WORLD')).toBe(false);
-    const [due] = service.paymentsDue;
-    expect(due).toMatchObject({
-      costMinor: 20000,
-      account: 'Fire',
-      opportunity: { cardId: 'S10', units: 2 },
-    });
-    service.beforeGrowTrade(paymentDueComment(due), 0, undefined, `@${due.category}`, 200);
+    service.takeOpportunity('S10', {}, ok());
     expect(service.paymentsDue).toHaveLength(0);
-    expect(state().allShares.find((share) => share.tag === 'WORLD')).toMatchObject({
-      quantity: 2,
-      price: 100,
-    });
-    expect(state().allGrowProjects.find((project) => project.title === 'WORLD')).toMatchObject({
-      phase: 'execute',
-    });
+    const plan = state().allGrowProjects.find((project) => project.title === 'WORLD')!;
+    expect(plan).toMatchObject({ phase: 'plan', status: 'planned' });
+    // priced by the market of now (an index a little above 1.00 after the first Payday)
+    expect(plan.share?.tag).toBe('WORLD');
+    expect(plan.share?.price).toBeGreaterThanOrEqual(100);
+    expect(plan.notes.some((note) => note.text.includes('🏦'))).toBe(true);
+    expect(service.opportunityView).toMatchObject({ planned: true, projectTitle: 'WORLD' });
+    expect(
+      state().cashflowGame.holdings?.some((holding) => holding.title === 'WORLD') ?? false,
+    ).toBe(false);
+    // the player sets the units in Grow (there is no limit on the card) and buys: the Add dialog books the share, the card does the rest
+    service.beforeGrowTrade('Buy Share WORLD 40 x 100;', 0, undefined, '@WORLD', 4000);
+    const holding = state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!;
+    expect(holding.units).toBe(40);
+    // 40 units x 0.15 a month
     expect(
       state().allSubscriptions.find((sub) => sub.title === 'WORLD Cashflow')?.amount,
-    ).toBeCloseTo(0.3, 2);
-    expect(service.opportunityView!.projectTitle).toBe('WORLD');
+    ).toBeCloseTo(6, 2);
+    // a sale booked in Grow brings the holding down
+    service.beforeGrowTrade('Sell Share WORLD 15 x 100;', 0, undefined, '@WORLD', 0);
+    expect(state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!.units).toBe(25);
   });
 
   it('a Harvest card moves the market, prices what the player owns, and sells in its window; the Payday drifts the indices', () => {
@@ -241,10 +243,9 @@ describe('CashflowGameService: life, career and dreams', () => {
         },
       },
     };
-    service.takeOpportunity('S10', { units: 4 }, ok());
-    const [due] = service.paymentsDue;
-    service.beforeGrowTrade(paymentDueComment(due), 0, undefined, `@${due.category}`, 400);
-    expect(state().allShares.find((share) => share.tag === 'WORLD')?.price).toBe(100);
+    service.takeOpportunity('S10', {}, ok());
+    service.beforeGrowTrade('Buy Share WORLD 4 x 100;', 0, undefined, '@WORLD', 400);
+    expect(state().cashflowGame.holdings![0].units).toBe(4);
 
     // the market card: a bull market (+7% for the world) with a window to sell
     landOn('harvest');

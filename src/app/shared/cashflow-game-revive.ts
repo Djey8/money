@@ -68,6 +68,7 @@ const BOOLEAN_FIELDS = new Set([
   'lifeCanDecline',
   'ended',
   'passed',
+  'planned',
 ]);
 
 /** Fields whose parts are all numbers, whatever their own names are (the dice rolled on a card). */
@@ -135,6 +136,7 @@ export const REVIVED_GAME_FIELDS = [
   // the Opportunity piles and what the player owns of them
   'opportunityDeck',
   'holdings',
+  'opportunityPlans',
   'markets',
   'harvestDeck',
   'nextPaydayIndex',

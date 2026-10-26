@@ -8,12 +8,16 @@ import {
   buyOpportunity,
   canOffer,
   drawOpportunityOffers,
+  planOpportunity,
   quoteOpportunity,
   tickOpportunities,
   type OpportunityContext,
 } from './opportunity';
 import { seededRng } from './rng';
+import { fixedClock } from './clock';
+import { identityText } from './game-text';
 
+const opportunity = (id: string) => OPPORTUNITY_CARDS.find((c) => c.id === id)!;
 const card = (id: string) => OPPORTUNITY_CARDS.find((c) => c.id === id)!;
 
 function start(): GameBooks {
@@ -144,12 +148,12 @@ describe('the Opportunity stack', () => {
     expect(
       quoteOpportunity(
         etf,
-        { units: 21 },
+        { units: 500 },
         context(books),
         DEFAULT_OPPORTUNITY_SETTINGS,
         OPPORTUNITY_CARDS,
       ).ok,
-    ).toBe(false);
+    ).toBe(true); // the card does not limit the units: Grow decides
     const bought = buyOpportunity(books, etf, { units: 3 }, {}, options(books));
     expect(bought.effects.shareUpserts).toEqual([{ tag: 'WORLD', quantity: 3, priceMinor: 10000 }]);
     const project = bought.effects.growUpdates.find((u) => u.title === 'WORLD')!;
@@ -267,5 +271,55 @@ describe('the Opportunity stack', () => {
     for (let i = 0; i < 11; i += 1) deposit = run(deposit).books;
     const last = run(deposit);
     expect(last.news[0]).toContain('locked money is back');
+  });
+
+  it('every card that costs something can be planned in Grow: a project in plan with the numbers of the card and no money moved', () => {
+    const books = start();
+    const deps = {
+      clock: fixedClock('2026-11-15'),
+      text: identityText,
+      money: (minor: number) => `${minor / 100}`,
+      plainMoney: (minor: number) => `${minor / 100}`,
+      lang: 'en' as const,
+      cards: {
+        textFor: () => ({}),
+        symbolFor: (x: string | undefined) => x,
+        sharedText: () => '',
+        groupName: (g: string) => g,
+      },
+    };
+    for (const card of OPPORTUNITY_CARDS) {
+      if (card.growType !== 'income-growth') continue;
+      const effects = planOpportunity(books, card, deps, { lang: 'en' });
+      const project = effects.growUpdates[0];
+      expect(project).toMatchObject({ create: true, phase: 'plan', status: 'planned' });
+      expect(project.details?.riskScore).toBe(card.riskScore);
+      expect(effects.appendedTransactions).toEqual([]);
+      expect(effects.state.opportunityPlans?.at(-1)?.cardId).toBe(card.id);
+      if (card.share) expect(project.share).toMatchObject({ tag: card.share.ticker, quantity: 1 });
+      else if (card.property || card.loan || card.kind === 'investment')
+        expect(project.investment?.depositMinor).toBe(card.costMinor ?? 0);
+      else expect(project.isAsset).toBe(true);
+    }
+  });
+
+  it('a purchase booked in Grow (light) makes the holding and the monthly line but leaves the balance sheet to the Add dialog', () => {
+    const books = start();
+    const light = buyOpportunity(
+      books,
+      opportunity('P15'),
+      {},
+      { outcome: 4 },
+      { ...options(books), light: true },
+    );
+    expect(light.effects.investmentUpserts).toEqual([]);
+    expect(light.effects.liabilityUpserts).toEqual([]);
+    expect(light.effects.assetUpserts).toEqual([]);
+    expect(light.holding).toMatchObject({ cardId: 'P15', cashflowMinor: 45000 });
+    expect(light.effects.subscriptionUpserts[0]).toMatchObject({
+      title: 'Snack Vending Machine Cashflow',
+      amountMinor: 45000,
+    });
+    expect(light.effects.state.opportunityPlans ?? []).toEqual([]);
   });
 });

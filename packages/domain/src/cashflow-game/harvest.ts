@@ -184,6 +184,46 @@ export interface HarvestPending {
   ladders: HarvestLadderOffer[];
 }
 
+/** A holding in a market that is open for selling now: what a unit brings, and how many there are. */
+export interface HarvestWindowSale {
+  holding: string;
+  label: string;
+  units: number;
+  unitMinor: number;
+  isShare: boolean;
+}
+
+/** What the player owns in a market that a card has opened for selling. */
+export function windowSaleList(
+  state: CashflowGameState,
+  cards: readonly OpportunityCard[],
+  window: string[] | 'ALL',
+  lang: EmergencyLang,
+): HarvestWindowSale[] {
+  const out: HarvestWindowSale[] = [];
+  for (const holding of state.holdings ?? []) {
+    if (holding.ended) continue;
+    const card = cards.find((candidate) => candidate.id === holding.cardId);
+    if (!card || (!card.share && holding.assetBaseMinor === undefined)) continue;
+    const open =
+      window === 'ALL'
+        ? !!holding.marketTag
+        : !!holding.marketTag && window.includes(holding.marketTag);
+    if (!open) continue;
+    const unitMinor = card.share
+      ? unitPriceNow(card, holding, state)
+      : valueOf(card, holding, state);
+    out.push({
+      holding: holding.title,
+      label: card.title[lang],
+      units: card.share ? (holding.units ?? 0) : 1,
+      unitMinor,
+      isShare: !!card.share,
+    });
+  }
+  return out;
+}
+
 export interface HarvestContext {
   cards: readonly OpportunityCard[];
   lang: EmergencyLang;
@@ -550,6 +590,35 @@ export function playHarvestCard(
     }
   }
   setLines();
+  // what the card offers is also what Grow's Sell works with: a buyer's price for a property, a price for every share in a window
+  const offers = [
+    ...windowSaleList(state, context.cards, pending.window, lang).map((entry) => ({
+      title: entry.holding,
+      salePriceMinor: entry.unitMinor * (entry.isShare ? entry.units : 1),
+      cardId: card.id,
+      label: card.title[lang],
+      ...(entry.isShare ? { pricePerShareMinor: entry.unitMinor } : {}),
+      offeredAtRoll: state.turn?.count ?? 0,
+    })),
+    ...pending.sales.map((sale) => ({
+      title: sale.holding,
+      salePriceMinor: sale.grossMinor - sale.costsMinor,
+      cardId: card.id,
+      label: sale.label,
+      ...(sale.units && sale.owedMinor === 0 && sale.costsMinor === 0
+        ? { pricePerShareMinor: Math.round(sale.grossMinor / sale.units) }
+        : {}),
+      offeredAtRoll: state.turn?.count ?? 0,
+    })),
+  ];
+  const offered = new Set(offers.map((offer) => offer.title));
+  state = {
+    ...state,
+    marketOffers: [
+      ...(state.marketOffers ?? []).filter((offer) => !offered.has(offer.title)),
+      ...offers,
+    ],
+  };
   // the holdings the card ended are not live any more; prices follow the indices
   repriceHoldings(live(), context.cards, state, effects, books.growProjects, date);
   effects.state = { ...state, holdings, markets };

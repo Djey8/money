@@ -51,6 +51,7 @@ import {
   difficultySettings,
   type DifficultySettings,
   drawHarvestCard,
+  indexOf,
   ladderPayout,
   playHarvestCard,
   rideLadder,
@@ -63,6 +64,9 @@ import {
   type HarvestSale,
   buyOpportunity,
   drawOpportunityOffers,
+  planOpportunity,
+  projectTitleOf,
+  settleHoldingSale,
   isOpportunityPile,
   quoteOpportunity,
   rollsFor,
@@ -154,6 +158,7 @@ import {
   fromMinorUnits,
   gameSubscriptionDays,
   gameTradeStep,
+  parseGrowComment,
   historySteps as historyStepsOf,
   isGameSnapshot as isGameSnapshotRule,
   keepSavedSlot,
@@ -873,6 +878,12 @@ export class CashflowGameService {
     this.pushUndoSnapshot(tradeStep); // step 2 (or the only step): the trade itself
     if (tradeStep.kind === 'buyInvestment' || tradeStep.kind === 'buyAsset') this.markPurchased();
     if (tradeStep.kind === 'doodad' || tradeStep.kind === 'marketCost') this.markCardPlayed();
+    // what the Opportunity cards made: bought in Grow it becomes a holding with its monthly line, sold in Grow it follows
+    if (['buyShare', 'buyInvestment', 'buyAsset'].includes(tradeStep.kind)) {
+      this.finishOpportunityBuy(tradeStep.detail ?? '', comment);
+    } else if (['sellShare', 'sellInvestment', 'sellAsset'].includes(tradeStep.kind)) {
+      this.settleOpportunitySale(tradeStep.detail ?? '', comment);
+    }
     if (tradeStep.kind === 'cardPayment') {
       // the payment a card asked for is made: it comes off the list (the undo step above brings it back)
       const paid = paymentsDueOf(state.cashflowGame).find(
@@ -2745,6 +2756,7 @@ export class CashflowGameService {
     passed: boolean;
     told: string[];
     projectTitle?: string;
+    planned: boolean;
     paymentOpen: boolean;
   } | null {
     const game = AppStateService.instance.cashflowGame;
@@ -2769,6 +2781,7 @@ export class CashflowGameService {
       passed: !!entry?.passed,
       told: entry?.told ?? [],
       projectTitle: entry?.projectTitle,
+      planned: !!entry?.planned,
       paymentOpen: (game.paymentsDue ?? []).some((due) => !!due.opportunity),
     };
   }
@@ -2864,8 +2877,43 @@ export class CashflowGameService {
       ...game,
       turn: { ...game.turn!, pending: { ...pending, played: true, opportunity: taken } },
     };
+    // an investment is planned in Grow: a project with its numbers and a note of what the player has and would have to borrow; how
+    // many units to buy is decided there (JFK, 2026-10-26). A saving applies at once (what it costs is a payment due).
+    if (card.growType === 'income-growth') {
+      try {
+        this.applyGameEffects(
+          planOpportunity(this.gameBooks(), card, this.dealDeps, {
+            lang,
+            swapOut: choice.swapOut,
+            indexPercent: Math.round(indexOf(state.cashflowGame, card.market?.tag) * 100),
+          }),
+        );
+      } catch (err: unknown) {
+        this.undoStack = popUndoSteps(this.undoStack, 1).stack;
+        callbacks.onError(errorMessage(err, 'This card could not be planned.'));
+        return;
+      }
+      this.updatePending((current) => ({
+        ...current,
+        opportunity: {
+          ...current.opportunity!,
+          planned: true,
+          projectTitle: projectTitleOf(card, lang),
+        },
+      }));
+      const planned = state.allGrowProjects.find(
+        (project) => project.title === projectTitleOf(card, lang),
+      );
+      if (planned) this.syncPlanNote(planned);
+      state.transactionsUpdated$.next();
+      this.persistAll('cashflow_opportunity_plan', { card: card.id }, callbacks, {
+        quiet: true,
+        includeGrow: true,
+      });
+      return;
+    }
     if (quote.costMinor > 0) {
-      // what it costs is paid by the player, in the Add dialog; the card becomes a project when it is paid
+      // a saving that costs something: the player pays it in the Add dialog, then it applies
       const title = card.share ? card.share.ticker : card.title[lang];
       state.cashflowGame = withPaymentDue(state.cashflowGame, {
         title: card.title[lang],
@@ -2892,7 +2940,11 @@ export class CashflowGameService {
   }
 
   /** The payment of a taken card was booked (or the card was free): the project, the position and the monthly lines are made. */
-  private completeOpportunity(card: OpportunityCard, choice: OpportunityChoice): void {
+  private completeOpportunity(
+    card: OpportunityCard,
+    choice: OpportunityChoice,
+    light = false,
+  ): void {
     const lang = this.emergencyLang;
     const books = this.gameBooks();
     const purchase = buyOpportunity(
@@ -2906,18 +2958,54 @@ export class CashflowGameService {
         lang,
         context: this.opportunityContext(),
         cards: this.opportunityCards,
+        light,
       },
     );
     this.applyGameEffects(purchase.effects);
-    this.updatePending((pending) => ({
-      ...pending,
-      opportunity: {
-        ...pending.opportunity!,
-        told: purchase.told,
-        projectTitle: purchase.holding.title,
-      },
-    }));
+    if (AppStateService.instance.cashflowGame.turn?.pending?.opportunity) {
+      this.updatePending((pending) => ({
+        ...pending,
+        opportunity: {
+          ...pending.opportunity!,
+          told: [...(pending.opportunity?.told ?? []), ...purchase.told],
+          projectTitle: purchase.holding.title,
+        },
+      }));
+    }
     AppStateService.instance.transactionsUpdated$.next();
+  }
+
+  /** A purchase booked in Grow for a project that was planned from a card: the card's own work (rolls, monthly line, holding). */
+  private finishOpportunityBuy(title: string, comment: string): void {
+    const state = AppStateService.instance;
+    const plan = (state.cashflowGame.opportunityPlans ?? []).find((entry) => entry.title === title);
+    const card = plan
+      ? this.opportunityCards.find((candidate) => candidate.id === plan.cardId)
+      : undefined;
+    if (!plan || !card) return;
+    const bought = parseGrowComment(comment).find((statement) => statement.kind === 'buyShare');
+    this.completeOpportunity(
+      card,
+      {
+        units: bought && 'quantity' in bought ? bought.quantity : undefined,
+        swapOut: plan.swapOut,
+        indexPercent: Math.round(indexOf(state.cashflowGame, card.market?.tag) * 100),
+      },
+      true,
+    );
+  }
+
+  /** A sale booked in Grow for something the cards made: the holding has fewer units, or is gone with its monthly line. */
+  private settleOpportunitySale(title: string, comment: string): void {
+    const sold = parseGrowComment(comment).find((statement) => statement.kind === 'sellShare');
+    const effects = settleHoldingSale(
+      this.gameBooks(),
+      title,
+      sold && 'quantity' in sold ? sold.quantity : undefined,
+      this.opportunityCards,
+      this.gameDay,
+    );
+    if (effects) this.applyGameEffects(effects);
   }
 
   /** None of the offered cards is taken: they go to the bottom of their pile. */
@@ -4764,6 +4852,14 @@ export class CashflowGameService {
     title: string,
     kind: 'property' | 'asset' | 'share' = 'share',
   ): string | null {
+    // what was planned from an Opportunity card is bought in Grow whatever the classic rules say of cards in hand
+    if (
+      (AppStateService.instance.cashflowGame.opportunityPlans ?? []).some(
+        (plan) => plan.title === title,
+      )
+    ) {
+      return null;
+    }
     const isProperty = kind === 'property';
     // At a table only the card in hand can be bought: a stock price card somebody else drew lets the holder SELL at that price, never
     // buy (JFK, 2026-10-19) - so its offer is not looked at for a purchase (the Buy button is hidden, the table refuses it anyway).

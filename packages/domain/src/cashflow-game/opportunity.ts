@@ -15,6 +15,7 @@ import {
   type OpportunityRoll,
 } from './opportunity-deck';
 import { mortgageDeltaMinor, withLuck, type Difficulty } from './difficulty';
+import { planDeal, type DealDeps, type DealInput } from './deals';
 import { bookOneTime } from './payments-due';
 import { pickOne, rollDie, systemRng, type Rng } from './rng';
 import type { CashflowGameState } from './types';
@@ -236,10 +237,9 @@ export function quoteOpportunity(
   let costMinor: number;
   let reason: OpportunityQuote['reason'];
   if (card.share) {
-    const held = active(context.holdings).find((holding) => holding.cardId === card.id);
-    const room = card.share.maxUnits - (held?.units ?? 0);
+    // a share has no limit on the card: the player decides in Grow how many to buy
     const units = choice.units ?? 1;
-    if (units < 1 || units > room) reason = 'units';
+    if (units < 1) reason = 'units';
     costMinor =
       Math.round((card.share.unitPriceMinor * (choice.indexPercent ?? 100)) / 100) * units;
   } else if (card.stepMinor) {
@@ -345,6 +345,8 @@ export function buyOpportunity(
     context: OpportunityContext;
     cards: readonly OpportunityCard[];
     difficulty?: Difficulty;
+    /** The position was bought in Grow (the Add dialog books it): only what the card adds to it is done here. */
+    light?: boolean;
   },
 ): OpportunityPurchase {
   const { date, lang } = options;
@@ -671,7 +673,31 @@ export function buyOpportunity(
   } else {
     holdings.push(holding);
   }
-  next = { ...next, holdings };
+  if (options.light) {
+    // the Add dialog books the share, the property, the loan and the asset itself; the project keeps what Grow wrote
+    effects.shareUpserts = [];
+    effects.investmentUpserts = [];
+    effects.liabilityUpserts = [];
+    effects.assetUpserts = [];
+    effects.growUpdates = effects.growUpdates.map((entry) =>
+      entry.title !== title
+        ? entry
+        : {
+            title: entry.title,
+            updatedAt: entry.updatedAt,
+            notes: entry.notes,
+            ...(entry.cashflowMinor !== undefined ? { cashflowMinor: entry.cashflowMinor } : {}),
+          },
+    );
+  }
+  next = {
+    ...next,
+    holdings,
+    // a plan that was bought is done (a share keeps its plan: more units can be bought later)
+    opportunityPlans: card.share
+      ? next.opportunityPlans
+      : (next.opportunityPlans ?? []).filter((plan) => plan.title !== title),
+  };
   effects.state = next;
   return { effects, holding, told };
 }
@@ -891,4 +917,160 @@ export function tickOpportunities(
 /** Whether a pile name is one of the three (for a stored game). */
 export function isOpportunityPile(value: unknown): value is OpportunityPile {
   return OPPORTUNITY_PILES.includes(value as OpportunityPile);
+}
+
+// ── Planning in Grow, and selling there (JFK, 2026-10-26) ──
+
+const averageOf = (values: number[]) =>
+  values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+
+/** What a card is expected to pay each month (by its numbers, the dice averaged): what the plan in Grow shows before it is bought. */
+export function expectedCashflowMinor(card: OpportunityCard): number {
+  if (card.cashflowMinor !== undefined) return card.cashflowMinor;
+  const rolled = (card.dice ?? []).flatMap((band) =>
+    band.value.cashflowMinor === undefined
+      ? []
+      : Array.from({ length: band.to - band.from + 1 }, () => band.value.cashflowMinor as number),
+  );
+  return averageOf(rolled);
+}
+
+/** The Grow project's title of a card: the ticker of a share, the name of everything else. */
+export const projectTitleOf = (card: OpportunityCard, lang: EmergencyLang): string =>
+  card.share ? card.share.ticker : card.title[lang];
+
+/**
+ * Taking a card is **planning** it: a Grow project in `plan` with everything the card tells, its numbers as the plan and a note that
+ * says what the player has in cash and what they would have to borrow. The player sets how many units to buy (there is no limit on the
+ * card), then buys with Grow's Buy; selling is Grow's Sell. The card becomes a holding when the purchase is booked (`light` buy).
+ */
+export function planOpportunity(
+  books: GameBooks,
+  card: OpportunityCard,
+  deps: DealDeps,
+  options: { lang: EmergencyLang; indexPercent?: number; swapOut?: string },
+): GameEffects {
+  const { lang } = options;
+  const title = projectTitleOf(card, lang);
+  const subtitle = card.category;
+  const description = card.story[lang];
+  const price = Math.round(
+    ((card.share?.unitPriceMinor ?? 0) * (options.indexPercent ?? 100)) / 100,
+  );
+  const input: DealInput = card.share
+    ? {
+        kind: 'share',
+        title,
+        quantity: 1,
+        priceMinor: price,
+        subtitle,
+        description,
+        strategy: card.strategy,
+      }
+    : card.property || card.loan || card.kind === 'investment'
+      ? {
+          kind: 'investment',
+          title,
+          depositMinor: card.costMinor ?? 0,
+          mortgageMinor: card.property?.mortgageMinor ?? card.loan?.loanMinor ?? 0,
+          cashflowMinor: expectedCashflowMinor(card),
+          subtitle,
+          description,
+        }
+      : {
+          kind: 'asset',
+          title,
+          costMinor: card.costMinor ?? 0,
+          coins: 0,
+          subtitle,
+          description,
+          strategy: card.strategy,
+        };
+  const effects = planDeal(books, input, deps);
+  const at = deps.clock.nowIso();
+  const first = effects.growUpdates[0];
+  effects.growUpdates = [
+    {
+      ...first,
+      strategy: card.strategy,
+      isAsset: first.isAsset ?? (card.kind === 'asset' && !card.share ? true : undefined),
+      details: {
+        type: card.growType,
+        category: card.category,
+        pattern: card.pattern,
+        reasoning: card.reasoning,
+        risks: card.risks,
+        riskScore: card.riskScore,
+        insights: card.insights,
+        alternative: card.alternative,
+        alternativeCostMinor: card.alternativeCostMinor,
+        links: card.links,
+        actionItems: card.actions,
+      },
+      notes: [
+        ...(first.notes ?? []),
+        ...(card.note ? [note(card.note, at)] : []),
+        ...(card.sideHustle
+          ? [note('A side hustle: it takes your evenings (at most a few run at a time).', at)]
+          : []),
+      ],
+    },
+  ];
+  effects.state = {
+    ...effects.state,
+    opportunityPlans: [
+      ...(effects.state.opportunityPlans ?? []).filter((plan) => plan.title !== title),
+      { title, cardId: card.id, ...(options.swapOut ? { swapOut: options.swapOut } : {}) },
+    ],
+  };
+  return effects;
+}
+
+/**
+ * A sale in Grow (the Add dialog books the money and the position): the holding follows - fewer units of a share, or ended with its
+ * monthly line when it is all sold. Returns null for a title that is not a holding.
+ */
+export function settleHoldingSale(
+  books: Pick<GameBooks, 'state'>,
+  title: string,
+  soldUnits: number | undefined,
+  cards: readonly OpportunityCard[],
+  date: string,
+): GameEffects | null {
+  const state = books.state;
+  const holdings = (state.holdings ?? []).map((holding) => ({ ...holding }));
+  const holding = holdings.find((candidate) => candidate.title === title && !candidate.ended);
+  if (!holding) return null;
+  const card = cards.find((candidate) => candidate.id === holding.cardId);
+  const effects = emptyEffects(state, null);
+  effects.persist = { subscriptions: true, grow: false, balanceSheet: false };
+  const partial =
+    !!card?.share &&
+    soldUnits !== undefined &&
+    holding.units !== undefined &&
+    soldUnits < holding.units;
+  let next = state;
+  if (partial && card?.share && soldUnits !== undefined && holding.units !== undefined) {
+    holding.units -= soldUnits;
+    holding.cashflowMinor = holding.units * card.share.dividendMonthPerUnitMinor;
+    if (holding.subscription) {
+      holding.lineMinor = monthlyOf(holding);
+      effects.subscriptionUpserts.push(
+        line(holding.subscription, holding.lineMinor, date, `@${title}`),
+      );
+    }
+  } else {
+    holding.ended = true;
+    if (holding.subscription) {
+      effects.subscriptionRemovals.push(holding.subscription);
+      next = {
+        ...next,
+        gameSubscriptionTitles: next.gameSubscriptionTitles.filter(
+          (t) => t !== holding.subscription,
+        ),
+      };
+    }
+  }
+  effects.state = { ...next, holdings };
+  return effects;
 }

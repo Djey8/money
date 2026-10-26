@@ -390,8 +390,9 @@ export interface CashflowPendingDecision {
     passed?: boolean;
     /** What the dice said, in words (kept so the card can be read again). */
     told?: string[];
-    /** The card was bought and its project made. */
+    /** The card was bought and its project made (or planned in Grow: `planned`). */
     projectTitle?: string;
+    planned?: boolean;
   };
   emergency?: {
     cardId: string;
@@ -513,6 +514,8 @@ export interface CashflowGameState {
   opportunityDeck?: OpportunityDeckState;
   /** What the player owns of the Opportunity cards (and what is still running of them). */
   holdings?: OpportunityHolding[];
+  /** The Grow projects planned from Opportunity cards (the plan becomes a holding when it is bought in Grow). */
+  opportunityPlans?: { title: string; cardId: string; swapOut?: string }[];
   /** The indices of the markets (1.00 at the start) that the Harvest cards move, and the Harvest pile. */
   markets?: Record<string, number>;
   harvestDeck?: EmergencyDeckState;

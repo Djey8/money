@@ -34,6 +34,9 @@ export interface DreamPolicy {
   name: string;
   /** Months of expenses kept in cash before anything is invested. */
   bufferMonths: number;
+  /** Of what the month has left, the share put into payment plans for the reserve and the dreams, and over how many Paydays they run. */
+  planShare: number;
+  planMonths: number;
   /** The order the free money of a Payday goes to. */
   priorities: ('reserve' | 'debt' | 'dream' | 'invest')[];
   /** Of the free money after the reserve and the debts, the share that goes to the dream each Payday. */
@@ -100,6 +103,8 @@ function makePolicy(
     | 'id'
     | 'name'
     | 'bufferMonths'
+    | 'planShare'
+    | 'planMonths'
     | 'priorities'
     | 'dreamShare'
     | 'lifeAcceptChance'
@@ -135,7 +140,7 @@ function makePolicy(
         let choice: OpportunityChoice = {};
         let cost = entryCostMinor(card);
         if (card.share) {
-          const room = card.share.maxUnits - (held.get(card.id) ?? 0);
+          const room = Number.POSITIVE_INFINITY - (held.get(card.id) ?? 0); // the card sets no limit: Grow decides
           const units = Math.max(
             1,
             Math.min(
@@ -196,6 +201,8 @@ export const DREAM_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'saver',
+      planShare: 0.9,
+      planMonths: 12,
       name: 'Cautious saver',
       bufferMonths: 3,
       priorities: ['reserve', 'debt', 'dream', 'invest'],
@@ -220,6 +227,8 @@ export const DREAM_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'etf',
+      planShare: 0.6,
+      planMonths: 18,
       name: 'ETF investor',
       bufferMonths: 2,
       priorities: ['reserve', 'debt', 'invest', 'dream'],
@@ -242,6 +251,8 @@ export const DREAM_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'property',
+      planShare: 0.5,
+      planMonths: 24,
       name: 'Property builder',
       bufferMonths: 2,
       priorities: ['reserve', 'debt', 'invest', 'dream'],
@@ -264,6 +275,8 @@ export const DREAM_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'hustler',
+      planShare: 0.5,
+      planMonths: 18,
       name: 'Side hustler',
       bufferMonths: 2,
       priorities: ['reserve', 'invest', 'debt', 'dream'],
@@ -286,6 +299,8 @@ export const DREAM_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'gambler',
+      planShare: 0.3,
+      planMonths: 24,
       name: 'Gambler',
       bufferMonths: 1,
       priorities: ['reserve', 'invest', 'debt', 'dream'],
@@ -310,6 +325,8 @@ export const DREAM_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'passive',
+      planShare: 0.9,
+      planMonths: 12,
       name: 'Free cards only',
       bufferMonths: 3,
       priorities: ['reserve', 'debt', 'dream'],

@@ -40,7 +40,13 @@ import {
 } from '../harvest';
 import { activeInsurances } from '../insurance';
 import { drawLifeCard, resolveLifeCard, type LifeDecision } from '../life-deck';
-import { applyLifeOutcome, endLifeLine, lifeContext, monthlyExpensesMinor } from '../life-books';
+import {
+  applyLifeOutcome,
+  endLifeLine,
+  lifeContext,
+  monthlyExpensesMinor,
+  netMonthlyMinor,
+} from '../life-books';
 import { endableLines } from '../life-deck';
 import { playBankLoan } from '../loan';
 import {
@@ -75,6 +81,15 @@ export interface DreamSimConfig {
   rules?: Partial<CustomRules>;
   /** A game not won or lost after this many rolls is a timeout. */
   maxTurns?: number;
+}
+
+/** A payment plan of a project: so much every Payday until what is left is paid. */
+interface SimPlan {
+  kind: 'mojo' | 'life' | 'smile' | 'emergency';
+  /** The dream card of a Smile project; the card of an emergency. */
+  id: string;
+  perMinor: number;
+  leftMinor: number;
 }
 
 export type DreamOutcome = 'won' | 'bankrupt' | 'timeout' | 'error';
@@ -129,8 +144,17 @@ export class DreamSim {
   private dreamSavedMinor = 0;
   private dreamLived = false;
   private readonly dreamTargetMinor: number;
-  private smile: { cardId: string; totalMinor: number; savedMinor: number; points: number }[] = [];
+  private smile: {
+    cardId: string;
+    totalMinor: number;
+    savedMinor: number;
+    points: number;
+    round: number;
+  }[] = [];
   private dreamPoints = 0;
+  /** What the Smile and Fire projects are paid by: a plan pays an installment at every Payday (the payment plans of the app). */
+  private plans: SimPlan[] = [];
+  private bonusPoints = 0;
   private readonly record: DreamGameRecord;
   private readonly debtTags: string[];
 
@@ -267,10 +291,10 @@ export class DreamSim {
   }
 
   /** Money out of the account: the reserve gives back first, then the Bank loan covers what is still short. */
-  private spend(costMinor: number, category: string): void {
+  private spend(costMinor: number, category: string, fromReserve = true): void {
     if (costMinor <= 0) return;
     let cash = this.cash();
-    if (cash < costMinor && this.reserveMinor > 0) {
+    if (fromReserve && cash < costMinor && this.reserveMinor > 0) {
       const back = Math.min(this.reserveMinor, costMinor - cash);
       this.reserveMinor -= back;
       this.add('Fire', back, '@Mojo');
@@ -361,7 +385,7 @@ export class DreamSim {
     record.reserveMinor = this.reserveMinor;
     record.passiveMinor = finances.passiveIncomeMinor;
     record.expensesMinor = finances.expensesMinor;
-    record.dreamPoints = this.dreamPoints;
+    record.dreamPoints = this.dreamPoints + this.bonusPoints;
     record.netWorthMinor = this.netWorth();
     return record;
   }
@@ -456,6 +480,99 @@ export class DreamSim {
 
   private payday(): void {
     this.trim();
+    this.payInstallments();
+    this.replan();
+    this.extraPayments();
+    this.track();
+  }
+
+  /** The installments of every plan are paid: the project they are for grows by them. */
+  private payInstallments(): void {
+    for (const plan of [...this.plans]) {
+      const pay = Math.min(plan.perMinor, plan.leftMinor);
+      if (pay <= 0) continue;
+      this.spend(pay, `@${plan.kind}`, plan.kind !== 'mojo');
+      plan.leftMinor -= pay;
+      if (plan.kind === 'mojo') this.reserveMinor += pay;
+      else if (plan.kind === 'life') this.dreamSavedMinor += pay;
+      else if (plan.kind === 'smile') {
+        const dream = this.smile.find((candidate) => candidate.cardId === plan.id);
+        if (dream) dream.savedMinor += pay;
+      }
+      if (plan.leftMinor <= 0) this.plans = this.plans.filter((candidate) => candidate !== plan);
+    }
+    this.checkDreams();
+  }
+
+  /** A dream that is fully funded is lived. */
+  private checkDreams(): void {
+    if (
+      !this.dreamLived &&
+      this.dreamTargetMinor > 0 &&
+      this.dreamSavedMinor >= this.dreamTargetMinor
+    ) {
+      this.dreamLived = true;
+      this.plans = this.plans.filter((plan) => plan.kind !== 'life');
+    }
+    for (const dream of [...this.smile]) {
+      if (dream.savedMinor < dream.totalMinor) continue;
+      this.dreamPoints += dream.points;
+      this.smile = this.smile.filter((candidate) => candidate !== dream);
+      this.plans = this.plans.filter(
+        (plan) => !(plan.kind === 'smile' && plan.id === dream.cardId),
+      );
+      const log: DreamLog = this.state.dreams ?? EMPTY_DREAM_LOG;
+      this.setState({
+        ...this.state,
+        dreams: {
+          ...log,
+          open: log.open.filter((open) => open.cardId !== dream.cardId),
+          lived: [
+            ...log.lived,
+            { cardId: dream.cardId, points: dream.points, round: this.state.round },
+          ],
+        },
+      });
+    }
+  }
+
+  /**
+   * The plans of the reserve and of the dreams are set to what the month can carry: a share of what is left of the monthly cashflow
+   * after the plans already running (an emergency plan is paid first), in the order of the strategy.
+   */
+  private replan(): void {
+    const policy = this.config.policy;
+    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
+    const committed = this.plans
+      .filter((plan) => plan.kind === 'emergency')
+      .reduce((sum, plan) => sum + plan.perMinor, 0);
+    let room = Math.max(
+      0,
+      Math.floor((finances.monthlyCashflowMinor - committed) * policy.planShare),
+    );
+    const months = Math.max(3, policy.planMonths);
+    const set = (kind: SimPlan['kind'], id: string, left: number) => {
+      this.plans = this.plans.filter((plan) => !(plan.kind === kind && plan.id === id));
+      if (left <= 0 || room <= 0) return;
+      const per = Math.min(room, Math.ceil(left / months));
+      this.plans.push({ kind, id, perMinor: per, leftMinor: left });
+      room -= per;
+    };
+    for (const priority of policy.priorities) {
+      if (priority === 'reserve') {
+        set('mojo', 'mojo', Math.max(0, this.monthlyExpenses() * 3 - this.reserveMinor));
+      } else if (priority === 'dream') {
+        if (!this.dreamLived && this.dreamTargetMinor > 0) {
+          set('life', 'life', this.dreamTargetMinor - this.dreamSavedMinor);
+        }
+        for (const dream of this.smile)
+          set('smile', dream.cardId, dream.totalMinor - dream.savedMinor);
+      }
+    }
+  }
+
+  /** What is left over a buffer after the plans: lump sums into the reserve, the debts and the dreams, as the strategy ranks them. */
+  private extraPayments(): void {
     const policy = this.config.policy;
     const expenses = this.monthlyExpenses();
     const buffer = policy.bufferMonths * expenses;
@@ -501,41 +618,24 @@ export class DreamSim {
         this.fundDreams(free() * policy.dreamShare);
       }
     }
-    this.track();
+    this.checkDreams();
   }
 
-  /** The money for dreams: the life dream first, then the dreams taken from the Dream tiles. */
+  /** Extra money for dreams: the life dream first, then the dreams taken from the Dream tiles. */
   private fundDreams(money: number): void {
     let left = Math.floor(money);
     if (!this.dreamLived && this.dreamTargetMinor > 0 && left > 0) {
       const put = Math.min(left, this.dreamTargetMinor - this.dreamSavedMinor);
-      this.spend(put, '@Dream');
+      this.spend(put, '@Dream', false);
       this.dreamSavedMinor += put;
       left -= put;
-      if (this.dreamSavedMinor >= this.dreamTargetMinor) this.dreamLived = true;
     }
-    for (const dream of [...this.smile]) {
+    for (const dream of this.smile) {
       if (left <= 0) break;
       const put = Math.min(left, dream.totalMinor - dream.savedMinor);
-      this.spend(put, '@Dream');
+      this.spend(put, '@Dream', false);
       dream.savedMinor += put;
       left -= put;
-      if (dream.savedMinor >= dream.totalMinor) {
-        this.dreamPoints += dream.points;
-        this.smile = this.smile.filter((candidate) => candidate !== dream);
-        const log: DreamLog = this.state.dreams ?? EMPTY_DREAM_LOG;
-        this.setState({
-          ...this.state,
-          dreams: {
-            ...log,
-            open: log.open.filter((open) => open.cardId !== dream.cardId),
-            lived: [
-              ...log.lived,
-              { cardId: dream.cardId, points: dream.points, round: this.state.round },
-            ],
-          },
-        });
-      }
     }
   }
 
@@ -608,10 +708,32 @@ export class DreamSim {
         };
         continue;
       }
-      this.spend(quote.payMinor, '@Emergency');
       this.record.emergenciesPaidMinor += quote.payMinor;
+      this.payEmergency(card.id, card.payment === 'pay_now', quote.payMinor);
       return;
     }
+  }
+
+  /** An emergency is paid from cash, from the reserve, or - where the card allows - on a plan of 3, 6 or 12 Paydays with its surcharge. */
+  private payEmergency(id: string, mustPayNow: boolean, payMinor: number): void {
+    const policy = this.config.policy;
+    const buffer = policy.bufferMonths * this.monthlyExpenses();
+    if (mustPayNow || this.cash() - payMinor >= buffer || this.reserveMinor >= payMinor) {
+      this.spend(payMinor, '@Emergency');
+      return;
+    }
+    const surcharge = difficultySettings(this.rules.difficulty).planSurchargePercents;
+    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
+    const room = Math.max(
+      0,
+      finances.monthlyCashflowMinor - this.plans.reduce((sum, plan) => sum + plan.perMinor, 0),
+    );
+    const choices = [3, 6, 12].map((months, at) => {
+      const total = Math.round(payMinor * (1 + surcharge[at] / 100));
+      return { total, per: Math.ceil(total / months) };
+    });
+    const fits = choices.find((choice) => choice.per <= room) ?? choices[2];
+    this.plans.push({ kind: 'emergency', id, perMinor: fits.per, leftMinor: fits.total });
   }
 
   private life(): void {
@@ -706,14 +828,86 @@ export class DreamSim {
       this.rng,
     );
     this.setState({ ...this.state, dreamDeck: landing.deck });
-    if (landing.kind !== 'offers') return;
+    if (landing.kind === 'moment') {
+      this.log(`D ${landing.moment.id}`);
+      this.moment(landing.moment.id, cards, settings, log);
+      return;
+    }
     const pick = this.config.policy.dream(landing.offers, this.view(), log.open.length);
     if (!pick || !canTakeDream(log, settings)) return;
+    this.takeDream(pick, log);
+  }
+
+  /** What a bot does with a dream moment: it uses it for the dreams it has open (the life dream is left as it is). */
+  private moment(
+    id: string,
+    cards: readonly import('../dream-deck').DreamCard[],
+    settings: DreamSettings,
+    log: DreamLog,
+  ): void {
+    const open = this.smile;
+    const cardOf = (cardId: string) => cards.find((candidate) => candidate.id === cardId);
+    const half = open.find((dream) => dream.savedMinor * 2 >= dream.totalMinor);
+    const gift = (minor: number) => {
+      const target = open[0];
+      if (target) target.savedMinor += minor;
+      else this.add('Smile', minor, '@Gift');
+    };
+    if (id === 'M01' && half) {
+      half.totalMinor = Math.round(half.savedMinor + (half.totalMinor - half.savedMinor) * 0.85);
+    } else if (id === 'M02') {
+      gift(30000);
+    } else if (id === 'M03' || id === 'M04') {
+      const trip = open.find((dream) => {
+        const category = cardOf(dream.cardId)?.category;
+        return (
+          category === 'travel' ||
+          category === 'wonders' ||
+          (id === 'M04' && category === 'adventure')
+        );
+      });
+      const partner = (this.state.life?.relationship ?? 'single') !== 'single';
+      if (trip && (id === 'M03' || partner)) {
+        const percent = id === 'M03' ? 20 : 25;
+        // the last-minute deal needs the dream to be funded completely right now
+        if (
+          id === 'M04' ||
+          this.cash() >= (trip.totalMinor - trip.savedMinor) * (1 - percent / 100)
+        ) {
+          trip.totalMinor = Math.round(trip.totalMinor * (1 - percent / 100));
+          trip.savedMinor = Math.min(trip.savedMinor, trip.totalMinor);
+        }
+      }
+    } else if (id === 'M05') {
+      const landing = drawDreamLanding(
+        cards,
+        [],
+        this.state.dreamDeck ?? emptyEmergencyDeck(),
+        { log, life: this.state.life, settings, forceOffers: 3 },
+        this.rng,
+      );
+      if (landing.kind === 'offers') {
+        const pick = this.config.policy.dream(landing.offers, this.view(), log.open.length);
+        if (pick && canTakeDream(log, settings)) this.takeDream(pick, log);
+      }
+    } else if (id === 'M06') {
+      const net = netMonthlyMinor(this.state, this.books.subscriptions);
+      gift(Math.round(net * 0.05));
+    } else if (id === 'M07') {
+      this.bonusPoints += open.filter(
+        (dream) => dream.savedMinor > 0 && this.state.round - dream.round >= 6,
+      ).length;
+    }
+    this.checkDreams();
+  }
+
+  private takeDream(pick: import('../dream-deck').DreamCard, log: DreamLog): void {
     this.smile.push({
       cardId: pick.id,
       totalMinor: pick.totalMinor,
       savedMinor: 0,
       points: pick.points,
+      round: this.state.round,
     });
     this.setState({
       ...this.state,
