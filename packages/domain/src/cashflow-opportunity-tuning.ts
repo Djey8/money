@@ -14,6 +14,8 @@ export interface OpportunityTuning {
   rentBoostPercent: number;
   /** What a unit of a share pays every month, times this. */
   dividendFactor: number;
+  /** A card that pays every month pays at least this share of what it costs (a share: of its price) - in percent a month. */
+  minMonthlyYieldPercent: number;
   /** Single cards, last: any field of the card replaced. */
   byId: Record<string, Partial<OpportunityCard>>;
 }
@@ -22,8 +24,13 @@ export const OPPORTUNITY_TUNING: OpportunityTuning = {
   notHustles: ['P15', 'P19', 'P20', 'P21', 'P22', 'P23', 'P24', 'P26', 'P27', 'P29'],
   cashflowFactor: { hustle: 1.6, business: 2.6, property: 1.8 },
   rentBoostPercent: 300,
-  dividendFactor: 9,
-  byId: {},
+  dividendFactor: 13,
+  minMonthlyYieldPercent: 1.5,
+  // gold and wine are kept at home: what the sketch charged for the safe deposit box took more than they brought (JFK, 2026-10-26)
+  byId: {
+    P12: { monthlyCostMinor: 0, note: 'Kept in a safe at home: no monthly cost.' },
+    P13: { monthlyCostMinor: 0 },
+  },
 };
 
 const scale = (value: number | undefined, factor: number) =>
@@ -62,6 +69,17 @@ export function tuneOpportunityCards(
       }
     }
     if (card.cashflowMinor === undefined) delete card.cashflowMinor;
+    // whatever pays every month pays a fair share of what it costs
+    const floor = tuning.minMonthlyYieldPercent / 100;
+    if (card.share && card.share.dividendMonthPerUnitMinor > 0) {
+      const least = Math.round(card.share.unitPriceMinor * floor);
+      if (card.share.dividendMonthPerUnitMinor < least) {
+        card.share.dividendMonthPerUnitMinor = least;
+        card.share.yieldYearPercent = Math.round(tuning.minMonthlyYieldPercent * 12 * 10) / 10;
+      }
+    } else if (!card.share && !card.property && (card.cashflowMinor ?? 0) > 0 && card.costMinor) {
+      card.cashflowMinor = Math.max(card.cashflowMinor!, Math.round(card.costMinor * floor));
+    }
     return { ...card, ...tuning.byId[card.id] };
   });
 }

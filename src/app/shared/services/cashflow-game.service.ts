@@ -50,6 +50,7 @@ import {
   DEFAULT_OPPORTUNITY_SETTINGS,
   difficultySettings,
   type DifficultySettings,
+  activeEffects,
   drawHarvestCard,
   harvestTopics,
   involvedHoldings,
@@ -61,6 +62,7 @@ import {
   sellHolding,
   unitPriceNow,
   valueOf,
+  type ActiveEffect,
   type AssetKind,
   type HarvestTopics,
   type HarvestCard,
@@ -2495,6 +2497,11 @@ export class CashflowGameService {
       sales: entry.sales,
       ladders: entry.ladders,
     };
+  }
+
+  /** What is working on the account now: costs and gains that run for some Paydays, pauses, what is on its way. */
+  get activeEffects(): ActiveEffect[] {
+    return activeEffects(AppStateService.instance.cashflowGame, this.emergencyLang);
   }
 
   /** The words of everything the player owns of the Opportunity cards: markets, groups and kinds. */

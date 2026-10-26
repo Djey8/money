@@ -1,3 +1,5 @@
+import type { ActiveEffect } from '@money/domain';
+import { ActiveEffectsComponent } from './active-effects.component';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
@@ -18,7 +20,13 @@ type SheetId = 'cashflow' | 'income' | 'balance';
 @Component({
   selector: 'app-character-sheet',
   standalone: true,
-  imports: [CommonModule, TranslateModule, AppNumberPipe, ProfessionSheetsComponent],
+  imports: [
+    CommonModule,
+    TranslateModule,
+    AppNumberPipe,
+    ProfessionSheetsComponent,
+    ActiveEffectsComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="cs-head">
@@ -97,6 +105,17 @@ type SheetId = 'cashflow' | 'income' | 'balance';
         </ul>
       </section>
     </ng-container>
+
+    <!-- what is working on the account now, and for how many more Paydays (JFK, 2026-10-26) -->
+    <section class="cs-group cs-group--effects" [style.order]="2" *ngIf="effects.length">
+      <h4>{{ 'CashflowGame.effects.heading' | translate }}</h4>
+      <app-active-effects
+        mode="detail"
+        [effects]="effects"
+        [currency]="currency"
+        (project)="effectProject.emit($event)"
+      ></app-active-effects>
+    </section>
 
     <!-- the insurances: hop in or hop out, effective with the next Payday (a running game only) -->
     <section class="cs-group cs-group--insurance" [style.order]="2" *ngIf="insurances.length">
@@ -398,6 +417,9 @@ export class CharacterSheetComponent {
   @Input() insurances: { kind: string; premium: number; held: boolean; heldNext: boolean }[] = [];
   /** What the character holds of the reserve against three months of expenses now (a running game). */
   @Input() reserveStatus: { held: number; target: number; ok: boolean } | null = null;
+  /** What runs on the account now (a running game). */
+  @Input() effects: ActiveEffect[] = [];
+  @Output() effectProject = new EventEmitter<string>();
   @Output() insuranceToggle = new EventEmitter<{ kind: string; on: boolean }>();
   trackKind = (_index: number, row: { kind: string }): string => row.kind;
 

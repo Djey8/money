@@ -131,6 +131,8 @@
         [checks]="professionCardView === 'live' && hasActiveGame ? goalChecks : null"
         [insurances]="professionCardView === 'live' && hasActiveGame ? insuranceRows : []"
         [reserveStatus]="professionCardView === 'live' && hasActiveGame ? reserveStatus : null"
+        [effects]="professionCardView === 'live' && hasActiveGame ? activeEffects : []"
+        (effectProject)="openEffectProject($event)"
         (insuranceToggle)="toggleInsurance($event)"
         [sheets]="professionSheets"
         [currency]="appState.currency"
@@ -1010,6 +1012,12 @@
               </p>
             </ng-template>
           </div>
+          <app-active-effects
+            mode="compact"
+            [effects]="activeEffects"
+            [currency]="appState.currency"
+            (project)="openEffectProject($event)"
+          ></app-active-effects>
           <div class="cf-solo-board">
             <div class="cf-ring" [class.cf-ring--map]="!!boardMap">
               <app-dream-board

@@ -219,10 +219,10 @@ describe('CashflowGameService: life, career and dreams', () => {
     service.beforeGrowTrade('Buy Share WORLD 40 x 100;', 0, undefined, '@WORLD', 4000);
     const holding = state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!;
     expect(holding.units).toBe(40);
-    // 40 units x 1.35 a month (the dividends are tuned up for the balance)
+    // 40 units x 1.95 a month (the dividends are tuned up for the balance)
     expect(
       state().allSubscriptions.find((sub) => sub.title === 'WORLD Cashflow')?.amount,
-    ).toBeCloseTo(54, 2);
+    ).toBeCloseTo(78, 2);
     // a sale booked in Grow brings the holding down
     service.beforeGrowTrade('Sell Share WORLD 15 x 100;', 0, undefined, '@WORLD', 0);
     expect(state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!.units).toBe(25);

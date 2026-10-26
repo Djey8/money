@@ -34,8 +34,20 @@ export interface OpportunitySettings {
   maxSideHustles: number;
   /** Copies of each savings card in its pile. */
   savingsCardCopies: number;
+  /** The first card of a landing is one that pays every month (default: yes). */
+  incomeOffer?: boolean;
   /** Turns a planned card stays buyable: 1 = only in the turn it was drawn. */
   validTurns?: number;
+}
+
+/** Whether a card brings money in every month (a dividend, rent, a business, a hustle, a saving). */
+export function paysMonthly(card: OpportunityCard): boolean {
+  if (card.trap) return false;
+  if (card.share) return card.share.dividendMonthPerUnitMinor > 0;
+  if (card.savings) return card.savings.monthlySavingsMinor > 0;
+  if (card.property) return true;
+  if ((card.cashflowMinor ?? 0) > 0) return true;
+  return (card.dice ?? []).some((band) => (band.value.cashflowMinor ?? 0) > 0);
 }
 
 export const DEFAULT_OPPORTUNITY_SETTINGS: OpportunitySettings = {
@@ -182,7 +194,13 @@ export function drawOpportunityOffers(
       pool = usable(keys);
     }
     if (pool.length === 0) break;
-    const entry = pickOne(pool, rng);
+    // the first card of a landing is one that pays every month: a landing of nothing but gold bars and coins gives no way to grow
+    // the cash flow (JFK, 2026-10-26)
+    const paying =
+      offers.length === 0 && settings.incomeOffer !== false
+        ? pool.filter((entry) => paysMonthly(entry.card))
+        : [];
+    const entry = pickOne(paying.length ? paying : pool, rng);
     seen.push(entry.key);
     offers.push(entry.card);
   }
@@ -899,12 +917,35 @@ export function tickOpportunities(
     }
 
     // what the Harvest cards did runs down, and the line follows what the holding pays now
+    // and each of them says so when it is over (JFK, 2026-10-26: "I magically got cashflow back and dont know why")
+    const over: string[] = [];
     if (holding.temp?.length) {
+      const before = holding.temp.length;
       holding.temp = holding.temp
         .map((entry) => ({ ...entry, paydaysLeft: entry.paydaysLeft - 1 }))
         .filter((entry) => entry.paydaysLeft > 0);
+      if (holding.temp.length < before)
+        over.push(`${holding.title}: a market card's effect on the cash flow is over.`);
     }
-    if (holding.noCashflowLeft && holding.noCashflowLeft > 0) holding.noCashflowLeft -= 1;
+    if (holding.noCashflowLeft && holding.noCashflowLeft > 0) {
+      holding.noCashflowLeft -= 1;
+      if (holding.noCashflowLeft === 0) over.push(`${holding.title}: it pays again.`);
+    }
+    if (over.length) {
+      news.push(...over);
+      const pushed = [...effects.growUpdates]
+        .reverse()
+        .find((entry) => entry.title === holding.title);
+      const lines = over.map((line) => note(line, at));
+      if (pushed?.notes) pushed.notes = [...pushed.notes, ...lines];
+      else
+        effects.growUpdates.push({
+          title: holding.title,
+          updatedAt: at,
+          notes: [...notes(), ...lines],
+        });
+      effects.persist.grow = true;
+    }
     if (holding.subscription && holding.ponziLeft === undefined) {
       const monthly = monthlyOf(holding);
       if (monthly !== holding.lineMinor) {

@@ -56,6 +56,7 @@ export * from './cashflow-game/opportunity';
 export * from './cashflow-game/harvest-deck';
 export * from './cashflow-game/harvest';
 export * from './cashflow-game/keywords';
+export * from './cashflow-game/active-effects';
 export * from './cashflow-game/difficulty';
 export * from './cashflow-game/dream-deck';
 export * from './cashflow-game/custom-rules';

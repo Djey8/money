@@ -59,6 +59,7 @@ import {
   type LifeCard,
   type LifeEffect,
   type LifeOutcome,
+  type ActiveEffect,
 } from '@money/domain';
 import { Grow } from 'src/app/interfaces/grow';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
@@ -84,6 +85,7 @@ import { ConfirmService } from 'src/app/shared/services/confirm.service';
 import { CashflowSavedGamesService } from 'src/app/shared/services/cashflow-saved-games.service';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { type ProfessionSheetNumbers } from './profession-sheets.component';
+import { ActiveEffectsComponent } from './active-effects.component';
 import { CharacterSheetComponent } from './character-sheet.component';
 import {
   DreamBoardComponent,
@@ -172,6 +174,7 @@ const DICE_DECISION_REST_MS = 900;
     AppDatePipe,
     RatRaceBoardComponent,
     TileCardComponent,
+    ActiveEffectsComponent,
   ],
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
@@ -1112,6 +1115,16 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       !!pending.opportunity?.taken ||
       !!pending.opportunity?.passed
     );
+  }
+
+  /** What runs on the account now (costs and gains with their Paydays left). */
+  get activeEffects(): ActiveEffect[] {
+    return this.cashflowGameService.activeEffects;
+  }
+
+  /** A running effect that is about a Grow project: look at it there. */
+  async openEffectProject(title: string): Promise<void> {
+    await this.openPlannedInGrow(title, 'asset');
   }
 
   /** The project an Opportunity card became: it is in Grow from here on. */
