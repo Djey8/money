@@ -2096,6 +2096,9 @@
           <span>{{ tileLabelKey(story.tile) | translate }}</span>
           <span class="cf-story-icon" aria-hidden="true">
             <img *ngIf="tileImageOf(story.tile)" [src]="tileImageOf(story.tile)" alt="" />
+            <svg *ngIf="story.tile === 'opportunity'" viewBox="0 0 24 24">
+              <path [attr.d]="sproutPath" />
+            </svg>
             <span *ngIf="tileGlyphOf(story.tile)">{{ tileGlyphOf(story.tile) }}</span>
           </span>
         </h3>

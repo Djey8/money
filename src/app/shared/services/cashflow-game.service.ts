@@ -48,6 +48,17 @@ import {
   withPaymentDue,
   withPaymentSettled,
   DEFAULT_OPPORTUNITY_SETTINGS,
+  drawHarvestCard,
+  ladderPayout,
+  playHarvestCard,
+  rideLadder,
+  sellHolding,
+  unitPriceNow,
+  valueOf,
+  type HarvestCard,
+  type HarvestLadderOffer,
+  type HarvestPending,
+  type HarvestSale,
   buyOpportunity,
   drawOpportunityOffers,
   isOpportunityPile,
@@ -424,6 +435,15 @@ function toFloatTransaction(record: CashflowTransactionRecord): Transaction {
 /** Every real entity a cashflow-game action can touch — a full copy of this is one undo step (JFK, 2026-09-29+: "we need to keep track of the history of inputs... we need to make sure we can revert each move"). Includes Smile/Fire/Mojo even though only `resetGame` ever touches them, so undoing a reset restores those too, not just the game's own bookkeeping. Plain JSON data throughout, so a deep clone is just a stringify/parse round-trip. */
 /** Everything a player can do that is one step in the game - and one step to undo (JFK, 2026-10-03). Defined in the domain, shared with the Pro API. */
 export type CashflowStepKind = GameStepKind;
+
+/** A holding in a market that is open for selling now: what a unit brings, and how many there are. */
+export interface HarvestWindowSale {
+  holding: string;
+  label: string;
+  units: number;
+  unitMinor: number;
+  isShare: boolean;
+}
 
 type CashflowStepInfo = GameStep;
 
@@ -2382,6 +2402,274 @@ export class CashflowGameService {
     this.persistAll('cashflow_career_stage', { stage: stageId }, callbacks, {
       includeSubscriptions: true,
       quiet: true,
+    });
+  }
+
+  // · Harvest (JFK, 2026-10-26)
+
+  get harvestCards(): HarvestCard[] {
+    return this.currentGameSet()?.decks?.harvest ?? [];
+  }
+
+  get harvestReady(): boolean {
+    return (
+      !this.remote_() &&
+      this.harvestCards.length > 0 &&
+      !!AppStateService.instance.cashflowGame.life
+    );
+  }
+
+  private harvestContext() {
+    return {
+      cards: this.opportunityCards,
+      lang: this.emergencyLang,
+      date: this.gameDay,
+      rng: this.rng,
+    };
+  }
+
+  /** The Harvest tile the token stands on: the card that was drawn, what it did, and what the player may sell or ride now. */
+  get harvestView(): {
+    card?: HarvestCard;
+    told: string[];
+    /** What can be sold now: shares and assets in a market that is open, with what a unit brings. */
+    window: HarvestWindowSale[];
+    sales: HarvestSale[];
+    ladders: HarvestLadderOffer[];
+  } | null {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (pending?.kind !== 'story' || pending.tile !== 'harvest') return null;
+    const entry = pending.harvest;
+    if (!entry) return { told: [], window: [], sales: [], ladders: [] };
+    return {
+      card: this.harvestCards.find((card) => card.id === entry.cardId),
+      told: entry.told,
+      window: this.windowSales(entry.window),
+      sales: entry.sales,
+      ladders: entry.ladders,
+    };
+  }
+
+  /** The holdings in a market that is open for selling now. */
+  private windowSales(window: string[] | 'ALL'): HarvestWindowSale[] {
+    const game = AppStateService.instance.cashflowGame;
+    const cards = this.opportunityCards;
+    const lang = this.emergencyLang;
+    const out: HarvestWindowSale[] = [];
+    for (const holding of game.holdings ?? []) {
+      if (holding.ended) continue;
+      const card = cards.find((candidate) => candidate.id === holding.cardId);
+      if (!card || (!card.share && holding.assetBaseMinor === undefined)) continue;
+      const open =
+        window === 'ALL'
+          ? !!holding.marketTag
+          : !!holding.marketTag && window.includes(holding.marketTag);
+      if (!open) continue;
+      const unitMinor = card.share
+        ? unitPriceNow(card, holding, game)
+        : valueOf(card, holding, game);
+      out.push({
+        holding: holding.title,
+        label: card.title[lang],
+        units: card.share ? (holding.units ?? 0) : 1,
+        unitMinor,
+        isShare: !!card.share,
+      });
+    }
+    return out;
+  }
+
+  /** The player turns the card of the Harvest tile: the pile is drawn, the card is played, and what it did is told. */
+  drawHarvest(callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    if (pending?.kind !== 'story' || pending.tile !== 'harvest' || pending.harvest) {
+      callbacks.onError('There is no market card to draw.');
+      return;
+    }
+    const cards = this.harvestCards;
+    if (cards.length === 0) {
+      callbacks.onError('This game has no market cards.');
+      return;
+    }
+    const draw = drawHarvestCard(cards, game.harvestDeck, this.rng);
+    this.pushUndoSnapshot({
+      kind: 'tileCard',
+      detail: draw.card.title[this.emergencyLang],
+      cardId: draw.card.id,
+      deck: 'harvest',
+    });
+    const played = playHarvestCard(this.gameBooks(), draw.card, this.harvestContext());
+    this.applyGameEffects(played.effects);
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      harvestDeck: draw.deck,
+      turn: {
+        ...state.cashflowGame.turn!,
+        pending: { ...state.cashflowGame.turn!.pending!, played: true, harvest: played.pending },
+      },
+    };
+    state.transactionsUpdated$.next();
+    this.persistAll('cashflow_harvest_draw', { card: draw.card.id }, callbacks, {
+      quiet: true,
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+    });
+  }
+
+  /** Sells units of a holding in an open market (all of them when `units` is left out). */
+  sellInWindow(
+    holdingTitle: string,
+    units: number | undefined,
+    callbacks: CashflowGameCallbacks,
+  ): void {
+    const entry = this.harvestView?.window.find((candidate) => candidate.holding === holdingTitle);
+    if (!entry) {
+      callbacks.onError('This market is not open for selling now.');
+      return;
+    }
+    const sold = Math.max(1, Math.min(units ?? entry.units, entry.units));
+    this.sellNow(
+      holdingTitle,
+      {
+        grossMinor: entry.unitMinor * (entry.isShare ? sold : 1),
+        costsMinor: 0,
+        owedMinor: 0,
+        units: entry.isShare ? sold : undefined,
+      },
+      callbacks,
+    );
+  }
+
+  /** Takes the offer of a buyer on the card. */
+  acceptHarvestSale(holdingTitle: string, callbacks: CashflowGameCallbacks): void {
+    const entry = AppStateService.instance.cashflowGame.turn?.pending?.harvest;
+    const sale = entry?.sales.find((candidate) => candidate.holding === holdingTitle);
+    if (!entry || !sale) {
+      callbacks.onError('There is no buyer for this.');
+      return;
+    }
+    this.sellNow(holdingTitle, sale, callbacks, (pending) => ({
+      ...pending,
+      sales: pending.sales.filter((candidate) => candidate.holding !== holdingTitle),
+    }));
+  }
+
+  private sellNow(
+    holdingTitle: string,
+    sale: { grossMinor: number; costsMinor: number; owedMinor: number; units?: number },
+    callbacks: CashflowGameCallbacks,
+    after?: (pending: HarvestPending) => HarvestPending,
+  ): void {
+    const state = AppStateService.instance;
+    this.pushUndoSnapshot({ kind: 'cardSale', detail: holdingTitle });
+    let effects;
+    try {
+      effects = sellHolding(this.gameBooks(), holdingTitle, sale, this.harvestContext());
+    } catch (err: unknown) {
+      this.undoStack = popUndoSteps(this.undoStack, 1).stack;
+      callbacks.onError(errorMessage(err, 'Could not sell this.'));
+      return;
+    }
+    this.applyGameEffects(effects);
+    if (after) {
+      this.updatePending((pending) => ({
+        ...pending,
+        harvest: pending.harvest ? after(pending.harvest) : pending.harvest,
+      }));
+    }
+    state.transactionsUpdated$.next();
+    this.persistAll('cashflow_harvest_sale', { holding: holdingTitle }, callbacks, {
+      quiet: true,
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+    });
+  }
+
+  /** The player rides a step of a hype: a die decides. */
+  rideHarvestLadder(holdingTitle: string, callbacks: CashflowGameCallbacks): number | null {
+    const entry = AppStateService.instance.cashflowGame.turn?.pending?.harvest;
+    const offer = entry?.ladders.find((candidate) => candidate.holding === holdingTitle);
+    if (!entry || !offer || offer.state === 'done') {
+      callbacks.onError('There is no hype to ride.');
+      return null;
+    }
+    this.pushUndoSnapshot({ kind: 'diceWon', detail: holdingTitle });
+    const step = rideLadder(offer, this.rng);
+    this.updatePending((pending) => ({
+      ...pending,
+      harvest: {
+        ...pending.harvest!,
+        ladders: pending.harvest!.ladders.map((candidate) =>
+          candidate.holding === holdingTitle ? step.offer : candidate,
+        ),
+      },
+    }));
+    if (step.offer.state === 'done') {
+      // the hype is over (collapsed, or the last step won): what is left is paid out
+      this.settleLadder(holdingTitle, step.offer, callbacks);
+    } else {
+      this.persistAll('cashflow_harvest_ladder', { holding: holdingTitle }, callbacks, {
+        quiet: true,
+      });
+    }
+    return step.roll;
+  }
+
+  /** The player cashes out a hype where it stands. */
+  cashOutHarvestLadder(holdingTitle: string, callbacks: CashflowGameCallbacks): void {
+    const offer = AppStateService.instance.cashflowGame.turn?.pending?.harvest?.ladders.find(
+      (candidate) => candidate.holding === holdingTitle,
+    );
+    if (!offer || offer.state === 'done') {
+      callbacks.onError('There is no hype to cash out.');
+      return;
+    }
+    this.pushUndoSnapshot({ kind: 'cardSale', detail: holdingTitle });
+    const done = { ...offer, state: 'done' as const };
+    this.updatePending((pending) => ({
+      ...pending,
+      harvest: {
+        ...pending.harvest!,
+        ladders: pending.harvest!.ladders.map((candidate) =>
+          candidate.holding === holdingTitle ? done : candidate,
+        ),
+      },
+    }));
+    this.settleLadder(holdingTitle, done, callbacks, false);
+  }
+
+  private settleLadder(
+    holdingTitle: string,
+    offer: HarvestLadderOffer,
+    callbacks: CashflowGameCallbacks,
+    undoable = true,
+  ): void {
+    void undoable;
+    const state = AppStateService.instance;
+    const payout = ladderPayout(offer);
+    try {
+      const effects = sellHolding(
+        this.gameBooks(),
+        holdingTitle,
+        { grossMinor: payout, costsMinor: 0, owedMinor: 0 },
+        this.harvestContext(),
+      );
+      this.applyGameEffects(effects);
+    } catch (err: unknown) {
+      callbacks.onError(errorMessage(err, 'Could not settle the hype.'));
+      return;
+    }
+    state.transactionsUpdated$.next();
+    this.persistAll('cashflow_harvest_ladder_done', { holding: holdingTitle }, callbacks, {
+      quiet: true,
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
     });
   }
 
@@ -4393,6 +4681,12 @@ export class CashflowGameService {
       return this.freeAmountRefusal(amountMinor);
     }
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
+      // what the Opportunity cards made is sold on the Harvest cards: in a window, to a buyer, or on a hype
+      const owned = (game.holdings ?? []).some(
+        (holding) => !holding.ended && holding.title === step.detail,
+      );
+      if (owned && this.customRules)
+        return this.translate.instant('CashflowGame.harvest.sellOnCard');
       return this.sellRefusal(step.detail);
     }
     if (['buyShare', 'buyInvestment', 'buyAsset'].includes(step.kind) && step.detail) {

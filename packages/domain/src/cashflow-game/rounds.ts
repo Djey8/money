@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import { applyInsuranceChanges } from './insurance';
 import { tickCareer } from './career';
 import { tickLife } from './life-books';
-import { tickOpportunities } from './opportunity';
+import { tickWorld } from './harvest';
 import type { OpportunityCard } from './opportunity-deck';
 import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
@@ -229,8 +229,8 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   if (career) next = career.state;
   // what the player owns of the Opportunity cards: a business starts, locked money returns, a trap pays and stops
   const opportunities =
-    deps.opportunityCards && (next.holdings?.length ?? 0) > 0
-      ? tickOpportunities(
+    deps.opportunityCards && deps.opportunityCards.length > 0 && next.life
+      ? tickWorld(
           { state: next, subscriptions: books.subscriptions, growProjects: books.growNotes ?? [] },
           deps.opportunityCards,
           { date: appendedTransactions[0]?.date ?? today, lang: deps.lang ?? 'en', rng: deps.rng },

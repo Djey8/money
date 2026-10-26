@@ -108,6 +108,10 @@ describe('a Dreamfund game survives a reload', () => {
     service.drawOpportunity('seed', ok());
     const offered = state().cashflowGame.turn!.pending!.opportunity!.offers![0];
     service.takeOpportunity(offered, {}, ok());
+    // the market: a card turned, the indices moved, a hype or a sale on offer
+    land('harvest');
+    service.rng = () => 0.5;
+    service.drawHarvest(ok());
     // an emergency with its dice and its project, left open on the tile
     land('emergency');
     service.drawEmergency(ok(), 'E21');

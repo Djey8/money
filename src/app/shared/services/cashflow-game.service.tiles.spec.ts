@@ -226,6 +226,55 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(service.opportunityView!.projectTitle).toBe('WORLD');
   });
 
+  it('a Harvest card moves the market, prices what the player owns, and sells in its window; the Payday drifts the indices', () => {
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    // own 4 units of the world ETF
+    landOn('opportunity');
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      turn: {
+        ...state().cashflowGame.turn!,
+        pending: {
+          ...state().cashflowGame.turn!.pending!,
+          opportunity: { pile: 'seed', offers: ['S10'] },
+        },
+      },
+    };
+    service.takeOpportunity('S10', { units: 4 }, ok());
+    const [due] = service.paymentsDue;
+    service.beforeGrowTrade(paymentDueComment(due), 0, undefined, `@${due.category}`, 400);
+    expect(state().allShares.find((share) => share.tag === 'WORLD')?.price).toBe(100);
+
+    // the market card: a bull market (+7% for the world) with a window to sell
+    landOn('harvest');
+    service.rng = (() => {
+      // draw H05 (the first copy of the cards that is a bull market) whatever the order of the pile
+      return 0;
+    }) as typeof service.rng;
+    service.drawHarvest(ok());
+    const view = service.harvestView!;
+    expect(view.card).toBeTruthy();
+    expect(state().cashflowGame.markets).toBeTruthy();
+    // whatever the card was, the share is priced by the index of its market
+    const index = state().cashflowGame.markets!['WORLD'];
+    expect(state().allShares.find((share) => share.tag === 'WORLD')?.price).toBeCloseTo(
+      100 * index,
+      1,
+    );
+    // a sale in a window (when this card opened one) pays the player and ends the unit count
+    if (view.window.some((w) => w.holding === 'WORLD')) {
+      const cash = service.cash;
+      service.sellInWindow('WORLD', 2, ok());
+      expect(service.cash).toBeGreaterThan(cash);
+      expect(state().cashflowGame.holdings![0].units).toBe(2);
+    }
+    // a Payday moves the indices again
+    const before = state().cashflowGame.markets!['WORLD'];
+    service.payday(ok());
+    expect(state().cashflowGame.markets!['WORLD']).not.toBe(before);
+  });
+
   it('the interest of the Bank loan is a setting of the game', () => {
     state().cashflowGame = {
       ...state().cashflowGame,

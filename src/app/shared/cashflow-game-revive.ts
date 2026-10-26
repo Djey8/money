@@ -17,6 +17,16 @@ const NUMBER_FIELDS = new Set([
   'dreamOffers',
   'maxOpenDreams',
   'opportunityOffers',
+  'multiplier',
+  'maxSteps',
+  'successFrom',
+  'step',
+  'fail',
+  'expensesPercentTotal',
+  'mortgageRatePp',
+  'factor',
+  'splitFactor',
+  'assetBaseMinor',
   'boughtRound',
   'maxSideHustles',
   'savingsCardCopies',
@@ -61,7 +71,7 @@ const BOOLEAN_FIELDS = new Set([
 ]);
 
 /** Fields whose parts are all numbers, whatever their own names are (the dice rolled on a card). */
-const NUMBER_CONTAINERS = new Set(['rolls']);
+const NUMBER_CONTAINERS = new Set(['rolls', 'markets', 'nextPaydayIndex']);
 
 function isNumberField(key: string): boolean {
   return NUMBER_FIELDS.has(key) || /(Minor|Left|Percent|Turns|Paydays|Count)$/.test(key);
@@ -125,6 +135,12 @@ export const REVIVED_GAME_FIELDS = [
   // the Opportunity piles and what the player owns of them
   'opportunityDeck',
   'holdings',
+  'markets',
+  'harvestDeck',
+  'nextPaydayIndex',
+  'marketEffects',
+  'expensesPercentTotal',
+  'mortgageRatePp',
   // what cards ask to be paid, in the Add dialog
   'paymentsDue',
 ] as const;
@@ -138,6 +154,7 @@ export const REVIVED_PENDING_FIELDS = [
   'career',
   'dream',
   'opportunity',
+  'harvest',
 ] as const;
 
 function reviveFields(

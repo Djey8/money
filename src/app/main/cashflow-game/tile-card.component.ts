@@ -444,6 +444,137 @@ const ROLL_MS = 1000;
           </ng-container>
         </ng-container>
 
+        <!-- ───────────── HARVEST ───────────── -->
+        <ng-container *ngSwitchCase="'harvest'">
+          <ng-container *ngIf="harvest as h">
+            <ng-container *ngIf="h.card as c; else harvestClosed">
+              <h4 class="tc-title">
+                {{ c.title[lang] }}
+                <small class="tc-tag">{{
+                  'CashflowGame.harvest.group.' + c.group | translate
+                }}</small>
+              </h4>
+              <p>{{ c.story[lang] }}</p>
+              <ul class="tc-bullets tc-bullets--done" *ngIf="h.told.length">
+                <li *ngFor="let line of h.told; trackBy: trackValue">{{ line }}</li>
+              </ul>
+              <p class="tc-note" *ngIf="c.realWorld">{{ c.realWorld }}</p>
+
+              <!-- a window to sell in: what you own in an open market -->
+              <section class="tc-market" *ngIf="h.window.length">
+                <h5>{{ 'CashflowGame.harvest.windowOpen' | translate }}</h5>
+                <div class="tc-sale" *ngFor="let w of h.window; trackBy: trackHoldingTitle">
+                  <span>
+                    {{ w.label }} · {{ w.units }} × {{ amount(w.unitMinor) }} {{ currency }}
+                  </span>
+                  <input
+                    *ngIf="w.isShare && w.units > 1"
+                    type="number"
+                    min="1"
+                    [max]="w.units"
+                    [value]="soldUnits(w.holding, w.units)"
+                    (input)="setSoldUnits(w.holding, $any($event.target).value)"
+                  />
+                  <button
+                    type="button"
+                    class="tc-btn tc-btn--primary"
+                    [disabled]="busy"
+                    (click)="sell(w)"
+                  >
+                    {{ 'CashflowGame.harvest.sell' | translate }}
+                  </button>
+                </div>
+              </section>
+
+              <!-- a buyer: what is offered -->
+              <section class="tc-market" *ngIf="h.sales.length">
+                <h5>{{ 'CashflowGame.harvest.buyer' | translate }}</h5>
+                <div class="tc-sale" *ngFor="let sale of h.sales; trackBy: trackHoldingTitle">
+                  <span>
+                    {{ sale.label }}: {{ amount(sale.grossMinor) }} {{ currency }}
+                    <small *ngIf="sale.costsMinor || sale.owedMinor">
+                      ({{
+                        'CashflowGame.harvest.costsOwed'
+                          | translate
+                            : { costs: amount(sale.costsMinor), owed: amount(sale.owedMinor) }
+                      }})
+                    </small>
+                    <strong>= {{ amount(sale.netMinor) }} {{ currency }}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    class="tc-btn tc-btn--primary"
+                    [disabled]="busy"
+                    (click)="acceptSale(sale.holding)"
+                  >
+                    {{ 'CashflowGame.harvest.sell' | translate }}
+                  </button>
+                </div>
+              </section>
+
+              <!-- a hype to ride -->
+              <section
+                class="tc-market"
+                *ngFor="let ladder of h.ladders; trackBy: trackHoldingTitle"
+              >
+                <h5>{{ 'CashflowGame.harvest.hype' | translate }}: {{ ladder.label }}</h5>
+                <p>
+                  {{
+                    'CashflowGame.harvest.stake'
+                      | translate
+                        : {
+                            stake: amount(ladder.stakeMinor),
+                            at:
+                              ladder.steps < 0 ? 0 : amount(ladder.stakeMinor * ladder.multiplier),
+                          }
+                  }}
+                  ·
+                  {{
+                    'CashflowGame.harvest.needs'
+                      | translate: { from: ladder.successFrom, step: ladder.step }
+                  }}
+                </p>
+                <ul class="tc-bullets tc-bullets--done" *ngIf="ladder.told.length">
+                  <li *ngFor="let line of ladder.told; trackBy: trackValue">{{ line }}</li>
+                </ul>
+                <div class="tc-actions" *ngIf="ladder.state !== 'done'">
+                  <button
+                    type="button"
+                    class="tc-btn tc-btn--primary"
+                    [disabled]="busy"
+                    (click)="ride(ladder.holding)"
+                  >
+                    🎲
+                    {{
+                      (ladder.state === 'riding'
+                        ? 'CashflowGame.harvest.rollAgain'
+                        : 'CashflowGame.harvest.ride'
+                      ) | translate
+                    }}
+                  </button>
+                  <button
+                    type="button"
+                    class="tc-btn"
+                    *ngIf="ladder.state === 'riding'"
+                    [disabled]="busy"
+                    (click)="cashOut(ladder.holding)"
+                  >
+                    {{ 'CashflowGame.harvest.cashOut' | translate }}
+                  </button>
+                </div>
+              </section>
+            </ng-container>
+            <ng-template #harvestClosed>
+              <ng-container
+                *ngTemplateOutlet="
+                  closed;
+                  context: { text: 'CashflowGame.harvest.intro', canDecline: false }
+                "
+              ></ng-container>
+            </ng-template>
+          </ng-container>
+        </ng-container>
+
         <!-- ───────────── OPPORTUNITY ───────────── -->
         <ng-container *ngSwitchCase="'opportunity'">
           <ng-container *ngIf="opportunity as o">
@@ -1360,7 +1491,9 @@ export class TileCardComponent implements OnInit, OnDestroy {
           ? this.service.lifeView
           : this.tile === 'dream'
             ? this.service.dreamView
-            : null;
+            : this.tile === 'harvest'
+              ? this.service.harvestView?.card
+              : null;
     if (!shown) this.open();
   }
 
@@ -1441,7 +1574,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   /** Under the free rules a card is searched in the grid; otherwise it is drawn at once. */
   open(): void {
-    if (this.service.cardChoiceFree) {
+    // the market is not searched: its card is turned
+    if (this.service.cardChoiceFree && this.tile !== 'harvest') {
       this.opening = true;
       return;
     }
@@ -1475,6 +1609,9 @@ export class TileCardComponent implements OnInit, OnDestroy {
         break;
       case 'dream':
         this.service.drawDream(this.callbacks, id ? { cardId: id } : {});
+        break;
+      case 'harvest':
+        this.service.drawHarvest(this.callbacks);
         break;
     }
     this.cdr.markForCheck();
@@ -1535,6 +1672,47 @@ export class TileCardComponent implements OnInit, OnDestroy {
       default:
         return this.translate.instant(`CashflowGame.life.type.${tag}`);
     }
+  }
+
+  // ── harvest ──
+
+  get harvest() {
+    return this.service.harvestView;
+  }
+
+  trackHoldingTitle = (_i: number, item: { holding: string }): string => item.holding;
+  private sold: Record<string, number> = {};
+
+  soldUnits(holding: string, max: number): number {
+    return Math.min(this.sold[holding] ?? max, max);
+  }
+
+  setSoldUnits(holding: string, value: string): void {
+    this.sold = { ...this.sold, [holding]: Math.max(1, Math.floor(Number(value) || 1)) };
+  }
+
+  sell(window: { holding: string; units: number; isShare: boolean }): void {
+    this.busy = true;
+    this.service.sellInWindow(
+      window.holding,
+      window.isShare ? this.soldUnits(window.holding, window.units) : undefined,
+      this.callbacks,
+    );
+  }
+
+  acceptSale(holding: string): void {
+    this.busy = true;
+    this.service.acceptHarvestSale(holding, this.callbacks);
+  }
+
+  ride(holding: string): void {
+    this.busy = true;
+    this.service.rideHarvestLadder(holding, this.callbacks);
+  }
+
+  cashOut(holding: string): void {
+    this.busy = true;
+    this.service.cashOutHarvestLadder(holding, this.callbacks);
   }
 
   // ── opportunity ──
@@ -1672,6 +1850,11 @@ export class TileCardComponent implements OnInit, OnDestroy {
     // a payment is made before the turn goes on (the free game is for trying things out)
     if (this.service.cannotRollBecause === 'PAYMENT_DUE') return false;
     switch (this.tile) {
+      case 'harvest': {
+        const h = this.harvest;
+        // a hype that is being ridden is cashed out or rolled on first
+        return !!h?.card && !h.ladders.some((ladder) => ladder.state === 'riding');
+      }
       case 'opportunity': {
         const o = this.opportunity;
         if (!o) return false;

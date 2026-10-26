@@ -75,6 +75,32 @@ export interface OpportunityHolding {
   capitalMinor?: number;
   /** The player ended it (sold, swapped out, ran out). */
   ended?: boolean;
+  /** The market it is priced by (the Harvest cards move its index), and how often a split has divided the price of a unit. */
+  marketTag?: string;
+  splitFactor?: number;
+  /** What a Harvest card did to its cash flow: for good (a factor), for some Paydays, or nothing for some Paydays. */
+  factor?: number;
+  temp?: { factor: number; paydaysLeft: number }[];
+  noCashflowLeft?: number;
+  /** What an asset is worth at the start of the markets (before its index), and what was paid for it altogether. */
+  assetBaseMinor?: number;
+  paidMinor?: number;
+  /** What its monthly line says now. */
+  lineMinor?: number;
+}
+
+/**
+ * What a holding pays (or costs) this month: its cash flow, less a cut of the rent, times what the Harvest cards did to it - and
+ * nothing while it ramps up or while a market card has stopped it.
+ */
+export function monthlyOf(holding: OpportunityHolding): number {
+  if (holding.rampLeft && holding.rampLeft > 0) return 0;
+  if (holding.noCashflowLeft && holding.noCashflowLeft > 0) return 0;
+  const cut = holding.rentCut
+    ? Math.round(((holding.rentMinor ?? 0) * holding.rentCut.percent) / 100)
+    : 0;
+  const temp = (holding.temp ?? []).reduce((product, entry) => product * entry.factor, 1);
+  return Math.round((holding.cashflowMinor - cut) * (holding.factor ?? 1) * temp);
 }
 
 export interface OpportunityContext {
@@ -609,9 +635,26 @@ export function buyOpportunity(
   }
   if (card.property || card.loan) holding.capitalMinor = paid;
 
+  holding.marketTag = card.market?.tag;
+  holding.paidMinor = paid;
+  holding.assetBaseMinor =
+    outcome.assetValueMinor ?? card.assetValueMinor ?? (card.kind === 'asset' ? paid : undefined);
+  holding.lineMinor = holding.subscription ? monthlyOf(holding) : undefined;
   update.notes = notes;
   effects.growUpdates.push(update);
-  holdings.push(holding);
+  const same = card.share ? active(holdings).find((h) => h.cardId === card.id) : undefined;
+  if (same) {
+    // more units of a share already held: the position grows, it is not a second project
+    same.units = holding.units;
+    same.cashflowMinor = holding.cashflowMinor;
+    same.paidMinor = (same.paidMinor ?? 0) + paid;
+    same.lineMinor = monthlyOf(same);
+    effects.subscriptionUpserts = effects.subscriptionUpserts.map((sub) =>
+      sub.title === same.subscription ? { ...sub, amountMinor: monthlyOf(same) } : sub,
+    );
+  } else {
+    holdings.push(holding);
+  }
   next = { ...next, holdings };
   effects.state = next;
   return { effects, holding, told };
@@ -752,7 +795,6 @@ export function tickOpportunities(
     if (holding.rampLeft) {
       holding.rampLeft -= 1;
       if (holding.rampLeft <= 0) {
-        setLine(holding, holding.cashflowMinor);
         news.push(`${holding.title} starts to pay.`);
         effects.growUpdates.push({
           title: holding.title,
@@ -768,14 +810,13 @@ export function tickOpportunities(
       holding.rentCut.paydaysLeft -= 1;
       if (holding.rentCut.paydaysLeft <= 0) {
         holding.rentCut = undefined;
-        setLine(holding, holding.cashflowMinor);
       }
     } else if (card.eachPayday && !holding.rampLeft) {
       const roll = bandFor(card.eachPayday, rollDie(rng));
       if (roll.rentCutPercent && holding.rentMinor) {
         const cut = Math.round((holding.rentMinor * roll.rentCutPercent) / 100);
         holding.rentCut = { percent: roll.rentCutPercent, paydaysLeft: roll.paydays ?? 1 };
-        setLine(holding, holding.cashflowMinor - cut);
+        void cut;
         news.push(
           `${holding.title}: rent is ${roll.rentCutPercent}% lower for ${roll.paydays ?? 1} Payday(s).`,
         );
@@ -785,7 +826,6 @@ export function tickOpportunities(
         holding.cashflowMinor = Math.round(
           holding.cashflowMinor * (1 - roll.capitalLossPercent / 100),
         );
-        setLine(holding, holding.cashflowMinor);
         news.push(
           `${holding.title}: a borrower defaulted, ${roll.capitalLossPercent}% of the capital is lost.`,
         );
@@ -810,6 +850,21 @@ export function tickOpportunities(
           lang,
         );
         news.push(`${holding.title}: a big repair is due.`);
+      }
+    }
+
+    // what the Harvest cards did runs down, and the line follows what the holding pays now
+    if (holding.temp?.length) {
+      holding.temp = holding.temp
+        .map((entry) => ({ ...entry, paydaysLeft: entry.paydaysLeft - 1 }))
+        .filter((entry) => entry.paydaysLeft > 0);
+    }
+    if (holding.noCashflowLeft && holding.noCashflowLeft > 0) holding.noCashflowLeft -= 1;
+    if (holding.subscription && holding.ponziLeft === undefined) {
+      const monthly = monthlyOf(holding);
+      if (monthly !== holding.lineMinor) {
+        setLine(holding, monthly);
+        holding.lineMinor = monthly;
       }
     }
   }

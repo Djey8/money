@@ -1,6 +1,8 @@
 import type { OpportunityCard } from './opportunity-deck';
+import type { HarvestCard } from './harvest-deck';
 import type { PaymentDue } from './payments-due';
 import type { OpportunityDeckState, OpportunityHolding } from './opportunity';
+import type { HarvestPending } from './harvest';
 import type { EmergencyCard, EmergencyDeckState, InsuranceKind, Localized } from './emergency-deck';
 import type { CustomRules } from './custom-rules';
 import type { DreamCard, DreamLog, DreamSettings } from './dream-deck';
@@ -258,6 +260,8 @@ export interface CashflowDecks {
   emergency?: EmergencyCard[];
   /** The Opportunity stack (Seed, Sapling, Tree): ways to raise the monthly cash flow, each becoming a Grow project. */
   opportunity?: OpportunityCard[];
+  /** The Harvest stack: the market (indices, buyers, hype, traps revealed). */
+  harvest?: HarvestCard[];
   dealSmall?: CashflowDealCard[];
   dealBig?: CashflowDealCard[];
   market?: CashflowMarketCard[];
@@ -372,6 +376,8 @@ export interface CashflowPendingDecision {
     /** A swap of dreams waits for the new dream: the project that goes. */
     swapping?: string;
   };
+  /** With a Harvest tile: what the card did, and what the player may do about it (sell, ride a hype). */
+  harvest?: HarvestPending;
   /** With an Opportunity tile: the pile chosen, the cards offered, and what the player did with them. */
   opportunity?: {
     pile?: string;
@@ -507,6 +513,15 @@ export interface CashflowGameState {
   opportunityDeck?: OpportunityDeckState;
   /** What the player owns of the Opportunity cards (and what is still running of them). */
   holdings?: OpportunityHolding[];
+  /** The indices of the markets (1.00 at the start) that the Harvest cards move, and the Harvest pile. */
+  markets?: Record<string, number>;
+  harvestDeck?: EmergencyDeckState;
+  /** What a card of the market said would come at the next Payday (indices), and costs that run for some Paydays. */
+  nextPaydayIndex?: Record<string, number>;
+  marketEffects?: { title: string; paydaysLeft: number; expensesMinor: number }[];
+  /** Living costs and mortgage rates that the market changed for good. */
+  expensesPercentTotal?: number;
+  mortgageRatePp?: number;
   /** The Life stack: what was drawn since the last reshuffle. */
   lifeDeck?: EmergencyDeckState;
   /** A job is being looked for (the Paydays left, the roll that finds one). */

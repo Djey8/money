@@ -55,7 +55,15 @@ export interface GameStep {
   cardId?: string;
   /** For `cardPicked`: the deck it came from. */
   deck?:
-    'dealSmall' | 'dealBig' | 'market' | 'doodad' | 'emergency' | 'life' | 'dream' | 'opportunity';
+    | 'dealSmall'
+    | 'dealBig'
+    | 'market'
+    | 'doodad'
+    | 'emergency'
+    | 'life'
+    | 'dream'
+    | 'opportunity'
+    | 'harvest';
 }
 
 /**

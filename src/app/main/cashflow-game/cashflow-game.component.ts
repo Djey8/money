@@ -1108,6 +1108,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       !!pending.dream?.declined ||
       !!pending.dream?.taken ||
       !!pending.dream?.applied ||
+      !!pending.harvest ||
       !!pending.opportunity?.taken ||
       !!pending.opportunity?.passed
     );
@@ -1151,6 +1152,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         return this.dreamDeckReady;
       case 'opportunity':
         return !!this.cashflowGameService.opportunityReady;
+      case 'harvest':
+        return !!this.cashflowGameService.harvestReady;
       default:
         return false;
     }
