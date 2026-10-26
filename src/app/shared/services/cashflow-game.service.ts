@@ -41,6 +41,8 @@ import {
   applyCareerStage,
   applyLifeOutcome,
   canTakeDream,
+  normalizeCustomRules,
+  type CustomRules,
   careerSnapshot,
   DEFAULT_DREAM_SETTINGS,
   discountRemaining,
@@ -936,7 +938,8 @@ export class CashflowGameService {
     mode: 'companion' | 'solo' = 'companion',
     rules?: Partial<GameRules>,
     boardSetup?: BoardSetup,
-    dreamSettings?: DreamSettings,
+    customRules?: CustomRules,
+    startInsurances?: string[],
   ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
@@ -1083,11 +1086,22 @@ export class CashflowGameService {
         ? {
             lineTitles,
             dreams: EMPTY_DREAM_LOG,
-            dreamSettings: dreamSettings ?? DEFAULT_DREAM_SETTINGS,
+            customRules: normalizeCustomRules(customRules),
           }
         : {}),
       gameSubscriptionTitles: subscriptionTitles,
-      ...(insurance ? { insurance: { ...insurance, premiums: translatedPremiums } } : {}),
+      // the insurances the player chose to start with (all of them when nothing was chosen)
+      ...(insurance
+        ? {
+            insurance: {
+              ...insurance,
+              premiums: translatedPremiums,
+              active: startInsurances
+                ? insurance.active.filter((kind) => startInsurances.includes(kind))
+                : insurance.active,
+            },
+          }
+        : {}),
       budgetPlan: [],
     };
     // a new game starts without the plan of the last one
@@ -1572,11 +1586,8 @@ export class CashflowGameService {
       ),
     );
     const target = Math.round(monthly * 3 * 100) / 100;
-    const inProject = project.buckets.reduce(
-      (sum, bucket) => sum + Math.min(Number(bucket.amount), Number(bucket.target)),
-      0,
-    );
-    const held = Math.round((inProject + Math.max(0, Number(state.mojo.amount) || 0)) * 100) / 100;
+    // the reserve is the Mojo: what it holds is what the character has set aside
+    const held = Math.round(Math.max(0, Number(state.mojo.amount) || 0) * 100) / 100;
     return { held, target, ok: target > 0 && held + 0.005 >= target };
   }
 
@@ -1809,6 +1820,7 @@ export class CashflowGameService {
       })),
       notes,
       emergencyCardId: card.id,
+      ...(card.payment === 'pay_now' ? { emergencyPayNow: true } : {}),
       createdAt: now,
       updatedAt: now,
     };
@@ -1935,9 +1947,51 @@ export class CashflowGameService {
     this.persistAll('cashflow_life_draw', { card: draw.card.id }, callbacks, { quiet: true });
   }
 
+  /** The rules of this Custom JFK game (null in a classic game): what the player may decide and what the cards decide. */
+  get customRules(): CustomRules | null {
+    const game = AppStateService.instance.cashflowGame;
+    return game.life || game.customRules ? normalizeCustomRules(game.customRules) : null;
+  }
+
   /** Whether the game lets the player decline what life offers (a game setting). */
   get lifeCanDecline(): boolean {
-    return AppStateService.instance.cashflowGame.dreamSettings?.lifeCanDecline !== false;
+    return this.customRules?.lifeMayDecline ?? true;
+  }
+
+  get dreamMayDecline(): boolean {
+    return this.customRules?.dreamMayDecline ?? true;
+  }
+
+  get careerMustRoll(): boolean {
+    return this.customRules?.careerMustRoll ?? false;
+  }
+
+  /** Whether Smile and Fire projects of the player's own may be added (outside the game's own cards). */
+  static ownProjectsAllowed(): boolean {
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame() || !game.professionId || !game.life) return true;
+    return normalizeCustomRules(game.customRules).ownProjects;
+  }
+
+  /**
+   * The emergencies that have to be dealt with before the turn goes on (the rule `emergencySettle`): not paid in full and, where a plan
+   * is allowed, without a plan running. Empty when the game is free.
+   */
+  get unsettledEmergencies(): { title: string; payNow: boolean }[] {
+    const rules = this.customRules;
+    if (!rules || rules.emergencySettle === 'never') return [];
+    return AppStateService.instance.allFireEmergencies
+      .filter((fire) => fire.emergencyCardId)
+      .filter((fire) => rules.emergencySettle === 'all' || fire.emergencyPayNow)
+      .filter((fire) => {
+        const paid = fire.buckets.every(
+          (bucket) => Number(bucket.amount) + 0.005 >= Number(bucket.target),
+        );
+        if (paid) return false;
+        const planned = (fire.plannedSubscriptions ?? []).some((plan) => plan.status === 'active');
+        return fire.emergencyPayNow || !planned;
+      })
+      .map((fire) => ({ title: fire.title, payNow: !!fire.emergencyPayNow }));
   }
 
   /** The player's answer to the card: it happens, is accepted, declined, rolled for, given, lent or passed. */
@@ -2053,6 +2107,8 @@ export class CashflowGameService {
 
   /** The player may search any card of a stack (the free rules); otherwise the card is drawn at random, as at the table. */
   get cardChoiceFree(): boolean {
+    const custom = this.customRules;
+    if (custom) return custom.cardChoice === 'free';
     return (AppStateService.instance.cashflowGame.rules?.cardChoice ?? 'free') === 'free';
   }
 
@@ -2210,6 +2266,14 @@ export class CashflowGameService {
   }
 
   get dreamSettings(): DreamSettings {
+    const custom = this.customRules;
+    if (custom) {
+      return {
+        offersPerLanding: custom.dreamOffers,
+        maxOpenDreams: custom.maxOpenDreams,
+        lifeCanDecline: custom.lifeMayDecline,
+      };
+    }
     return AppStateService.instance.cashflowGame.dreamSettings ?? DEFAULT_DREAM_SETTINGS;
   }
 
@@ -2702,7 +2766,10 @@ export class CashflowGameService {
 
   /** Why no roll can be made right now (null when one can). */
   get cannotRollBecause(): string | null {
-    return whyCannotRoll(AppStateService.instance.cashflowGame);
+    const reason = whyCannotRoll(AppStateService.instance.cashflowGame);
+    if (reason) return reason;
+    // an emergency has to be paid (or planned) before the game goes on, where the rules say so
+    return this.unsettledEmergencies.length > 0 ? 'EMERGENCY_UNSETTLED' : null;
   }
 
   /** How a finished solo game ended, with the closing numbers. */

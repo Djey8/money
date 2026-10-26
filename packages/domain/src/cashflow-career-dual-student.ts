@@ -27,7 +27,7 @@ export const DUAL_STUDENT_CAREER: CareerTrack = {
       next: {
         stages: ['C2'],
         minPaydays: 3,
-        rollFrom: 3,
+        rollFrom: 4,
         onFail: {
           upTo: 2,
           oneTimeMinor: -15000,

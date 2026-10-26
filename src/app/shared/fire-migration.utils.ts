@@ -126,6 +126,7 @@ export function migrateFire(raw: any, transactions?: any[]): Fire {
     // what makes a project a part of a game: the reserve of a character, an emergency card
     ...(raw.reserve ? { reserve: true } : {}),
     ...(raw.emergencyCardId ? { emergencyCardId: raw.emergencyCardId } : {}),
+    ...(raw.emergencyPayNow ? { emergencyPayNow: true } : {}),
     phase: phase,
     description: raw.description || '',
     buckets: buckets,

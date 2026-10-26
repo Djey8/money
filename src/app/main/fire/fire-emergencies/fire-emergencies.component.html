@@ -32,7 +32,13 @@
     (click)="openAiAssistant()"
     (keydown.enter)="openAiAssistant()"
   />
-  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addFireEmergencie()">
+  <button
+    id="addbtn"
+    class="add-circle-btn"
+    aria-label="Add"
+    *ngIf="ownProjectsAllowed"
+    (click)="addFireEmergencie()"
+  >
     +
   </button>
 </div>

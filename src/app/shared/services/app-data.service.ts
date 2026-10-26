@@ -1395,6 +1395,10 @@ export class AppDataService {
             if (raw[k].emergencyCardId) {
               rawFire.emergencyCardId = this.cryptic.decrypt(raw[k].emergencyCardId, 'database');
             }
+            if (raw[k].emergencyPayNow != null) {
+              rawFire.emergencyPayNow =
+                this.cryptic.decrypt(raw[k].emergencyPayNow, 'database') === 'true';
+            }
             // Migrate to current schema
             const fire: Fire = migrateFire(rawFire);
             myFire.push(fire);

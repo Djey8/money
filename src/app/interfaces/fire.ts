@@ -58,6 +58,8 @@ export interface Fire {
   reserve?: boolean;
   /** The Emergency card this project came from (a Dreamfund game): it counts as open until its buckets are full. */
   emergencyCardId?: string;
+  /** The card said it has to be paid at once (a fine, a fee): it cannot be put on a plan. */
+  emergencyPayNow?: boolean;
 
   // Payment Plans (optional - multiple payment plans supported)
   plannedSubscriptions?: PlannedSubscription[]; // Array of payment plans for this emergency fund

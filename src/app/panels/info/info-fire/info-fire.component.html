@@ -96,6 +96,15 @@
         <pre class="section-text">{{ classReference.description }}</pre>
       </div>
 
+      <!-- the reserve of a game is the Mojo: this project follows it (JFK, 2026-10-26) -->
+      <div class="info-section reserve-note" *ngIf="isReserve">
+        <h5 class="section-label">{{ 'Fire.reserveMojoTitle' | translate }}</h5>
+        <p class="section-text">{{ 'Fire.reserveMojo' | translate }}</p>
+        <button type="button" class="btn btn--fire" (click)="payIntoMojo()">
+          {{ 'Fire.payIntoMojo' | translate }}
+        </button>
+      </div>
+
       <!-- Overall Progress -->
       <div class="info-section">
         <h5 class="section-label">{{ 'Common.overallProgress' | translate }}</h5>
@@ -278,7 +287,7 @@
             </div>
           </div>
 
-          <div class="bucket-settle-buttons" *ngIf="settlingBucketId !== bucket.id">
+          <div class="bucket-settle-buttons" *ngIf="settlingBucketId !== bucket.id && !isReserve">
             <button class="btn btn--sm" (click)="openSettle(bucket)">
               {{ (isSettled(bucket) ? 'Bucket.resettle' : 'Bucket.settle') | translate }}
             </button>
@@ -290,7 +299,7 @@
           <!-- Add to This Bucket Button -->
           <button
             class="btn btn--sm btn--fire bucket-add-btn"
-            *ngIf="!isSettled(bucket) && bucket.amount < bucket.target"
+            *ngIf="!isReserve && !isSettled(bucket) && bucket.amount < bucket.target"
             (click)="addBucketToTransaction(bucket.id, bucket.title, bucket.target - bucket.amount)"
           >
             + {{ 'Fire.addToBucket' | translate }}

@@ -32,7 +32,15 @@
     (click)="openAiAssistant()"
     (keydown.enter)="openAiAssistant()"
   />
-  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addSmileProject()">+</button>
+  <button
+    id="addbtn"
+    class="add-circle-btn"
+    aria-label="Add"
+    *ngIf="ownProjectsAllowed"
+    (click)="addSmileProject()"
+  >
+    +
+  </button>
 </div>
 
 <!-- Search -->

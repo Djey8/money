@@ -2077,7 +2077,8 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       // the custom edition played in the app has a map: the ring, medium, unless another is chosen
       expect.objectContaining({ shape: 'ring', size: 'medium' }),
       // what the player set for the dreams: two offered, three open at once
-      { offersPerLanding: 2, maxOpenDreams: 3, lifeCanDecline: true },
+      expect.objectContaining({ mode: 'free', cardChoice: 'free', lifeMayDecline: true }),
+      undefined,
     );
     const companion = soloComponent();
     companion.component.setPlayMode('companion');
@@ -2090,6 +2091,9 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
   it('starts the game under the rules chosen on the start panel, and a preset fills them in', () => {
     const { component, cashflowGameService } = soloComponent();
     component.playMode = 'solo';
+    // the classic rules belong to the classic edition
+    component.chooseEdition('cashflow');
+    component.selectedProfessionId = component.selectedGameSet!.professions[0].id;
     component.choosePreset('strict');
     expect(component.rulePresetNow).toBe('strict');
     component.startGame();
@@ -2101,8 +2105,31 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     });
   });
 
+  it('the Custom JFK edition has rules of its own: a mode fills them in, the classic rules are those of the mode', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.playMode = 'solo';
+    expect(component.showBoardChoice).toBe(true);
+    component.chooseCustomMode('strict');
+    expect(component.customDraft).toMatchObject({
+      mode: 'strict',
+      cardChoice: 'random',
+      lifeMayDecline: false,
+      emergencySettle: 'all',
+      ownProjects: false,
+    });
+    expect(component.customIsPreset).toBe(true);
+    component.setCustom('dreamOffers', 3);
+    expect(component.customIsPreset).toBe(false);
+    component.startGame();
+    const call = cashflowGameService.pickProfession.mock.calls[0];
+    expect(call[4]).toMatchObject({ preset: 'strict', manualTransactions: 'forbidden' });
+    expect(call[6]).toMatchObject({ mode: 'strict', dreamOffers: 3 });
+  });
+
   it('a changed setting makes the rules custom, and the limits are typed in the currency', () => {
     const { component, cashflowGameService } = soloComponent();
+    component.chooseEdition('cashflow');
+    component.selectedProfessionId = component.selectedGameSet!.professions[0].id;
     component.choosePreset('guided');
     component.ruleDraft.sellOfferRolls = 2;
     component.maxFreeText = '250';

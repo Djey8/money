@@ -1,3 +1,4 @@
+import { CashflowGameService } from '../../../shared/services/cashflow-game.service';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { gotoTop } from 'src/app/shared/scroll.utils';
@@ -538,6 +539,13 @@ export class AddFireComponent extends BaseAddComponent {
     this.clearError();
     this.resetForm();
     this.closeWindow();
+    // in the game a new project is opened at once, to be paid or planned (JFK, 2026-10-26)
+    if (CashflowGameService.isCashflowGame()) {
+      const index = AppStateService.instance.allFireEmergencies.length - 1;
+      void import('../../info/info-fire/info-fire.component').then((m) =>
+        m.InfoFireComponent.setInfoFireComponent(index, newFire),
+      );
+    }
     AppStateService.instance.isSaving = true;
     this.persistence.writeAndSync({
       tag: 'fire',

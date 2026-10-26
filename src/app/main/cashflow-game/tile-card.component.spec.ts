@@ -36,6 +36,8 @@ describe('TileCardComponent', () => {
       ],
       dreamCards: [offer('D01'), offer('D02')],
       lifeCanDecline: true,
+      dreamMayDecline: true,
+      careerMustRoll: false,
       emergencyView: null,
       lifeView: null,
       dreamView: null,
@@ -77,6 +79,7 @@ describe('TileCardComponent', () => {
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   };
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
   const click = (element: HTMLElement, selector: string) => {
     (element.querySelector(selector) as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -89,7 +92,7 @@ describe('TileCardComponent', () => {
     expect(service['drawLife']).not.toHaveBeenCalled();
   });
 
-  it('under the free rules the card is found in a grid with quick filters, or shuffled', () => {
+  it('under the free rules the card is found in a grid with quick filters, or shuffled', async () => {
     const element = render('life');
     click(element, '.tc-btn--primary');
     expect(element.querySelectorAll('.tc-grid-item')).toHaveLength(2);
@@ -100,20 +103,26 @@ describe('TileCardComponent', () => {
     fixture.detectChanges();
     expect(element.querySelectorAll('.tc-grid-item')).toHaveLength(1);
     click(element, '.tc-grid-item');
+    // the pile is shuffled for a moment first
+    expect(element.querySelector('.tc-shuffle')).not.toBeNull();
+    await wait(450);
     expect(service['drawLife']).toHaveBeenCalledWith(expect.anything(), 'L01');
   });
 
-  it('shuffling draws a card at random', () => {
+  it('shuffling draws a card at random', async () => {
     const element = render('life');
     click(element, '.tc-btn--primary');
     click(element, '.tc-picker .tc-actions .tc-btn--primary');
+    expect(element.querySelector('.tc-shuffle')).not.toBeNull();
+    await wait(900);
     expect(service['drawLife']).toHaveBeenCalledWith(expect.anything(), undefined);
   });
 
-  it('under the other rules the card is drawn the moment it is opened', () => {
+  it('under the other rules the card is drawn after the shuffle, the moment it is opened', async () => {
     service['cardChoiceFree'] = false;
     const element = render('life');
     click(element, '.tc-btn--primary');
+    await wait(900);
     expect(service['drawLife']).toHaveBeenCalledTimes(1);
     expect(element.querySelector('.tc-grid')).toBeNull();
   });
@@ -183,6 +192,19 @@ describe('TileCardComponent', () => {
     }
   });
 
+  it('at the top of the ladder there is nothing to roll and the turn goes on', () => {
+    service['careerStatus'] = {
+      title: 'Chief Data Architect',
+      stageNumber: 6,
+      branch: 'technical',
+      top: true,
+    };
+    service['careerNext'] = null;
+    const element = render('career');
+    expect(element.querySelector('.tc-btn--gold')).toBeNull();
+    expect(element.querySelector('.tc-done')).not.toBeNull();
+  });
+
   it('a career that is not due yet does not offer the roll', () => {
     service['careerStatus'] = { title: 'Dual Student', stageNumber: 1, branch: undefined };
     service['careerNext'] = {
@@ -195,5 +217,7 @@ describe('TileCardComponent', () => {
     const element = render('career');
     expect(element.querySelector('.tc-btn--gold')).toBeNull();
     expect(element.textContent).toContain('2');
+    // the turn must go on: there is a Done button (the game was stuck here once)
+    expect(element.querySelector('.tc-done')).not.toBeNull();
   });
 });

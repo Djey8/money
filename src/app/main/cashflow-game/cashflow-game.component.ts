@@ -46,6 +46,13 @@ import {
   whyDiceFirst,
   type GameRules,
   dreamsForMoment,
+  CUSTOM_RULE_PRESETS,
+  droppedPremiumTitles,
+  classicRulesOfMode,
+  isPresetMode,
+  INITIAL_LIFE_STATE,
+  type CustomMode,
+  type CustomRules,
   type DreamMomentId,
   type LifeCard,
   type LifeEffect,
@@ -663,8 +670,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** Every current game expense subscription, itemized — mirrors the profession card's own expense lines, live. */
   get liveExpenseLines(): { title: string; amount: number }[] {
     const gameTitles = this.appState.cashflowGame.gameSubscriptionTitles;
+    const dropped = droppedPremiumTitles(this.appState.cashflowGame);
     return this.appState.allSubscriptions
-      .filter((sub) => gameTitles.includes(sub.title) && sub.amount < 0)
+      .filter((sub) => gameTitles.includes(sub.title) && !dropped.has(sub.title) && sub.amount < 0)
       .map((sub) => ({ title: sub.title, amount: sub.amount }));
   }
 
@@ -946,9 +954,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   // ── the Life, Career and Dream tiles (JFK, 2026-10-26) ──
 
   /** What the player sets for the dreams of a game: how many are offered at a landing and how many may be open. */
-  dreamOffers = 2;
-  maxOpenDreams = 3;
-  lifeCanDeclineSetting = true;
 
   get lifeCanDecline(): boolean {
     return this.cashflowGameService.lifeCanDecline;
@@ -973,6 +978,28 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** The tile has a stack of cards in this game, and so a panel of its own. */
+  /** The player has looked away from the card to see the map. */
+  peekMap = false;
+
+  /** The card of a tile with a stack lies over the whole wheel (not while the token walks, or when the map is being looked at). */
+  get cardOverWheel(): boolean {
+    const story = this.pendingStory;
+    return (
+      !!story &&
+      this.soloTurn.phase === 'decide' &&
+      !this.walking &&
+      !this.diceActionOpen &&
+      !this.peekMap &&
+      this.tileHasPanel(story.tile)
+    );
+  }
+
+  /** The tile under the token has no stack of cards: its text is shown below the wheel and ticked off. */
+  get storyPlain(): boolean {
+    const story = this.pendingStory;
+    return !!story && !this.tileHasPanel(story.tile);
+  }
+
   tileHasPanel(tile: string): boolean {
     switch (tile) {
       case 'emergency':
@@ -986,6 +1013,57 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       default:
         return false;
     }
+  }
+
+  /** The career a character starts on, before the game: the first stage of the ladder. */
+  private get setupCareerBadge() {
+    const track = this.characterChosen ? this.selectedProfession?.career : undefined;
+    const stage = track?.stages.find((candidate) => candidate.id === track.start);
+    if (!track || !stage) return null;
+    return {
+      title: stage.title[this.language.current === 'de' ? 'de' : 'en'],
+      stage: stage.stage,
+      pips: [] as boolean[],
+      branch: '',
+      eligibleIn: stage.next?.minPaydays ?? 0,
+      top: !stage.next,
+    };
+  }
+
+  /** The insurances of the character as chosen for the start: all of them, unless one was left out. */
+  startInsurances: string[] | undefined = undefined;
+
+  get setupInsuranceRows(): { kind: string; premium: number; held: boolean; heldNext: boolean }[] {
+    const profession = this.selectedProfession;
+    if (!this.characterChosen || !profession) return [];
+    const rows = profession.expenses
+      .filter((line) => line.insurance && line.amountMinor !== 0)
+      .map((line) => {
+        const held = !this.startInsurances || this.startInsurances.includes(line.insurance!);
+        return {
+          kind: line.insurance!,
+          premium: this.toDisplayAmount(line.amountMinor),
+          held,
+          heldNext: held,
+        };
+      });
+    const key = JSON.stringify(rows);
+    if (this.setupInsuranceCache?.key !== key) this.setupInsuranceCache = { key, rows };
+    return this.setupInsuranceCache.rows;
+  }
+
+  private setupInsuranceCache: {
+    key: string;
+    rows: { kind: string; premium: number; held: boolean; heldNext: boolean }[];
+  } | null = null;
+
+  /** Hop in or out of an insurance before the game starts: the premium and the cover follow from the first Payday. */
+  toggleSetupInsurance(change: { kind: string; on: boolean }): void {
+    const all = this.setupInsuranceRows.map((row) => row.kind);
+    const held = new Set(this.startInsurances ?? all);
+    if (change.on) held.add(change.kind);
+    else held.delete(change.kind);
+    this.startInsurances = all.filter((kind) => held.has(kind));
   }
 
   /** The trait whose small card is open (none at first). */
@@ -1028,7 +1106,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (!chip) return null;
     const t = (key: string) => this.translate.instant(key);
     let extra: string | undefined;
-    if (chip.key === 'career') {
+    if (chip.key === 'career' && !this.careerStatus) {
+      const badge = this.setupCareerBadge;
+      if (badge?.eligibleIn) {
+        extra = this.translate.instant('CashflowGame.career.startsWith', {
+          count: badge.eligibleIn,
+        });
+      }
+    } else if (chip.key === 'career') {
       const status = this.careerStatus;
       const next = this.cashflowGameService.careerNext;
       if (status?.top) extra = t('CashflowGame.career.topText');
@@ -1058,9 +1143,26 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   };
 
   /** The badges of the profile: partner, children, pet, car, home, city, job, career - what has happened to the character. */
+  /**
+   * The life the traits describe: the running game's, or - while a character is looked at before the start - the life the character
+   * begins with (JFK, 2026-10-26: the start attributes and insurances are seen when the character is chosen).
+   */
+  private get traitLife() {
+    const life = this.appState.cashflowGame.life;
+    if (life) return life;
+    return this.characterChosen && this.selectedProfession?.profile ? INITIAL_LIFE_STATE : null;
+  }
+
+  /** The insurances held: those of the running game, or those chosen for the start. */
+  private get insurancesHeld(): number {
+    if (this.appState.cashflowGame.life) {
+      return this.cashflowGameService.insurances.filter((offer) => offer.held).length;
+    }
+    return this.setupInsuranceRows.filter((row) => row.held).length;
+  }
+
   get lifeBadges(): { icon: string; text: string; key: string }[] {
-    const game = this.appState.cashflowGame;
-    const life = game.life;
+    const life = this.traitLife;
     if (!life) return [];
     const v = (value: string) => this.translate.instant(`CashflowGame.life.value.${value}`);
     const badges: { icon: string; text: string; key: string }[] = [
@@ -1073,14 +1175,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (life.pet !== 'none')
       badges.push({ key: 'pet', icon: life.pet === 'cat' ? '🐱' : '🐶', text: v(life.pet) });
     if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('yes') });
-    const held = this.cashflowGameService.insurances.filter((offer) => offer.held).length;
+    const held = this.insurancesHeld;
     if (held > 0) badges.push({ key: 'insurance', icon: '🛡️', text: `× ${held}` });
     return badges;
   }
 
   get careerBadge() {
     const status = this.careerStatus;
-    if (!status) return null;
+    if (!status) return this.setupCareerBadge;
     return {
       title: status.title,
       stage: status.stageNumber,
@@ -1440,7 +1542,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     const mode = this.playMode;
     let rules: GameRules;
     try {
-      rules = this.currentRules();
+      // the Custom JFK edition has rules of its own; the classic ones are those of its mode
+      rules = this.showBoardChoice
+        ? classicRulesOfMode(this.customDraft.mode)
+        : this.currentRules();
     } catch (error) {
       this.isBusy = false;
       this.toastService.show(error instanceof Error ? error.message : String(error), 'error');
@@ -1472,11 +1577,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       mode,
       rules,
       this.showBoardChoice ? this.boardSetup : undefined,
-      {
-        offersPerLanding: this.dreamOffers,
-        maxOpenDreams: this.maxOpenDreams,
-        lifeCanDecline: this.lifeCanDeclineSetting,
-      },
+      this.showBoardChoice ? this.customDraft : undefined,
+      this.startInsurances,
     );
   }
 
@@ -1494,6 +1596,70 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   maxFreeText = '';
   showAdvancedRules = false;
   readonly presetIds = ['free', 'guided', 'strict'] as const;
+
+  // ── The rules of the Custom JFK edition (JFK, 2026-10-26) ──
+
+  readonly customModes: CustomMode[] = ['free', 'guided', 'strict'];
+  customDraft: CustomRules = { ...CUSTOM_RULE_PRESETS.free };
+
+  chooseCustomMode(mode: CustomMode): void {
+    this.customDraft = { ...CUSTOM_RULE_PRESETS[mode] };
+  }
+
+  get customIsPreset(): boolean {
+    return isPresetMode(this.customDraft);
+  }
+
+  customValue(key: string): unknown {
+    return (this.customDraft as unknown as Record<string, unknown>)[key];
+  }
+
+  setCustom(key: string, value: unknown): void {
+    this.customDraft = { ...this.customDraft, [key]: value } as CustomRules;
+  }
+
+  /** The settings of the custom rules that can be changed one by one, with what each can be. */
+  readonly customRows: {
+    key: string;
+    options: { value: unknown; label: string }[];
+  }[] = [
+    {
+      key: 'cardChoice',
+      options: [
+        { value: 'free', label: 'CashflowGame.custom.cardChoiceFree' },
+        { value: 'random', label: 'CashflowGame.custom.cardChoiceRandom' },
+      ],
+    },
+    {
+      key: 'dreamOffers',
+      options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
+    },
+    {
+      key: 'maxOpenDreams',
+      options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+    },
+    { key: 'dreamMayDecline', options: this.yesNo() },
+    { key: 'lifeMayDecline', options: this.yesNo() },
+    { key: 'careerMustRoll', options: this.yesNo() },
+    {
+      key: 'emergencySettle',
+      options: [
+        { value: 'never', label: 'CashflowGame.custom.settleNever' },
+        { value: 'payNow', label: 'CashflowGame.custom.settlePayNow' },
+        { value: 'all', label: 'CashflowGame.custom.settleAll' },
+      ],
+    },
+    { key: 'ownProjects', options: this.yesNo() },
+  ];
+
+  private yesNo(): { value: boolean; label: string }[] {
+    return [
+      { value: true, label: 'CashflowGame.setup.lifeDeclineYes' },
+      { value: false, label: 'CashflowGame.custom.no' },
+    ];
+  }
+
+  trackByValue = (_index: number, item: unknown): string => String(item);
 
   choosePreset(id: 'free' | 'guided' | 'strict'): void {
     this.ruleDraft = { ...RULE_PRESETS[id] };
@@ -1668,6 +1834,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * The dice may only be pressed when nothing is still loading or being stored (JFK, 2026-10-10: on a phone the button
    * worked before the turn had finished loading) and no dice action of a card is open - those come first.
    */
+  /** The emergencies that the rules of the game want settled before the next roll. */
+  get unsettledEmergencies(): { title: string; payNow: boolean }[] {
+    return this.isSolo ? this.cashflowGameService.unsettledEmergencies : [];
+  }
+
   get canRoll(): boolean {
     return (
       (!this.remote || this.remote.canAct()) &&

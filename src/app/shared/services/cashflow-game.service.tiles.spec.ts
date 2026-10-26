@@ -1,3 +1,4 @@
+import { CUSTOM_RULE_PRESETS } from '@money/domain';
 import { AppStateService } from './app-state.service';
 import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
@@ -132,7 +133,7 @@ describe('CashflowGameService: life, career and dreams', () => {
   it('only as many dreams can be open as the setting allows', () => {
     state().cashflowGame = {
       ...state().cashflowGame,
-      dreamSettings: { offersPerLanding: 2, maxOpenDreams: 1 },
+      customRules: { ...CUSTOM_RULE_PRESETS.free, maxOpenDreams: 1 },
     };
     landOn('dream');
     service.drawDream(ok(), { cardId: 'D16' });
@@ -243,5 +244,109 @@ describe('CashflowGameService: life, career and dreams', () => {
     state().mojo.amount = Number(state().mojo.amount) - 500;
     expect(status().held).toBeLessThan(status().target);
     expect(status().ok).toBe(false);
+  });
+
+  it('under strict rules an emergency has to be paid or planned before the game goes on, and own projects are locked', () => {
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      customRules: { ...CUSTOM_RULE_PRESETS.strict },
+    };
+    expect(CashflowGameService.ownProjectsAllowed()).toBe(false);
+    expect(service.lifeCanDecline).toBe(false);
+    expect(service.cardChoiceFree).toBe(false);
+    expect(service.cannotRollBecause).toBeNull();
+    // a card that allows a plan (a cracked screen)
+    landOn('emergency');
+    service.drawEmergency(ok(), 'E09');
+    service.chooseEmergencyOption('A', ok());
+    service.createEmergencyProject(ok());
+    const onRoll = () => {
+      state().cashflowGame = { ...state().cashflowGame, turn: { phase: 'roll', count: 9 } };
+    };
+    onRoll();
+    expect(service.unsettledEmergencies).toHaveLength(1);
+    expect(service.cannotRollBecause).toBe('EMERGENCY_UNSETTLED');
+    // a plan is enough where the card allows it
+    const project = state().allFireEmergencies.find((fire) => fire.emergencyCardId === 'E09')!;
+    project.plannedSubscriptions = [{ status: 'active' } as never];
+    expect(service.unsettledEmergencies).toHaveLength(0);
+    expect(service.cannotRollBecause).toBeNull();
+    // a fine cannot be planned: it has to be paid
+    landOn('emergency', 10);
+    service.drawEmergency(ok(), 'E05');
+    service.createEmergencyProject(ok());
+    onRoll();
+    const fine = state().allFireEmergencies.find((fire) => fire.emergencyCardId === 'E05')!;
+    expect(fine.emergencyPayNow).toBe(true);
+    fine.plannedSubscriptions = [{ status: 'active' } as never];
+    expect(service.unsettledEmergencies.map((e) => e.payNow)).toEqual([true]);
+    for (const bucket of fine.buckets) bucket.amount = bucket.target;
+    expect(service.unsettledEmergencies).toHaveLength(0);
+  });
+
+  it('under guided rules only what cannot wait blocks the game; under free rules nothing does', () => {
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      customRules: { ...CUSTOM_RULE_PRESETS.guided },
+    };
+    landOn('emergency');
+    service.drawEmergency(ok(), 'E09');
+    service.chooseEmergencyOption('A', ok());
+    service.createEmergencyProject(ok());
+    // a cracked screen can be planned or left, it is not a fine: guided rules do not wait for it
+    expect(service.unsettledEmergencies).toHaveLength(0);
+    // a fine does wait
+    landOn('emergency', 2);
+    service.drawEmergency(ok(), 'E05');
+    service.createEmergencyProject(ok());
+    expect(service.unsettledEmergencies.map((e) => e.payNow)).toEqual([true]);
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      customRules: { ...CUSTOM_RULE_PRESETS.free },
+      turn: { phase: 'roll', count: 9 },
+    };
+    expect(service.cannotRollBecause).toBeNull();
+  });
+
+  it('the insurances chosen for the start are the ones held; the others cost nothing', () => {
+    (AppStateService as any)._instance = undefined;
+    const fresh = state();
+    fresh.daily = 60;
+    fresh.splurge = 10;
+    fresh.smile = 10;
+    fresh.fire = 20;
+    service.pickProfession(
+      'jfk-stories',
+      'dual-student-informatik',
+      ok(),
+      'solo',
+      undefined,
+      undefined,
+      undefined,
+      ['liability'],
+    );
+    expect(state().cashflowGame.insurance!.active).toEqual(['liability']);
+    // its premium is not part of the month
+    expect(service.monthlyCashflow).toBeCloseTo(500 + 15.61, 2);
+  });
+
+  it('the emergency reserve is the Mojo: what is booked into @Mojo fills it, and its project follows', () => {
+    const project = () => state().allFireEmergencies.find((fire) => fire.reserve)!;
+    expect(project().buckets.every((b) => b.amount === 0)).toBe(true);
+    // 3,000 into the Mojo fills the first month and most of the second
+    state().allTransactions.push({
+      account: 'Daily',
+      amount: -3000,
+      date: '2026-12-01',
+      time: '',
+      category: '@Mojo',
+      comment: '',
+    });
+    landOn('life');
+    service.drawLife(ok(), 'L08');
+    service.decideLife({ kind: 'fate' }, ok());
+    expect(state().mojo.amount).toBe(3000);
+    expect(project().buckets.map((b) => b.amount)).toEqual([2333, 667, 0]);
+    expect(service.reserveStatus!.held).toBe(3000);
   });
 });

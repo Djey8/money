@@ -215,6 +215,15 @@ export class IncomeStatementService {
     applyProjects(state.allSmileProjects, result.smile);
     applyProjects(state.allFireEmergencies, result.fire);
     state.mojo.amount = fromMinorUnits(result.mojo.amountMinor);
+    // the emergency reserve of a game is the Mojo (JFK, 2026-10-26): its project only follows it, bucket by bucket
+    let inMojo = Number(state.mojo.amount) || 0;
+    for (const project of state.allFireEmergencies.filter((fire) => fire.reserve)) {
+      for (const bucket of project.buckets) {
+        const part = Math.min(Number(bucket.target), Math.max(0, inMojo));
+        bucket.amount = Math.round(part * 100) / 100;
+        inMojo -= part;
+      }
+    }
 
     // Capping/settlement rewrites (the engine drops zero-amount transactions
     // from its output; those are left exactly as they are here).

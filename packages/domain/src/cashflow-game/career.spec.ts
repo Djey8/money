@@ -79,9 +79,10 @@ describe('the career of the Dual Student (temp_cards v0.2)', () => {
     expect(rollCareer(career, track, fixed(6))).toEqual({ kind: 'waiting', paydaysLeft: 2 });
   });
 
-  it('on time a die decides: 3 or more promotes the student, a 1 or 2 retakes the exam for a fee', () => {
+  it('on time a die decides: 4 or more promotes the student, a 1 or 2 retakes the exam for a fee, a 3 does nothing', () => {
     const career: CareerState = { stage: 'C1', paydaysInStage: 3 };
-    expect(rollCareer(career, track, fixed(3))).toMatchObject({ kind: 'promoted', to: 'C2' });
+    expect(rollCareer(career, track, fixed(4))).toMatchObject({ kind: 'promoted', to: 'C2' });
+    expect(rollCareer(career, track, fixed(3))).toEqual({ kind: 'failed', roll: 3 });
     expect(rollCareer(career, track, fixed(2))).toMatchObject({
       kind: 'failed',
       retakeMinor: -15000,

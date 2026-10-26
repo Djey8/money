@@ -14,6 +14,7 @@ const NUMBER_FIELDS = new Set([
   'points',
   'bonusPoints',
   'offersPerLanding',
+  'dreamOffers',
   'maxOpenDreams',
   'livingStandard',
   'rollFrom',
@@ -36,6 +37,10 @@ const BOOLEAN_FIELDS = new Set([
   'rerolled',
   'boost',
   'declined',
+  'dreamMayDecline',
+  'lifeMayDecline',
+  'careerMustRoll',
+  'ownProjects',
   'done',
   'sponsorship',
   'ongoingReward',
@@ -103,6 +108,7 @@ export const REVIVED_GAME_FIELDS = [
   'dreamDeck',
   // the budget the game planned: months of rows (a tag and an amount)
   'budgetPlan',
+  'customRules',
 ] as const;
 
 /** What a tile asks of the turn besides its kind and place: the card drawn and what was done with it. */

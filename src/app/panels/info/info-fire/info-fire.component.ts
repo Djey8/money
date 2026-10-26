@@ -519,7 +519,29 @@ export class InfoFireComponent extends BaseInfoComponent {
     InfoFireComponent.activeTab = tab;
   }
 
+  /** The reserve of a game is the Mojo: the money is booked into the category @Mojo, from any account. */
+  payIntoMojo(): void {
+    const mojo = AppStateService.instance.mojo;
+    const missing = Math.max(
+      0,
+      Math.round((Number(mojo.target) - Number(mojo.amount)) * 100) / 100,
+    );
+    AddComponent.categoryTextField = '@Mojo';
+    AddComponent.selectedOption = 'Daily';
+    AddComponent.amountTextField = (missing * -1).toString();
+    AddComponent.commentTextField = InfoFireComponent.title;
+    AddComponent.url = '/fireemergencies';
+    InfoFireComponent.isInfo = false;
+    AddComponent.isAdd = true;
+    MenuComponent.isMenu = false;
+    InfoComponent.isInfo = false;
+  }
+
   add() {
+    if (this.isReserve) {
+      this.payIntoMojo();
+      return;
+    }
     AddComponent.categoryTextField = `@${InfoFireComponent.title}`;
     AddComponent.selectedOption = 'Fire';
     AddComponent.url = '/fireemergencies';
@@ -1351,6 +1373,11 @@ export class InfoFireComponent extends BaseInfoComponent {
     const fire = this.getCurrentFire();
     if (!fire.plannedSubscriptions) {
       fire.plannedSubscriptions = [];
+    }
+    // the reserve is the Mojo: its plans book into the category @Mojo, without bucket tags
+    if (fire.reserve) {
+      plan.category = '@Mojo';
+      plan.comment = '';
     }
     fire.plannedSubscriptions.push(this.withSurchargeBucket(fire, plan));
     InfoFireComponent.plannedSubscriptions = fire.plannedSubscriptions;

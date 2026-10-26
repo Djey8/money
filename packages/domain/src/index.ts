@@ -51,6 +51,7 @@ export * from './cashflow-game/life-deck';
 export * from './cashflow-game/life-books';
 export * from './cashflow-game/career';
 export * from './cashflow-game/dream-deck';
+export * from './cashflow-game/custom-rules';
 export * from './cashflow-game/steps';
 export * from './cashflow-game/card-reference';
 export * from './cashflow-game/market-cards';

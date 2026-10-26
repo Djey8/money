@@ -32,6 +32,10 @@ interface PickerItem {
   tag: string;
 }
 
+/** How long the pile is shuffled before a card is shown (shorter for a card that was picked). */
+const SHUFFLE_MS = 800;
+const SHUFFLE_PICKED_MS = 350;
+
 /** How long the die tumbles before the result is shown. */
 const ROLL_MS = 1000;
 
@@ -72,7 +76,7 @@ const ROLL_MS = 1000;
         <ng-container *ngSwitchCase="'emergency'">
           <ng-container *ngIf="emergency as e; else emergencyClosed">
             <p class="tc-lucky" *ngIf="e.skipped.length">
-              🍀 {{ 'CashflowGame.emergency.lucky' | translate }}
+              {{ 'CashflowGame.emergency.lucky' | translate }}
             </p>
             <h4 class="tc-title">
               {{ e.card.title[lang] }}
@@ -126,14 +130,13 @@ const ROLL_MS = 1000;
                 </li>
               </ul>
               <p class="tc-good" *ngIf="e.quote.insured && e.quote.savedMinor > 0">
-                🛡️
                 {{
                   'CashflowGame.emergency.insuredSaved'
                     | translate: { saved: amount(e.quote.savedMinor), currency: currency }
                 }}
               </p>
               <p class="tc-bad" *ngIf="!e.quote.insured && e.card.insurance">
-                ⚠️ {{ 'CashflowGame.emergency.notInsured' | translate }}
+                {{ 'CashflowGame.emergency.notInsured' | translate }}
               </p>
               <p class="tc-note" *ngIf="e.card.insuranceNote">{{ e.card.insuranceNote[lang] }}</p>
               <ng-container *ngIf="!e.projectTitle">
@@ -144,7 +147,7 @@ const ROLL_MS = 1000;
                   [disabled]="busy"
                   (click)="createEmergency()"
                 >
-                  🔥 {{ 'CashflowGame.emergency.createProject' | translate }}
+                  {{ 'CashflowGame.emergency.createProject' | translate }}
                 </button>
               </ng-container>
               <ng-container *ngIf="e.projectTitle">
@@ -175,7 +178,7 @@ const ROLL_MS = 1000;
         <ng-container *ngSwitchCase="'life'">
           <ng-container *ngIf="life as l; else lifeClosed">
             <p class="tc-lucky" *ngIf="l.skipped.length">
-              🍀 {{ 'CashflowGame.life.skipped' | translate }}
+              {{ 'CashflowGame.life.skipped' | translate }}
             </p>
             <h4 class="tc-title">{{ l.card.title[lang] }}</h4>
             <p>{{ l.card.story[lang] }}</p>
@@ -357,9 +360,9 @@ const ROLL_MS = 1000;
                   <ng-container *ngSwitchCase="'failed'">{{
                     'CashflowGame.career.failed' | translate
                   }}</ng-container>
-                  <ng-container *ngSwitchCase="'moment'"
-                    >✨ {{ momentKey($any(r).moment) | translate }}</ng-container
-                  >
+                  <ng-container *ngSwitchCase="'moment'">{{
+                    momentKey($any(r).moment) | translate
+                  }}</ng-container>
                   <ng-container *ngSwitchCase="'waiting'">{{
                     'CashflowGame.career.waiting' | translate: { count: $any(r).paydaysLeft }
                   }}</ng-container>
@@ -424,22 +427,20 @@ const ROLL_MS = 1000;
             </ng-container>
             <ng-template #careerOpen>
               <button
-                *ngIf="!next || next.eligible; else tooEarly"
+                *ngIf="next?.eligible"
                 type="button"
                 class="tc-btn tc-btn--gold tc-btn--wide"
-                [disabled]="busy || rolling || !next"
+                [disabled]="busy || rolling"
                 (click)="rollCareer()"
               >
-                🎲 {{ 'CashflowGame.career.roll' | translate }}
+                {{ 'CashflowGame.career.roll' | translate }}
               </button>
-              <ng-template #tooEarly>
-                <p class="tc-note">
-                  {{
-                    'CashflowGame.career.tooEarly'
-                      | translate: { count: next!.minPaydays - next!.paydaysIn }
-                  }}
-                </p>
-              </ng-template>
+              <p class="tc-note" *ngIf="next && !next.eligible">
+                {{
+                  'CashflowGame.career.tooEarly'
+                    | translate: { count: next.minPaydays - next.paydaysIn }
+                }}
+              </p>
             </ng-template>
           </ng-container>
         </ng-container>
@@ -560,7 +561,7 @@ const ROLL_MS = 1000;
                 </button>
               </div>
               <button
-                *ngIf="!selectedOffer && !d.taken && !d.declined && !d.swapping"
+                *ngIf="!selectedOffer && !d.taken && !d.declined && !d.swapping && dreamMayDecline"
                 type="button"
                 class="tc-btn tc-btn--wide"
                 [disabled]="busy"
@@ -590,7 +591,7 @@ const ROLL_MS = 1000;
             <ng-container
               *ngTemplateOutlet="
                 closed;
-                context: { text: 'CashflowGame.dream.intro', canDecline: true }
+                context: { text: 'CashflowGame.dream.intro', canDecline: dreamMayDecline }
               "
             ></ng-container>
           </ng-template>
@@ -599,7 +600,14 @@ const ROLL_MS = 1000;
 
       <!-- the card is closed: open it (or, where nobody has to, leave it) -->
       <ng-template #closed let-text="text" let-canDecline="canDecline">
-        <ng-container *ngIf="!opening; else picker">
+        <!-- the pile is shuffled and a card is drawn -->
+        <div class="tc-shuffle" *ngIf="shuffling" aria-live="polite">
+          <span class="tc-back tc-back--1"></span>
+          <span class="tc-back tc-back--2"></span>
+          <span class="tc-back tc-back--3"></span>
+          <p>{{ 'CashflowGame.tile.shuffling' | translate }}</p>
+        </div>
+        <ng-container *ngIf="!shuffling && !opening; else pickerOrNothing">
           <p>{{ text | translate }}</p>
           <div class="tc-actions">
             <button
@@ -608,7 +616,7 @@ const ROLL_MS = 1000;
               [disabled]="busy"
               (click)="open()"
             >
-              🃏 {{ 'CashflowGame.tile.openCard' | translate }}
+              {{ 'CashflowGame.tile.openCard' | translate }}
             </button>
             <button
               *ngIf="canDecline"
@@ -623,6 +631,11 @@ const ROLL_MS = 1000;
         </ng-container>
       </ng-template>
 
+      <ng-template #pickerOrNothing>
+        <ng-container *ngIf="!shuffling">
+          <ng-container *ngTemplateOutlet="picker"></ng-container>
+        </ng-container>
+      </ng-template>
       <!-- the free rules: any card of the stack, found in a small grid with quick filters - or shuffled -->
       <ng-template #picker>
         <div class="tc-picker">
@@ -664,7 +677,7 @@ const ROLL_MS = 1000;
               [disabled]="busy"
               (click)="shuffle()"
             >
-              🔀 {{ 'CashflowGame.tile.shuffle' | translate }}
+              {{ 'CashflowGame.tile.shuffle' | translate }}
             </button>
           </div>
         </div>
@@ -1018,6 +1031,58 @@ const ROLL_MS = 1000;
         text-align: start;
         cursor: pointer;
       }
+      .tc-shuffle {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 150px;
+        margin: 8px 0;
+      }
+      .tc-shuffle p {
+        position: absolute;
+        bottom: 0;
+        margin: 0;
+        font-weight: 600;
+      }
+      .tc-back {
+        position: absolute;
+        width: 76px;
+        height: 108px;
+        border-radius: 10px;
+        border: 3px solid #fff;
+        background: repeating-linear-gradient(
+          45deg,
+          var(--tc, #3f51b5),
+          var(--tc, #3f51b5) 8px,
+          color-mix(in srgb, var(--tc, #3f51b5) 70%, #fff) 8px,
+          color-mix(in srgb, var(--tc, #3f51b5) 70%, #fff) 16px
+        );
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        animation: tc-shuffle 0.8s ease-in-out infinite;
+      }
+      .tc-back--2 {
+        animation-delay: 0.15s;
+      }
+      .tc-back--3 {
+        animation-delay: 0.3s;
+      }
+      @keyframes tc-shuffle {
+        0%,
+        100% {
+          transform: translateX(0) rotate(0deg);
+        }
+        25% {
+          transform: translateX(-48px) rotate(-14deg);
+        }
+        75% {
+          transform: translateX(48px) rotate(14deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tc-back {
+          animation: none;
+        }
+      }
       .tc-grid-item small {
         opacity: 0.6;
       }
@@ -1039,6 +1104,7 @@ export class TileCardComponent implements OnDestroy {
 
   busy = false;
   opening = false;
+  shuffling = false;
   filter: string | null = null;
   selectedOffer: string | null = null;
   faces: number[] = [];
@@ -1137,10 +1203,15 @@ export class TileCardComponent implements OnDestroy {
     this.draw(id);
   }
 
-  private draw(id?: string): void {
+  private async draw(id?: string): Promise<void> {
     this.opening = false;
     this.filter = null;
     this.faces = [];
+    // the pile is shuffled for a moment before the card is shown; a card that was picked needs less of it
+    this.shuffling = true;
+    this.cdr.markForCheck();
+    await new Promise((resolve) => setTimeout(resolve, id ? SHUFFLE_PICKED_MS : SHUFFLE_MS));
+    this.shuffling = false;
     switch (this.tile) {
       case 'emergency':
         this.service.drawEmergency(this.callbacks, id);
@@ -1215,8 +1286,13 @@ export class TileCardComponent implements OnDestroy {
       case 'life':
         return !!this.life?.outcome && !this.rolling;
       case 'career': {
+        if (this.rolling) return false;
         const view = this.service.careerView;
-        return !!view && view.done && !this.rolling;
+        if (view) return view.done;
+        // nothing to roll for (too early, or at the top of the ladder): the turn goes on
+        const next = this.service.careerNext;
+        // a due promotion may be left unrolled only where the rules allow it
+        return !next || !next.eligible || !this.service.careerMustRoll;
       }
       case 'dream': {
         const view = this.service.dreamView;
@@ -1252,12 +1328,19 @@ export class TileCardComponent implements OnDestroy {
   createEmergency(): void {
     this.busy = true;
     this.service.createEmergencyProject(this.callbacks);
+    // the project opens at once, to be paid or planned
+    const title = this.service.emergencyView?.projectTitle;
+    if (title) this.openFire.emit(title);
   }
 
   // ── life ──
 
   get life() {
     return this.service.lifeView;
+  }
+
+  get dreamMayDecline(): boolean {
+    return this.service.dreamMayDecline;
   }
 
   get lifeCanDecline(): boolean {
@@ -1483,6 +1566,9 @@ export class TileCardComponent implements OnDestroy {
   takeDream(id: string): void {
     this.busy = true;
     this.service.takeDream(id, this.callbacks);
+    // the project opens at once, to be funded or planned
+    const title = this.service.dreamView?.taken;
+    if (title) this.openSmile.emit(title);
   }
 
   declineDreams(): void {

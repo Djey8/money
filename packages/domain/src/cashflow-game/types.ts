@@ -1,4 +1,5 @@
 import type { EmergencyCard, EmergencyDeckState, InsuranceKind, Localized } from './emergency-deck';
+import type { CustomRules } from './custom-rules';
 import type { DreamCard, DreamLog, DreamSettings } from './dream-deck';
 import type { CareerResult, CareerSnapshot, CareerState, CareerTrack } from './career';
 import type { LifeCard, LifeLine, LifeOutcome, LifeState, ScheduledLife } from './life-deck';
@@ -471,6 +472,8 @@ export interface CashflowGameState {
   /** The dreams of the game (JFK, 2026-10-26): open, lived, points; and what the player set for them. */
   dreams?: DreamLog;
   dreamSettings?: DreamSettings;
+  /** The rules of the Custom JFK edition: what the player may decide and what the cards decide (JFK, 2026-10-26). */
+  customRules?: CustomRules;
   dreamDeck?: EmergencyDeckState;
   /** Where the character stands on the career ladder (JFK, 2026-10-26). */
   career?: CareerState;

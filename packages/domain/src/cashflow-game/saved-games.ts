@@ -1,3 +1,4 @@
+import { droppedPremiumTitles } from './insurance';
 import type { CashflowGameState } from './types';
 
 /**
@@ -82,10 +83,12 @@ export interface CashflowFinanceSummary {
  * rat-race banner, so a saved game and the live view always agree.
  */
 export function summarizeGameFinances(
-  state: Pick<CashflowGameState, 'gameSubscriptionTitles'>,
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles' | 'insurance'>,
   subscriptions: { title: string; amountMinor: number }[],
 ): CashflowFinanceSummary {
-  const titles = state.gameSubscriptionTitles;
+  // an insurance that is dropped costs nothing: its premium is not part of the month
+  const dropped = droppedPremiumTitles(state);
+  const titles = state.gameSubscriptionTitles.filter((title) => !dropped.has(title));
   const owned = subscriptions.filter((sub) => titles.includes(sub.title));
   const salary = owned.find((sub) => sub.title === titles[0]);
   const salaryMinor = salary && salary.amountMinor > 0 ? salary.amountMinor : 0;

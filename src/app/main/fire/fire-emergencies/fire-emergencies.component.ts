@@ -1,3 +1,4 @@
+import { CashflowGameService } from '../../../shared/services/cashflow-game.service';
 import { Component } from '@angular/core';
 import { LocalService } from 'src/app/shared/services/local.service';
 import { InfoFireComponent } from 'src/app/panels/info/info-fire/info-fire.component';
@@ -185,7 +186,13 @@ export class FireEmergenciesComponent {
     );
   }
 
+  /** In a strict game the cards bring the projects: none of the player's own (JFK, 2026-10-26). */
+  get ownProjectsAllowed(): boolean {
+    return CashflowGameService.ownProjectsAllowed();
+  }
+
   addFireEmergencie() {
+    if (!this.ownProjectsAllowed) return;
     AddFireComponent.zIndex = 1;
     AddFireComponent.isAddFire = true;
     InfoSmileComponent.isInfo = false;

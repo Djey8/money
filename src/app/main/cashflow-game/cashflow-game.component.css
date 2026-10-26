@@ -3258,3 +3258,63 @@
   margin-top: 4px !important;
   font-weight: 600;
 }
+
+.cf-settle-first {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 2px solid var(--color-danger, #c0392b);
+  border-radius: var(--radius-md, 10px);
+  background: color-mix(in srgb, var(--color-danger, #c0392b) 8%, var(--color-surface, #fff));
+}
+
+.cf-settle-first p {
+  margin: 0;
+  font-weight: 600;
+}
+
+/*
+ * The card of a tile with a stack lies over the whole wheel (JFK, 2026-10-26): wheel and card share one place, so the box is as high as
+ * the taller of the two and nothing is pushed down the page.
+ */
+.cf-solo-board--card {
+  display: grid;
+}
+
+.cf-solo-board--card > .cf-ring {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.cf-card-overlay {
+  grid-area: 1 / 1;
+  z-index: 8;
+  box-sizing: border-box;
+  padding: 10px 12px 12px;
+  border: 3px solid var(--tc, #888);
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--tc, #888) 10%, var(--color-surface, #fff));
+}
+
+.cf-card-overlay .cf-story-head {
+  margin-bottom: 8px;
+}
+
+.cf-peek {
+  margin-inline-start: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--color-border, #ccc);
+  border-radius: 999px;
+  background: var(--color-surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.cf-peek--back {
+  justify-self: center;
+  margin: 6px auto;
+}

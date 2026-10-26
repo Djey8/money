@@ -1,3 +1,4 @@
+import { droppedPremiumTitles } from './insurance';
 import { emptyEffects, type BookSubscription, type GameEffects } from './effects';
 import type { EmergencyLang } from './emergency-deck';
 import {
@@ -45,11 +46,17 @@ export function netMonthlyMinor(
 
 /** All the monthly expenses of the game (a positive number). */
 export function monthlyExpensesMinor(
-  state: Pick<CashflowGameState, 'gameSubscriptionTitles'>,
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles' | 'insurance'>,
   subscriptions: readonly { title: string; amountMinor: number }[],
 ): number {
+  const dropped = droppedPremiumTitles(state);
   return subscriptions
-    .filter((sub) => state.gameSubscriptionTitles.includes(sub.title) && sub.amountMinor < 0)
+    .filter(
+      (sub) =>
+        state.gameSubscriptionTitles.includes(sub.title) &&
+        !dropped.has(sub.title) &&
+        sub.amountMinor < 0,
+    )
     .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
 }
 
