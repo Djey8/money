@@ -1,0 +1,329 @@
+import type { OpportunityCard, OpportunityPile } from '../opportunity-deck';
+import type { OpportunityChoice } from '../opportunity';
+import type { DreamCard } from '../dream-deck';
+import type { HarvestLadderOffer, HarvestSale } from '../harvest';
+import type { Rng } from '../rng';
+
+/**
+ * How a bot plays the Dreamfund game (JFK, 2026-10-26): a small set of rules - what to take, what to keep in cash, when to sell, whether
+ * to ride a hype - written as data, so strategies can be compared and one day become the bots of a table. The decisions are those a
+ * player has: money goes to the reserve, the debts and the dream; the Opportunity and Harvest cards are taken or left.
+ */
+
+/** What a policy may look at when it decides. */
+export interface DreamView {
+  cashMinor: number;
+  monthlyExpensesMinor: number;
+  passiveMinor: number;
+  reserveMinor: number;
+  reserveTargetMinor: number;
+  round: number;
+  debtsMinor: number;
+  dreamFundedMinor: number;
+  dreamTargetMinor: number;
+  /** Cash that may be spent on a card now: what is left over a buffer of some months of expenses. */
+  spendableMinor: number;
+  /** The index of every market now. */
+  markets: Record<string, number>;
+  holdingsCount: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface DreamPolicy {
+  id: string;
+  name: string;
+  /** Months of expenses kept in cash before anything is invested. */
+  bufferMonths: number;
+  /** The order the free money of a Payday goes to. */
+  priorities: ('reserve' | 'debt' | 'dream' | 'invest')[];
+  /** Of the free money after the reserve and the debts, the share that goes to the dream each Payday. */
+  dreamShare: number;
+  /** Life cards that offer a choice are accepted with this chance. */
+  lifeAcceptChance: number;
+  /** The most a card may risk (its risk score, 0 to 5) for the policy to take it. */
+  riskTolerance: number;
+  pile(view: DreamView, rng: Rng): OpportunityPile | null;
+  /** Which of the offered cards to take (or none), with the choice made on it. */
+  take(
+    offers: readonly OpportunityCard[],
+    view: DreamView,
+    held: ReadonlyMap<string, number>,
+  ): { card: OpportunityCard; choice: OpportunityChoice } | null;
+  /** A dream to take among the offered (or none). */
+  dream(offers: readonly DreamCard[], view: DreamView, open: number): DreamCard | null;
+  /** In an open market: sell this holding now? */
+  sellWindow(view: DreamView, holding: { title: string; tag?: string }, index: number): boolean;
+  acceptBuyer(view: DreamView, sale: HarvestSale): boolean;
+  ladder(view: DreamView, offer: HarvestLadderOffer): 'ride' | 'cash' | 'skip';
+}
+
+const avg = (values: number[]) =>
+  values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+
+/** What a card is expected to pay or save every month, in minor units (by its numbers, dice averaged). */
+export function expectedMonthlyMinor(card: OpportunityCard): number {
+  if (card.share) return card.share.dividendMonthPerUnitMinor;
+  if (card.cashflowMinor !== undefined) return card.cashflowMinor;
+  const band = (
+    value: (r: NonNullable<OpportunityCard['dice']>[number]['value']) => number | undefined,
+  ) =>
+    avg(
+      (card.dice ?? []).flatMap((entry) => {
+        const v = value(entry.value);
+        return v === undefined ? [] : Array.from({ length: entry.to - entry.from + 1 }, () => v);
+      }),
+    );
+  const cash = band((r) => r.cashflowMinor);
+  if (cash) return cash;
+  const saving = band((r) => r.monthlySavingsMinor);
+  if (saving) return saving;
+  return card.savings?.monthlySavingsMinor ?? 0;
+}
+
+/** What a card costs now (a lot of a share: one unit). */
+export function entryCostMinor(card: OpportunityCard): number {
+  if (card.share) return card.share.unitPriceMinor;
+  return card.costMinor ?? 0;
+}
+
+const isSaving = (card: OpportunityCard) => card.growType !== 'income-growth';
+
+interface Taste {
+  /** How much the card is wanted: yearly return on what it costs, plus a liking by kind. */
+  weight(card: OpportunityCard): number;
+}
+
+/** A policy made of a taste: it takes the best affordable card that its risk tolerance allows. */
+function makePolicy(
+  base: Pick<
+    DreamPolicy,
+    | 'id'
+    | 'name'
+    | 'bufferMonths'
+    | 'priorities'
+    | 'dreamShare'
+    | 'lifeAcceptChance'
+    | 'riskTolerance'
+  >,
+  taste: Taste,
+  extra: {
+    piles: OpportunityPile[];
+    unitsShare?: number;
+    sellProfit?: number;
+    ride?: boolean;
+    takeDreams?: boolean;
+  },
+): DreamPolicy {
+  return {
+    ...base,
+    pile(view, rng) {
+      // the pile the money allows: a big pile only with enough to pay for its cards
+      const options = extra.piles.filter((pile) =>
+        pile === 'seed'
+          ? true
+          : pile === 'sapling'
+            ? view.spendableMinor > 300000
+            : view.spendableMinor > 3000000,
+      );
+      const list = options.length ? options : ['seed' as OpportunityPile];
+      return list[Math.floor(rng() * list.length)];
+    },
+    take(offers, view, held) {
+      let best: { card: OpportunityCard; choice: OpportunityChoice; score: number } | null = null;
+      for (const card of offers) {
+        if (card.riskScore > base.riskTolerance && !isSaving(card)) continue;
+        let choice: OpportunityChoice = {};
+        let cost = entryCostMinor(card);
+        if (card.share) {
+          const room = card.share.maxUnits - (held.get(card.id) ?? 0);
+          const units = Math.max(
+            1,
+            Math.min(
+              room,
+              Math.floor(
+                (view.spendableMinor * (extra.unitsShare ?? 0.5)) / card.share.unitPriceMinor,
+              ),
+            ),
+          );
+          if (room < 1 || units * card.share.unitPriceMinor > view.spendableMinor) continue;
+          choice = { units };
+          cost = units * card.share.unitPriceMinor;
+        } else if (card.stepMinor) {
+          const steps = Math.max(1, Math.min(10, Math.floor(view.spendableMinor / card.stepMinor)));
+          if (steps * card.stepMinor > view.spendableMinor) continue;
+          choice = { steps };
+          cost = steps * card.stepMinor;
+        } else if (cost > view.spendableMinor) {
+          continue;
+        }
+        const score = taste.weight(card) + (cost === 0 ? 5 : 0);
+        if (score > 0 && (!best || score > best.score)) best = { card, choice, score };
+      }
+      return best ? { card: best.card, choice: best.choice } : null;
+    },
+    dream(offers, view, open) {
+      if (!extra.takeDreams || open >= 2) return null;
+      // a dream the player can plausibly fund: the cheapest of the offered
+      const sorted = [...offers].sort((a, b) => a.totalMinor - b.totalMinor);
+      const pick = sorted[0];
+      return pick && pick.totalMinor <= view.monthlyExpensesMinor * 12 ? pick : null;
+    },
+    sellWindow(_view, _holding, index) {
+      return extra.sellProfit !== undefined && index >= 1 + extra.sellProfit;
+    },
+    acceptBuyer(_view, sale) {
+      return sale.netMinor > 0 && sale.grossMinor > 0;
+    },
+    ladder(_view, offer) {
+      if (!extra.ride) return 'skip';
+      // ride while it is cheap to lose, cash out once the stake has multiplied enough
+      if (offer.state === 'riding') return offer.multiplier >= 3 ? 'cash' : 'ride';
+      return 'ride';
+    },
+  };
+}
+
+const roi = (card: OpportunityCard) => {
+  const cost = Math.max(entryCostMinor(card), 100);
+  return (expectedMonthlyMinor(card) * 12) / cost;
+};
+
+const isShare = (card: OpportunityCard, ...tags: string[]) =>
+  !!card.share && tags.includes(card.market?.tag ?? '');
+
+/** The five strategies the Dreamfund deck sketch names, plus a baseline that takes only what is free. */
+export const DREAM_POLICIES: DreamPolicy[] = [
+  makePolicy(
+    {
+      id: 'saver',
+      name: 'Cautious saver',
+      bufferMonths: 3,
+      priorities: ['reserve', 'debt', 'dream', 'invest'],
+      dreamShare: 0.6,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 1,
+    },
+    {
+      weight: (card) =>
+        isSaving(card)
+          ? 10
+          : card.lockedPaydays || card.id === 'S09'
+            ? 6
+            : isShare(card, 'BOND', 'WORLD')
+              ? 3
+              : card.riskScore <= 1
+                ? roi(card) * 20
+                : 0,
+    },
+    { piles: ['seed'], takeDreams: true, unitsShare: 0.3 },
+  ),
+  makePolicy(
+    {
+      id: 'etf',
+      name: 'ETF investor',
+      bufferMonths: 2,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.4,
+      lifeAcceptChance: 0.6,
+      riskTolerance: 2,
+    },
+    {
+      weight: (card) =>
+        isSaving(card)
+          ? 10
+          : isShare(card, 'WORLD', 'EMERG', 'DIVID', 'BOND', 'INSU')
+            ? 8 + roi(card) * 5
+            : card.riskScore <= 1
+              ? 1
+              : 0,
+    },
+    { piles: ['seed', 'sapling'], takeDreams: true, unitsShare: 0.7 },
+  ),
+  makePolicy(
+    {
+      id: 'property',
+      name: 'Property builder',
+      bufferMonths: 2,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.3,
+      lifeAcceptChance: 0.6,
+      riskTolerance: 3,
+    },
+    {
+      weight: (card) =>
+        isSaving(card)
+          ? 10
+          : card.property
+            ? 12 + roi(card) * 30
+            : card.loan && card.riskScore <= 3
+              ? 6
+              : 0,
+    },
+    { piles: ['seed', 'tree'], takeDreams: false },
+  ),
+  makePolicy(
+    {
+      id: 'hustler',
+      name: 'Side hustler',
+      bufferMonths: 2,
+      priorities: ['reserve', 'invest', 'debt', 'dream'],
+      dreamShare: 0.4,
+      lifeAcceptChance: 0.7,
+      riskTolerance: 3,
+    },
+    {
+      weight: (card) =>
+        isSaving(card)
+          ? 10
+          : card.sideHustle || card.loan
+            ? 8 + roi(card) * 10
+            : card.cashflowMinor
+              ? roi(card) * 10
+              : 0,
+    },
+    { piles: ['seed', 'sapling'], takeDreams: true },
+  ),
+  makePolicy(
+    {
+      id: 'gambler',
+      name: 'Gambler',
+      bufferMonths: 1,
+      priorities: ['reserve', 'invest', 'debt', 'dream'],
+      dreamShare: 0.2,
+      lifeAcceptChance: 0.9,
+      riskTolerance: 5,
+    },
+    {
+      weight: (card) =>
+        isSaving(card)
+          ? 6
+          : isShare(card, 'BTC', 'ETH', 'ALTS', 'MOON', 'LITHX', 'TECH') ||
+              card.id === 'S20' ||
+              card.id === 'S17'
+            ? 12
+            : card.riskScore >= 3
+              ? 8
+              : 2,
+    },
+    { piles: ['seed', 'sapling'], ride: true, sellProfit: 0.3, takeDreams: false },
+  ),
+  makePolicy(
+    {
+      id: 'passive',
+      name: 'Free cards only',
+      bufferMonths: 3,
+      priorities: ['reserve', 'debt', 'dream'],
+      dreamShare: 0.7,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 0,
+    },
+    { weight: (card) => (isSaving(card) ? 10 : 0) },
+    { piles: ['seed'], takeDreams: true },
+  ),
+];
+
+export const policyById = (id: string): DreamPolicy => {
+  const found = DREAM_POLICIES.find((policy) => policy.id === id);
+  if (!found) throw new Error(`Unknown policy ${id}`);
+  return found;
+};

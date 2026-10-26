@@ -1,3 +1,4 @@
+import type { Difficulty } from './difficulty';
 import type { GameRules } from './rules';
 import { RULE_PRESETS } from './rules';
 
@@ -41,6 +42,8 @@ export interface CustomRules {
   opportunityOffers: number;
   maxSideHustles: number;
   savingsCardCopies: number;
+  /** The level of the game: the defaults of the decks and the odds. Only Medium is offered until the simulation has set the others. */
+  difficulty: Difficulty;
   /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
   bankInterestPercent: number;
 }
@@ -60,6 +63,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     opportunityOffers: 1,
     maxSideHustles: 2,
     savingsCardCopies: 2,
+    difficulty: 'medium',
   },
   guided: {
     mode: 'guided',
@@ -75,6 +79,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     opportunityOffers: 1,
     maxSideHustles: 2,
     savingsCardCopies: 2,
+    difficulty: 'medium',
   },
   strict: {
     mode: 'strict',
@@ -91,6 +96,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     opportunityOffers: 1,
     maxSideHustles: 2,
     savingsCardCopies: 2,
+    difficulty: 'medium',
   },
 };
 
@@ -124,6 +130,10 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
     opportunityOffers: clamp(raw?.opportunityOffers, 1, 3, base.opportunityOffers),
     maxSideHustles: clamp(raw?.maxSideHustles, 1, 5, base.maxSideHustles),
     savingsCardCopies: clamp(raw?.savingsCardCopies, 1, 3, base.savingsCardCopies),
+    difficulty:
+      raw?.difficulty === 'easy' || raw?.difficulty === 'medium' || raw?.difficulty === 'hard'
+        ? raw.difficulty
+        : base.difficulty,
   };
 }
 

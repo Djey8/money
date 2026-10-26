@@ -32,6 +32,7 @@ describe('the rules of the Custom JFK edition', () => {
       opportunityOffers: 1,
       maxSideHustles: 2,
       savingsCardCopies: 2,
+      difficulty: 'medium',
     });
   });
 

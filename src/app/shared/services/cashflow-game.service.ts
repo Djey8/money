@@ -48,6 +48,8 @@ import {
   withPaymentDue,
   withPaymentSettled,
   DEFAULT_OPPORTUNITY_SETTINGS,
+  difficultySettings,
+  type DifficultySettings,
   drawHarvestCard,
   ladderPayout,
   playHarvestCard,
@@ -1422,6 +1424,7 @@ export class CashflowGameService {
       lang: this.emergencyLang,
       rng: this.rng,
       opportunityCards: this.opportunityCards,
+      difficulty: this.customRules?.difficulty,
     };
   }
 
@@ -1725,8 +1728,16 @@ export class CashflowGameService {
       insurances: activeInsurances(game),
       traits: game.traits ?? [],
       openEmergencies: this.openEmergencyCount,
-      priceFactor: this.currentProfession()?.priceFactor ?? 1,
+      // the level of the game makes emergencies cheaper or dearer, and the deductible of an insurance smaller or bigger
+      priceFactor:
+        (this.currentProfession()?.priceFactor ?? 1) * this.levelSettings.emergencyCostMultiplier,
+      deductibleCapMinor: this.levelSettings.insuranceDeductibleCapMinor,
     };
+  }
+
+  /** The level of the game (Medium until the others are offered) and what it sets. */
+  get levelSettings(): DifficultySettings {
+    return difficultySettings(this.customRules?.difficulty);
   }
 
   /** The card of the Emergency tile the token stands on, with what is picked and rolled and what it costs this player. */
@@ -2425,6 +2436,7 @@ export class CashflowGameService {
       lang: this.emergencyLang,
       date: this.gameDay,
       rng: this.rng,
+      difficulty: this.customRules?.difficulty,
     };
   }
 
@@ -2883,12 +2895,19 @@ export class CashflowGameService {
   private completeOpportunity(card: OpportunityCard, choice: OpportunityChoice): void {
     const lang = this.emergencyLang;
     const books = this.gameBooks();
-    const purchase = buyOpportunity(books, card, choice, rollsFor(card, this.rng), {
-      date: this.gameDay,
-      lang,
-      context: this.opportunityContext(),
-      cards: this.opportunityCards,
-    });
+    const purchase = buyOpportunity(
+      books,
+      card,
+      choice,
+      rollsFor(card, this.rng, this.customRules?.difficulty),
+      {
+        difficulty: this.customRules?.difficulty,
+        date: this.gameDay,
+        lang,
+        context: this.opportunityContext(),
+        cards: this.opportunityCards,
+      },
+    );
     this.applyGameEffects(purchase.effects);
     this.updatePending((pending) => ({
       ...pending,

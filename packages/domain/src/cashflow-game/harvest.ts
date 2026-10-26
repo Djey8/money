@@ -1,4 +1,5 @@
 import type { GameBooks } from './books';
+import type { Difficulty } from './difficulty';
 import { emptyEffects, type GameEffects } from './effects';
 import { emptyEmergencyDeck, type EmergencyDeckState, type EmergencyLang } from './emergency-deck';
 import {
@@ -22,8 +23,6 @@ import type { CashflowGameState } from './types';
  * offer - a window to sell, a buyer, a hype to ride. Every market starts at an index of 1.00; the value of a share is its card price
  * times the index of its market. Pure rules like all the others: books and a die in, `GameEffects` out.
  */
-
-export type Difficulty = 'easy' | 'medium' | 'hard';
 
 /** The trap tickers have no public index; the Harvest cards set them to zero. */
 const NO_INDEX = new Set(['LITHX', 'MOON', 'PREIPO', 'TIMESH']);

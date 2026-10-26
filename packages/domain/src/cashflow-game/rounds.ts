@@ -3,6 +3,7 @@ import { applyInsuranceChanges } from './insurance';
 import { tickCareer } from './career';
 import { tickLife } from './life-books';
 import { tickWorld } from './harvest';
+import type { Difficulty } from './difficulty';
 import type { OpportunityCard } from './opportunity-deck';
 import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
@@ -67,6 +68,8 @@ export interface RoundDeps {
   rng?: Rng;
   /** The Opportunity cards of the game: what the Paydays do to what the player owns of them. */
   opportunityCards?: readonly OpportunityCard[];
+  /** The level of the game: the markets drift by it. */
+  difficulty?: Difficulty;
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -233,7 +236,12 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
       ? tickWorld(
           { state: next, subscriptions: books.subscriptions, growProjects: books.growNotes ?? [] },
           deps.opportunityCards,
-          { date: appendedTransactions[0]?.date ?? today, lang: deps.lang ?? 'en', rng: deps.rng },
+          {
+            date: appendedTransactions[0]?.date ?? today,
+            lang: deps.lang ?? 'en',
+            rng: deps.rng,
+            difficulty: deps.difficulty,
+          },
         )
       : null;
   if (opportunities) {

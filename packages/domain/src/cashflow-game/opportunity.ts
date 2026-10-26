@@ -14,6 +14,7 @@ import {
   type OpportunityPile,
   type OpportunityRoll,
 } from './opportunity-deck';
+import { mortgageDeltaMinor, withLuck, type Difficulty } from './difficulty';
 import { bookOneTime } from './payments-due';
 import { pickOne, rollDie, systemRng, type Rng } from './rng';
 import type { CashflowGameState } from './types';
@@ -278,10 +279,16 @@ export interface OpportunityRolls {
   onBuy?: number;
 }
 
-export function rollsFor(card: OpportunityCard, rng: Rng = systemRng): OpportunityRolls {
+export function rollsFor(
+  card: OpportunityCard,
+  rng: Rng = systemRng,
+  difficulty?: Difficulty,
+): OpportunityRolls {
   const rolls: OpportunityRolls = {};
   if (card.dice) {
-    rolls.outcome = rollDie(rng);
+    // the luck of the level goes on the dice where high is good - never on a trap
+    const roll = rollDie(rng);
+    rolls.outcome = card.trap ? roll : withLuck(roll, difficulty);
     const first = bandFor(card.dice, rolls.outcome);
     if (first.rollAgain) rolls.outcomeAgain = rollDie(rng);
   }
@@ -337,6 +344,7 @@ export function buyOpportunity(
     lang: EmergencyLang;
     context: OpportunityContext;
     cards: readonly OpportunityCard[];
+    difficulty?: Difficulty;
   },
 ): OpportunityPurchase {
   const { date, lang } = options;
@@ -410,6 +418,14 @@ export function buyOpportunity(
   };
 
   let cashflowMinor = outcome.cashflowMinor ?? buyRoll.cashflowMinor ?? card.cashflowMinor ?? 0;
+  // the mortgage costs what the level and the market say, not only what the card was written with
+  if (card.property && !outcome.cashflowMinor && buyRoll.cashflowMinor === undefined) {
+    cashflowMinor -= mortgageDeltaMinor(
+      card.property.mortgageMinor,
+      options.difficulty,
+      state.mortgageRatePp ?? 0,
+    );
+  }
   const holding: OpportunityHolding = {
     cardId: card.id,
     title,
