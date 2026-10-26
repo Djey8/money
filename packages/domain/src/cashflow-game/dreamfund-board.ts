@@ -59,21 +59,21 @@ const mix = (
 /** How many tiles of each kind a map has, by size and difficulty: easy holds more chances, hard more emergencies. */
 export const TILE_MIX: Record<BoardSize, Record<BoardDifficulty, Mix>> = {
   // payday, opportunity, harvest, dream, emergency, life, career - Opportunity is the most common tile; Career is a chance of a
-  // promotion (JFK, 2026-10-25), so a map holds several; the two that cost money (Dream, Emergency) stay a sixth of the map at most
+  // promotion (JFK, 2026-10-26): a few a map, one fewer than first planned, the tile went to Opportunity
   small: {
-    easy: mix(3, 8, 5, 2, 1, 3, 2),
-    medium: mix(3, 7, 4, 2, 2, 3, 3),
-    hard: mix(3, 5, 3, 3, 4, 3, 3),
+    easy: mix(3, 9, 5, 2, 1, 3, 1),
+    medium: mix(3, 8, 4, 2, 2, 3, 2),
+    hard: mix(3, 6, 3, 3, 4, 3, 2),
   },
   medium: {
-    easy: mix(4, 12, 7, 3, 2, 4, 4),
-    medium: mix(4, 10, 6, 3, 3, 5, 5),
-    hard: mix(4, 8, 5, 4, 5, 5, 5),
+    easy: mix(4, 13, 7, 3, 2, 4, 3),
+    medium: mix(4, 11, 6, 3, 3, 5, 4),
+    hard: mix(4, 9, 5, 4, 5, 5, 4),
   },
   large: {
-    easy: mix(6, 15, 10, 4, 3, 6, 4),
-    medium: mix(6, 13, 8, 4, 4, 7, 6),
-    hard: mix(6, 10, 7, 5, 7, 7, 6),
+    easy: mix(6, 16, 10, 4, 3, 6, 3),
+    medium: mix(6, 14, 8, 4, 4, 7, 5),
+    hard: mix(6, 11, 7, 5, 7, 7, 5),
   },
 };
 

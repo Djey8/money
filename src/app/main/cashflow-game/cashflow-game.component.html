@@ -961,15 +961,42 @@
         <div class="cf-card cf-solo" *ngIf="isSolo">
           <!-- What the last Payday paid, small: the big popup has gone, the numbers stay until the next roll. -->
           <div class="cf-latest-slot">
-            <p class="cf-latest" *ngIf="paydayLatest as latest" role="status">
-              <span class="cf-latest-label">💰 {{ 'CashflowGame.solo.latest' | translate }}</span>
+            <!-- A Payday just passed: its numbers light up in the slot above the map, where they cover nothing (JFK, 2026-10-26). -->
+            <p
+              class="cf-latest cf-latest--new"
+              *ngIf="paydayBanner as payday; else latestLine"
+              role="status"
+            >
+              <span class="cf-latest-label">💰</span>
               <b>{{ 'CashflowGame.solo.passedPayday' | translate }}</b>
-              <span class="cf-payday-in">{{ signedCardAmount(latest.incomeMinor) }}</span>
-              <span class="cf-payday-out">{{ signedCardAmount(-latest.expensesMinor) }}</span>
-              <b [class.cf-negative]="latest.netMinor < 0"
-                >= {{ signedCardAmount(latest.netMinor) }}</b
+              <span class="cf-payday-times" *ngIf="payday.count > 1">{{
+                'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
+              }}</span>
+              <span class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</span>
+              <span class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</span>
+              <b [class.cf-negative]="payday.netMinor < 0"
+                >= {{ signedCardAmount(payday.netMinor) }}</b
               >
+              <button
+                type="button"
+                class="cf-latest-close"
+                [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
+                (click)="dismissPayday()"
+              >
+                ✕
+              </button>
             </p>
+            <ng-template #latestLine>
+              <p class="cf-latest" *ngIf="paydayLatest as latest" role="status">
+                <span class="cf-latest-label">💰 {{ 'CashflowGame.solo.latest' | translate }}</span>
+                <b>{{ 'CashflowGame.solo.passedPayday' | translate }}</b>
+                <span class="cf-payday-in">{{ signedCardAmount(latest.incomeMinor) }}</span>
+                <span class="cf-payday-out">{{ signedCardAmount(-latest.expensesMinor) }}</span>
+                <b [class.cf-negative]="latest.netMinor < 0"
+                  >= {{ signedCardAmount(latest.netMinor) }}</b
+                >
+              </p>
+            </ng-template>
           </div>
           <div class="cf-solo-board">
             <div class="cf-ring" [class.cf-ring--map]="!!boardMap">
@@ -988,46 +1015,6 @@
               <!-- The messages (a Payday, a kept MLM card, a Market card that did not apply, what the others do) are laid in the -->
               <!-- middle of the wheel: they cover nothing that matters, and each can be closed with its x (JFK, 2026-10-18). -->
               <div class="cf-ring-overlay">
-                <!-- What a Payday paid: an info box like the one below, goes with the next action or the X (JFK, 2026-10-06). -->
-                <div
-                  class="cf-card cf-notice cf-notice--payday"
-                  *ngIf="paydayBanner as payday"
-                  role="status"
-                >
-                  <div class="cf-payday">
-                    <header class="cf-payday-head">
-                      <span class="cf-payday-coin" aria-hidden="true">💰</span>
-                      <strong>{{ 'CashflowGame.solo.passedPayday' | translate }}</strong>
-                      <span class="cf-payday-times" *ngIf="payday.count > 1">{{
-                        'CashflowGame.solo.paydayTimes' | translate: { count: payday.count }
-                      }}</span>
-                    </header>
-                    <div class="cf-payday-tiles">
-                      <span class="cf-payday-tile">
-                        <small>{{ 'CashflowGame.solo.paydayIncome' | translate }}</small>
-                        <b class="cf-payday-in">{{ signedCardAmount(payday.incomeMinor) }}</b>
-                      </span>
-                      <span class="cf-payday-tile">
-                        <small>{{ 'CashflowGame.solo.sumExpenses' | translate }}</small>
-                        <b class="cf-payday-out">{{ signedCardAmount(-payday.expensesMinor) }}</b>
-                      </span>
-                      <span class="cf-payday-tile cf-payday-tile--net">
-                        <small>{{ 'CashflowGame.monthlyCashflow' | translate }}</small>
-                        <b [class.cf-negative]="payday.netMinor < 0">{{
-                          signedCardAmount(payday.netMinor)
-                        }}</b>
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="cf-friend-sale-close"
-                    [attr.aria-label]="'CashflowGame.cardDismiss' | translate"
-                    (click)="dismissPayday()"
-                  >
-                    ✕
-                  </button>
-                </div>
                 <!-- The bonus roll of a kept Multi-Level-Marketing card: same game turn as the Payday above, so both show. -->
                 <div
                   class="cf-card cf-notice cf-notice--mlm"

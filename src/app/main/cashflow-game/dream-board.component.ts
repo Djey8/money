@@ -64,8 +64,8 @@ const MARGIN = 70;
 /** The pad the tokens wait on before the first roll: above the map, in the middle. */
 const START_HEIGHT = 84;
 const START_GAP = 24;
-/** A token stands at the corner of its tile, so the tile's picture stays in view. */
-const TOKEN_CORNER = TILE / 2 - 4;
+/** How far from the middle of its tile a token stands: past the edge of the tile, with room for the token. */
+const TOKEN_DISTANCE = TILE / 2 + 26;
 /** What the header, the start of the page and the roll bar take of the height of the screen. */
 const HEIGHT_TAKEN = 400;
 
@@ -182,8 +182,8 @@ const HEIGHT_TAKEN = 400;
         [style.stroke]="color(here.kind)"
       />
       <g class="db-token" [style.transform]="tokenTransform">
-        <circle r="15" class="db-token-body" />
-        <circle r="6" class="db-token-dot" />
+        <circle r="21" class="db-token-body" />
+        <circle r="8" class="db-token-dot" />
       </g>
     </svg>
   `,
@@ -323,8 +323,11 @@ export class DreamBoardComponent {
     const minY = this.atStart ? -START_GAP - START_HEIGHT - 8 : 0;
     const maxX = width + 2 * MARGIN;
     const maxY = height + 2 * MARGIN;
+    // a token stands inside the map, next to its tile, the way tokens do at a table
+    const spots = tokenSpots(tiles);
     const value: Layout = {
       tiles,
+      spots,
       start,
       startWidth,
       viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`,
@@ -345,8 +348,8 @@ export class DreamBoardComponent {
       const at = this.layout.start;
       return `translate(${at.x}px, ${at.y + 8}px)`;
     }
-    const at = this.layout.tiles[this.position];
-    return `translate(${at.x + TOKEN_CORNER}px, ${at.y + TOKEN_CORNER}px)`;
+    const at = this.layout.spots[this.position] ?? this.layout.tiles[this.position];
+    return `translate(${at.x}px, ${at.y}px)`;
   }
 
   get ariaLabel(): string {
@@ -375,10 +378,54 @@ export class DreamBoardComponent {
 
 interface Layout {
   tiles: DrawnTile[];
+  /** Where the token stands when it is on a tile: inside the map, beside it. */
+  spots: { x: number; y: number }[];
   start: { x: number; y: number };
   startWidth: number;
   viewBox: string;
   trackPoints: string;
   /** Width over height of the picture. */
   ratio: number;
+}
+
+/**
+ * Where a token stands next to each tile: on the inner side of the track, so it lies inside the map and covers no tile. Inner is the
+ * side of the middle of the whole map - or, for a tile close to that middle (the crossing of an infinity), the middle of the loop
+ * the tile is on, found from the tiles around it on the track.
+ */
+export function tokenSpots(tiles: { x: number; y: number }[]): { x: number; y: number }[] {
+  const n = tiles.length;
+  const centre = {
+    x: tiles.reduce((sum, t) => sum + t.x, 0) / n,
+    y: tiles.reduce((sum, t) => sum + t.y, 0) / n,
+  };
+  const around = Math.max(3, Math.round(n / 5));
+  return tiles.map((tile, i) => {
+    let target = centre;
+    if (Math.hypot(centre.x - tile.x, centre.y - tile.y) < SPACING * 1.6) {
+      // near the middle: the loop this tile belongs to
+      let sx = 0;
+      let sy = 0;
+      for (let k = -around; k <= around; k += 1) {
+        const t = tiles[(i + k + n) % n];
+        sx += t.x;
+        sy += t.y;
+      }
+      target = { x: sx / (2 * around + 1), y: sy / (2 * around + 1) };
+    }
+    const dx = target.x - tile.x;
+    const dy = target.y - tile.y;
+    const length = Math.hypot(dx, dy) || 1;
+    const spot = (sign: number) => ({
+      x: tile.x + sign * (dx / length) * TOKEN_DISTANCE,
+      y: tile.y + sign * (dy / length) * TOKEN_DISTANCE,
+    });
+    // clear of the other tiles: where the map is narrow the inner side can be crowded, then the token stands outside
+    const room = (at: { x: number; y: number }) =>
+      Math.min(
+        ...tiles.filter((_, other) => other !== i).map((t) => Math.hypot(at.x - t.x, at.y - t.y)),
+      );
+    const inner = spot(1);
+    return room(inner) >= TILE / 2 + 4 ? inner : room(spot(-1)) > room(inner) ? spot(-1) : inner;
+  });
 }

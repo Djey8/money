@@ -35,7 +35,7 @@ describe('the Dreamfund maps', () => {
           (k) => k !== 'opportunity',
         );
         for (const kind of others) expect(mix.opportunity).toBeGreaterThan(mix[kind]);
-        expect(mix.career).toBeGreaterThanOrEqual(2);
+        expect(mix.career).toBeGreaterThanOrEqual(1);
         expect(mix.harvest).toBeGreaterThanOrEqual(3);
         expect(mix.life).toBeGreaterThanOrEqual(3);
         if (difficulty !== 'hard') {

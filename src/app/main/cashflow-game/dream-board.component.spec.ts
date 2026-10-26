@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { buildDreamfundBoard, type BoardShape } from '@money/domain';
-import { DreamBoardComponent } from './dream-board.component';
+import { DreamBoardComponent, tokenSpots } from './dream-board.component';
 
 describe('DreamBoardComponent', () => {
   let fixture: ComponentFixture<DreamBoardComponent>;
@@ -49,11 +49,25 @@ describe('DreamBoardComponent', () => {
     expect(moved.querySelector('.db-here')).not.toBeNull();
     const token = moved.querySelector('.db-token') as HTMLElement;
     const tile = moved.querySelectorAll('.db-tile rect')[5] as SVGRectElement;
-    // the token stands at the corner of its tile, so the picture of the tile stays in view
-    const right = Number(tile.getAttribute('x')) + Number(tile.getAttribute('width'));
-    const x = Number(/translate\(([\d.]+)px/.exec(token.style.transform)![1]);
-    expect(x).toBeGreaterThan(right - 12);
-    expect(x).toBeLessThan(right + 12);
+    // the token stands inside the map, beside its tile: close to it, not on it, and nearer the middle of the map than the tile is
+    const cx = Number(tile.getAttribute('x')) + Number(tile.getAttribute('width')) / 2;
+    const cy = Number(tile.getAttribute('y')) + Number(tile.getAttribute('height')) / 2;
+    const [tx, ty] = /translate\(([\d.-]+)px, ([\d.-]+)px\)/
+      .exec(token.style.transform)!
+      .slice(1)
+      .map(Number);
+    const distance = Math.hypot(tx - cx, ty - cy);
+    expect(distance).toBeGreaterThan(40);
+    expect(distance).toBeLessThan(72);
+    const all = Array.from(moved.querySelectorAll('.db-tile rect')).map((r) => ({
+      x: Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2,
+      y: Number(r.getAttribute('y')) + Number(r.getAttribute('height')) / 2,
+    }));
+    const mid = {
+      x: all.reduce((sum, t) => sum + t.x, 0) / all.length,
+      y: all.reduce((sum, t) => sum + t.y, 0) / all.length,
+    };
+    expect(Math.hypot(tx - mid.x, ty - mid.y)).toBeLessThan(Math.hypot(cx - mid.x, cy - mid.y));
   });
 
   it('is always drawn as in the choice of maps: an infinity lies down on any screen', () => {
@@ -100,6 +114,24 @@ describe('DreamBoardComponent', () => {
           expect(y + size).toBeLessThanOrEqual(minY + h + 0.01);
         }
       }
+    }
+  });
+
+  it('on every map the token beside a tile covers no other tile', () => {
+    for (const shape of ['ring', 'infinity', 'rectangle', 'square', 'mountain'] as BoardShape[]) {
+      const element = render(shape, 3);
+      const tiles = Array.from(element.querySelectorAll('.db-tile rect')).map((r) => ({
+        x: Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2,
+        y: Number(r.getAttribute('y')) + Number(r.getAttribute('height')) / 2,
+      }));
+      const spots = tokenSpots(tiles);
+      spots.forEach((spot, index) => {
+        tiles.forEach((tile, other) => {
+          if (other === index) return;
+          // the token (radius 15 and its rim) is clear of the other tiles (half a tile of 76)
+          expect(Math.hypot(spot.x - tile.x, spot.y - tile.y)).toBeGreaterThan(38);
+        });
+      });
     }
   });
 });
