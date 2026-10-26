@@ -927,6 +927,17 @@ export class CashflowGameService {
         });
       }
     }
+    // the facts of the payment, in the project it is for: what it cost, what there was in cash, what had to be borrowed
+    if (purchase && purchase.costMinor > 0) {
+      const target = purchase.title || category;
+      const cashBefore = toMinorUnits(this.cash) - borrowedMinor;
+      const after = cashBefore + borrowedMinor - purchase.costMinor;
+      this.noteProject(
+        target,
+        `Paid ${this.noteMoney(purchase.costMinor)}. Cash before: ${this.noteMoney(Math.max(0, cashBefore))}${borrowedMinor > 0 ? `, so ${this.noteMoney(borrowedMinor)} was borrowed from the Bank` : ', no loan needed'}; cash after: ${this.noteMoney(Math.max(0, after))}.`,
+        `${this.noteMoney(purchase.costMinor)} bezahlt. Bargeld vorher: ${this.noteMoney(Math.max(0, cashBefore))}${borrowedMinor > 0 ? `, deshalb wurden ${this.noteMoney(borrowedMinor)} bei der Bank geliehen` : ', kein Kredit nötig'}; Bargeld danach: ${this.noteMoney(Math.max(0, after))}.`,
+      );
+    }
     this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
@@ -954,6 +965,32 @@ export class CashflowGameService {
     } catch {
       // nothing open to settle
     }
+  }
+
+  /**
+   * A note in a project of the game - a Grow, Fire or Smile project, found by its title - with what happened and the numbers of it
+   * (JFK, 2026-10-26: "when something happens or was diced or decided I want to have a note in that project").
+   */
+  private noteProject(title: string, en: string, de: string): void {
+    const state = AppStateService.instance;
+    const wanted = title.replace(/^@/, '').trim().toLowerCase();
+    if (!wanted) return;
+    const project = [
+      ...state.allGrowProjects,
+      ...state.allFireEmergencies,
+      ...state.allSmileProjects,
+    ].find((candidate) => candidate.title.toLowerCase() === wanted);
+    if (!project) return;
+    const note = {
+      text: this.emergencyLang === 'de' ? de : en,
+      createdAt: new Date().toISOString(),
+    };
+    project.notes = [...(project.notes ?? []), note] as typeof project.notes;
+  }
+
+  /** A sum in the game's money for a note, in the player's number format. */
+  private noteMoney(minor: number): string {
+    return this.amountText(fromMinorUnits(minor));
   }
 
   /** The toast text for an automatic loan, in the current language. */
@@ -2745,6 +2782,11 @@ export class CashflowGameService {
       return;
     }
     this.applyGameEffects(effects);
+    this.noteProject(
+      holdingTitle,
+      `Cash after the sale: ${this.noteMoney(toMinorUnits(this.cash))}.`,
+      `Bargeld nach dem Verkauf: ${this.noteMoney(toMinorUnits(this.cash))}.`,
+    );
     if (after) {
       this.updatePending((pending) => ({
         ...pending,
@@ -2770,6 +2812,12 @@ export class CashflowGameService {
     }
     this.pushUndoSnapshot({ kind: 'diceWon', detail: holdingTitle });
     const step = rideLadder(offer, this.rng);
+    const won = step.roll >= offer.successFrom;
+    this.noteProject(
+      holdingTitle,
+      `Hype: rolled ${step.roll} (${offer.successFrom} or more wins a step) - ${won ? `a step won, the stake is now ${this.noteMoney(Math.round(step.offer.stakeMinor * step.offer.multiplier))} (x${step.offer.multiplier})` : `the hype collapsed, ${step.offer.multiplier > 0 ? `${this.noteMoney(Math.round(step.offer.stakeMinor * step.offer.multiplier))} is left of the stake of ${this.noteMoney(step.offer.stakeMinor)}` : `nothing is left of the stake of ${this.noteMoney(step.offer.stakeMinor)}`}`}.`,
+      `Hype: gewürfelt ${step.roll} (ab ${offer.successFrom} gewinnt eine Stufe) - ${won ? `eine Stufe gewonnen, der Einsatz ist jetzt ${this.noteMoney(Math.round(step.offer.stakeMinor * step.offer.multiplier))} wert (x${step.offer.multiplier})` : `der Hype ist zusammengebrochen, ${step.offer.multiplier > 0 ? `von ${this.noteMoney(step.offer.stakeMinor)} Einsatz bleiben ${this.noteMoney(Math.round(step.offer.stakeMinor * step.offer.multiplier))}` : `von ${this.noteMoney(step.offer.stakeMinor)} Einsatz bleibt nichts`}`}.`,
+    );
     this.updatePending((pending) => ({
       ...pending,
       harvest: {
@@ -3556,6 +3604,11 @@ export class CashflowGameService {
       (candidate) => candidate.title === target.projectTitle,
     );
     const day = this.gameDay;
+    const targetOf = () =>
+      (project?.buckets ?? []).reduce((sum, bucket) => sum + Number(bucket.target), 0);
+    const savedOf = () =>
+      (project?.buckets ?? []).reduce((sum, bucket) => sum + Number(bucket.amount), 0);
+    const targetBefore = targetOf();
     const say = (en: string, de: string) => ({ en, de });
     let applied: { en: string; de: string } | undefined;
     const money = (amount: number) => `${amount.toFixed(2)} ${state.currency}`;
@@ -3664,7 +3717,17 @@ export class CashflowGameService {
       callbacks.onError('This moment cannot be applied now.');
       return;
     }
-    if (project) project.updatedAt = new Date().toISOString();
+    if (project) {
+      project.updatedAt = new Date().toISOString();
+      const titleOfMoment = DREAM_MOMENTS.find((entry) => entry.id === moment)?.title;
+      const name = titleOfMoment ? titleOfMoment[lang] : moment;
+      const money2 = (value: number) => this.amountText(value);
+      this.noteProject(
+        project.title,
+        `${name}: ${applied.en} Total cost ${money2(targetBefore)} before, ${money2(targetOf())} now; saved so far ${money2(savedOf())}.`,
+        `${name}: ${applied.de} Gesamtkosten vorher ${money2(targetBefore)}, jetzt ${money2(targetOf())}; bisher gespart ${money2(savedOf())}.`,
+      );
+    }
     this.updatePending((pending) => ({
       ...pending,
       played: true,

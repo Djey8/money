@@ -81,6 +81,13 @@ services:
       - '8080:8080'
     volumes:
       - certs:/etc/nginx/certs:ro
+    # nginx listens on IPv4 only and `localhost` resolves to ::1 first in the image's own check, which then never turns healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/ || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     depends_on:
       backend:
         condition: service_started

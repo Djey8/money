@@ -185,6 +185,14 @@ Erschaffen und Geben. Ein Traum macht ein **Smile-Projekt** mit Töpfen, die du 
 offen haben. **Traum-Momente** (ein Frühbucher-Angebot, ein Geschenk der Familie, ein Last-Minute-Angebot, ein Reisepartner,
 Inspiration, Geld für ein Nebenprojekt, Punkte für Geduld, ein Traumtausch) helfen einem Traum weiter.
 
+## Die Notizen eines Projekts
+
+Alles, was mit einem Grow-, Fire- oder Smile-Projekt geschieht, steht mit den Zahlen in seinen **Notizen**: was eine Zahlung gekostet hat,
+wie viel Bargeld du hattest und wie viel die Bank dir dafür geliehen hat; was ein Käufer bietet (der Preis, die Verkaufskosten, was noch
+geschuldet ist, was du bekämst) oder was ein Marktfenster je Anteil zahlt; jeder Schritt eines Hypes mit dem gewürfelten Wert und dem Wert
+des Einsatzes; ein Verkauf mit dem Ausgezahlten und dem Bargeld danach; ein Traum-Moment mit den Kosten vorher und nachher und dem, was du
+bisher gespart hast.
+
 ## Was auf deinem Konto läuft
 
 Ein Streifen über der Karte zeigt **jeden Effekt, der gerade auf dein Geld wirkt**, und **wie viele Zahltage noch bleiben**: Kosten, die

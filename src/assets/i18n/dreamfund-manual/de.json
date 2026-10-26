@@ -1,7 +1,7 @@
 {
   "title": "Traumtopf (Dreamfund) - das Spiel, die Karten und die Zahlen",
   "subtitle": "Die Karte, jede Kartenart, die Ziele und wie man gewinnt - mit den Statistiken der Charaktere.",
-  "order": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"],
+  "order": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"],
   "sections": {
     "s1": {
       "nav": "Überblick",
@@ -258,7 +258,7 @@
         },
         {
           "type": "p",
-          "text": "**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der *beste* Ausstieg, aber selten - auf etwa hundert Würfe kommt eine Landung, die von einem bestimmten Besitz spricht. Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer Münze, einer Sammlung oder einer Immobilie (die Hypothek geht vom Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt). Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen."
+          "text": "**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der beste Ausstieg, aber selten - auf etwa hundert Würfe kommt eine Landung, die von einem bestimmten Besitz spricht. Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer Münze, einer Sammlung oder einer Immobilie (die Hypothek geht vom Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt). Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen."
         },
         {
           "type": "h3",
@@ -309,6 +309,16 @@
       ]
     },
     "s7": {
+      "nav": "Die Notizen eines Projekts",
+      "title": "Die Notizen eines Projekts",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Alles, was mit einem Grow-, Fire- oder Smile-Projekt geschieht, steht mit den Zahlen in seinen **Notizen**: was eine Zahlung gekostet hat, wie viel Bargeld du hattest und wie viel die Bank dir dafür geliehen hat; was ein Käufer bietet (der Preis, die Verkaufskosten, was noch geschuldet ist, was du bekämst) oder was ein Marktfenster je Anteil zahlt; jeder Schritt eines Hypes mit dem gewürfelten Wert und dem Wert des Einsatzes; ein Verkauf mit dem Ausgezahlten und dem Bargeld danach; ein Traum-Moment mit den Kosten vorher und nachher und dem, was du bisher gespart hast."
+        }
+      ]
+    },
+    "s8": {
       "nav": "Was auf deinem Konto läuft",
       "title": "Was auf deinem Konto läuft",
       "blocks": [
@@ -318,7 +328,7 @@
         }
       ]
     },
-    "s8": {
+    "s9": {
       "nav": "Die Ziele und wie man gewinnt",
       "title": "Die Ziele und wie man gewinnt",
       "blocks": [
@@ -355,7 +365,7 @@
         }
       ]
     },
-    "s9": {
+    "s10": {
       "nav": "Regeln und Einstellungen",
       "title": "Regeln und Einstellungen",
       "blocks": [
@@ -387,7 +397,7 @@
         }
       ]
     },
-    "s10": {
+    "s11": {
       "nav": "Wege zum Sieg",
       "title": "Wege zum Sieg",
       "blocks": [
@@ -413,7 +423,7 @@
         }
       ]
     },
-    "s11": {
+    "s12": {
       "nav": "Die Statistiken der Charaktere",
       "title": "Die Statistiken der Charaktere",
       "blocks": [

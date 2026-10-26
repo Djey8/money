@@ -284,16 +284,24 @@ export function playHarvestCard(
       return held ? [[holding.title, valueOf(held, holding, state)] as const] : [];
     }),
   );
+  const noteLists = new Map<string, { text: string; createdAt: string }[]>();
   const note = (title: string, line: string) => {
     noted.add(title);
-    effects.growUpdates.push({
-      title,
-      updatedAt: `${date}T00:00:00.000Z`,
-      notes: [
-        ...(books.growProjects.find((project) => project.title === title)?.notes ?? []),
-        { text: line, createdAt: `${date}T00:00:00.000Z` },
-      ],
-    });
+    const stamp = `${date}T00:00:00.000Z`;
+    // every note of this card for one project goes into the one update, after the notes the project already has
+    const list = [
+      ...(noteLists.get(title) ??
+        books.growProjects.find((project) => project.title === title)?.notes ??
+        []),
+      { text: line, createdAt: stamp },
+    ];
+    noteLists.set(title, list);
+    const existing = effects.growUpdates.find(
+      (update) =>
+        update.title === title && update.notes !== undefined && update.updatedAt === stamp,
+    );
+    if (existing) existing.notes = list;
+    else effects.growUpdates.push({ title, updatedAt: stamp, notes: list });
   };
   const setLines = () => {
     for (const holding of live()) {
@@ -624,6 +632,39 @@ export function playHarvestCard(
   for (const sale of pending.sales) touched.add(sale.holding);
   for (const ladder of pending.ladders) touched.add(ladder.holding);
   pending.affected = [...touched];
+  // the offers in numbers, in the notes of what they are about (JFK, 2026-10-26)
+  const fmt = (minor: number) => round2(minor / 100).toLocaleString(lang === 'de' ? 'de-DE' : 'en');
+  for (const sale of pending.sales) {
+    note(
+      sale.holding,
+      text(
+        `${card.title.en}: a buyer offers ${fmt(sale.grossMinor)}${sale.costsMinor ? `, less ${fmt(sale.costsMinor)} costs of the sale` : ''}${sale.owedMinor ? `, less ${fmt(sale.owedMinor)} still owed (loan or mortgage)` : ''} - you would receive ${fmt(sale.netMinor)}${sale.units ? ` for ${sale.units} units` : ''}. ${sale.label}.`,
+        `${card.title.de}: Ein Käufer bietet ${fmt(sale.grossMinor)}${sale.costsMinor ? `, abzüglich ${fmt(sale.costsMinor)} Verkaufskosten` : ''}${sale.owedMinor ? `, abzüglich ${fmt(sale.owedMinor)} Restschuld (Kredit oder Hypothek)` : ''} - du bekämst ${fmt(sale.netMinor)}${sale.units ? ` für ${sale.units} Anteile` : ''}. ${sale.label}.`,
+        lang,
+      ),
+    );
+  }
+  for (const entry of windowSaleList(state, context.cards, pending.window, lang)) {
+    note(
+      entry.holding,
+      text(
+        `${card.title.en}: the market is open for selling - ${fmt(entry.unitMinor)} ${entry.isShare ? 'a unit' : 'for it'}${entry.isShare ? `, ${entry.units} units = ${fmt(entry.unitMinor * entry.units)}` : ''}.`,
+        `${card.title.de}: Der Markt ist zum Verkaufen offen - ${fmt(entry.unitMinor)} ${entry.isShare ? 'je Anteil' : 'dafür'}${entry.isShare ? `, ${entry.units} Anteile = ${fmt(entry.unitMinor * entry.units)}` : ''}.`,
+        lang,
+      ),
+    );
+  }
+  for (const ladder of pending.ladders) {
+    note(
+      ladder.holding,
+      text(
+        `${card.title.en}: a hype - your stake is worth ${fmt(ladder.stakeMinor)}; a roll of ${ladder.successFrom} or more multiplies it by ${ladder.step} (up to ${ladder.maxSteps} steps), a lower roll leaves ${ladder.fail > 0 ? `${ladder.fail} times` : 'nothing'} of it.`,
+        `${card.title.de}: Ein Hype - dein Einsatz ist ${fmt(ladder.stakeMinor)} wert; bei einer ${ladder.successFrom} oder mehr wird er mit ${ladder.step} multipliziert (bis zu ${ladder.maxSteps} Stufen), bei weniger bleibt ${ladder.fail > 0 ? `das ${ladder.fail}-Fache` : 'nichts'} davon.`,
+        lang,
+      ),
+    );
+  }
+  pending.affected = [...new Set([...(pending.affected ?? []), ...noted])];
   // what the card offers is also what Grow's Sell works with: a buyer's price for a property, a price for every share in a window
   const offers = [
     ...windowSaleList(state, context.cards, pending.window, lang).map((entry) => ({
@@ -1130,7 +1171,10 @@ export function sellHolding(
       notes: [
         ...(books.growProjects.find((project) => project.title === holdingTitle)?.notes ?? []),
         {
-          text: `Sold for ${round2(sale.grossMinor / 100)}${sale.owedMinor ? `, ${round2(sale.owedMinor / 100)} repaid` : ''}.`,
+          text:
+            context.lang === 'de'
+              ? `Verkauft für ${round2(sale.grossMinor / 100).toLocaleString('de-DE')}${sale.costsMinor ? `, Verkaufskosten ${round2(sale.costsMinor / 100).toLocaleString('de-DE')}` : ''}${sale.owedMinor ? `, Restschuld ${round2(sale.owedMinor / 100).toLocaleString('de-DE')} getilgt` : ''}${sale.units ? ` (${sale.units} Anteile)` : ''}: ausgezahlt ${round2((sale.grossMinor - sale.costsMinor - sale.owedMinor) / 100).toLocaleString('de-DE')}.`
+              : `Sold for ${round2(sale.grossMinor / 100).toLocaleString('en')}${sale.costsMinor ? `, costs of the sale ${round2(sale.costsMinor / 100).toLocaleString('en')}` : ''}${sale.owedMinor ? `, ${round2(sale.owedMinor / 100).toLocaleString('en')} still owed, repaid` : ''}${sale.units ? ` (${sale.units} units)` : ''}: paid out ${round2((sale.grossMinor - sale.costsMinor - sale.owedMinor) / 100).toLocaleString('en')}.`,
           createdAt: at,
         },
       ],

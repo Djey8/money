@@ -1,7 +1,7 @@
 {
   "title": "Dreamfund (Traumtopf) - the game, the cards and the numbers",
   "subtitle": "The map, every card type, the goals and how to win - with the statistics of the characters.",
-  "order": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"],
+  "order": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"],
   "sections": {
     "s1": {
       "nav": "Overview",
@@ -304,6 +304,16 @@
       ]
     },
     "s7": {
+      "nav": "The notes of a project",
+      "title": "The notes of a project",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Whatever happens to a Grow, Fire or Smile project is written into its **notes**, with the numbers: what a payment cost, how much cash you had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far."
+        }
+      ]
+    },
+    "s8": {
       "nav": "What is running on your account",
       "title": "What is running on your account",
       "blocks": [
@@ -313,7 +323,7 @@
         }
       ]
     },
-    "s8": {
+    "s9": {
       "nav": "The goals and how a game is won",
       "title": "The goals and how a game is won",
       "blocks": [
@@ -350,7 +360,7 @@
         }
       ]
     },
-    "s9": {
+    "s10": {
       "nav": "Rules and settings",
       "title": "Rules and settings",
       "blocks": [
@@ -382,7 +392,7 @@
         }
       ]
     },
-    "s10": {
+    "s11": {
       "nav": "Ways to win",
       "title": "Ways to win",
       "blocks": [
@@ -408,7 +418,7 @@
         }
       ]
     },
-    "s11": {
+    "s12": {
       "nav": "The statistics of the characters",
       "title": "The statistics of the characters",
       "blocks": [

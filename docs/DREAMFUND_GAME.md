@@ -176,6 +176,13 @@ creating and giving. Taking a dream makes a **Smile project** with buckets you f
 **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money,
 points for patience, a dream swap) help a dream along.
 
+## The notes of a project
+
+Whatever happens to a Grow, Fire or Smile project is written into its **notes**, with the numbers: what a payment cost, how much cash you
+had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would
+receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what
+was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far.
+
 ## What is running on your account
 
 A strip above the map shows **every effect that is working on your money right now** and **how many Paydays are left**: costs that run

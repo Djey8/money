@@ -219,6 +219,9 @@ describe('CashflowGameService: life, career and dreams', () => {
     service.beforeGrowTrade('Buy Share WORLD 40 x 100;', 0, undefined, '@WORLD', 4000);
     const holding = state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!;
     expect(holding.units).toBe(40);
+    // the facts of the payment are in the project: what it cost, what there was in cash, what was borrowed
+    const notes = state().allGrowProjects.find((project) => project.title === 'WORLD')!.notes;
+    expect(notes.some((note) => /^Paid .*Cash before/.test(note.text))).toBe(true);
     // 40 units x 1.95 a month (the dividends are tuned up for the balance)
     expect(
       state().allSubscriptions.find((sub) => sub.title === 'WORLD Cashflow')?.amount,
@@ -306,6 +309,11 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(service.sellHeldFromOffer('WORLD')).toEqual({ sold: true });
     expect(service.cash).toBeGreaterThan(cash);
     expect(state().cashflowGame.holdings!.find((h) => h.title === 'WORLD')?.ended).toBe(true);
+    expect(
+      state()
+        .allGrowProjects.find((project) => project.title === 'WORLD')!
+        .notes.some((note) => note.text.startsWith('Cash after the sale')),
+    ).toBe(true);
     expect(service.sellHeldFromOffer('NOTHING')).toBeNull();
 
     // bought again, no card offers a price: the market pays its price less a discount - there is always a way out
