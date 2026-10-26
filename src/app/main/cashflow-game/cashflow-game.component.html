@@ -2768,16 +2768,21 @@
 <!-- the traits of the character: chips, and a small card for the one that is open -->
 <ng-template #traitsBlock>
   <div class="cf-traits" *ngIf="traitChips.length > 0">
-    <button
-      *ngFor="let chip of traitChips; trackBy: trackByKey"
-      type="button"
-      class="cf-trait"
-      [class.cf-trait--on]="openTrait === chip.key"
-      [attr.aria-expanded]="openTrait === chip.key"
-      (click)="toggleTrait(chip.key)"
-    >
-      {{ chip.icon }} {{ chip.text }}
-    </button>
+    <!-- one row: it scrolls sideways inside itself where it does not fit, and shows only the symbols on a small screen -->
+    <div class="cf-traits-row">
+      <button
+        *ngFor="let chip of traitChips; trackBy: trackByKey"
+        type="button"
+        class="cf-trait"
+        [class.cf-trait--on]="openTrait === chip.key"
+        [attr.aria-expanded]="openTrait === chip.key"
+        [attr.aria-label]="chip.text"
+        [attr.title]="chip.text"
+        (click)="toggleTrait(chip.key)"
+      >
+        {{ chip.icon }} <span class="cf-trait-text">{{ chip.text }}</span>
+      </button>
+    </div>
     <article class="cf-trait-card" *ngIf="traitInfo as info" role="note">
       <h5>{{ info.icon }} {{ info.title }}: {{ info.value }}</h5>
       <p>{{ info.text }}</p>

@@ -3212,13 +3212,34 @@
 
 /* The traits of the character, under the profession: chips, and a small card for the one that is open (JFK, 2026-10-26). */
 .cf-traits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
   margin: 4px 0 10px;
+  min-width: 0;
+}
+
+.cf-traits-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 480px) {
+  /* a small screen: the symbols only; the card of the one that is tapped tells what it is */
+  .cf-trait-text {
+    display: none;
+  }
+
+  .cf-trait {
+    padding: 4px 9px;
+    font-size: 1rem;
+  }
 }
 
 .cf-trait {
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 4px 10px;
   border: 1px solid var(--color-border, #d0d5dc);
   border-radius: 999px;
@@ -3236,7 +3257,7 @@
 }
 
 .cf-trait-card {
-  flex: 1 1 100%;
+  margin-top: 6px;
   padding: 8px 12px;
   border-left: 4px solid var(--color-primary, #1976d2);
   border-radius: 8px;
@@ -3278,4 +3299,37 @@
 .cf-tile-view {
   border: 3px solid var(--tc, #888);
   background: color-mix(in srgb, var(--tc, #888) 8%, var(--color-surface, #fff));
+}
+
+/*
+ * Nothing in the game is wider than the screen (JFK, 2026-10-26: the first roll made the page scroll sideways). The row of the roll that
+ * is under way (dice, "moving", skip) wraps instead of pushing the wheel wider, and the box of the wheel can shrink to the screen.
+ */
+.cf-solo-board {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cf-solo-controls,
+.cf-solo-roll-row,
+.cf-latest-slot {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.cf-solo-roll-row {
+  flex-wrap: wrap;
+}
+
+.cf-solo-roll-row > .btn--primary {
+  min-width: 0;
+  white-space: normal;
+}
+
+.cf-solo,
+.cf-dashboard {
+  max-width: 100%;
+  overflow-x: clip;
 }

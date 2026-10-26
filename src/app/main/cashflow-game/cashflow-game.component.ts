@@ -1201,22 +1201,43 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   toggleTrait(key: string): void {
     this.openTrait = this.openTrait === key ? null : key;
+    if (key === 'insurance') this.goToInsurance();
+  }
+
+  /** The insurance chip leads to where the insurances are hopped in and out: the profession panel, at its insurance section. */
+  private goToInsurance(): void {
+    const profession = this.currentProfession;
+    if (this.hasActiveGame && profession && !this.viewedProfession) {
+      this.openProfessionCard(profession);
+    }
+    // the panel is drawn by the next check
+    setTimeout(
+      () =>
+        document
+          .querySelector('.cs-group--insurance')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+      80,
+    );
   }
 
   private traitChipsCache: {
     key: string;
-    chips: { key: string; icon: string; text: string }[];
+    chips: { key: string; icon: string; text: string; detail?: string }[];
   } | null = null;
 
   /** The traits of the character as chips: what has happened to them, and their step on the career ladder. */
-  get traitChips(): { key: string; icon: string; text: string }[] {
-    const chips = [...this.lifeBadges];
+  get traitChips(): { key: string; icon: string; text: string; detail?: string }[] {
+    const chips: { key: string; icon: string; text: string; detail?: string }[] = [
+      ...this.lifeBadges,
+    ];
     const career = this.careerBadge;
     if (career) {
       chips.push({
         key: 'career',
-        icon: '💼',
-        text: `${career.title} · ${this.translate.instant('CashflowGame.career.stage')} ${career.stage}`,
+        icon: '🪜',
+        // the chip says "Career" and the step; the title of the stage is for the card that opens
+        text: `${this.translate.instant('CashflowGame.life.badge.career')} ${career.stage}`,
+        detail: `${career.title} · ${this.translate.instant('CashflowGame.career.stage')} ${career.stage}`,
       });
     }
     const key = JSON.stringify(chips);
@@ -1254,7 +1275,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return {
       icon: chip.icon,
       title: t(`CashflowGame.life.badge.${chip.key}`),
-      value: chip.text,
+      value: chip.detail ?? chip.text,
       text: t(`CashflowGame.life.info.${chip.key}`),
       ...(extra ? { extra } : {}),
     };
@@ -1299,7 +1320,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       { key: 'relationship', icon: '❤️', text: v(life.relationship) },
       { key: 'home', icon: '🏠', text: v(life.home) },
       { key: 'location', icon: '📍', text: v(life.location) },
-      { key: 'employment', icon: '💼', text: v(life.employment) },
+      { key: 'employment', icon: '👔', text: v(life.employment) },
     ];
     if (life.kids > 0) badges.splice(1, 0, { key: 'kids', icon: '👶', text: `× ${life.kids}` });
     if (life.pet !== 'none')
