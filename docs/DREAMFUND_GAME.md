@@ -140,6 +140,11 @@ means for you. Every affected Grow project gets a note and a highlight.
 buyer, or on a hype. The offer stays open (for a few rolls, depending on the rules) even after you pressed **Done**: the project's
 **Sell** button in Grow then sells at the card's price.
 
+**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it is rare - about one landing in a hundred rolls
+speaks of a given holding. So the **Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
+15% for a coin, a collection or a property (the mortgage comes off the proceeds), and a business or a hustle for a year of what it pays
+(half of what a buyer on a card pays). Nothing is sold below that, and savings and scams cannot be sold at all.
+
 ### 🔥 Emergency (45 cards)
 
 Something breaks. Cards come in five tiers - **spark, flame, blaze, wildfire, inferno** - from a broken bike grip to a house fire. An

@@ -146,6 +146,12 @@ sie für alle tut und was sie für dich bedeutet. Jedes betroffene Grow-Projekt 
 Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot bleibt offen (je nach Regeln mehrere Würfe lang), auch nachdem du auf
 **Fertig** gedrückt hast: Der **Verkaufen**-Button des Projekts in Grow verkauft dann zum Preis der Karte.
 
+**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber selten - auf etwa hundert Würfe
+kommt eine Landung, die von einem bestimmten Besitz spricht. Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
+Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer Münze, einer Sammlung oder einer Immobilie (die Hypothek geht vom
+Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt).
+Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen.
+
 ### 🔥 Notfall (45 Karten)
 
 Etwas geht kaputt. Die Karten haben fünf Stufen - **Funke, Flamme, Brand, Lauffeuer, Inferno** - vom kaputten Lenkergriff bis zum

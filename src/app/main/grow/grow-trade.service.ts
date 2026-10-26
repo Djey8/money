@@ -118,6 +118,7 @@ export class GrowTradeService {
       : null;
     if (held) {
       if ('message' in held) this.toastService.show(held.message, 'error');
+      else if (held.notice) this.toastService.show(held.notice, 'success');
       else this.toastService.show('CashflowGame.harvest.soldFromGrow', 'success');
       return;
     }

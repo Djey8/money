@@ -175,6 +175,7 @@ import {
   keepSavedSlot,
   marketSaleFor,
   openOfferFor,
+  standingSale,
   nextSmartDate,
   pickCashflowProfession,
   planAutoLoan,
@@ -2646,16 +2647,42 @@ export class CashflowGameService {
    * its market, a buyer - and the game books it itself, at the offer's price. Returns null when the project is not one of those,
    * else how it went: `sold`, or the sentence that says why not.
    */
-  sellHeldFromOffer(title: string): { sold: true } | { sold: false; message: string } | null {
+  sellHeldFromOffer(
+    title: string,
+  ): { sold: true; notice?: string } | { sold: false; message: string } | null {
     const state = AppStateService.instance;
     const game = state.cashflowGame;
     if (!this.customRules) return null;
     const holding = (game.holdings ?? []).find((entry) => !entry.ended && entry.title === title);
     if (!holding) return null;
     const offer = openOfferFor(game, title);
-    if (!offer)
-      return { sold: false, message: this.translate.instant('CashflowGame.harvest.sellOnCard') };
     const card = this.opportunityCards.find((candidate) => candidate.id === holding.cardId);
+    if (!offer) {
+      // no card offers a price: the market takes it at its price less a discount, so there is always a way out
+      const standing = card ? standingSale(card, holding, game) : null;
+      if (!standing) {
+        return { sold: false, message: this.translate.instant('CashflowGame.harvest.noBuyer') };
+      }
+      let problem = '';
+      this.sellNow(
+        title,
+        {
+          grossMinor: standing.grossMinor,
+          costsMinor: 0,
+          owedMinor: standing.owedMinor,
+          units: standing.units,
+        },
+        { onSuccess: () => undefined, onError: (message) => (problem = message) },
+      );
+      return problem
+        ? { sold: false, message: problem }
+        : {
+            sold: true,
+            notice: this.translate.instant('CashflowGame.harvest.soldAtMarket', {
+              percent: standing.discountPercent,
+            }),
+          };
+    }
     const units = card?.share ? holding.units : undefined;
     const perUnit = offer.pricePerShareMinor;
     const grossMinor = perUnit !== undefined && units ? perUnit * units : offer.salePriceMinor;

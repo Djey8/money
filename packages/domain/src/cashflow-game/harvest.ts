@@ -994,6 +994,67 @@ function repriceHoldings(
 
 // ── selling ──
 
+/** What a sale at the market price gives up against the value of the holding, in percent (a Harvest card's window or buyer pays more). */
+export const STANDING_DISCOUNT_PERCENT = { share: 5, asset: 15, property: 15, business: 50 };
+
+export interface StandingSale {
+  grossMinor: number;
+  owedMinor: number;
+  units?: number;
+  discountPercent: number;
+}
+
+/**
+ * The way out that is always there (JFK, 2026-10-26: "I have not been able to sell any asset or share"): a holding can be sold at any
+ * time at the market price less a discount - 5% for a share, 15% for a coin, a collection or a property, a business for 12 months of its
+ * cash flow (half of what a buyer on a card pays). The Harvest cards stay the better way: a window or a buyer pays the full value.
+ * Null for what nobody buys (a saving, a scam).
+ */
+export function standingSale(
+  card: OpportunityCard,
+  holding: OpportunityHolding,
+  state: Pick<CashflowGameState, 'markets'>,
+): StandingSale | null {
+  if (holding.monthlySavingsMinor || card.savings || card.trap || holding.ponziLeft !== undefined)
+    return null;
+  if (card.share) {
+    const units = holding.units ?? 0;
+    if (units <= 0) return null;
+    const gross = Math.round(
+      (unitPriceNow(card, holding, state) * units * (100 - STANDING_DISCOUNT_PERCENT.share)) / 100,
+    );
+    return {
+      grossMinor: gross,
+      owedMinor: 0,
+      units,
+      discountPercent: STANDING_DISCOUNT_PERCENT.share,
+    };
+  }
+  if (card.property) {
+    const gross = Math.round(
+      (valueOf(card, holding, state) * (100 - STANDING_DISCOUNT_PERCENT.property)) / 100,
+    );
+    return {
+      grossMinor: gross,
+      owedMinor: card.property.mortgageMinor,
+      discountPercent: STANDING_DISCOUNT_PERCENT.property,
+    };
+  }
+  if (holding.assetBaseMinor !== undefined) {
+    const gross = Math.round(
+      (valueOf(card, holding, state) * (100 - STANDING_DISCOUNT_PERCENT.asset)) / 100,
+    );
+    return { grossMinor: gross, owedMinor: 0, discountPercent: STANDING_DISCOUNT_PERCENT.asset };
+  }
+  // a business or a hustle: a year of what it pays
+  const gross = Math.max(12 * monthlyOf(holding), Math.round((holding.paidMinor ?? 0) * 0.3));
+  return {
+    grossMinor: gross,
+    owedMinor: card.loan?.loanMinor ?? 0,
+    discountPercent: STANDING_DISCOUNT_PERCENT.business,
+  };
+}
+
 /**
  * What the player sells and gets: a share lot, a property, a business, an asset. The position, its loan and its monthly line end (or
  * shrink, for a part of a lot) and the proceeds - what was paid for it less what is owed on it and the costs - come into the account.

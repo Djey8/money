@@ -1858,6 +1858,8 @@
   "CashflowGame.win.continue": "Keep playing",
   "CashflowGame.win.games": "My games",
   "CashflowGame.harvest.soldFromGrow": "Sold at the price of the market card.",
+  "CashflowGame.harvest.noBuyer": "Nobody buys this.",
+  "CashflowGame.harvest.soldAtMarket": "Sold at the market price, {{percent}}% less than it is worth. A market card with a window or a buyer pays more.",
   "CashflowGame.opportunity.pass": "Take none of them",
   "CashflowGame.opportunity.passed": "You took nothing: the cards go to the bottom of their pile.",
   "CashflowGame.opportunity.payFirst": "Pay it in the Add dialog: then the card becomes a Grow project.",
