@@ -515,7 +515,7 @@ export interface CashflowGameState {
   /** What the player owns of the Opportunity cards (and what is still running of them). */
   holdings?: OpportunityHolding[];
   /** The Grow projects planned from Opportunity cards (the plan becomes a holding when it is bought in Grow). */
-  opportunityPlans?: { title: string; cardId: string; swapOut?: string }[];
+  opportunityPlans?: { title: string; cardId: string; swapOut?: string; turnsLeft?: number }[];
   /** The indices of the markets (1.00 at the start) that the Harvest cards move, and the Harvest pile. */
   markets?: Record<string, number>;
   harvestDeck?: EmergencyDeckState;

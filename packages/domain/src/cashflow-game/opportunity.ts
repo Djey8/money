@@ -15,6 +15,7 @@ import {
   type OpportunityRoll,
 } from './opportunity-deck';
 import { mortgageDeltaMinor, withLuck, type Difficulty } from './difficulty';
+import { marketOfTag } from './harvest-deck';
 import { planDeal, type DealDeps, type DealInput } from './deals';
 import { bookOneTime } from './payments-due';
 import { pickOne, rollDie, systemRng, type Rng } from './rng';
@@ -33,6 +34,8 @@ export interface OpportunitySettings {
   maxSideHustles: number;
   /** Copies of each savings card in its pile. */
   savingsCardCopies: number;
+  /** Turns a planned card stays buyable: 1 = only in the turn it was drawn. */
+  validTurns?: number;
 }
 
 export const DEFAULT_OPPORTUNITY_SETTINGS: OpportunitySettings = {
@@ -653,7 +656,7 @@ export function buyOpportunity(
   }
   if (card.property || card.loan) holding.capitalMinor = paid;
 
-  holding.marketTag = card.market?.tag;
+  holding.marketTag = marketOfTag(card.market?.tag);
   holding.paidMinor = paid;
   holding.assetBaseMinor =
     outcome.assetValueMinor ?? card.assetValueMinor ?? (card.kind === 'asset' ? paid : undefined);
@@ -948,7 +951,7 @@ export function planOpportunity(
   books: GameBooks,
   card: OpportunityCard,
   deps: DealDeps,
-  options: { lang: EmergencyLang; indexPercent?: number; swapOut?: string },
+  options: { lang: EmergencyLang; indexPercent?: number; swapOut?: string; validTurns?: number },
 ): GameEffects {
   const { lang } = options;
   const title = projectTitleOf(card, lang);
@@ -1020,7 +1023,12 @@ export function planOpportunity(
     ...effects.state,
     opportunityPlans: [
       ...(effects.state.opportunityPlans ?? []).filter((plan) => plan.title !== title),
-      { title, cardId: card.id, ...(options.swapOut ? { swapOut: options.swapOut } : {}) },
+      {
+        title,
+        cardId: card.id,
+        turnsLeft: options.validTurns ?? 1,
+        ...(options.swapOut ? { swapOut: options.swapOut } : {}),
+      },
     ],
   };
   return effects;
@@ -1072,5 +1080,45 @@ export function settleHoldingSale(
     }
   }
   effects.state = { ...next, holdings };
+  return effects;
+}
+
+/**
+ * A turn is settled (JFK, 2026-10-26): every planned card has one turn less to be bought. A card whose time is up is a chance missed -
+ * the Grow project is completed (or back to execute when units of it are held) and says so in a note; it cannot be bought any more.
+ * With the default of one turn a card can only be bought in the turn in which it is in hand.
+ */
+export function closeOpportunityPlans(
+  books: Pick<GameBooks, 'state' | 'growProjects'>,
+  lang: EmergencyLang,
+  date: string,
+): GameEffects | null {
+  const plans = books.state.opportunityPlans ?? [];
+  if (plans.length === 0) return null;
+  const effects = emptyEffects(books.state, null);
+  const kept: typeof plans = [];
+  for (const plan of plans) {
+    const left = (plan.turnsLeft ?? 1) - 1;
+    if (left > 0) {
+      kept.push({ ...plan, turnsLeft: left });
+      continue;
+    }
+    const project = books.growProjects.find((candidate) => candidate.title === plan.title);
+    const held = (books.state.holdings ?? []).some(
+      (holding) => holding.title === plan.title && !holding.ended,
+    );
+    const text =
+      lang === 'de'
+        ? 'Chance verpasst: Das Angebot wurde nicht rechtzeitig genutzt und ging an jemand anderen.'
+        : 'Chance missed: the offer was not taken in time and went to somebody else.';
+    effects.growUpdates.push({
+      title: plan.title,
+      phase: held ? 'execute' : 'completed',
+      notes: [...(project?.notes ?? []), note(text, date)],
+      updatedAt: date,
+    });
+  }
+  effects.state = { ...books.state, opportunityPlans: kept };
+  effects.persist.grow = effects.growUpdates.length > 0;
   return effects;
 }

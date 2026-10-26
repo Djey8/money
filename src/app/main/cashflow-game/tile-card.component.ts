@@ -11,11 +11,19 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import type { OpportunityCard, OpportunityChoice, OpportunityPile } from '@money/domain';
+import type {
+  AssetKind,
+  HarvestTopics,
+  OpportunityCard,
+  OpportunityChoice,
+  OpportunityPile,
+} from '@money/domain';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
+  assetKindOf,
   dreamsForMoment,
   fromMinorUnits,
+  keywordsOfCard,
   type DreamMomentId,
   type LifeCard,
   type LifeDecision,
@@ -448,16 +456,67 @@ const ROLL_MS = 1000;
         <ng-container *ngSwitchCase="'harvest'">
           <ng-container *ngIf="harvest as h">
             <ng-container *ngIf="h.card as c; else harvestClosed">
-              <h4 class="tc-title">
-                {{ c.title[lang] }}
-                <small class="tc-tag">{{
+              <header class="tc-card-head">
+                <span class="tc-kind tc-kind--harvest">{{
                   'CashflowGame.harvest.group.' + c.group | translate
-                }}</small>
-              </h4>
-              <p>{{ c.story[lang] }}</p>
-              <ul class="tc-bullets tc-bullets--done" *ngIf="h.told.length">
-                <li *ngFor="let line of h.told; trackBy: trackValue">{{ line }}</li>
+                }}</span>
+                <span
+                  class="tc-involve"
+                  [class.tc-involve--me]="h.involved.length > 0"
+                  *ngIf="h.topics"
+                >
+                  {{
+                    (h.involved.length > 0
+                      ? 'CashflowGame.harvest.touchesYou'
+                      : 'CashflowGame.harvest.notYou'
+                    ) | translate
+                  }}
+                </span>
+              </header>
+              <h4 class="tc-card-title">{{ c.title[lang] }}</h4>
+              <div class="tc-keys" *ngIf="h.topics as topics">
+                <span
+                  class="tc-key"
+                  *ngFor="let key of harvestKeys(topics); trackBy: trackValue"
+                  [class.tc-key--mine]="mineOf(key, h)"
+                >
+                  {{ keywordLabel(key) }}
+                </span>
+              </div>
+              <p class="tc-card-story">{{ c.story[lang] }}</p>
+
+              <!-- what the card does to everybody -->
+              <ul class="tc-effects" *ngIf="h.told.length">
+                <li
+                  class="tc-effect"
+                  *ngFor="let line of h.told; trackBy: trackValue"
+                  [attr.data-tone]="toneOf(line)"
+                >
+                  {{ line }}
+                </li>
               </ul>
+
+              <!-- what it means for what you own -->
+              <section class="tc-mine" *ngIf="h.topics">
+                <h5>{{ 'CashflowGame.harvest.aboutYou' | translate }}</h5>
+                <p class="tc-note" *ngIf="h.involved.length === 0">
+                  {{ 'CashflowGame.harvest.noneOfYours' | translate }}
+                </p>
+                <div class="tc-hold" *ngFor="let own of h.involved; trackBy: trackInvolved">
+                  <span class="tc-kind" [attr.data-kind]="own.kind">{{
+                    'CashflowGame.kind.' + own.kind | translate
+                  }}</span>
+                  <strong>{{ own.label }}</strong>
+                </div>
+                <button
+                  type="button"
+                  class="tc-btn tc-btn--wide"
+                  *ngIf="h.involved.length > 0"
+                  (click)="openGrow.emit(h.involved[0].title)"
+                >
+                  {{ 'CashflowGame.harvest.seeInGrow' | translate }} ›
+                </button>
+              </section>
               <p class="tc-note" *ngIf="c.realWorld">{{ c.realWorld }}</p>
 
               <!-- a window to sell in: what you own in an open market -->
@@ -598,15 +657,43 @@ const ROLL_MS = 1000;
 
             <!-- the cards offered from the pile -->
             <ng-container *ngIf="o.pile && !o.taken && !o.passed">
-              <article class="tc-offer" *ngFor="let offer of o.offers; trackBy: trackOffer">
-                <h4 class="tc-title">
-                  {{ pileIcon(offer.card.pile) }} {{ offer.card.title[lang] }}
-                  <small class="tc-tag">{{ offer.card.category }}</small>
-                </h4>
-                <p>{{ offer.card.story[lang] }}</p>
-                <ul class="tc-lines">
-                  <li *ngFor="let fact of facts(offer.card); trackBy: trackValue">
-                    <span>{{ fact }}</span>
+              <article
+                class="tc-offer tc-offer--card"
+                *ngFor="let offer of o.offers; trackBy: trackOffer"
+                [attr.data-kind]="kindOf(offer.card)"
+              >
+                <header class="tc-card-head">
+                  <span class="tc-kind" [attr.data-kind]="kindOf(offer.card)">{{
+                    kindLabel(offer.card) | translate
+                  }}</span>
+                  <small class="tc-pile-mark">
+                    {{ pileIcon(offer.card.pile) }}
+                    {{ 'CashflowGame.opportunity.pile.' + offer.card.pile | translate }}
+                  </small>
+                </header>
+                <h4 class="tc-card-title">{{ offer.card.title[lang] }}</h4>
+                <div class="tc-keys">
+                  <span
+                    class="tc-key"
+                    *ngFor="let key of keywords(offer.card); trackBy: trackValue"
+                  >
+                    {{ keywordLabel(key) }}
+                  </span>
+                </div>
+                <p class="tc-card-story">{{ offer.card.story[lang] }}</p>
+                <div class="tc-facts">
+                  <div
+                    class="tc-fact"
+                    *ngFor="let fact of keyFacts(offer.card); trackBy: trackFact"
+                    [attr.data-tone]="fact.tone"
+                  >
+                    <span class="tc-fact-label">{{ fact.label | translate }}</span>
+                    <strong class="tc-fact-value">{{ fact.value }}</strong>
+                  </div>
+                </div>
+                <ul class="tc-benefits" *ngIf="moreFacts(offer.card).length">
+                  <li *ngFor="let fact of moreFacts(offer.card); trackBy: trackValue">
+                    {{ fact }}
                   </li>
                 </ul>
                 <p class="tc-note" *ngIf="offer.card.estimate">
@@ -639,7 +726,7 @@ const ROLL_MS = 1000;
                   >
                     {{
                       (offer.card.growType === 'income-growth'
-                        ? 'CashflowGame.opportunity.plan'
+                        ? 'CashflowGame.opportunity.planCard'
                         : quote.costMinor > 0
                           ? 'CashflowGame.opportunity.takeFor'
                           : 'CashflowGame.opportunity.take'
@@ -654,7 +741,7 @@ const ROLL_MS = 1000;
                 [disabled]="busy"
                 (click)="passOpportunity()"
               >
-                {{ 'CashflowGame.opportunity.pass' | translate }}
+                {{ 'CashflowGame.opportunity.decline' | translate }}
               </button>
             </ng-container>
 
@@ -1342,6 +1429,187 @@ const ROLL_MS = 1000;
         text-align: center;
         opacity: 0.75;
       }
+      /* the cards of the Opportunity and Harvest tiles: one look - the kind, the words, the numbers that matter (JFK, 2026-10-26) */
+      .tc-card-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      .tc-kind {
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--tc-kind, #607d8b);
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .tc-kind[data-kind='share'] {
+        --tc-kind: #1e88e5;
+      }
+      .tc-kind[data-kind='investment'] {
+        --tc-kind: #8e44ad;
+      }
+      .tc-kind[data-kind='asset'] {
+        --tc-kind: #00897b;
+      }
+      .tc-kind[data-kind='saving'] {
+        --tc-kind: #2e9e5b;
+      }
+      .tc-kind--harvest {
+        --tc-kind: #c9871c;
+      }
+      .tc-pile-mark {
+        opacity: 0.75;
+        font-weight: 600;
+      }
+      .tc-card-title {
+        margin: 2px 0 6px;
+        font-size: 1.15rem;
+      }
+      .tc-card-story {
+        margin: 6px 0 4px;
+      }
+      .tc-keys {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin: 2px 0 4px;
+      }
+      .tc-key {
+        padding: 1px 8px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: 6px;
+        font-size: 0.74rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.85;
+      }
+      .tc-key--mine {
+        border-color: #d9362b;
+        background: #d9362b;
+        color: #fff;
+        opacity: 1;
+      }
+      .tc-facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        margin: 10px 0 4px;
+        padding-top: 10px;
+        border-top: 1px solid var(--color-border, #ddd);
+      }
+      .tc-fact {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+      }
+      .tc-fact:nth-child(even) {
+        align-items: flex-end;
+        text-align: right;
+      }
+      .tc-fact-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+      .tc-fact-value {
+        font-size: 1.15rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .tc-fact[data-tone='income'] .tc-fact-value {
+        color: var(--color-success, #2e7d32);
+      }
+      .tc-fact[data-tone='cost'] .tc-fact-value {
+        color: var(--color-danger, #c0392b);
+      }
+      .tc-benefits {
+        margin: 6px 0 0;
+        padding-inline-start: 1.1em;
+        font-size: 0.82rem;
+        opacity: 0.85;
+      }
+      .tc-effects {
+        margin: 8px 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 5px;
+      }
+      .tc-effect {
+        padding: 7px 10px;
+        border-inline-start: 5px solid var(--color-border, #999);
+        border-radius: 6px;
+        background: var(--color-surface-alt, #eef1f5);
+        font-weight: 700;
+      }
+      .tc-effect[data-tone='up'] {
+        border-inline-start-color: #2e9e5b;
+        background: #e7f6ea;
+        color: #1b5e20;
+      }
+      .tc-effect[data-tone='down'] {
+        border-inline-start-color: #d9362b;
+        background: #fdeceb;
+        color: #8c1d14;
+      }
+      .tc-involve {
+        padding: 2px 9px;
+        border-radius: 999px;
+        border: 1px solid var(--color-border, #bbb);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      .tc-involve--me {
+        border-color: #d9362b;
+        background: #d9362b;
+        color: #fff;
+        opacity: 1;
+      }
+      .tc-mine {
+        margin: 10px 0 4px;
+        padding: 8px 10px;
+        border: 2px dashed var(--color-border, #ccc);
+        border-radius: var(--radius-md, 8px);
+      }
+      .tc-mine h5 {
+        margin: 0 0 4px;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .tc-hold {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 0;
+      }
+      .tc-offer--card {
+        border-width: 2px;
+        border-left-width: 6px;
+      }
+      .tc-offer--card[data-kind='share'] {
+        border-left-color: #1e88e5;
+      }
+      .tc-offer--card[data-kind='investment'] {
+        border-left-color: #8e44ad;
+      }
+      .tc-offer--card[data-kind='asset'] {
+        border-left-color: #00897b;
+      }
+      .tc-offer--card[data-kind='saving'] {
+        border-left-color: #2e9e5b;
+      }
       .tc-offer {
         margin: 8px 0;
         padding: 10px 12px;
@@ -1742,12 +2010,153 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   take(card: OpportunityCard): void {
     this.busy = true;
-    this.service.takeOpportunity(card.id, this.choiceOf(card), this.callbacks);
+    // a planned card lives in Grow: the project opens there as soon as it is made (JFK, 2026-10-26)
+    this.service.takeOpportunity(card.id, this.choiceOf(card), {
+      onSuccess: () => {
+        this.callbacks.onSuccess();
+        const view = this.opportunity;
+        if (view?.planned && view.projectTitle) this.openGrow.emit(view.projectTitle);
+      },
+      onError: this.callbacks.onError,
+    });
   }
 
   passOpportunity(): void {
     this.busy = true;
     this.service.passOpportunity(this.callbacks);
+  }
+
+  trackFact = (_i: number, fact: { label: string }): string => fact.label;
+  trackInvolved = (_i: number, own: { title: string }): string => own.title;
+
+  /** What the card becomes in Grow, as the word Grow uses: Share, Investment, Asset (or a saving). */
+  kindOf(card: OpportunityCard): AssetKind {
+    return assetKindOf(card);
+  }
+
+  kindLabel(card: OpportunityCard): string {
+    const kind = assetKindOf(card);
+    return kind === 'saving' ? 'CashflowGame.kind.saving' : `CashflowGame.kind.${kind}`;
+  }
+
+  keywords(card: OpportunityCard): string[] {
+    return keywordsOfCard(card);
+  }
+
+  /** The word of a market or group: its translation, or the tag itself when there is none. */
+  keywordLabel(key: string): string {
+    const id = `CashflowGame.keyword.${key}`;
+    const text = this.translate.instant(id);
+    return text === id ? key : text;
+  }
+
+  /** The words a Harvest card names: its markets and groups. */
+  harvestKeys(topics: HarvestTopics): string[] {
+    return topics.allMarkets ? ['ALL', ...topics.targets] : topics.targets;
+  }
+
+  /** Whether the player owns something the word is about. */
+  mineOf(key: string, view: { involved: { title: string }[]; topics?: HarvestTopics }): boolean {
+    if (view.involved.length === 0) return false;
+    const holdings = this.service.heldKeywords();
+    return key === 'ALL' ? holdings.size > 0 : holdings.has(key);
+  }
+
+  /** The tone of a line of what a card did: a rise, a fall. */
+  toneOf(line: string): 'up' | 'down' | 'flat' {
+    if (/[−-]\d/.test(line) || /\bfall|Rückgang|lost|verlor/i.test(line)) return 'down';
+    if (/\+\d|recover|rise|bonus/i.test(line)) return 'up';
+    return 'flat';
+  }
+
+  /** The key numbers of a card, laid out like the classic cards: what it costs, what it pays each month. */
+  keyFacts(
+    card: OpportunityCard,
+  ): { label: string; value: string; tone: 'cost' | 'income' | 'neutral' }[] {
+    const money = (minor: number) => `${this.amount(minor)} ${this.currency}`;
+    const signed = (minor: number) => `${minor < 0 ? '−' : '+'}${money(minor)}`;
+    const out: { label: string; value: string; tone: 'cost' | 'income' | 'neutral' }[] = [];
+    if (card.share) {
+      out.push({
+        label: 'CashflowGame.card.price',
+        value: money(card.share.unitPriceMinor),
+        tone: 'cost',
+      });
+      out.push({
+        label: 'CashflowGame.card.dividend',
+        value:
+          card.share.dividendMonthPerUnitMinor > 0
+            ? signed(card.share.dividendMonthPerUnitMinor)
+            : money(0),
+        tone: card.share.dividendMonthPerUnitMinor > 0 ? 'income' : 'neutral',
+      });
+    } else if (card.property) {
+      out.push({
+        label: 'CashflowGame.dealCost',
+        value: money(card.property.priceMinor),
+        tone: 'cost',
+      });
+      out.push({
+        label: 'CashflowGame.dealMortgage',
+        value: money(card.property.mortgageMinor),
+        tone: 'neutral',
+      });
+      out.push({
+        label: 'CashflowGame.dealDeposit',
+        value: money(card.property.cashNeededMinor),
+        tone: 'cost',
+      });
+      out.push({
+        label: 'CashflowGame.cardCashflow',
+        value: signed(card.cashflowMinor ?? card.property.rentMonthMinor),
+        tone: 'income',
+      });
+    } else {
+      if (card.costMinor !== undefined) {
+        out.push({ label: 'CashflowGame.dealCost', value: money(card.costMinor), tone: 'cost' });
+      }
+      if (card.loan) {
+        out.push({
+          label: 'CashflowGame.dealMortgage',
+          value: money(card.loan.loanMinor),
+          tone: 'neutral',
+        });
+      }
+      if (card.cashflowMinor !== undefined) {
+        out.push({
+          label: 'CashflowGame.cardCashflow',
+          value: signed(card.cashflowMinor),
+          tone: card.cashflowMinor >= 0 ? 'income' : 'cost',
+        });
+      } else if (card.dice) {
+        out.push({ label: 'CashflowGame.cardCashflow', value: '🎲', tone: 'neutral' });
+      }
+      if (card.savings && card.savings.monthlySavingsMinor > 0) {
+        out.push({
+          label: 'CashflowGame.card.saves',
+          value: signed(card.savings.monthlySavingsMinor),
+          tone: 'income',
+        });
+      }
+    }
+    return out;
+  }
+
+  /** What else the card tells: when it pays, what locks the money, the risk. */
+  moreFacts(card: OpportunityCard): string[] {
+    const t = (key: string, params?: Record<string, unknown>) =>
+      this.translate.instant(key, params);
+    const out: string[] = [];
+    if (card.share && card.share.dividendMonthPerUnitMinor > 0) {
+      out.push(t('CashflowGame.opportunity.fact.yield', { year: card.share.yieldYearPercent }));
+    }
+    if (card.rampPaydays)
+      out.push(t('CashflowGame.opportunity.fact.ramp', { paydays: card.rampPaydays }));
+    if (card.lockedPaydays)
+      out.push(t('CashflowGame.opportunity.fact.locked', { paydays: card.lockedPaydays }));
+    if (card.sideHustle) out.push(t('CashflowGame.opportunity.fact.sideHustle'));
+    out.push(t('CashflowGame.opportunity.fact.risk', { score: card.riskScore }));
+    return out;
   }
 
   /** The numbers of a card, each as one short line: what it costs, what it pays, what it risks. */

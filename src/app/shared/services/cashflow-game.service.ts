@@ -51,6 +51,9 @@ import {
   difficultySettings,
   type DifficultySettings,
   drawHarvestCard,
+  harvestTopics,
+  involvedHoldings,
+  keywordsOfCard,
   indexOf,
   ladderPayout,
   playHarvestCard,
@@ -58,6 +61,8 @@ import {
   sellHolding,
   unitPriceNow,
   valueOf,
+  type AssetKind,
+  type HarvestTopics,
   type HarvestCard,
   type HarvestLadderOffer,
   type HarvestPending,
@@ -66,6 +71,7 @@ import {
   drawOpportunityOffers,
   planOpportunity,
   projectTitleOf,
+  closeOpportunityPlans,
   settleHoldingSale,
   isOpportunityPile,
   quoteOpportunity,
@@ -529,6 +535,7 @@ export class CashflowGameService {
     private translate: TranslateService,
   ) {
     CashflowGameService.translator = translate;
+    CashflowGameService.current = this;
     // The game ends when the books say so, whichever action changed them.
     const state = AppStateService.instance;
     merge(state.transactionsUpdated$, state.subscriptionsUpdated$)
@@ -538,6 +545,8 @@ export class CashflowGameService {
 
   /** Set when the service is created: the game rules' English refusals are shown in the player's language. */
   private static translator?: TranslateService;
+  /** The running service, for the rules the Grow pages ask by a static call. */
+  private static current?: CashflowGameService;
 
   /** A game-rules refusal in the player's language (the sentence itself when it is not one or there is no translator). */
   static ruleText(message: string): string {
@@ -2459,19 +2468,48 @@ export class CashflowGameService {
     window: HarvestWindowSale[];
     sales: HarvestSale[];
     ladders: HarvestLadderOffer[];
+    /** What the card is about (its markets and groups, what it does to everyone) and what of that the player owns. */
+    topics?: HarvestTopics;
+    involved: { title: string; label: string; kind: AssetKind }[];
   } | null {
     const game = AppStateService.instance.cashflowGame;
     const pending = game.turn?.pending;
     if (pending?.kind !== 'story' || pending.tile !== 'harvest') return null;
     const entry = pending.harvest;
-    if (!entry) return { told: [], window: [], sales: [], ladders: [] };
+    if (!entry) return { told: [], window: [], sales: [], ladders: [], involved: [] };
+    const drawn = this.harvestCards.find((card) => card.id === entry.cardId);
+    const topics = drawn ? harvestTopics(drawn) : undefined;
+    const lang = this.emergencyLang;
     return {
-      card: this.harvestCards.find((card) => card.id === entry.cardId),
+      card: drawn,
+      topics,
+      involved: topics
+        ? involvedHoldings(topics, game.holdings ?? [], this.opportunityCards).map((entryOf) => ({
+            title: entryOf.holding.title,
+            label: entryOf.card.title[lang],
+            kind: entryOf.kind,
+          }))
+        : [],
       told: entry.told,
       window: this.windowSales(entry.window),
       sales: entry.sales,
       ladders: entry.ladders,
     };
+  }
+
+  /** The words of everything the player owns of the Opportunity cards: markets, groups and kinds. */
+  heldKeywords(): Set<string> {
+    const game = AppStateService.instance.cashflowGame;
+    const words = new Set<string>();
+    for (const holding of game.holdings ?? []) {
+      if (holding.ended) continue;
+      const card = this.opportunityCards.find((candidate) => candidate.id === holding.cardId);
+      if (!card) continue;
+      keywordsOfCard(card).forEach((word) => words.add(word));
+      words.add(card.id);
+      if (card.share) words.add(card.share.ticker);
+    }
+    return words;
   }
 
   /** The holdings in a market that is open for selling now. */
@@ -2532,6 +2570,13 @@ export class CashflowGameService {
       turn: {
         ...state.cashflowGame.turn!,
         pending: { ...state.cashflowGame.turn!.pending!, played: true, harvest: played.pending },
+        // the projects the card touched are marked in Grow (like the Market cards of the classic game)
+        affected: [
+          ...new Set([
+            ...(state.cashflowGame.turn!.affected ?? []),
+            ...(played.pending.affected ?? []),
+          ]),
+        ],
       },
     };
     state.transactionsUpdated$.next();
@@ -2710,6 +2755,7 @@ export class CashflowGameService {
           offersPerLanding: rules.opportunityOffers,
           maxSideHustles: rules.maxSideHustles,
           savingsCardCopies: rules.savingsCardCopies,
+          validTurns: rules.opportunityValidTurns,
         }
       : DEFAULT_OPPORTUNITY_SETTINGS;
   }
@@ -2885,6 +2931,7 @@ export class CashflowGameService {
           planOpportunity(this.gameBooks(), card, this.dealDeps, {
             lang,
             swapOut: choice.swapOut,
+            validTurns: this.opportunitySettings.validTurns,
             indexPercent: Math.round(indexOf(state.cashflowGame, card.market?.tag) * 100),
           }),
         );
@@ -3710,12 +3757,23 @@ export class CashflowGameService {
     // the card's chance to be bought is over: an unbought plan leaves the plan phase (JFK, 2026-10-18)
     const closing = closePlanOfSettledCardRule(this.gameBooks());
     if (closing) this.applyGameEffects(closing);
+    // a planned Opportunity card has one turn less to be bought; one whose time is up is a chance missed (JFK, 2026-10-26)
+    const missed = AppStateService.instance.cashflowGame.opportunityPlans?.length
+      ? closeOpportunityPlans(this.gameBooks(), this.emergencyLang, this.gameDay)
+      : null;
+    if (missed) {
+      this.applyGameEffects(missed);
+      settled = {
+        ...settled,
+        state: { ...settled.state, opportunityPlans: missed.state.opportunityPlans },
+      };
+    }
     AppStateService.instance.cashflowGame = settled.state;
     this.persistAll(
       'cashflow_decision',
       { how },
       callbacks,
-      closing ? { quiet: true, includeGrow: true } : { quiet: true },
+      closing || missed ? { quiet: true, includeGrow: true } : { quiet: true },
     );
   }
 
@@ -4852,13 +4910,17 @@ export class CashflowGameService {
     title: string,
     kind: 'property' | 'asset' | 'share' = 'share',
   ): string | null {
-    // what was planned from an Opportunity card is bought in Grow whatever the classic rules say of cards in hand
+    // what was planned from an Opportunity card is bought in Grow whatever the classic rules say of cards in hand - for as many
+    // turns as the setting says (1: only in the turn the card is in hand); after that the chance is gone (JFK, 2026-10-26)
+    const planned = AppStateService.instance.cashflowGame.opportunityPlans ?? [];
+    if (planned.some((plan) => plan.title === title)) return null;
+    const instance = CashflowGameService.current;
     if (
-      (AppStateService.instance.cashflowGame.opportunityPlans ?? []).some(
-        (plan) => plan.title === title,
+      instance?.opportunityCards.some(
+        (card) => projectTitleOf(card, instance.emergencyLang) === title,
       )
     ) {
-      return null;
+      return instance.translate.instant('CashflowGame.opportunity.chanceGone');
     }
     const isProperty = kind === 'property';
     // At a table only the card in hand can be bought: a stock price card somebody else drew lets the holder SELL at that price, never

@@ -42,6 +42,8 @@ export interface CustomRules {
   opportunityOffers: number;
   maxSideHustles: number;
   savingsCardCopies: number;
+  /** How many turns a planned Opportunity card can still be bought: 1 = only in the turn the card is in hand (JFK, 2026-10-26). */
+  opportunityValidTurns: number;
   /** The level of the game: the defaults of the decks and the odds. Only Medium is offered until the simulation has set the others. */
   difficulty: Difficulty;
   /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
@@ -63,6 +65,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
+    opportunityValidTurns: 1,
     difficulty: 'medium',
   },
   guided: {
@@ -79,6 +82,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
+    opportunityValidTurns: 1,
     difficulty: 'medium',
   },
   strict: {
@@ -96,6 +100,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
+    opportunityValidTurns: 1,
     difficulty: 'medium',
   },
 };
@@ -130,6 +135,7 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
     opportunityOffers: clamp(raw?.opportunityOffers, 1, 3, base.opportunityOffers),
     maxSideHustles: clamp(raw?.maxSideHustles, 1, 5, base.maxSideHustles),
     savingsCardCopies: clamp(raw?.savingsCardCopies, 1, 3, base.savingsCardCopies),
+    opportunityValidTurns: clamp(raw?.opportunityValidTurns, 1, 3, base.opportunityValidTurns),
     difficulty:
       raw?.difficulty === 'easy' || raw?.difficulty === 'medium' || raw?.difficulty === 'hard'
         ? raw.difficulty

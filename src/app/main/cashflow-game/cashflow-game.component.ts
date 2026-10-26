@@ -1116,7 +1116,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The project an Opportunity card became: it is in Grow from here on. */
   async openOpportunityProject(title: string): Promise<void> {
-    await this.openPlannedInGrow(title, 'asset');
+    // a share is opened in edit mode (the units are set there), anything else on its financials
+    const card = this.cashflowGameService.opportunityView?.taken;
+    await this.openPlannedInGrow(title, card?.share ? 'share' : 'asset');
   }
 
   openStackTile(): void {
@@ -1819,6 +1821,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     {
       key: 'maxSideHustles',
       options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+    },
+    {
+      key: 'opportunityValidTurns',
+      options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
     },
     { key: 'savingsCardCopies', options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })) },
     {
@@ -2547,12 +2553,20 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       void this.remoteMove((remote) => (how === 'passed' ? remote.pass() : remote.finish()));
       return;
     }
+    // a Harvest card that touched what the player owns: after Done the Grow page shows which projects it touched (JFK, 2026-10-26)
+    const toGrow =
+      this.stackTile?.tile === 'harvest' &&
+      !!this.appState.cashflowGame.turn?.pending?.harvest?.affected?.length;
     this.isBusy = true;
     this.backToMain();
     this.cashflowGameService.settleSoloDecision(how, {
       onSuccess: () => {
         this.isBusy = false;
         this.backToMain();
+        if (toGrow) {
+          this.closeWindow();
+          void this.router.navigate(['/grow']);
+        }
       },
       onError: (message) => {
         this.isBusy = false;

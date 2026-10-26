@@ -64,8 +64,9 @@ const MARGIN = 70;
 /** The pad the tokens wait on before the first roll: above the map, in the middle. */
 const START_HEIGHT = 84;
 const START_GAP = 24;
-/** How far from the middle of its tile a token stands: past the edge of the tile, with room for the token. */
-const TOKEN_DISTANCE = TILE / 2 + 26;
+/** The token's size and the space kept between it and its tile. */
+const TOKEN_RADIUS = 22;
+const TOKEN_GAP = 12;
 /** What the header, the start of the page and the roll bar take of the height of the screen. */
 const HEIGHT_TAKEN = 400;
 
@@ -436,16 +437,29 @@ export function tokenSpots(tiles: { x: number; y: number }[]): { x: number; y: n
     const dx = target.x - tile.x;
     const dy = target.y - tile.y;
     const length = Math.hypot(dx, dy) || 1;
-    const spot = (sign: number) => ({
-      x: tile.x + sign * (dx / length) * TOKEN_DISTANCE,
-      y: tile.y + sign * (dy / length) * TOKEN_DISTANCE,
+    // on the line from the middle through the middle of the tile, a gap beyond the edge or corner the line leaves the tile by (a
+    // square's edge is nearer on the straight than on the diagonal, so the distance follows the direction) - JFK, 2026-10-26
+    const exit = TILE / 2 / Math.max(Math.abs(dx / length), Math.abs(dy / length), 0.001);
+    const spot = (sign: number, gap: number) => ({
+      x: tile.x + sign * (dx / length) * (exit + TOKEN_RADIUS + gap),
+      y: tile.y + sign * (dy / length) * (exit + TOKEN_RADIUS + gap),
     });
-    // clear of the other tiles: where the map is narrow the inner side can be crowded, then the token stands outside
+    // clear of the other tiles: where the map is narrow the inner side can be crowded, then the gap shrinks, and at the last the
+    // token stands outside
     const room = (at: { x: number; y: number }) =>
       Math.min(
         ...tiles.filter((_, other) => other !== i).map((t) => Math.hypot(at.x - t.x, at.y - t.y)),
       );
-    const inner = spot(1);
-    return room(inner) >= TILE / 2 + 4 ? inner : room(spot(-1)) > room(inner) ? spot(-1) : inner;
+    for (const gap of [TOKEN_GAP, 8, 5, 2]) {
+      const inner = spot(1, gap);
+      if (room(inner) >= TILE / 2 + 4) return inner;
+    }
+    // the plain distance of old (a tile edge and a token beside it, straight on the line) is the last place to look
+    const plain = (sign: number) => ({
+      x: tile.x + sign * (dx / length) * (TILE / 2 + 26),
+      y: tile.y + sign * (dy / length) * (TILE / 2 + 26),
+    });
+    const rest = [spot(1, 0), plain(1), plain(-1), spot(-1, TOKEN_GAP), spot(-1, 4), spot(-1, 0)];
+    return rest.reduce((best, at) => (room(at) > room(best) ? at : best), spot(1, 2));
   });
 }

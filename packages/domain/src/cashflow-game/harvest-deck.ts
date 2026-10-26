@@ -157,6 +157,30 @@ export const MARKET_DRIFT_PERCENT: Record<
   ART: { easy: 0, medium: 0, hard: 0 },
 };
 
+/**
+ * The index market an Opportunity card's own tag is priced by (a corporate bond ladder follows the bond market, a cloud stock the tech
+ * market): the cards keep their own tags, the Harvest cards speak of the markets (JFK, 2026-10-26).
+ */
+export const MARKET_ALIAS: Record<string, string> = {
+  BUND: 'BOND',
+  CBOND: 'BOND',
+  DIVI: 'DIVID',
+  TELE: 'DIVID',
+  CCALL: 'DIVID',
+  DIVPF: 'DIVID',
+  CLOUD: 'TECH',
+  NCHIP: 'TECH',
+  SOLW: 'ENERGY',
+  ALT10: 'ALTS',
+  STARTUP: 'PRIVATE',
+  PEFUND: 'PRIVATE',
+  GOLDKG: 'GOLD',
+  FARMLAND: 'FARM',
+};
+
+export const marketOfTag = (tag: string | undefined): string | undefined =>
+  tag ? (MARKET_ALIAS[tag] ?? tag) : tag;
+
 /** The groups of Opportunity cards that business and side-hustle events speak of (section 1.4 of the Harvest deck). */
 export const HARVEST_GROUPS: Record<string, string[]> = {
   CONTENT: ['S28', 'S32', 'S33', 'P19'],

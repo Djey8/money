@@ -58,7 +58,7 @@ describe('DreamBoardComponent', () => {
       .map(Number);
     const distance = Math.hypot(tx - cx, ty - cy);
     expect(distance).toBeGreaterThan(40);
-    expect(distance).toBeLessThan(72);
+    expect(distance).toBeLessThan(95);
     const all = Array.from(moved.querySelectorAll('.db-tile rect')).map((r) => ({
       x: Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2,
       y: Number(r.getAttribute('y')) + Number(r.getAttribute('height')) / 2,

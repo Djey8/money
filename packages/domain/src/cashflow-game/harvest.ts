@@ -5,6 +5,7 @@ import { emptyEmergencyDeck, type EmergencyDeckState, type EmergencyLang } from 
 import {
   HARVEST_GROUPS,
   MARKET_DRIFT_PERCENT,
+  marketOfTag,
   type HarvestBuyer,
   type HarvestCard,
   type HarvestFactorBand,
@@ -12,6 +13,7 @@ import {
   type HarvestLadder,
   type HarvestOp,
 } from './harvest-deck';
+import { harvestTopics, isInvolved } from './keywords';
 import { monthlyOf, tickOpportunities, type OpportunityHolding } from './opportunity';
 import type { OpportunityCard } from './opportunity-deck';
 import { bookOneTime } from './payments-due';
@@ -35,7 +37,7 @@ export function initialMarkets(): Record<string, number> {
 export const indexOf = (
   state: Pick<CashflowGameState, 'markets'>,
   tag: string | undefined,
-): number => (tag && !NO_INDEX.has(tag) ? (state.markets?.[tag] ?? 1) : 1);
+): number => (tag && !NO_INDEX.has(tag) ? (state.markets?.[marketOfTag(tag)!] ?? 1) : 1);
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
@@ -104,13 +106,13 @@ export function groupsOf(card: OpportunityCard): string[] {
   return [...groups, card.id];
 }
 
-const matchesTarget = (
+export const matchesTarget = (
   card: OpportunityCard,
   holding: OpportunityHolding,
   target: string,
 ): boolean =>
   groupsOf(card).includes(target) ||
-  holding.marketTag === target ||
+  marketOfTag(holding.marketTag) === target ||
   card.share?.ticker === target ||
   card.id === target;
 
@@ -182,6 +184,8 @@ export interface HarvestPending {
   window: string[] | 'ALL';
   sales: HarvestSale[];
   ladders: HarvestLadderOffer[];
+  /** The Grow projects the card touched: they are marked in Grow and say so in their notes. */
+  affected?: string[];
 }
 
 /** A holding in a market that is open for selling now: what a unit brings, and how many there are. */
@@ -273,7 +277,15 @@ export function playHarvestCard(
   };
   const sign = (factor: number) =>
     (factor >= 1 ? '+' : '−') + Math.abs(Math.round((factor - 1) * 100)) + '%';
+  const noted = new Set<string>();
+  const before = new Map(
+    live().flatMap((holding) => {
+      const held = cardOf(holding);
+      return held ? [[holding.title, valueOf(held, holding, state)] as const] : [];
+    }),
+  );
   const note = (title: string, line: string) => {
+    noted.add(title);
     effects.growUpdates.push({
       title,
       updatedAt: `${date}T00:00:00.000Z`,
@@ -590,6 +602,28 @@ export function playHarvestCard(
     }
   }
   setLines();
+  // who the card is about: what is priced by a market it moved, sold in its window, bought by its buyer - each says so in its notes
+  const topics = harvestTopics(card);
+  const touched = new Set<string>(noted);
+  for (const holding of live()) {
+    const held = cardOf(holding);
+    if (!held) continue;
+    const valueBefore = before.get(holding.title);
+    const valueNow = valueOf(held, holding, state);
+    const moved = valueBefore !== undefined && valueBefore > 0 && valueNow !== valueBefore;
+    if (moved && !noted.has(holding.title)) {
+      note(
+        holding.title,
+        `${card.title[lang]}: ${text('value', 'Wert', lang)} ${round2(valueBefore / 100)} → ${round2(valueNow / 100)} (${sign(valueNow / valueBefore)}).`,
+      );
+    } else if (!noted.has(holding.title) && isInvolved(topics, held, holding)) {
+      note(holding.title, `${card.title[lang]}: ${told[0] ?? ''}`.trim());
+    }
+    if (noted.has(holding.title)) touched.add(holding.title);
+  }
+  for (const sale of pending.sales) touched.add(sale.holding);
+  for (const ladder of pending.ladders) touched.add(ladder.holding);
+  pending.affected = [...touched];
   // what the card offers is also what Grow's Sell works with: a buyer's price for a property, a price for every share in a window
   const offers = [
     ...windowSaleList(state, context.cards, pending.window, lang).map((entry) => ({

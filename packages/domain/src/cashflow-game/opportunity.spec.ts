@@ -7,6 +7,7 @@ import {
   DEFAULT_OPPORTUNITY_SETTINGS,
   buyOpportunity,
   canOffer,
+  closeOpportunityPlans,
   drawOpportunityOffers,
   planOpportunity,
   quoteOpportunity,
@@ -321,5 +322,38 @@ describe('the Opportunity stack', () => {
       amountMinor: 45000,
     });
     expect(light.effects.state.opportunityPlans ?? []).toEqual([]);
+  });
+
+  it('a planned card that was not bought is a chance missed when the turn is settled: its project is completed and says so', () => {
+    const base = start();
+    const deps = {
+      clock: fixedClock('2026-11-15'),
+      text: identityText,
+      money: (minor: number) => `${minor / 100}`,
+      plainMoney: (minor: number) => `${minor / 100}`,
+      lang: 'en' as const,
+      cards: {
+        textFor: () => ({}),
+        symbolFor: (x: string | undefined) => x,
+        sharedText: () => '',
+        groupName: (g: string) => g,
+      },
+    };
+    const planned = planOpportunity(base, opportunity('S10'), deps, { lang: 'en' });
+    const books = applyEffectsToBooks(base, planned);
+    expect(books.state.opportunityPlans?.[0].turnsLeft).toBe(1);
+    const closed = closeOpportunityPlans(books, 'en', '2026-11-16')!;
+    expect(closed.state.opportunityPlans).toEqual([]);
+    expect(closed.growUpdates[0]).toMatchObject({ title: 'WORLD', phase: 'completed' });
+    expect(closed.growUpdates[0].notes?.at(-1)?.text).toContain('Chance missed');
+
+    // two turns: the first settle only counts down
+    const longer = applyEffectsToBooks(
+      base,
+      planOpportunity(base, opportunity('S10'), deps, { lang: 'en', validTurns: 2 }),
+    );
+    const first = closeOpportunityPlans(longer, 'en', '2026-11-16')!;
+    expect(first.state.opportunityPlans?.[0].turnsLeft).toBe(1);
+    expect(first.growUpdates).toEqual([]);
   });
 });

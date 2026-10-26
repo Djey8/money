@@ -226,6 +226,17 @@ describe('CashflowGameService: life, career and dreams', () => {
     // a sale booked in Grow brings the holding down
     service.beforeGrowTrade('Sell Share WORLD 15 x 100;', 0, undefined, '@WORLD', 0);
     expect(state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!.units).toBe(25);
+
+    // the turn is settled: the chance to buy more is over (1 turn by default), the project goes on as what it is
+    expect(CashflowGameService.buyRefusalFor('WORLD')).toBeNull();
+    service.settleSoloDecision('done', ok());
+    expect(state().cashflowGame.opportunityPlans ?? []).toEqual([]);
+    expect(CashflowGameService.buyRefusalFor('WORLD')).not.toBeNull();
+    expect(
+      state()
+        .allGrowProjects.find((project) => project.title === 'WORLD')
+        ?.notes.at(-1)?.text,
+    ).toContain('Chance missed');
   });
 
   it('a Harvest card moves the market, prices what the player owns, and sells in its window; the Payday drifts the indices', () => {
