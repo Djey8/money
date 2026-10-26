@@ -127,6 +127,10 @@ export interface DreamGameRecord {
   landings: Record<string, number>;
   /** How often each Opportunity card was taken, and what it earned. */
   taken: Record<string, number>;
+  /** How often each card of the other stacks was met (`E01`, `L05`, `H12`, `D...`): for finding the events that break a game. */
+  drawn: Record<string, number>;
+  /** The same, only in the first 60 rolls: every game gets that far, so the events can be compared fairly. */
+  drawnEarly: Record<string, number>;
   emergenciesPaidMinor: number;
   /** The last cards before the game ended (a bankruptcy shows what broke it). */
   lastEvents: string[];
@@ -273,6 +277,8 @@ export class DreamSim {
       taken: {},
       emergenciesPaidMinor: 0,
       lastEvents: [],
+      drawn: {},
+      drawnEarly: {},
       trace: [],
     };
   }
@@ -328,6 +334,11 @@ export class DreamSim {
 
   private log(event: string): void {
     this.record.lastEvents = [...this.record.lastEvents, `${this.turns}:${event}`].slice(-8);
+    const id = event.split(' ')[1];
+    if (id && !event.startsWith('O ') && !event.startsWith('C ')) {
+      this.record.drawn[id] = (this.record.drawn[id] ?? 0) + 1;
+      if (this.turns <= 60) this.record.drawnEarly[id] = (this.record.drawnEarly[id] ?? 0) + 1;
+    }
   }
 
   private payDues(): void {

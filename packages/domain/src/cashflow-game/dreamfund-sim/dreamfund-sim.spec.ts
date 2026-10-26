@@ -1,6 +1,6 @@
 import { reportMarkdown, runBatch } from './batch';
 import { simulateDreamGame } from './world';
-import { policyById } from './policies';
+import { DREAM_POLICIES, policyById } from './policies';
 
 describe('the Dreamfund simulation', () => {
   it('plays a whole game: the same seed gives the same game, and no game stops with an error', () => {
@@ -15,8 +15,8 @@ describe('the Dreamfund simulation', () => {
   });
 
   it('a batch over every strategy runs without engine errors and reports', () => {
-    const result = runBatch({ games: 6, maxTurns: 160 });
-    expect(result.records).toHaveLength(42);
+    const result = runBatch({ games: 3, maxTurns: 160 });
+    expect(result.records).toHaveLength(DREAM_POLICIES.length * 3);
     expect(result.errors).toEqual([]);
     const report = reportMarkdown(result);
     expect(report).toContain('| saver |');

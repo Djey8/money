@@ -1,7 +1,8 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { reportMarkdown, runBatch, type BatchConfig } from './batch';
 import type { CustomRules } from '../custom-rules';
+import { injectStats, statsMarkdown } from './stats-doc';
 
 /**
  * Runs a batch of Dreamfund games from the command line (JFK, 2026-10-26):
@@ -39,6 +40,19 @@ const config: BatchConfig = {
 const started = Date.now();
 const result = runBatch(config);
 const report = reportMarkdown(result);
+const docPath = option('doc');
+if (docPath) {
+  // the statistics go into a page the players read, between the markers of the character (--doc-name Jonas)
+  const name = option('doc-name') ?? 'jonas';
+  const page = existsSync(docPath) ? readFileSync(docPath, 'utf8') : '';
+  const stats = statsMarkdown(result.records, {
+    profession: option('profession') ?? 'Jonas',
+    maxTurns: config.maxTurns ?? 400,
+    shapes: config.shapes ?? ['ring'],
+  });
+  writeFileSync(docPath, injectStats(page, name.toLowerCase(), stats), 'utf8');
+  console.log(`statistics of ${result.records.length} games -> ${docPath}`);
+}
 const out = option('out');
 if (out) {
   mkdirSync(dirname(out), { recursive: true });

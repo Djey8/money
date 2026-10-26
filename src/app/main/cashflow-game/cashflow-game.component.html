@@ -892,18 +892,64 @@
           <!-- Monthly cashflow already has a view — the Subscriptions page's own total
              (JFK, 2026-09-26: "use the normal app as much as possible"). Only the
              losing-condition warning is specific to this page. -->
-          <!-- Escaped the rat race: passive income covers the expenses. The game goes on. -->
-          <p class="cf-escape-banner" *ngIf="escapedRatRace" role="status">
-            🎉
-            {{
-              'CashflowGame.ratRaceEscaped'
-                | translate
-                  : {
-                      passive: (livePassiveIncome | appNumber),
-                      expenses: (liveTotalExpenses | appNumber),
-                    }
-            }}
-            {{ appState.currency }}
+          <!-- The win screen: every goal of the list is done -->
+          <div class="cf-win-overlay" *ngIf="showWin" role="dialog" aria-modal="true">
+            <div class="cf-win">
+              <div class="cf-win-trophy" aria-hidden="true">🏆</div>
+              <h3>{{ 'CashflowGame.win.title' | translate }}</h3>
+              <p class="cf-win-sub">
+                {{
+                  'CashflowGame.win.subtitle'
+                    | translate: { name: profileOf(selectedProfession)?.name ?? '' }
+                }}
+              </p>
+              <ul class="cf-win-goals">
+                <li *ngFor="let goal of winGoals">☑ {{ goal.text }}</li>
+              </ul>
+              <dl class="cf-win-stats">
+                <div>
+                  <dt>{{ 'CashflowGame.win.months' | translate }}</dt>
+                  <dd>{{ winStats.round }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.win.turns' | translate }}</dt>
+                  <dd>{{ winStats.turns }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.win.passive' | translate }}</dt>
+                  <dd>{{ winStats.passive | appNumber }} {{ appState.currency }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'CashflowGame.win.expenses' | translate }}</dt>
+                  <dd>{{ winStats.expenses | appNumber }} {{ appState.currency }}</dd>
+                </div>
+              </dl>
+              <div class="cf-win-actions">
+                <button type="button" class="btn btn--primary" (click)="dismissWin()">
+                  {{ 'CashflowGame.win.continue' | translate }}
+                </button>
+                <button type="button" class="btn" (click)="dismissWin(); openGames()">
+                  {{ 'CashflowGame.win.games' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial independence: the passive income covers the expenses - a badge, the game goes on (JFK, 2026-10-26). -->
+          <p class="cf-independence-badge" *ngIf="escapedRatRace" role="status">
+            <span class="cf-independence-gem" aria-hidden="true">💎</span>
+            <strong>{{ 'CashflowGame.independence.badge' | translate }}</strong>
+            <small>
+              {{
+                'CashflowGame.independence.detail'
+                  | translate
+                    : {
+                        passive: (livePassiveIncome | appNumber),
+                        expenses: (liveTotalExpenses | appNumber),
+                        currency: appState.currency,
+                      }
+              }}
+            </small>
           </p>
 
           <p class="cf-bankruptcy-warning" *ngIf="baseCashflow < 0">

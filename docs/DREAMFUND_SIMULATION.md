@@ -10,16 +10,17 @@ Hard are prepared in `packages/domain/src/cashflow-game/difficulty.ts` and are n
 npm run simulate:dreamfund -- --games 100 --shapes ring,infinity --sizes medium --out docs/dreamfund-balance/run.md
 ```
 
-| Option                | Meaning                                                                        |
-| --------------------- | ------------------------------------------------------------------------------ |
-| `--games N`           | Games per strategy and map (the seeds count up, so a run can be repeated)      |
-| `--policies a,b`      | Strategies to play (default all): `saver etf property hustler gambler passive` |
-| `--shapes`, `--sizes` | Maps: `ring infinity rectangle square mountain`, `small medium large`          |
-| `--difficulty`        | `easy`, `medium` (default) or `hard`                                           |
-| `--mode`              | The rules of the game: `free` (default), `guided`, `strict`                    |
-| `--max-turns N`       | A game not decided after this many rolls is a timeout (default 400)            |
-| `--first-seed N`      | Seed of the first game                                                         |
-| `--out file.md`       | Writes the report there and the raw games beside it as `.json`                 |
+| Option                | Meaning                                                                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--games N`           | Games per strategy and map (the seeds count up, so a run can be repeated)                                                                                                   |
+| `--policies a,b`      | Strategies to play (default all): `saver etf property hustler gambler expert dividend sapling tree dreamer steady passive`                                                  |
+| `--shapes`, `--sizes` | Maps: `ring infinity rectangle square mountain`, `small medium large`                                                                                                       |
+| `--difficulty`        | `easy`, `medium` (default) or `hard`                                                                                                                                        |
+| `--mode`              | The rules of the game: `free` (default), `guided`, `strict`                                                                                                                 |
+| `--max-turns N`       | A game not decided after this many rolls is a timeout (default 400)                                                                                                         |
+| `--first-seed N`      | Seed of the first game                                                                                                                                                      |
+| `--out file.md`       | Writes the report there and the raw games beside it as `.json`                                                                                                              |
+| `--doc page.md`       | Writes the readable statistics into a page between `<!-- stats:jonas:start -->` and `<!-- stats:jonas:end -->` (`--doc-name`, `--profession`); see `docs/DREAMFUND_GAME.md` |
 
 ## What it plays
 

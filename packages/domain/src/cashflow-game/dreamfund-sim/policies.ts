@@ -121,6 +121,8 @@ function makePolicy(
     /** A card scoring less than this is not taken, however affordable. */
     minScore?: number;
     sellProfit?: number;
+    /** The cash from which the Tree pile is looked at (default 30,000). */
+    treeFromMinor?: number;
     ride?: boolean;
     takeDreams?: boolean;
   },
@@ -133,7 +135,7 @@ function makePolicy(
         extra.piles.includes(pile) &&
         (pile === 'seed' ||
           (pile === 'sapling' && view.spendableMinor > 500000) ||
-          (pile === 'tree' && view.spendableMinor > 3000000));
+          (pile === 'tree' && view.spendableMinor > (extra.treeFromMinor ?? 3000000)));
       const ladder: OpportunityPile[] = ['tree', 'sapling', 'seed'];
       const options = ladder.filter(allowed);
       if (options.length === 0) return 'seed';
@@ -281,7 +283,7 @@ export const DREAM_POLICIES: DreamPolicy[] = [
               ? 6
               : 0,
     },
-    { piles: ['seed', 'tree'], takeDreams: false },
+    { piles: ['seed', 'tree'], takeDreams: false, treeFromMinor: 1200000 },
   ),
   makePolicy(
     {
@@ -361,6 +363,125 @@ export const DREAM_POLICIES: DreamPolicy[] = [
             : Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4),
     },
     { piles: ['seed', 'sapling', 'tree'], takeDreams: true, unitsShare: 0.5 },
+  ),
+  // more ways to play (JFK, 2026-10-26: "make more profiles and ideas to win this game")
+  makePolicy(
+    {
+      id: 'dividend',
+      dreamAfterPassiveShare: 0.3,
+      name: 'Dividend snowball',
+      planShare: 0.5,
+      planMonths: 18,
+      bufferMonths: 1,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.4,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 3,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.share && card.share.dividendMonthPerUnitMinor > 0
+            ? 6 + ((monthly * 12) / Math.max(cost, 100)) * 6
+            : card.loan && card.riskScore <= 2
+              ? 3
+              : 0,
+    },
+    { piles: ['seed', 'sapling', 'tree'], takeDreams: true, unitsShare: 0.8 },
+  ),
+  makePolicy(
+    {
+      id: 'sapling',
+      dreamAfterPassiveShare: 0.3,
+      name: 'Sapling business builder',
+      planShare: 0.45,
+      planMonths: 18,
+      bufferMonths: 0.5,
+      priorities: ['reserve', 'invest', 'debt', 'dream'],
+      dreamShare: 0.4,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 4,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.riskScore >= 5 || card.property
+            ? 0
+            : card.pile === 'sapling' || card.sideHustle
+              ? Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4)
+              : 0,
+    },
+    { piles: ['seed', 'sapling'], takeDreams: true },
+  ),
+  makePolicy(
+    {
+      id: 'tree',
+      dreamAfterPassiveShare: 0.5,
+      name: 'Tree saver',
+      planShare: 0.15,
+      planMonths: 30,
+      bufferMonths: 0.5,
+      priorities: ['invest', 'reserve', 'debt', 'dream'],
+      dreamShare: 0.3,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 4,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.pile === 'tree' && card.riskScore <= 4
+            ? Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4)
+            : 0,
+    },
+    { piles: ['seed', 'tree'], takeDreams: true, treeFromMinor: 1200000 },
+  ),
+  makePolicy(
+    {
+      id: 'dreamer',
+      name: 'Dream chaser',
+      planShare: 0.8,
+      planMonths: 12,
+      bufferMonths: 2,
+      priorities: ['reserve', 'dream', 'debt', 'invest'],
+      dreamShare: 0.9,
+      lifeAcceptChance: 0.8,
+      riskTolerance: 2,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.riskScore <= 2
+            ? Math.min(12, (monthly / 100) ** 0.5 + ((monthly * 12) / Math.max(cost, 100)) * 2)
+            : 0,
+    },
+    { piles: ['seed', 'sapling'], takeDreams: true },
+  ),
+  makePolicy(
+    {
+      id: 'steady',
+      dreamAfterPassiveShare: 0.4,
+      name: 'Steady builder',
+      planShare: 0.5,
+      planMonths: 18,
+      bufferMonths: 3,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.5,
+      lifeAcceptChance: 0.4,
+      riskTolerance: 3,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.riskScore >= 4
+            ? 0
+            : Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4),
+    },
+    { piles: ['seed', 'sapling', 'tree'], takeDreams: true, unitsShare: 0.4 },
   ),
   makePolicy(
     {

@@ -10,6 +10,8 @@ export interface OpportunityTuning {
   notHustles: string[];
   /** The monthly cash flow of a card, times this, by what kind of card it is. */
   cashflowFactor: { hustle: number; business: number; property: number };
+  /** Last, what a pile pays as a whole: a Sapling business is a good start, not a way out (JFK, 2026-10-26: 3,000 a month from a Sapling is a Tree's). */
+  pileFactor: { seed: number; sapling: number; tree: number };
   /** Rent of every property, more by this share (the cash flow rises by the same amount). */
   rentBoostPercent: number;
   /** What a unit of a share pays every month, times this. */
@@ -23,6 +25,7 @@ export interface OpportunityTuning {
 export const OPPORTUNITY_TUNING: OpportunityTuning = {
   notHustles: ['P15', 'P19', 'P20', 'P21', 'P22', 'P23', 'P24', 'P26', 'P27', 'P29'],
   cashflowFactor: { hustle: 1.6, business: 2.6, property: 1.8 },
+  pileFactor: { seed: 1, sapling: 0.4, tree: 1 },
   rentBoostPercent: 300,
   dividendFactor: 13,
   minMonthlyYieldPercent: 1.5,
@@ -63,9 +66,10 @@ export function tuneOpportunityCards(
       const base = card.cashflowMinor ?? 0;
       card.cashflowMinor = Math.round(base > 0 ? base * factor : base * 0.5) + boost;
     } else {
-      card.cashflowMinor = scale(card.cashflowMinor, factor);
+      const total = factor * tuning.pileFactor[card.pile];
+      card.cashflowMinor = scale(card.cashflowMinor, total);
       for (const band of card.dice ?? []) {
-        band.value.cashflowMinor = scale(band.value.cashflowMinor, factor);
+        band.value.cashflowMinor = scale(band.value.cashflowMinor, total);
       }
     }
     if (card.cashflowMinor === undefined) delete card.cashflowMinor;

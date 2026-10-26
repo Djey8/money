@@ -892,6 +892,54 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   private goalChecksCache: { key: string; value: Record<string, boolean> } | null = null;
 
+  // ── the win screen (JFK, 2026-10-26): every goal on the character's list is done ──
+
+  private winSeenId: string | null = null;
+
+  /** Every goal of the character's list is met in a game with a list (a Dreamfund game). */
+  get allGoalsDone(): boolean {
+    if (!this.hasActiveGame || !this.cashflowGameService.customRules) return false;
+    const checks = Object.values(this.goalChecks);
+    return checks.length > 0 && checks.every(Boolean);
+  }
+
+  private get winKey(): string {
+    return `dreamfund-won-${this.savedGames.currentGameId ?? this.appState.cashflowGame.professionId}`;
+  }
+
+  /** The win screen shows once for a game; "keep playing" closes it for good. */
+  get showWin(): boolean {
+    if (!this.allGoalsDone) return false;
+    if (this.winSeenId === this.winKey) return false;
+    try {
+      return localStorage.getItem(this.winKey) !== '1';
+    } catch {
+      return true;
+    }
+  }
+
+  dismissWin(): void {
+    this.winSeenId = this.winKey;
+    try {
+      localStorage.setItem(this.winKey, '1');
+    } catch {
+      // the screen only stays closed until the page is reloaded
+    }
+  }
+
+  get winGoals(): { id: string; text: string }[] {
+    return this.profileOf(this.selectedProfession)?.goalItems ?? [];
+  }
+
+  get winStats(): { round: number; turns: number; passive: number; expenses: number } {
+    return {
+      round: this.appState.cashflowGame.round,
+      turns: this.appState.cashflowGame.turn?.count ?? 0,
+      passive: this.livePassiveIncome,
+      expenses: this.liveTotalExpenses,
+    };
+  }
+
   /** What of the winning list of the character is met in the running game (the dream follows with the project). */
   get goalChecks(): Record<string, boolean> {
     const open = (aliases: string[]) =>
