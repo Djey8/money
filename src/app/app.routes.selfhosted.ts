@@ -25,6 +25,12 @@ export const routes: Routes = [
       import('./docs/cashflow/cashflow-docs.component').then((m) => m.CashflowDocsComponent),
   },
   {
+    // The Dreamfund (Traumtopf) guide, with the statistics of the characters: self-hosted only like the game.
+    path: 'docs/dreamfund',
+    loadComponent: () =>
+      import('./docs/dreamfund/dreamfund-docs.component').then((m) => m.DreamfundDocsComponent),
+  },
+  {
     path: 'settings/tokens',
     loadComponent: () =>
       import('./panels/settings/personal-access-tokens/personal-access-tokens.component').then(

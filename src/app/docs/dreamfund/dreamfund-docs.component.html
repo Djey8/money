@@ -1,0 +1,221 @@
+<!-- Toolbar -->
+<div class="toolbar" role="banner">
+  <img
+    id="profile-pic"
+    width="40"
+    alt="Profile Logo"
+    src="../../assets/profile-blank.jpg"
+    role="button"
+    tabindex="0"
+    aria-label="Open profile"
+    (click)="appReference.clickProfile()"
+    (keydown.enter)="appReference.clickProfile()"
+  />
+  <a routerLink="/" class="logo">Money<span>App</span></a>
+  <div class="spacer"></div>
+  <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation" />
+  <label for="nav-toggle" class="nav-toggle-label" aria-hidden="true"><span></span></label>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+  <ul class="nav-links">
+    <li>
+      <a routerLink="/" (click)="closeNav()">{{ 'Landing.nav.howItWorks' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/changelog" (click)="closeNav()">{{ 'Landing.nav.changelog' | translate }}</a>
+    </li>
+    <li>
+      <a routerLink="/docs" class="active-nav" (click)="closeNav()">{{
+        'Landing.nav.docs' | translate
+      }}</a>
+    </li>
+    <li>
+      <a routerLink="/community" (click)="closeNav()">{{ 'Landing.nav.community' | translate }}</a>
+    </li>
+    <li>
+      <a href="javascript:void(0)" (click)="closeNav(); navigateToSection('get-started')">{{
+        'Landing.nav.getStarted' | translate
+      }}</a>
+    </li>
+    <li>
+      <button class="nav-demo-btn" (click)="closeNav(); launchDemo()">
+        {{ 'Landing.nav.demo' | translate }}
+      </button>
+    </li>
+  </ul>
+</div>
+
+<div class="selfhosted-page dreamfund-manual">
+  <header class="selfhosted-header">
+    <a routerLink="/docs" class="back-link">← {{ 'Docs.dreamfundgame.back' | translate }}</a>
+    <h1 class="selfhosted-title">
+      🌱 {{ content?.title || ('Docs.topics.dreamfundgame.title' | translate) }}
+    </h1>
+    <p class="selfhosted-subtitle">
+      {{ content?.subtitle || ('Docs.topics.dreamfundgame.desc' | translate) }}
+    </p>
+  </header>
+
+  <!-- Only a Cashflow game account reads the manual. -->
+  <div class="info-card" *ngIf="!isGameAccount">
+    <div class="info-card-header">{{ 'Docs.dreamfundgame.lockedTitle' | translate }}</div>
+    <p>{{ 'Docs.dreamfundgame.locked' | translate }}</p>
+  </div>
+
+  <div class="info-card" *ngIf="isGameAccount && loadFailed">
+    <p>{{ 'Docs.dreamfundgame.loadFailed' | translate }}</p>
+  </div>
+
+  <div class="selfhosted-content" *ngIf="isGameAccount && content">
+    <!-- Section list (desktop) -->
+    <aside class="selfhosted-sidebar">
+      <h3 class="sidebar-title">{{ 'Docs.selfhosted.sections' | translate }}</h3>
+      <ul class="section-list">
+        <li
+          *ngFor="let s of sections; let i = index"
+          class="section-item"
+          [ngClass]="{ active: i === selectedIndex }"
+          (click)="selectSection(i)"
+        >
+          <span class="section-number">{{ s.number }}</span>
+          <span class="section-label">{{ navOf(s) }}</span>
+        </li>
+      </ul>
+    </aside>
+
+    <main class="selfhosted-detail">
+      <!-- Mobile section select -->
+      <div class="mobile-section-select">
+        <label class="mobile-select-label">{{ 'Docs.selfhosted.jumpTo' | translate }}</label>
+        <select
+          class="mobile-section-dropdown"
+          [value]="selectedIndex"
+          (change)="selectSection(+$any($event.target).value)"
+        >
+          <option *ngFor="let s of sections; let i = index" [value]="i">
+            {{ s.number }} {{ navOf(s) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="warning-card" *ngIf="usingFallback">
+        <span class="warning-icon">ℹ️</span>
+        <span>{{ 'Docs.dreamfundgame.fallback' | translate }}</span>
+      </div>
+
+      <article class="doc-section" *ngIf="section as sec">
+        <h2 class="doc-section-title">{{ selected.number }} · {{ sec.title }}</h2>
+        <p class="doc-intro" *ngIf="sec.intro">
+          <ng-container *ngFor="let part of segments(sec.intro)">
+            <strong *ngIf="part.bold">{{ part.text }}</strong>
+            <code *ngIf="part.code">{{ part.text }}</code>
+            <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+          </ng-container>
+        </p>
+
+        <ng-container *ngFor="let block of sec.blocks">
+          <ng-container [ngSwitch]="block.type">
+            <!-- Paragraph -->
+            <p class="manual-p" *ngSwitchCase="'p'">
+              <ng-container *ngFor="let part of segments($any(block).text)">
+                <strong *ngIf="part.bold">{{ part.text }}</strong>
+                <code *ngIf="part.code">{{ part.text }}</code>
+                <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+              </ng-container>
+            </p>
+
+            <!-- Sub heading -->
+            <h3 class="doc-subheading" *ngSwitchCase="'h3'">{{ $any(block).text }}</h3>
+
+            <!-- List -->
+            <ng-container *ngSwitchCase="'list'">
+              <ol class="manual-list" *ngIf="$any(block).ordered; else bullets">
+                <li *ngFor="let item of $any(block).items">
+                  <ng-container *ngFor="let part of segments(item)">
+                    <strong *ngIf="part.bold">{{ part.text }}</strong>
+                    <code *ngIf="part.code">{{ part.text }}</code>
+                    <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+                  </ng-container>
+                </li>
+              </ol>
+              <ng-template #bullets>
+                <ul class="manual-list">
+                  <li *ngFor="let item of $any(block).items">
+                    <ng-container *ngFor="let part of segments(item)">
+                      <strong *ngIf="part.bold">{{ part.text }}</strong>
+                      <code *ngIf="part.code">{{ part.text }}</code>
+                      <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+                    </ng-container>
+                  </li>
+                </ul>
+              </ng-template>
+            </ng-container>
+
+            <!-- Callout -->
+            <div
+              class="manual-callout"
+              [ngClass]="'manual-callout--' + $any(block).kind"
+              *ngSwitchCase="'callout'"
+            >
+              <div class="manual-callout-title" *ngIf="$any(block).title">
+                {{ $any(block).title }}
+              </div>
+              <div>
+                <ng-container *ngFor="let part of segments($any(block).text)">
+                  <strong *ngIf="part.bold">{{ part.text }}</strong>
+                  <code *ngIf="part.code">{{ part.text }}</code>
+                  <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+                </ng-container>
+              </div>
+            </div>
+
+            <!-- Hand-written table -->
+            <div class="endpoint-table manual-table" *ngSwitchCase="'table'">
+              <table>
+                <thead>
+                  <tr>
+                    <th *ngFor="let head of $any(block).head">{{ head }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of $any(block).rows">
+                    <td *ngFor="let cell of row">
+                      <ng-container *ngFor="let part of segments(cell)">
+                        <strong *ngIf="part.bold">{{ part.text }}</strong>
+                        <code *ngIf="part.code">{{ part.text }}</code>
+                        <ng-container *ngIf="!part.bold && !part.code">{{
+                          part.text
+                        }}</ng-container>
+                      </ng-container>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="manual-table-note" *ngIf="$any(block).note">{{ $any(block).note }}</p>
+            </div>
+          </ng-container>
+        </ng-container>
+      </article>
+
+      <!-- Previous / next -->
+      <div class="section-nav">
+        <button
+          class="nav-btn prev"
+          *ngIf="previous as prev; else noPrev"
+          (click)="selectSection(selectedIndex - 1)"
+        >
+          <span class="nav-btn-label">← {{ 'Docs.selfhosted.nav.prev' | translate }}</span>
+          <span class="nav-btn-title">{{ prev.number }} {{ navOf(prev) }}</span>
+        </button>
+        <ng-template #noPrev><div></div></ng-template>
+        <button
+          class="nav-btn next"
+          *ngIf="next as following"
+          (click)="selectSection(selectedIndex + 1)"
+        >
+          <span class="nav-btn-label">{{ 'Docs.selfhosted.nav.next' | translate }} →</span>
+          <span class="nav-btn-title">{{ following.number }} {{ navOf(following) }}</span>
+        </button>
+      </div>
+    </main>
+  </div>
+</div>

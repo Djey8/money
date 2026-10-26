@@ -7,31 +7,31 @@ import type { DreamGameRecord } from './world';
 
 /**
  * The statistics of a simulation as a page the players can read (JFK, 2026-10-26): what each way of playing achieves, how a game
- * unfolds, which cards carry a win and which events break a game. It is generated from the records of `runBatch`, never typed by hand.
+ * unfolds, which cards carry a win and which events break a game. It is generated from the records of `runBatch`, never typed by hand,
+ * in English or German.
  */
 
 const OPPORTUNITY = tuneOpportunityCards(SKETCH_CARDS);
 const SET = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories');
 
-const titles = new Map<string, { title: string; kind: string }>();
+type Lang = 'en' | 'de';
+const titles = new Map<string, { en: string; de: string; kind: string }>();
 for (const card of OPPORTUNITY) {
-  titles.set(card.id, { title: card.title.en, kind: `Opportunity · ${card.pile}` });
+  titles.set(card.id, { en: card.title.en, de: card.title.de, kind: `Opportunity · ${card.pile}` });
 }
 for (const card of HARVEST_CARDS) {
-  titles.set(card.id, { title: card.title.en, kind: 'Harvest' });
+  titles.set(card.id, { en: card.title.en, de: card.title.de, kind: 'Harvest' });
 }
 for (const [kind, deck] of [
   ['Emergency', SET?.decks?.emergency],
   ['Life', SET?.decks?.life],
   ['Dream', SET?.decks?.dream],
 ] as const) {
-  for (const card of (deck ?? []) as { id: string; title: { en: string } }[]) {
-    titles.set(card.id, { title: card.title.en, kind });
+  for (const card of (deck ?? []) as { id: string; title: { en: string; de: string } }[]) {
+    titles.set(card.id, { en: card.title.en, de: card.title.de, kind });
   }
 }
 
-const pct = (value: number) => `${Math.round(value * 100)}%`;
-const money = (minor: number) => Math.round(minor / 100).toLocaleString('en');
 const mean = (values: number[]) =>
   values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 const median = (values: number[]): number | null => {
@@ -51,28 +51,87 @@ export interface StatsDocOptions {
   profession: string;
   maxTurns: number;
   shapes: string[];
+  lang?: Lang;
 }
 
-/** The strategies in words: what each one does, with what it achieved. */
-const IDEAS: Record<string, string> = {
-  saver:
+/** The strategies in words: what each one does, in both languages. */
+const NAMES: Record<string, [string, string]> = {
+  saver: ['Cautious saver', 'Vorsichtiger Sparer'],
+  etf: ['ETF investor', 'ETF-Anleger'],
+  property: ['Property builder', 'Immobilienaufbauer'],
+  hustler: ['Side hustler', 'Nebenprojekt-Gründer'],
+  gambler: ['Gambler', 'Zocker'],
+  expert: ['Informed investor', 'Informierter Anleger'],
+  dividend: ['Dividend snowball', 'Dividenden-Schneeball'],
+  sapling: ['Sapling business builder', 'Sapling-Unternehmer'],
+  tree: ['Tree saver', 'Tree-Sparer'],
+  dreamer: ['Dream chaser', 'Traumjäger'],
+  steady: ['Steady builder', 'Stetiger Aufbauer'],
+  passive: ['Free cards only', 'Nur Gratis-Karten'],
+};
+const IDEAS: Record<string, [string, string]> = {
+  saver: [
     'Keeps cash, takes only the safest cards (savings, bonds, a world ETF) and funds the reserve and the dream first.',
-  etf: 'Puts the free money into index and dividend ETFs and bonds, little else.',
-  property: 'Saves for the Tree pile and buys rental properties with a mortgage.',
-  hustler:
+    'Hält Bargeld, nimmt nur die sichersten Karten (Ersparnisse, Anleihen, einen Welt-ETF) und füllt zuerst Notgroschen und Traum.',
+  ],
+  etf: [
+    'Puts the free money into index and dividend ETFs and bonds, little else.',
+    'Steckt das freie Geld in Index- und Dividenden-ETFs und Anleihen, sonst kaum etwas.',
+  ],
+  property: [
+    'Saves for the Tree pile and buys rental properties with a mortgage.',
+    'Spart für den Tree-Stapel und kauft Mietimmobilien mit Hypothek.',
+  ],
+  hustler: [
     'Starts side hustles and small businesses from the Seed and Sapling piles, one after the other.',
-  gambler: 'Goes for crypto, hot tips, collectibles and the hype ladder.',
-  expert:
+    'Startet nacheinander Nebenprojekte und kleine Unternehmen aus dem Seed- und Sapling-Stapel.',
+  ],
+  gambler: [
+    'Goes for crypto, hot tips, collectibles and the hype ladder.',
+    'Setzt auf Krypto, heiße Tipps, Sammlerstücke und die Hype-Leiter.',
+  ],
+  expert: [
     'Takes every free saving, then whatever pays most for its price from all three piles, plans the reserve and the dream by payment plans and starts the dream only once the passive income carries part of the costs.',
-  dividend: 'Builds a snowball of dividend shares from all piles.',
-  sapling: 'Builds businesses and hustles from the Sapling pile and never buys property.',
-  tree: 'Collects savings and Seed cards until a Tree is affordable, then buys only Trees.',
-  dreamer: 'Funds the dreams first, with safe cards on the side.',
-  steady: 'Like the informed investor but with three months of cash in hand and no risky cards.',
-  passive: 'Takes only the free savings cards and never invests.',
+    'Nimmt jede Gratis-Ersparnis, dann aus allen drei Stapeln, was für den Preis am meisten zahlt, plant Notgroschen und Traum mit Zahlungsplänen und startet den Traum erst, wenn das passive Einkommen einen Teil der Kosten trägt.',
+  ],
+  dividend: [
+    'Builds a snowball of dividend shares from all piles.',
+    'Baut aus allen Stapeln einen Schneeball von Dividendenaktien auf.',
+  ],
+  sapling: [
+    'Builds businesses and hustles from the Sapling pile and never buys property.',
+    'Baut Unternehmen und Nebenprojekte aus dem Sapling-Stapel auf und kauft nie Immobilien.',
+  ],
+  tree: [
+    'Collects savings and Seed cards until a Tree is affordable, then buys only Trees.',
+    'Sammelt Ersparnisse und Seed-Karten, bis ein Tree bezahlbar ist, und kauft dann nur Trees.',
+  ],
+  dreamer: [
+    'Funds the dreams first, with safe cards on the side.',
+    'Finanziert zuerst die Träume, nebenbei mit sicheren Karten.',
+  ],
+  steady: [
+    'Like the informed investor but with three months of cash in hand and no risky cards.',
+    'Wie der informierte Anleger, aber mit drei Monaten Bargeld und ohne riskante Karten.',
+  ],
+  passive: [
+    'Takes only the free savings cards and never invests.',
+    'Nimmt nur die Gratis-Spar-Karten und investiert nie.',
+  ],
 };
 
 export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptions): string {
+  const lang: Lang = options.lang ?? 'en';
+  const de = lang === 'de';
+  const t = (en: string, german: string) => (de ? german : en);
+  const pct = (value: number) => `${Math.round(value * 100)}%`;
+  const money = (minor: number) => Math.round(minor / 100).toLocaleString(de ? 'de-DE' : 'en');
+  const titleOf = (id: string) => titles.get(id)?.[lang] ?? id;
+  const kindOf = (id: string) => titles.get(id)?.kind ?? '';
+  const nameOf = (id: string) => NAMES[id]?.[de ? 1 : 0] ?? id;
+  const kindText = (kind: string) =>
+    de ? kind.replace('Emergency', 'Notfall').replace('Life', 'Leben') : kind;
+
   const lines: string[] = [];
   const byPolicy = new Map<string, DreamGameRecord[]>();
   for (const record of records) {
@@ -80,46 +139,60 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
   }
   const order = DREAM_POLICIES.map((policy) => policy.id).filter((id) => byPolicy.has(id));
   const wins = records.filter((record) => record.outcome === 'won');
+  const months = Math.round(options.maxTurns / 2.5);
 
   lines.push(
-    `${records.length.toLocaleString('en')} games were played by ${order.length} ways of playing, on the maps ${options.shapes.join(', ')}, up to ${options.maxTurns} rolls of the dice each (about ${Math.round(options.maxTurns / 2.5)} months). The same seeds were used for every strategy, so the differences come from how they play, not from luck of the draw. ${options.profession} starts every game the same way.`,
+    t(
+      `${records.length.toLocaleString('en')} games were played by ${order.length} ways of playing, on the maps ${options.shapes.join(', ')}, up to ${options.maxTurns} rolls of the dice each (about ${months} months). The same seeds were used for every strategy, so the differences come from how they play, not from luck of the draw. ${options.profession} starts every game the same way.`,
+      `${records.length.toLocaleString('de-DE')} Spiele wurden mit ${order.length} Spielweisen gespielt, auf den Karten ${options.shapes.join(', ')}, jeweils bis zu ${options.maxTurns} Würfen (etwa ${months} Monate). Für jede Strategie wurden dieselben Startwerte benutzt, die Unterschiede kommen also vom Spielstil, nicht vom Kartenglück. ${options.profession} startet jedes Spiel gleich.`,
+    ),
     '',
-    `Overall **${pct(won(records))}** of the games were won and **${pct(bankrupt(records))}** ended in bankruptcy; the rest were not decided after ${options.maxTurns} rolls.`,
+    t(
+      `Overall **${pct(won(records))}** of the games were won and **${pct(bankrupt(records))}** ended in bankruptcy; the rest were not decided after ${options.maxTurns} rolls.`,
+      `Insgesamt wurden **${pct(won(records))}** der Spiele gewonnen und **${pct(bankrupt(records))}** endeten in der Pleite; die übrigen waren nach ${options.maxTurns} Würfen nicht entschieden.`,
+    ),
     '',
-    '### Ways of playing',
+    t('### Ways of playing', '### Spielweisen'),
     '',
-    '| Strategy | What it does | Won | Bankrupt | Month of the win (typical) | Net worth at the end | Passive income at its best |',
+    t(
+      '| Strategy | What it does | Won | Bankrupt | Month of the win (typical) | Net worth at the end | Passive income at its best |',
+      '| Strategie | Was sie tut | Gewonnen | Pleite | Monat des Siegs (typisch) | Vermögen am Ende | Passives Einkommen (Spitze) |',
+    ),
     '|---|---|---|---|---|---|---|',
   );
   for (const id of order) {
     const rows = byPolicy.get(id)!;
-    const policy = DREAM_POLICIES.find((entry) => entry.id === id)!;
     const winTurns = rows.filter((row) => row.wonTurn !== undefined).map((row) => row.wonTurn!);
     lines.push(
-      `| **${policy.name}** | ${IDEAS[id] ?? ''} | ${pct(won(rows))} | ${pct(bankrupt(rows))} | ${monthsText(median(winTurns))} | ${money(median(rows.map((row) => row.netWorthMinor)) ?? 0)} | ${money(median(rows.map((row) => row.peakPassiveMinor)) ?? 0)} |`,
+      `| **${nameOf(id)}** | ${IDEAS[id]?.[de ? 1 : 0] ?? ''} | ${pct(won(rows))} | ${pct(bankrupt(rows))} | ${monthsText(median(winTurns))} | ${money(median(rows.map((row) => row.netWorthMinor)) ?? 0)} | ${money(median(rows.map((row) => row.peakPassiveMinor)) ?? 0)} |`,
     );
   }
 
   lines.push(
     '',
-    '### How a game unfolds',
+    t('### How a game unfolds', '### Wie ein Spiel verläuft'),
     '',
-    `The four goals are reached in a typical order. The table shows the month in which the half of the players who got there reached each goal, and how many got there at all.`,
+    t(
+      'The four goals are reached in a typical order. The table shows the month in which the half of the players who got there reached each goal, and how many got there at all.',
+      'Die vier Ziele werden in einer typischen Reihenfolge erreicht. Die Tabelle zeigt den Monat, in dem die Hälfte der Spieler, die es geschafft haben, das jeweilige Ziel erreicht hat, und wie viele überhaupt dorthin kamen.',
+    ),
     '',
-    '| Strategy | Reserve full | Debts repaid | Life dream lived | Passive income covers the expenses |',
+    t(
+      '| Strategy | Reserve full | Debts repaid | Life dream lived | Passive income covers the expenses |',
+      '| Strategie | Notgroschen voll | Schulden getilgt | Lebenstraum erfüllt | Passives Einkommen deckt die Ausgaben |',
+    ),
     '|---|---|---|---|---|',
   );
   const goal = (rows: DreamGameRecord[], pick: (row: DreamGameRecord) => number | undefined) => {
     const turns = rows.map(pick).filter((turn): turn is number => turn !== undefined);
     return turns.length
-      ? `month ${monthsText(median(turns))} (${pct(turns.length / rows.length)})`
+      ? `${t('month', 'Monat')} ${monthsText(median(turns))} (${pct(turns.length / rows.length)})`
       : '-';
   };
   for (const id of order) {
     const rows = byPolicy.get(id)!;
-    const policy = DREAM_POLICIES.find((entry) => entry.id === id)!;
     lines.push(
-      `| ${policy.name} | ${goal(rows, (r) => r.reserveFullTurn)} | ${goal(rows, (r) => r.debtsRepaidTurn)} | ${goal(rows, (r) => r.dreamLivedTurn)} | ${goal(rows, (r) => r.independentTurn)} |`,
+      `| ${nameOf(id)} | ${goal(rows, (r) => r.reserveFullTurn)} | ${goal(rows, (r) => r.debtsRepaidTurn)} | ${goal(rows, (r) => r.dreamLivedTurn)} | ${goal(rows, (r) => r.independentTurn)} |`,
     );
   }
 
@@ -130,8 +203,8 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
       const without = records.filter((record) => !record.taken[id]);
       return {
         id,
-        title: titles.get(id)?.title ?? id,
-        kind: titles.get(id)?.kind ?? '',
+        title: titleOf(id),
+        kind: kindOf(id),
         games: taken.length,
         share: taken.length / records.length,
         shareOfWins: wins.length
@@ -143,19 +216,26 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
       };
     })
     .filter((row) => row.games >= Math.max(10, records.length * 0.02));
+  const pile = (kind: string) => kind.replace('Opportunity · ', '');
 
   lines.push(
     '',
-    '### The cards that carry a win',
+    t('### The cards that carry a win', '### Die Karten, die einen Sieg tragen'),
     '',
-    'Of all won games, the share in which the card was taken (a card in nearly every win is a pillar of the game):',
+    t(
+      'Of all won games, the share in which the card was taken (a card in nearly every win is a pillar of the game):',
+      'Anteil der gewonnenen Spiele, in denen die Karte genommen wurde (eine Karte in fast jedem Sieg ist eine Säule des Spiels):',
+    ),
     '',
-    '| Card | Pile | Taken in these wins | Win chance when taken | Win chance without it | Difference in net worth |',
+    t(
+      '| Card | Pile | Taken in these wins | Win chance when taken | Win chance without it | Difference in net worth |',
+      '| Karte | Stapel | In diesen Siegen genommen | Siegchance mit der Karte | Siegchance ohne sie | Unterschied im Vermögen |',
+    ),
     '|---|---|---|---|---|---|',
   );
   for (const row of [...cardRows].sort((a, b) => b.shareOfWins - a.shareOfWins).slice(0, 18)) {
     lines.push(
-      `| ${row.title} (${row.id}) | ${row.kind.replace('Opportunity · ', '')} | ${pct(row.shareOfWins)} | ${pct(row.winWhenTaken)} | ${pct(row.winWithout)} | ${row.lift >= 0 ? '+' : '−'}${money(Math.abs(row.lift))} |`,
+      `| ${row.title} (${row.id}) | ${pile(row.kind)} | ${pct(row.shareOfWins)} | ${pct(row.winWhenTaken)} | ${pct(row.winWithout)} | ${row.lift >= 0 ? '+' : '−'}${money(Math.abs(row.lift))} |`,
     );
   }
 
@@ -169,46 +249,53 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
     .slice(0, 10);
   lines.push(
     '',
-    '### Cards that tip the balance',
+    t('### Cards that tip the balance', '### Karten, die das Gleichgewicht kippen'),
     '',
-    '**Very strong** (a win is much more likely when the card is taken - candidates to weaken):',
+    t(
+      '**Very strong** (a win is much more likely when the card is taken - candidates to weaken):',
+      '**Sehr stark** (mit der Karte ist ein Sieg viel wahrscheinlicher - Kandidaten zum Abschwächen):',
+    ),
     '',
     ...(strong.length
       ? strong.map(
           (row) =>
-            `- ${row.title} (${row.id}, ${row.kind.replace('Opportunity · ', '')}): ${pct(row.winWhenTaken)} won with it, ${pct(row.winWithout)} without.`,
+            `- ${row.title} (${row.id}, ${pile(row.kind)}): ${pct(row.winWhenTaken)} ${t('won with it,', 'gewonnen mit ihr,')} ${pct(row.winWithout)} ${t('without.', 'ohne sie.')}`,
         )
-      : ['- none: no single card decides the game.']),
+      : [
+          t(
+            '- none: no single card decides the game.',
+            '- keine: keine einzelne Karte entscheidet das Spiel.',
+          ),
+        ]),
     '',
-    '**Taken often but they hold a player back** (candidates to strengthen):',
+    t(
+      '**Taken often but they hold a player back** (candidates to strengthen):',
+      '**Oft genommen, aber sie bremsen den Spieler** (Kandidaten zum Verstärken):',
+    ),
     '',
     ...(weak.length
       ? weak.map(
           (row) =>
-            `- ${row.title} (${row.id}, ${row.kind.replace('Opportunity · ', '')}): taken in ${pct(row.share)} of the games, ${pct(row.winWhenTaken)} won with it, ${pct(row.winWithout)} without.`,
+            `- ${row.title} (${row.id}, ${pile(row.kind)}): ${t('taken in', 'genommen in')} ${pct(row.share)} ${t('of the games,', 'der Spiele,')} ${pct(row.winWhenTaken)} ${t('won with it,', 'gewonnen mit ihr,')} ${pct(row.winWithout)} ${t('without.', 'ohne sie.')}`,
         )
-      : ['- none.']),
+      : [t('- none.', '- keine.')]),
   );
 
   // the events
+  const eligible = records.filter((record) => record.turns >= 60 || record.outcome !== 'bankrupt');
   const eventRows = [...new Set(records.flatMap((record) => Object.keys(record.drawnEarly ?? {})))]
     .map((id) => {
       // only the first 60 rolls count: a won game stops early, so later cards would make every event look harmless
-      const eligible = records.filter(
-        (record) => record.turns >= 60 || record.outcome !== 'bankrupt',
-      );
       const met = eligible.filter((record) => record.drawnEarly?.[id]);
       const not = eligible.filter((record) => !record.drawnEarly?.[id]);
       return {
         id,
-        title: titles.get(id)?.title ?? id,
-        kind: titles.get(id)?.kind ?? '',
-        perGame: mean(records.map((record) => record.drawnEarly?.[id] ?? 0)),
+        title: titleOf(id),
+        kind: kindOf(id),
         games: met.length,
         winMet: won(met),
         winNot: won(not),
         brokeMet: bankrupt(met),
-        brokeNot: bankrupt(not),
       };
     })
     .filter((row) => row.games >= Math.max(10, records.length * 0.05) && row.kind !== 'Dream');
@@ -218,15 +305,21 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
     .slice(0, 12);
   lines.push(
     '',
-    '### Events that hit hardest',
+    t('### Events that hit hardest', '### Ereignisse, die am härtesten treffen'),
     '',
-    'Cards from the Emergency and Life stacks that were met in the first 60 rolls (every game gets that far), and how the games went on: the games that met the card against those that did not.',
+    t(
+      'Cards from the Emergency and Life stacks that were met in the first 60 rolls (every game gets that far), and how the games went on: the games that met the card against those that did not.',
+      'Karten aus dem Notfall- und dem Lebensstapel, die in den ersten 60 Würfen vorkamen (so weit kommt jedes Spiel), und wie die Spiele weitergingen: die Spiele mit der Karte gegen die ohne.',
+    ),
     '',
-    '| Event | Stack | Met in | Win chance after | Win chance otherwise | Bankrupt after |',
+    t(
+      '| Event | Stack | Met in | Win chance after | Win chance otherwise | Bankrupt after |',
+      '| Ereignis | Stapel | Vorgekommen in | Siegchance danach | Siegchance sonst | Pleite danach |',
+    ),
     '|---|---|---|---|---|---|',
     ...harsh.map(
       (row) =>
-        `| ${row.title} (${row.id}) | ${row.kind} | ${pct(row.games / records.length)} of the games | ${pct(row.winMet)} | ${pct(row.winNot)} | ${pct(row.brokeMet)} |`,
+        `| ${row.title} (${row.id}) | ${kindText(row.kind)} | ${pct(row.games / records.length)} ${t('of the games', 'der Spiele')} | ${pct(row.winMet)} | ${pct(row.winNot)} | ${pct(row.brokeMet)} |`,
     ),
   );
   const luckyHarvest = [...eventRows]
@@ -234,9 +327,15 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
     .sort((a, b) => b.winMet - b.winNot - (a.winMet - a.winNot));
   lines.push(
     '',
-    '### The market cards that help most and hurt most',
+    t(
+      '### The market cards that help most and hurt most',
+      '### Die Marktkarten, die am meisten helfen und am meisten schaden',
+    ),
     '',
-    '| Market card | Win chance after | Win chance otherwise | Bankrupt after |',
+    t(
+      '| Market card | Win chance after | Win chance otherwise | Bankrupt after |',
+      '| Marktkarte | Siegchance danach | Siegchance sonst | Pleite danach |',
+    ),
     '|---|---|---|---|',
     ...[...luckyHarvest.slice(0, 6), ...luckyHarvest.slice(-6)].map(
       (row) =>
@@ -251,16 +350,23 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
     const last = record.lastEvents.filter((event) => /^\d+:(E|L|H) /.test(event)).slice(-2);
     for (const event of last) {
       const id = event.split(' ')[1];
-      const title = titles.get(id)?.title ?? id;
-      causes.set(`${title} (${id})`, (causes.get(`${title} (${id})`) ?? 0) + 1);
+      const name = `${titleOf(id)} (${id})`;
+      causes.set(name, (causes.get(name) ?? 0) + 1);
     }
   }
-  lines.push('', '### What came just before a bankruptcy', '');
+  lines.push(
+    '',
+    t('### What came just before a bankruptcy', '### Was kurz vor einer Pleite kam'),
+    '',
+  );
   if (broke.length === 0) {
-    lines.push('No game ended in bankruptcy.');
+    lines.push(t('No game ended in bankruptcy.', 'Kein Spiel endete in der Pleite.'));
   } else {
     lines.push(
-      `${broke.length} games ended in bankruptcy (${pct(broke.length / records.length)}). The last two cards before it:`,
+      t(
+        `${broke.length} games ended in bankruptcy (${pct(broke.length / records.length)}). The last two cards before it:`,
+        `${broke.length} Spiele endeten in der Pleite (${pct(broke.length / records.length)}). Die letzten zwei Karten davor:`,
+      ),
       '',
       ...[...causes.entries()]
         .sort((a, b) => b[1] - a[1])
@@ -274,12 +380,24 @@ export function statsMarkdown(records: DreamGameRecord[], options: StatsDocOptio
     const turns = wins.map((record) => record.wonTurn ?? record.turns);
     lines.push(
       '',
-      '### What a won game looks like',
+      t('### What a won game looks like', '### Wie ein gewonnenes Spiel aussieht'),
       '',
-      `- Typical win: month ${monthsText(median(turns))} (the quickest ${monthsText(Math.min(...turns))}, the slowest ${monthsText(Math.max(...turns))}).`,
-      `- Passive income at the end: ${money(median(wins.map((record) => record.passiveMinor)) ?? 0)} a month against expenses of ${money(median(wins.map((record) => record.expensesMinor)) ?? 0)}.`,
-      `- Dream points collected: ${Math.round(mean(wins.map((record) => record.dreamPoints)))} on average.`,
-      `- Bank loan at its highest: ${money(median(wins.map((record) => record.peakBankLoanMinor)) ?? 0)}.`,
+      t(
+        `- Typical win: month ${monthsText(median(turns))} (the quickest ${monthsText(Math.min(...turns))}, the slowest ${monthsText(Math.max(...turns))}).`,
+        `- Typischer Sieg: Monat ${monthsText(median(turns))} (der schnellste ${monthsText(Math.min(...turns))}, der langsamste ${monthsText(Math.max(...turns))}).`,
+      ),
+      t(
+        `- Passive income at the end: ${money(median(wins.map((record) => record.passiveMinor)) ?? 0)} a month against expenses of ${money(median(wins.map((record) => record.expensesMinor)) ?? 0)}.`,
+        `- Passives Einkommen am Ende: ${money(median(wins.map((record) => record.passiveMinor)) ?? 0)} im Monat bei Ausgaben von ${money(median(wins.map((record) => record.expensesMinor)) ?? 0)}.`,
+      ),
+      t(
+        `- Dream points collected: ${Math.round(mean(wins.map((record) => record.dreamPoints)))} on average.`,
+        `- Gesammelte Traumpunkte: durchschnittlich ${Math.round(mean(wins.map((record) => record.dreamPoints)))}.`,
+      ),
+      t(
+        `- Bank loan at its highest: ${money(median(wins.map((record) => record.peakBankLoanMinor)) ?? 0)}.`,
+        `- Höchster Bankkredit: ${money(median(wins.map((record) => record.peakBankLoanMinor)) ?? 0)}.`,
+      ),
     );
   }
   return lines.join('\n');

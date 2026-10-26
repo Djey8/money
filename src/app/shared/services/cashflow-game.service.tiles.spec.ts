@@ -273,6 +273,44 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(state().cashflowGame.holdings!.some((holding) => holding.cardId === 'S33')).toBe(true);
   });
 
+  it('what the cards made is sold from Grow at the open offer of a Harvest card, and refused without one', () => {
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    landOn('opportunity');
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      turn: {
+        ...state().cashflowGame.turn!,
+        pending: {
+          ...state().cashflowGame.turn!.pending!,
+          opportunity: { pile: 'seed', offers: ['S10'] },
+        },
+      },
+    };
+    service.takeOpportunity('S10', {}, ok());
+    service.beforeGrowTrade('Buy Share WORLD 4 x 100;', 0, undefined, '@WORLD', 400);
+    // no offer: the sentence says where it is sold
+    expect(service.sellHeldFromOffer('WORLD')).toMatchObject({ sold: false });
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      marketOffers: [
+        {
+          title: 'WORLD',
+          cardId: 'H01',
+          label: 'Window',
+          salePriceMinor: 48000,
+          pricePerShareMinor: 12000,
+          offeredAtRoll: state().cashflowGame.turn!.count,
+        },
+      ],
+    };
+    const cash = service.cash;
+    expect(service.sellHeldFromOffer('WORLD')).toEqual({ sold: true });
+    expect(service.cash).toBeGreaterThan(cash);
+    expect(state().cashflowGame.holdings!.find((h) => h.title === 'WORLD')?.ended).toBe(true);
+    expect(service.sellHeldFromOffer('NOTHING')).toBeNull();
+  });
+
   it('a Harvest card moves the market, prices what the player owns, and sells in its window; the Payday drifts the indices', () => {
     state().tier3BalanceLoaded = true;
     state().tier3GrowLoaded = true;

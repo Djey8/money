@@ -136,6 +136,10 @@ Each card shows its **group** (market, shares, crypto, hype, metals, collectible
 about - red when you own something with that word -, an **"Affects you / Not about you"** badge, what it does to everybody, and what it
 means for you. Every affected Grow project gets a note and a highlight.
 
+**Selling what the cards gave you.** What the Opportunity cards made is sold at the price of a Harvest card: in an open market, to a
+buyer, or on a hype. The offer stays open (for a few rolls, depending on the rules) even after you pressed **Done**: the project's
+**Sell** button in Grow then sells at the card's price.
+
 ### 🔥 Emergency (45 cards)
 
 Something breaks. Cards come in five tiers - **spark, flame, blaze, wildfire, inferno** - from a broken bike grip to a house fire. An
@@ -187,6 +191,8 @@ Every character has a list of goals. For Jonas, **all five must be true**:
 **The Financial independence badge** 💎 appears as soon as the passive income covers the expenses (the part of the expenses that
 comes from your salary - income tax and social insurance - is not counted against your passive income, because it stops when the
 salary stops). The game goes on: the badge is a milestone, not the end.
+
+**When every goal is done** the **win screen** appears, with a trophy, the ticked goals and the numbers of your game; you may keep playing.
 
 **Bankruptcy.** If the monthly cash flow turns negative the game ends.
 
@@ -412,7 +418,7 @@ _Read the tables with care: with 200 games per way of playing, differences of a 
 #### How these tables are made
 
 Run `npm run simulate:dreamfund -- --games 100 --shapes ring,infinity --max-turns 150 --out docs/dreamfund-balance/run.md --doc
-docs/DREAMFUND_GAME.md` (build the domain package first). The tables above are rewritten between the markers; the text around them is
+docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md` (build the domain package first). The tables above are rewritten between the markers; the text around them is
 written by hand. The raw games are saved beside the report as JSON.
 
 ### Other characters

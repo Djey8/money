@@ -38,20 +38,31 @@ const config: BatchConfig = {
 };
 
 const started = Date.now();
-const result = runBatch(config);
+// --from-json file: the pages are made again from the games of an earlier run (no new simulation)
+const earlier = option('from-json');
+const result = earlier
+  ? { ...runBatch({ ...config, games: 0 }), records: JSON.parse(readFileSync(earlier, 'utf8')) }
+  : runBatch(config);
 const report = reportMarkdown(result);
 const docPath = option('doc');
 if (docPath) {
-  // the statistics go into a page the players read, between the markers of the character (--doc-name Jonas)
+  // the statistics go into pages the players read, between the markers of the character (--doc-name Jonas); --doc-de is the German page
   const name = option('doc-name') ?? 'jonas';
-  const page = existsSync(docPath) ? readFileSync(docPath, 'utf8') : '';
-  const stats = statsMarkdown(result.records, {
-    profession: option('profession') ?? 'Jonas',
-    maxTurns: config.maxTurns ?? 400,
-    shapes: config.shapes ?? ['ring'],
-  });
-  writeFileSync(docPath, injectStats(page, name.toLowerCase(), stats), 'utf8');
-  console.log(`statistics of ${result.records.length} games -> ${docPath}`);
+  for (const [path, lang] of [
+    [docPath, 'en'],
+    [option('doc-de'), 'de'],
+  ] as const) {
+    if (!path) continue;
+    const page = existsSync(path) ? readFileSync(path, 'utf8') : '';
+    const stats = statsMarkdown(result.records, {
+      profession: option('profession') ?? 'Jonas',
+      maxTurns: config.maxTurns ?? 400,
+      shapes: config.shapes ?? ['ring'],
+      lang,
+    });
+    writeFileSync(path, injectStats(page, name.toLowerCase(), stats), 'utf8');
+    console.log(`statistics of ${result.records.length} games -> ${path}`);
+  }
 }
 const out = option('out');
 if (out) {

@@ -174,6 +174,7 @@ import {
   isGameSnapshot as isGameSnapshotRule,
   keepSavedSlot,
   marketSaleFor,
+  openOfferFor,
   nextSmartDate,
   pickCashflowProfession,
   planAutoLoan,
@@ -2638,6 +2639,52 @@ export class CashflowGameService {
       },
       callbacks,
     );
+  }
+
+  /**
+   * Selling from Grow what the Opportunity cards made (JFK, 2026-10-26): it is sold at the open offer of a Harvest card - a window of
+   * its market, a buyer - and the game books it itself, at the offer's price. Returns null when the project is not one of those,
+   * else how it went: `sold`, or the sentence that says why not.
+   */
+  sellHeldFromOffer(title: string): { sold: true } | { sold: false; message: string } | null {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    if (!this.customRules) return null;
+    const holding = (game.holdings ?? []).find((entry) => !entry.ended && entry.title === title);
+    if (!holding) return null;
+    const offer = openOfferFor(game, title);
+    if (!offer)
+      return { sold: false, message: this.translate.instant('CashflowGame.harvest.sellOnCard') };
+    const card = this.opportunityCards.find((candidate) => candidate.id === holding.cardId);
+    const units = card?.share ? holding.units : undefined;
+    const perUnit = offer.pricePerShareMinor;
+    const grossMinor = perUnit !== undefined && units ? perUnit * units : offer.salePriceMinor;
+    // a buyer's offer is net of the costs of the sale; what is still owed on a property or a business comes off the proceeds
+    const owedMinor =
+      perUnit === undefined ? (card?.property?.mortgageMinor ?? card?.loan?.loanMinor ?? 0) : 0;
+    let failure = '';
+    this.sellNow(
+      title,
+      { grossMinor, costsMinor: 0, owedMinor, units },
+      {
+        onSuccess: () => undefined,
+        onError: (message) => (failure = message),
+      },
+    );
+    if (failure) return { sold: false, message: failure };
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      marketOffers: (state.cashflowGame.marketOffers ?? []).filter(
+        (entry) => entry.title !== title,
+      ),
+    };
+    this.persistAll(
+      'cashflow_offer_taken',
+      { title },
+      { onSuccess: () => undefined, onError: () => undefined },
+      { quiet: true },
+    );
+    return { sold: true };
   }
 
   /** Takes the offer of a buyer on the card. */

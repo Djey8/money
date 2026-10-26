@@ -112,6 +112,15 @@ export class GrowTradeService {
   }
 
   async sell(project: Grow): Promise<void> {
+    // what the Opportunity cards made is sold at the open offer of a Harvest card, and the game books it at that price
+    const held = CashflowGameService.isCashflowGame()
+      ? this.cashflowGame.sellHeldFromOffer(project.title)
+      : null;
+    if (held) {
+      if ('message' in held) this.toastService.show(held.message, 'error');
+      else this.toastService.show('CashflowGame.harvest.soldFromGrow', 'success');
+      return;
+    }
     const refused = CashflowGameService.sellRefusalFor(project.title);
     if (refused) {
       this.toastService.show('CashflowGame.rules.sellBlocked', 'error');

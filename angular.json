@@ -57,7 +57,11 @@
                   "glob": "**/*",
                   "input": "src/assets",
                   "output": "/assets",
-                  "ignore": ["i18n/cashflow-cards/**", "i18n/cashflow-manual/**"]
+                  "ignore": [
+                    "i18n/cashflow-cards/**",
+                    "i18n/cashflow-manual/**",
+                    "i18n/dreamfund-manual/**"
+                  ]
                 },
                 {
                   "glob": "manifest.webmanifest",
@@ -107,7 +111,11 @@
                   "glob": "**/*",
                   "input": "src/assets",
                   "output": "/assets",
-                  "ignore": ["i18n/cashflow-cards/**", "i18n/cashflow-manual/**"]
+                  "ignore": [
+                    "i18n/cashflow-cards/**",
+                    "i18n/cashflow-manual/**",
+                    "i18n/dreamfund-manual/**"
+                  ]
                 },
                 {
                   "glob": "manifest.webmanifest",
