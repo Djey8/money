@@ -224,6 +224,13 @@ Settings worth knowing: cards offered per Opportunity landing (1-3), side hustle
 turns a planned card stays buyable (1-3), the interest of the Bank loan, whether a dream or a life choice may be declined, whether a
 promotion has to be rolled for.
 
+**Your own settings.** The **Settings** row of the game menu has switches that only you see, kept in your browser: **Notifications** (the
+small confirmations that pop up; errors always show) and **Messages on the map** (the Payday that just passed, market notices). Turn the
+notifications off on a phone if they cover buttons.
+
+**The independence badge** compares the passive income with the **cost of living**: the expenses without the income tax and social
+insurance that stop with the salary. The badge says both numbers.
+
 ## Ways to win
 
 The simulation (below) has tried twelve ways of playing. They are ideas to steal:

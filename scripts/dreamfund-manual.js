@@ -137,4 +137,9 @@ for (const [language, file] of [
   console.log(
     `Wrote src/assets/i18n/dreamfund-manual/${language}.json (${manual.order.length} sections)`,
   );
+  // the same page for the agents: explain_concept topics dreamfund_game_en / dreamfund_game_de
+  fs.copyFileSync(
+    path.join(root, file),
+    path.join(root, `docs/domain/DREAMFUND_GAME_${language.toUpperCase()}.md`),
+  );
 }

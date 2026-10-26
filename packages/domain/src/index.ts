@@ -92,6 +92,7 @@ export * from './cashflow-game/simulation/digest';
 export * from './cashflow-game/analysis/books-from-snapshot';
 export * from './cashflow-game/analysis/snapshot-from-books';
 export * from './cashflow-game/analysis/review';
+export * from './cashflow-game/analysis/dreamfund-review';
 export * from './cashflow-game/analysis/render';
 export * from './cashflow-game/analysis/benchmark';
 export * from './cashflow-game/analysis/progress';

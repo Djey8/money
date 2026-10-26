@@ -945,7 +945,8 @@
                   | translate
                     : {
                         passive: (livePassiveIncome | appNumber),
-                        expenses: (liveTotalExpenses | appNumber),
+                        living: (liveLivingCosts | appNumber),
+                        linked: (liveSalaryLinked | appNumber),
                         currency: appState.currency,
                       }
               }}
@@ -1030,7 +1031,7 @@
             ></app-active-effects>
             <p
               class="cf-latest cf-latest--new cf-latest--over"
-              *ngIf="paydayBanner as payday"
+              *ngIf="gameSettings.messages && paydayBanner as payday"
               role="status"
             >
               <span class="cf-latest-label">💰</span>
@@ -1069,7 +1070,7 @@
               </ng-template>
               <!-- The messages (a Payday, a kept MLM card, a Market card that did not apply, what the others do) are laid in the -->
               <!-- middle of the wheel: they cover nothing that matters, and each can be closed with its x (JFK, 2026-10-18). -->
-              <div class="cf-ring-overlay">
+              <div class="cf-ring-overlay" *ngIf="gameSettings.messages">
                 <!-- The bonus roll of a kept Multi-Level-Marketing card: same game turn as the Payday above, so both show. -->
                 <div
                   class="cf-card cf-notice cf-notice--mlm"
@@ -1756,9 +1757,15 @@
 
           <!-- The way to the lobby while a game is loaded (the menu has only the Cashflow Game entry then). From the route table: -->
           <!-- nothing of it exists in the Firebase edition. -->
+          <!-- Alone, the row is the player's Settings (the switch for the small confirmations among them); at a table the way to the lobby
+               is the table's own menu (JFK, 2026-10-26). -->
+          <button class="cf-row-btn" *ngIf="!remote" (click)="dashboardView = 'settings'">
+            <span>{{ 'CashflowGame.settings.title' | translate }}</span>
+            <span class="cf-row-btn-chevron">›</span>
+          </button>
           <button
             class="cf-row-btn"
-            *ngIf="multiplayerLink as link"
+            *ngIf="remote && multiplayerLink as link"
             (click)="openMultiplayer(link.path)"
           >
             <span>{{ link.label }}</span>
@@ -1810,6 +1817,37 @@
             {{ item.label }}
           </button>
         </div>
+      </div>
+
+      <!-- The player's Settings: switches kept in the browser. More will come here. -->
+      <div class="cf-card" *ngIf="dashboardView === 'settings'">
+        <button class="cf-back-btn" (click)="backToMain()">
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
+        </button>
+        <h3>{{ 'CashflowGame.settings.title' | translate }}</h3>
+        <ul class="cf-settings">
+          <li *ngFor="let row of [{ id: 'toasts' }, { id: 'messages' }]">
+            <span class="cf-settings-text">
+              <strong>{{ 'CashflowGame.settings.' + row.id | translate }}</strong>
+              <small>{{ 'CashflowGame.settings.' + row.id + 'Hint' | translate }}</small>
+            </span>
+            <button
+              type="button"
+              class="cf-switch"
+              role="switch"
+              [class.cf-switch--on]="$any(gameSettings)[row.id]"
+              [attr.aria-checked]="$any(gameSettings)[row.id]"
+              (click)="toggleSetting($any(row.id))"
+            >
+              {{
+                ($any(gameSettings)[row.id]
+                  ? 'CashflowGame.settings.on'
+                  : 'CashflowGame.settings.off'
+                ) | translate
+              }}
+            </button>
+          </li>
+        </ul>
       </div>
 
       <div class="cf-card" *ngIf="dashboardView === 'games'">

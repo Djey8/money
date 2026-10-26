@@ -265,6 +265,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     | 'history'
     | 'games'
     | 'confirmSpace'
+    | 'settings'
     | 'table' = 'main';
 
   constructor(
@@ -388,6 +389,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** Leaves a focused sub-view (Deal pile choice, or the Cards find/draw flow) back to the main dashboard. */
+  /** The player's own switches (see the game's Settings). */
+  get gameSettings() {
+    return this.cashflowGameService.settings;
+  }
+
+  toggleSetting(name: 'toasts' | 'messages'): void {
+    this.cashflowGameService.setSetting(name, !this.cashflowGameService.settings[name]);
+  }
+
   backToMain(): void {
     this.historyCardView = false;
     this.recordOpenCard();
@@ -713,6 +723,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
           gameTitles.includes(sub.title) && sub.title.endsWith(' Cashflow') && sub.amount > 0,
       )
       .map((sub) => ({ name: sub.title.replace(/ Cashflow$/, ''), amount: sub.amount }));
+  }
+
+  /** What the passive income is compared with: the expenses without tax and social insurance (they stop with the salary). */
+  get liveLivingCosts(): number {
+    return fromMinorUnits(this.liveFinances.expensesMinor - this.liveFinances.salaryLinkedMinor);
+  }
+
+  get liveSalaryLinked(): number {
+    return fromMinorUnits(this.liveFinances.salaryLinkedMinor);
   }
 
   get livePassiveIncome(): number {

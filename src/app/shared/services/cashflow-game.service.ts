@@ -543,6 +543,8 @@ export class CashflowGameService {
   ) {
     CashflowGameService.translator = translate;
     CashflowGameService.current = this;
+    // the player's switch for the small confirmations (JFK, 2026-10-26: on a phone they cover buttons)
+    ToastService.muted = () => !this.settings.toasts && CashflowGameService.isCashflowGame();
     void loadCardTextDe().then(registerCardTextDe);
     // The game ends when the books say so, whichever action changed them.
     const state = AppStateService.instance;
@@ -561,6 +563,31 @@ export class CashflowGameService {
       return null;
     }
   })();
+
+  /** What the player chose for themselves in the game's Settings: kept in the browser, not in the game. */
+  readonly settings = {
+    /** The small confirmations (saved, bought, sold ...). Errors always show. */
+    toasts: CashflowGameService.readSetting('toasts'),
+    /** The messages laid on the map (a Payday that passed, a market notice). */
+    messages: CashflowGameService.readSetting('messages'),
+  };
+
+  private static readSetting(name: string): boolean {
+    try {
+      return localStorage.getItem(`mm.game.${name}`) !== '0';
+    } catch {
+      return true;
+    }
+  }
+
+  setSetting(name: 'toasts' | 'messages', on: boolean): void {
+    this.settings[name] = on;
+    try {
+      localStorage.setItem(`mm.game.${name}`, on ? '1' : '0');
+    } catch {
+      // a convenience only
+    }
+  }
 
   /** The running service, for the rules the Grow pages ask by a static call. */
   private static current?: CashflowGameService;

@@ -4154,4 +4154,14 @@ describe('CashflowGameService', () => {
       expect(state.allSubscriptions.map((s) => s.title)).toEqual(['A', 'C']);
     });
   });
+
+  describe("the player's own settings", () => {
+    it('keeps the switch for the small confirmations in the browser', () => {
+      service.setSetting('toasts', false);
+      expect(service.settings.toasts).toBe(false);
+      expect(localStorage.getItem('mm.game.toasts')).toBe('0');
+      service.setSetting('toasts', true);
+      expect(localStorage.getItem('mm.game.toasts')).toBe('1');
+    });
+  });
 });

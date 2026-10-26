@@ -234,6 +234,13 @@ Einstellungen, die man kennen sollte: angebotene Karten pro Chance-Landung (1-3)
 Spar-Karte (1-3), Runden, in denen eine geplante Karte kaufbar bleibt (1-3), der Zins des Bankkredits, ob ein Traum oder eine
 Lebenswahl abgelehnt werden darf, ob auf eine Beförderung gewürfelt werden muss.
 
+**Deine eigenen Einstellungen.** Die Zeile **Einstellungen** im Spielmenü hat Schalter, die nur du siehst und die in deinem Browser bleiben:
+**Benachrichtigungen** (die kleinen Bestätigungen, die aufpoppen; Fehler werden immer gezeigt) und **Meldungen auf der Karte** (der Zahltag, der
+gerade vorbei ist, Markthinweise). Schalte die Benachrichtigungen am Handy aus, wenn sie Buttons verdecken.
+
+**Das Abzeichen Finanzielle Unabhängigkeit** vergleicht das passive Einkommen mit den **Lebenshaltungskosten**: den Ausgaben ohne die Lohnsteuer und
+Sozialabgaben, die mit dem Gehalt wegfallen. Das Abzeichen nennt beide Zahlen.
+
 ## Wege zum Sieg
 
 Die Simulation (unten) hat zwölf Spielweisen ausprobiert. Es sind Ideen zum Abgucken:

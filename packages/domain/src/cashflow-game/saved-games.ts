@@ -74,6 +74,8 @@ export interface CashflowFinanceSummary {
   fundingMinor: number;
   /** What is left of the month after the plans: the cashflow the player lives on. */
   cashflowAfterPlansMinor: number;
+  /** What the salary costs (income tax, social insurances): it stops with the salary, so a Dreamfund game does not count it against the passive income. */
+  salaryLinkedMinor: number;
   /** Passive income covers every monthly expense - out of the rat race. */
   escapedRatRace: boolean;
   /** The monthly cashflow is negative: how you lose the game. */
@@ -107,8 +109,10 @@ export function summarizeGameFinances(
     .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
   const monthlyCashflowMinor = owned.reduce((sum, sub) => sum + sub.amountMinor, 0);
   const fundingMinor = runningFundingMinor(state, subscriptions);
+  const linkedMinor = salaryLinkedMinor(state, owned);
   return {
     fundingMinor,
+    salaryLinkedMinor: linkedMinor,
     cashflowAfterPlansMinor: monthlyCashflowMinor - fundingMinor,
     salaryMinor,
     passiveIncomeMinor,
@@ -116,8 +120,7 @@ export function summarizeGameFinances(
     monthlyCashflowMinor,
     // in a Dreamfund game independence means the passive income pays for the way of living: what the salary pays to the state and the
     // social insurances (a tax that goes with the job) is not part of it (JFK, 2026-10-26)
-    escapedRatRace:
-      expensesMinor > 0 && passiveIncomeMinor >= expensesMinor - salaryLinkedMinor(state, owned),
+    escapedRatRace: expensesMinor > 0 && passiveIncomeMinor >= expensesMinor - linkedMinor,
     bankrupt: monthlyCashflowMinor < 0,
   };
 }

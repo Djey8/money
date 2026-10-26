@@ -21,10 +21,12 @@ export class ToastService {
    * to press on a phone). Errors always show - a failed save must never be silent.
    */
   static quiet: (() => boolean) | null = null;
+  /** The player's own setting (the game's Settings): the small confirmations are off; errors still show. */
+  static muted: (() => boolean) | null = null;
 
   show(message: string, type: 'success' | 'error' | 'info' | 'update' | 'delete' = 'success') {
     const id = ++this.counter;
-    if (type !== 'error' && ToastService.quiet?.()) return id;
+    if (type !== 'error' && (ToastService.quiet?.() || ToastService.muted?.())) return id;
     this.toastSubject.next({ message, type, id });
     return id;
   }
