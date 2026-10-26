@@ -1,3 +1,4 @@
+import { mirrorReserveToMojo } from 'src/app/shared/reserve-mirror';
 import { gameTradeStep, hasGameTag, parseGrowComment } from '@money/domain';
 import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import { bucketCapacity } from 'src/app/shared/bucket.utils';
@@ -1081,6 +1082,8 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         if (AddComponent.selectedOption === 'Mojo') {
           this.removeFromMojo();
         }
+        // a game's emergency reserve project follows the Mojo
+        mirrorReserveToMojo();
 
         let isInvesmtent = false;
         if (AddComponent.isLiabilitie) {

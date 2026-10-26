@@ -70,6 +70,10 @@ export interface CashflowFinanceSummary {
   passiveIncomeMinor: number;
   expensesMinor: number;
   monthlyCashflowMinor: number;
+  /** What the payment plans running at the next Payday pay every month (JFK, 2026-10-26): saving, but money that leaves the month. */
+  fundingMinor: number;
+  /** What is left of the month after the plans: the cashflow the player lives on. */
+  cashflowAfterPlansMinor: number;
   /** Passive income covers every monthly expense - out of the rat race. */
   escapedRatRace: boolean;
   /** The monthly cashflow is negative: how you lose the game. */
@@ -83,8 +87,9 @@ export interface CashflowFinanceSummary {
  * rat-race banner, so a saved game and the live view always agree.
  */
 export function summarizeGameFinances(
-  state: Pick<CashflowGameState, 'gameSubscriptionTitles' | 'insurance'>,
-  subscriptions: { title: string; amountMinor: number }[],
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles' | 'insurance'> &
+    Partial<Pick<CashflowGameState, 'fundingSubscriptionTitles' | 'virtualDate'>>,
+  subscriptions: { title: string; amountMinor: number; startDate?: string; endDate?: string }[],
 ): CashflowFinanceSummary {
   // an insurance that is dropped costs nothing: its premium is not part of the month
   const dropped = droppedPremiumTitles(state);
@@ -99,7 +104,10 @@ export function summarizeGameFinances(
     .filter((sub) => sub.amountMinor < 0)
     .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
   const monthlyCashflowMinor = owned.reduce((sum, sub) => sum + sub.amountMinor, 0);
+  const fundingMinor = runningFundingMinor(state, subscriptions);
   return {
+    fundingMinor,
+    cashflowAfterPlansMinor: monthlyCashflowMinor - fundingMinor,
     salaryMinor,
     passiveIncomeMinor,
     expensesMinor,
@@ -117,6 +125,25 @@ export function savedGameStatus(
   if (summary.escapedRatRace) return 'escaped';
   if (summary.bankrupt) return 'bankrupt';
   return 'playing';
+}
+
+/** What the funding plans that pay on the next Payday (their dates cover it) take every month, as a positive number. */
+export function runningFundingMinor(
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles'> &
+    Partial<Pick<CashflowGameState, 'fundingSubscriptionTitles' | 'virtualDate'>>,
+  subscriptions: { title: string; amountMinor: number; startDate?: string; endDate?: string }[],
+): number {
+  const date = state.virtualDate ?? '';
+  return (state.fundingSubscriptionTitles ?? [])
+    .filter((title) => !state.gameSubscriptionTitles.includes(title))
+    .map((title) => subscriptions.find((sub) => sub.title === title))
+    .filter(
+      (sub) =>
+        sub !== undefined &&
+        (!sub.startDate || sub.startDate <= date) &&
+        (!sub.endDate || date <= sub.endDate),
+    )
+    .reduce((sum, sub) => sum + Math.abs(sub!.amountMinor), 0);
 }
 
 /** Most recently saved first. */

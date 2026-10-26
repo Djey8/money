@@ -904,7 +904,7 @@
             {{ appState.currency }}
           </p>
 
-          <p class="cf-bankruptcy-warning" *ngIf="monthlyCashflow < 0">
+          <p class="cf-bankruptcy-warning" *ngIf="baseCashflow < 0">
             {{ 'CashflowGame.bankruptcyWarning' | translate }}
             <a routerLink="/subscription" (click)="closeWindow()">{{
               'CashflowGame.viewSubscriptions' | translate

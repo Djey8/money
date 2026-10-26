@@ -75,4 +75,26 @@ describe('savedGameStatus and sortSavedGames', () => {
     expect(sortSavedGames(games).map((g) => g.id)).toEqual(['b', 'c', 'a']);
     expect(games.map((g) => g.id)).toEqual(['a', 'b', 'c']);
   });
+
+  it('payment plans that pay at the next Payday leave the month, the ones that are paused or finished do not', () => {
+    const state = {
+      gameSubscriptionTitles: ['Salary', 'Rent'],
+      fundingSubscriptionTitles: ['Plan A', 'Plan B'],
+      virtualDate: '2026-12-15',
+      insurance: undefined,
+    } as any;
+    const subs = [
+      { title: 'Salary', amountMinor: 200000 },
+      { title: 'Rent', amountMinor: -100000 },
+      { title: 'Plan A', amountMinor: -30000, startDate: '2026-11-15', endDate: '2027-03-15' },
+      // paused: ended before the next Payday
+      { title: 'Plan B', amountMinor: -20000, startDate: '2026-11-15', endDate: '2026-12-14' },
+    ];
+    const finances = summarizeGameFinances(state, subs);
+    expect(finances.fundingMinor).toBe(30000);
+    expect(finances.monthlyCashflowMinor).toBe(100000);
+    expect(finances.cashflowAfterPlansMinor).toBe(70000);
+    // only the cashflow of the game itself decides bankruptcy
+    expect(finances.bankrupt).toBe(false);
+  });
 });

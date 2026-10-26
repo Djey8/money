@@ -204,6 +204,7 @@ import {
   type SavedGameSummary,
 } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
+import { syncPaymentPlans } from '../payment-plan-sync';
 import { AppStateService } from './app-state.service';
 import { CashflowCardText } from './cashflow-card-text.service';
 import { IncomeStatementService } from './income-statement.service';
@@ -1547,6 +1548,17 @@ export class CashflowGameService {
     }
     for (const project of state.allFireEmergencies) {
       if (!project.reserve && reserveTitles.includes(project.title)) project.reserve = true;
+      // a reserve saved under its old name is called Mojo now, like the account it follows
+      if (project.reserve) {
+        const current = reserveTitles.find((title) => !!title);
+        if (current && project.title !== current) {
+          const old = project.title;
+          project.title = current;
+          for (const plan of project.plannedSubscriptions ?? []) {
+            if (plan.projectTitle === old) plan.projectTitle = current;
+          }
+        }
+      }
     }
   }
 
@@ -3151,6 +3163,15 @@ export class CashflowGameService {
    */
   get monthlyCashflow(): number {
     const state = AppStateService.instance;
+    // what the payment plans of the next Payday take leaves the month too (JFK, 2026-10-26)
+    return fromMinorUnits(
+      summarizeGameFinances(state.cashflowGame, this.gameSubscriptions()).cashflowAfterPlansMinor,
+    );
+  }
+
+  /** The cashflow without the payment plans: the one that decides bankruptcy. */
+  get baseCashflow(): number {
+    const state = AppStateService.instance;
     return fromMinorUnits(
       computeMonthlyCashflowMinor(state.cashflowGame, this.gameSubscriptions()),
     );
@@ -4480,6 +4501,19 @@ export class CashflowGameService {
     this.repairGameProjects();
     this.refreshReserveTarget();
     this.incomeStatement.recalculate();
+    // a payment plan whose buckets are full (or that has run out) is finished: its subscription ends
+    const day = state.cashflowGame.virtualDate;
+    if (
+      day &&
+      state.cashflowGame.professionId &&
+      syncPaymentPlans(
+        [...state.allSmileProjects, ...state.allFireEmergencies],
+        state.allSubscriptions,
+        day,
+      )
+    ) {
+      options = { ...options, includeSubscriptions: true };
+    }
     if (!options.quiet) state.isSaving = true;
     if (this.refreshCurrentMonthPlan()) options = { ...options, includeBudget: true };
 

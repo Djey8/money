@@ -6,6 +6,8 @@ import { Smile } from '../../interfaces/smile';
 import { Fire } from '../../interfaces/fire';
 import { AppStateService } from './app-state.service';
 import { PersistenceService } from './persistence.service';
+import { addMonthsToIsoDate } from '@money/domain';
+import { plannedRemaining } from '../payment-plan-sync';
 
 /**
  * Service for activating and deactivating planned subscriptions
@@ -111,6 +113,27 @@ export class SubscriptionActivationService {
     }
   }
 
+  /** A game pays a plan at its Paydays: the plan is registered with the game (as saving, not as a monthly expense). */
+  private registerFunding(title: string): void {
+    const game = AppStateService.instance.cashflowGame;
+    AppStateService.instance.cashflowGame = {
+      ...game,
+      fundingSubscriptionTitles: [
+        ...(game.fundingSubscriptionTitles ?? []).filter((entry) => entry !== title),
+        title,
+      ],
+    };
+    this.persistence.writeAndSync({
+      tag: 'cashflowGame',
+      data: AppStateService.instance.cashflowGame,
+      localStorageKey: 'cashflowGame',
+      logEvent: 'activate_payment_plan_game',
+      logMetadata: { title },
+      onSuccess: () => undefined,
+      onError: (error) => console.error('Failed to save the game with its funding plan:', error),
+    });
+  }
+
   /**
    * Deactivate an active planned subscription
    * Sets the subscription end date to today instead of deleting it
@@ -195,8 +218,26 @@ export class SubscriptionActivationService {
         return false;
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const endDate = plan.targetDate || plan.endDate;
+      // in a game a plan runs on the game's own days: it starts at the next Payday and pays as many Paydays as it still has to
+      const game = AppStateService.instance.cashflowGame;
+      const inGame =
+        CashflowGameService.isCashflowGame() && !!game.professionId && !!game.virtualDate;
+      if (inGame) {
+        const room = CashflowGameService.fundingRoom(plan.title);
+        const emergency = !!(project as { emergencyCardId?: string }).emergencyCardId;
+        if (!emergency && room !== null && plan.amount > room + 0.005) {
+          console.warn('The month cannot carry this plan', plan.amount, room);
+          return false;
+        }
+      }
+      const today = inGame ? game.virtualDate! : new Date().toISOString().split('T')[0];
+      let endDate = plan.targetDate || plan.endDate;
+      if (inGame) {
+        const left = Math.max(1, Math.ceil(plannedRemaining(plan, project) / plan.amount - 0.001));
+        endDate = addMonthsToIsoDate(today, left - 1);
+        plan.startDate = today;
+        plan.endDate = endDate;
+      }
 
       // Look for existing subscription (that was deactivated)
       const subscriptionIndex = AppStateService.instance.allSubscriptions.findIndex(
@@ -232,6 +273,7 @@ export class SubscriptionActivationService {
       plan.updatedAt = new Date().toISOString();
       plan.activatedAt = new Date().toISOString();
       delete plan.deactivatedAt;
+      if (inGame) this.registerFunding(plan.title);
 
       // Save to database
       this.persistence.writeAndSync({
@@ -282,6 +324,24 @@ export class SubscriptionActivationService {
       // If plan is active, deactivate it first
       if (plan.status === 'active') {
         this.deactivatePlannedSubscription(plan, project);
+      }
+
+      // The plan is gone, and so is its subscription (a paused or finished plan left it behind as an ended one)
+      const subscriptions = AppStateService.instance.allSubscriptions;
+      const at = subscriptions.findIndex(
+        (sub) => sub.title === plan.title && sub.category === plan.category,
+      );
+      if (at !== -1) {
+        subscriptions.splice(at, 1);
+        this.persistence.writeAndSync({
+          tag: 'subscriptions',
+          data: subscriptions,
+          localStorageKey: 'subscriptions',
+          logEvent: 'delete_payment_plan',
+          logMetadata: { title: plan.title, projectTitle: plan.projectTitle },
+          onSuccess: () => undefined,
+          onError: (error) => console.error('Failed to remove the plan subscription:', error),
+        });
       }
 
       // Remove from project's planned subscriptions

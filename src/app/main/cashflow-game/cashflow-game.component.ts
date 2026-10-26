@@ -530,6 +530,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.cashflowGameService.monthlyCashflow;
   }
 
+  /** The month without the payment plans: only this one being negative ends the game. */
+  get baseCashflow(): number {
+    return this.cashflowGameService.baseCashflow;
+  }
+
   /** `cashflowGame`'s history is stored in minor units (decision 6); the template displays decimal. */
   toDisplayAmount(amountMinor: number): number {
     return fromMinorUnits(amountMinor);
@@ -620,8 +625,26 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       this.appState.allSubscriptions.map((sub) => ({
         title: sub.title,
         amountMinor: toMinorUnits(sub.amount),
+        startDate: sub.startDate,
+        endDate: sub.endDate,
       })),
     );
+  }
+
+  /** The payment plans that pay at the next Payday: money for a project that leaves the month (JFK, 2026-10-26). */
+  get liveFundingLines(): { title: string; amount: number }[] {
+    const game = this.appState.cashflowGame;
+    const date = game.virtualDate ?? '';
+    return (game.fundingSubscriptionTitles ?? [])
+      .filter((title) => !game.gameSubscriptionTitles.includes(title))
+      .map((title) => this.appState.allSubscriptions.find((sub) => sub.title === title))
+      .filter(
+        (sub): sub is NonNullable<typeof sub> =>
+          !!sub &&
+          (!sub.startDate || sub.startDate <= date) &&
+          (!sub.endDate || date <= sub.endDate),
+      )
+      .map((sub) => ({ title: sub.title, amount: -Math.abs(sub.amount) }));
   }
 
   /**
@@ -707,11 +730,12 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     const dropped = droppedPremiumTitles(this.appState.cashflowGame);
     return this.appState.allSubscriptions
       .filter((sub) => gameTitles.includes(sub.title) && !dropped.has(sub.title) && sub.amount < 0)
-      .map((sub) => ({ title: sub.title, amount: sub.amount }));
+      .map((sub) => ({ title: sub.title, amount: sub.amount }))
+      .concat(this.liveFundingLines);
   }
 
   get liveTotalExpenses(): number {
-    return fromMinorUnits(this.liveFinances.expensesMinor);
+    return fromMinorUnits(this.liveFinances.expensesMinor + this.liveFinances.fundingMinor);
   }
 
   /**

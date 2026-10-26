@@ -575,10 +575,11 @@ function reserveProject(lang: 'en' | 'de', monthlyExpensesMinor: number): Cashfl
     ),
   });
   return {
-    title: t('Emergency reserve', 'Notgroschen'),
+    // the project is called like the account it follows, so a payment into `@Mojo` and the project are one (JFK, 2026-10-26)
+    title: 'Mojo',
     sub: t(
-      'Three months of expenses, for emergencies only',
-      'Drei Monatsausgaben, nur für Notfälle',
+      'Emergency reserve · three months of expenses, for emergencies only',
+      'Notgroschen · drei Monatsausgaben, nur für Notfälle',
     ),
     description: t(
       'An emergency reserve is money that waits for the day something goes wrong: a job lost, a repair, a medical bill. Almost every book on personal finance starts here, before investing and before big goals, because without it one bad month turns into debt. The usual rule is three to six months of your expenses in an account you can reach at once. Here the first goal is three. Fill it with payment plans, a little every Payday; use it when you really have to pay for an emergency, and fill it up again afterwards. The game is won only with the reserve full.',
