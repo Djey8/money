@@ -63,14 +63,25 @@ export function activeEffects(
 ): ActiveEffect[] {
   const out: ActiveEffect[] = [];
 
+  // the lines of one card that run the same time are one effect (a job offer changes the income and the costs: one badge, the sum)
+  const lifeGroups = new Map<
+    string,
+    { line: NonNullable<typeof state.lifeLines>[number]; sum: number }
+  >();
   for (const line of state.lifeLines ?? []) {
+    const key = `${line.cardId}|${line.paydaysLeft ?? 'for good'}`;
+    const group = lifeGroups.get(key);
+    if (group) group.sum += line.amountMinor;
+    else lifeGroups.set(key, { line, sum: line.amountMinor });
+  }
+  for (const [key, { line, sum }] of lifeGroups) {
     out.push({
-      id: `life:${line.id}`,
+      id: `life:${key}`,
       kind: line.paydaysLeft === undefined ? 'permanent' : 'life',
       title: line.title[lang],
-      amountMinor: line.amountMinor,
+      amountMinor: sum,
       ...(line.paydaysLeft !== undefined ? { paydaysLeft: line.paydaysLeft } : {}),
-      tone: line.amountMinor >= 0 ? 'good' : 'bad',
+      tone: sum >= 0 ? 'good' : 'bad',
     });
   }
   for (const item of state.lifeScheduled ?? []) {

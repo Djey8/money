@@ -50,4 +50,28 @@ describe('what is working on the account', () => {
   it('is empty when nothing runs', () => {
     expect(activeEffects({} as never, 'de')).toEqual([]);
   });
+
+  it('shows the lines of one card that run the same time as one effect, the amounts added', () => {
+    const effects = activeEffects(
+      {
+        lifeLines: [
+          {
+            id: 'L16:incomePercent',
+            cardId: 'L16',
+            title: { en: 'Job Offer', de: 'Jobangebot' },
+            amountMinor: 13916,
+          },
+          {
+            id: 'L16:expensesPercent',
+            cardId: 'L16',
+            title: { en: 'Job Offer', de: 'Jobangebot' },
+            amountMinor: 12415,
+          },
+        ],
+      } as never,
+      'en',
+    );
+    expect(effects).toHaveLength(1);
+    expect(effects[0]).toMatchObject({ title: 'Job Offer', amountMinor: 26331, tone: 'good' });
+  });
 });

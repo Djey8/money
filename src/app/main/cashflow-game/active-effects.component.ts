@@ -85,14 +85,26 @@ import { fromMinorUnits, type ActiveEffect } from '@money/domain';
       :host {
         display: block;
       }
+      /* one row, however many effects: what does not fit scrolls sideways (JFK, 2026-10-26: three rows took the phone's screen) */
       .ae-strip {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: center;
         gap: 4px;
         margin: 4px 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
         font-size: 0.74rem;
         line-height: 1.2;
+      }
+      .ae-strip::-webkit-scrollbar {
+        display: none;
+      }
+      .ae-strip > * {
+        flex: 0 0 auto;
       }
       .ae-head,
       .ae-chip,

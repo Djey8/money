@@ -2860,6 +2860,22 @@
  * line high even when empty, so the wheel never moves when it comes or goes; the line itself never wraps, it only gets smaller on a
  * small phone.
  */
+.cf-effects-slot {
+  position: relative;
+}
+
+/* a Payday that just passed: its banner covers the effects' row for a while */
+.cf-effects-slot--banner {
+  min-height: 2rem;
+}
+
+.cf-latest--over {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 2;
+  height: 2rem;
+}
+
 .cf-latest-slot {
   height: 2rem;
   margin: 0 0 6px;
