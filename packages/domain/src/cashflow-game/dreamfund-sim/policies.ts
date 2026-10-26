@@ -37,6 +37,8 @@ export interface DreamPolicy {
   /** Of what the month has left, the share put into payment plans for the reserve and the dreams, and over how many Paydays they run. */
   planShare: number;
   planMonths: number;
+  /** The dream is planned from the start, or only once the passive income pays for this share of the living costs (an investor builds first). */
+  dreamAfterPassiveShare?: number;
   /** The order the free money of a Payday goes to. */
   priorities: ('reserve' | 'debt' | 'dream' | 'invest')[];
   /** Of the free money after the reserve and the debts, the share that goes to the dream each Payday. */
@@ -93,7 +95,8 @@ const isSaving = (card: OpportunityCard) => card.growType !== 'income-growth';
 
 interface Taste {
   /** How much the card is wanted: yearly return on what it costs, plus a liking by kind. */
-  weight(card: OpportunityCard): number;
+  /** How much a card is wanted, given what it pays a month and costs for the lot the player would take. */
+  weight(card: OpportunityCard, monthlyMinor: number, costMinor: number): number;
 }
 
 /** A policy made of a taste: it takes the best affordable card that its risk tolerance allows. */
@@ -105,6 +108,7 @@ function makePolicy(
     | 'bufferMonths'
     | 'planShare'
     | 'planMonths'
+    | 'dreamAfterPassiveShare'
     | 'priorities'
     | 'dreamShare'
     | 'lifeAcceptChance'
@@ -114,6 +118,8 @@ function makePolicy(
   extra: {
     piles: OpportunityPile[];
     unitsShare?: number;
+    /** A card scoring less than this is not taken, however affordable. */
+    minScore?: number;
     sellProfit?: number;
     ride?: boolean;
     takeDreams?: boolean;
@@ -122,16 +128,16 @@ function makePolicy(
   return {
     ...base,
     pile(view, rng) {
-      // the pile the money allows: a big pile only with enough to pay for its cards
-      const options = extra.piles.filter((pile) =>
-        pile === 'seed'
-          ? true
-          : pile === 'sapling'
-            ? view.spendableMinor > 300000
-            : view.spendableMinor > 3000000,
-      );
-      const list = options.length ? options : ['seed' as OpportunityPile];
-      return list[Math.floor(rng() * list.length)];
+      // the pile the money allows: the biggest the player can pay for, now and then a smaller one to look around
+      const allowed = (pile: OpportunityPile) =>
+        extra.piles.includes(pile) &&
+        (pile === 'seed' ||
+          (pile === 'sapling' && view.spendableMinor > 500000) ||
+          (pile === 'tree' && view.spendableMinor > 3000000));
+      const ladder: OpportunityPile[] = ['tree', 'sapling', 'seed'];
+      const options = ladder.filter(allowed);
+      if (options.length === 0) return 'seed';
+      return rng() < 0.75 ? options[0] : options[Math.floor(rng() * options.length)];
     },
     take(offers, view, held) {
       let best: { card: OpportunityCard; choice: OpportunityChoice; score: number } | null = null;
@@ -161,8 +167,13 @@ function makePolicy(
         } else if (cost > view.spendableMinor) {
           continue;
         }
-        const score = taste.weight(card) + (cost === 0 ? 5 : 0);
-        if (score > 0 && (!best || score > best.score)) best = { card, choice, score };
+        const monthly = card.share
+          ? card.share.dividendMonthPerUnitMinor * (choice.units ?? 1)
+          : expectedMonthlyMinor(card);
+        const score = taste.weight(card, monthly, cost) + (cost === 0 ? 5 : 0);
+        if (score > (extra.minScore ?? 0) && (!best || score > best.score)) {
+          best = { card, choice, score };
+        }
       }
       return best ? { card: best.card, choice: best.choice } : null;
     },
@@ -204,7 +215,7 @@ export const DREAM_POLICIES: DreamPolicy[] = [
       planShare: 0.9,
       planMonths: 12,
       name: 'Cautious saver',
-      bufferMonths: 3,
+      bufferMonths: 2,
       priorities: ['reserve', 'debt', 'dream', 'invest'],
       dreamShare: 0.6,
       lifeAcceptChance: 0.5,
@@ -230,7 +241,7 @@ export const DREAM_POLICIES: DreamPolicy[] = [
       planShare: 0.6,
       planMonths: 18,
       name: 'ETF investor',
-      bufferMonths: 2,
+      bufferMonths: 1,
       priorities: ['reserve', 'debt', 'invest', 'dream'],
       dreamShare: 0.4,
       lifeAcceptChance: 0.6,
@@ -254,11 +265,11 @@ export const DREAM_POLICIES: DreamPolicy[] = [
       planShare: 0.5,
       planMonths: 24,
       name: 'Property builder',
-      bufferMonths: 2,
+      bufferMonths: 1,
       priorities: ['reserve', 'debt', 'invest', 'dream'],
       dreamShare: 0.3,
       lifeAcceptChance: 0.6,
-      riskTolerance: 3,
+      riskTolerance: 4,
     },
     {
       weight: (card) =>
@@ -278,11 +289,11 @@ export const DREAM_POLICIES: DreamPolicy[] = [
       planShare: 0.5,
       planMonths: 18,
       name: 'Side hustler',
-      bufferMonths: 2,
+      bufferMonths: 1,
       priorities: ['reserve', 'invest', 'debt', 'dream'],
       dreamShare: 0.4,
       lifeAcceptChance: 0.7,
-      riskTolerance: 3,
+      riskTolerance: 4,
     },
     {
       weight: (card) =>
@@ -302,7 +313,7 @@ export const DREAM_POLICIES: DreamPolicy[] = [
       planShare: 0.3,
       planMonths: 24,
       name: 'Gambler',
-      bufferMonths: 1,
+      bufferMonths: 0.5,
       priorities: ['reserve', 'invest', 'debt', 'dream'],
       dreamShare: 0.2,
       lifeAcceptChance: 0.9,
@@ -316,11 +327,40 @@ export const DREAM_POLICIES: DreamPolicy[] = [
               card.id === 'S20' ||
               card.id === 'S17'
             ? 12
-            : card.riskScore >= 3
-              ? 8
-              : 2,
+            : card.id === 'P10' ||
+                card.id === 'P31' ||
+                card.id === 'S22' ||
+                card.id === 'S23' ||
+                card.riskScore >= 5
+              ? 10
+              : 0.5,
     },
-    { piles: ['seed', 'sapling'], ride: true, sellProfit: 0.3, takeDreams: false },
+    { piles: ['seed', 'sapling'], minScore: 5, ride: true, sellProfit: 0.3, takeDreams: false },
+  ),
+  // the strategy a careful, informed player follows: free savings first, then the cards that pay most for their price, the reserve
+  // and the dream by plan, the big businesses as soon as the money is there - and nothing that claims to be a sure thing
+  makePolicy(
+    {
+      id: 'expert',
+      dreamAfterPassiveShare: 0.35,
+      name: 'Informed investor',
+      planShare: 0.45,
+      planMonths: 18,
+      bufferMonths: 0.5,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.5,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 4,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.riskScore >= 5
+            ? 0
+            : Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4),
+    },
+    { piles: ['seed', 'sapling', 'tree'], takeDreams: true, unitsShare: 0.5 },
   ),
   makePolicy(
     {

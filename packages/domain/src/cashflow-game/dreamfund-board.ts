@@ -68,7 +68,7 @@ export const TILE_MIX: Record<BoardSize, Record<BoardDifficulty, Mix>> = {
   },
   medium: {
     easy: mix(4, 13, 8, 3, 2, 4, 2),
-    medium: mix(4, 12, 7, 3, 3, 5, 2),
+    medium: mix(4, 14, 6, 3, 3, 4, 2),
     hard: mix(4, 10, 5, 4, 5, 5, 3),
   },
   large: {

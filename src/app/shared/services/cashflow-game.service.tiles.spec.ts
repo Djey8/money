@@ -183,8 +183,8 @@ describe('CashflowGameService: life, career and dreams', () => {
     service.drawOpportunity('seed', ok());
     const first = service.opportunityView!;
     expect(first.pile).toBe('seed');
-    expect(first.offers).toHaveLength(1);
-    expect(first.offers[0].card.pile).toBe('seed');
+    expect(first.offers.length).toBeGreaterThanOrEqual(1);
+    expect(first.offers.every((entry) => entry.card.pile === 'seed')).toBe(true);
 
     // a saving costs nothing: the project and the cut of the expense are there at once
     offer(['S02']);
@@ -219,10 +219,10 @@ describe('CashflowGameService: life, career and dreams', () => {
     service.beforeGrowTrade('Buy Share WORLD 40 x 100;', 0, undefined, '@WORLD', 4000);
     const holding = state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!;
     expect(holding.units).toBe(40);
-    // 40 units x 0.15 a month
+    // 40 units x 1.35 a month (the dividends are tuned up for the balance)
     expect(
       state().allSubscriptions.find((sub) => sub.title === 'WORLD Cashflow')?.amount,
-    ).toBeCloseTo(6, 2);
+    ).toBeCloseTo(54, 2);
     // a sale booked in Grow brings the holding down
     service.beforeGrowTrade('Sell Share WORLD 15 x 100;', 0, undefined, '@WORLD', 0);
     expect(state().cashflowGame.holdings!.find((entry) => entry.title === 'WORLD')!.units).toBe(25);

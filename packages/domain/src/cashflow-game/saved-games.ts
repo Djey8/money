@@ -88,7 +88,9 @@ export interface CashflowFinanceSummary {
  */
 export function summarizeGameFinances(
   state: Pick<CashflowGameState, 'gameSubscriptionTitles' | 'insurance'> &
-    Partial<Pick<CashflowGameState, 'fundingSubscriptionTitles' | 'virtualDate'>>,
+    Partial<
+      Pick<CashflowGameState, 'fundingSubscriptionTitles' | 'virtualDate' | 'lineTitles' | 'life'>
+    >,
   subscriptions: { title: string; amountMinor: number; startDate?: string; endDate?: string }[],
 ): CashflowFinanceSummary {
   // an insurance that is dropped costs nothing: its premium is not part of the month
@@ -112,7 +114,10 @@ export function summarizeGameFinances(
     passiveIncomeMinor,
     expensesMinor,
     monthlyCashflowMinor,
-    escapedRatRace: expensesMinor > 0 && passiveIncomeMinor >= expensesMinor,
+    // in a Dreamfund game independence means the passive income pays for the way of living: what the salary pays to the state and the
+    // social insurances (a tax that goes with the job) is not part of it (JFK, 2026-10-26)
+    escapedRatRace:
+      expensesMinor > 0 && passiveIncomeMinor >= expensesMinor - salaryLinkedMinor(state, owned),
     bankrupt: monthlyCashflowMinor < 0,
   };
 }
@@ -125,6 +130,28 @@ export function savedGameStatus(
   if (summary.escapedRatRace) return 'escaped';
   if (summary.bankrupt) return 'bankrupt';
   return 'playing';
+}
+
+const SALARY_LINKED_KEYS = [
+  'incomeTax',
+  'pension',
+  'healthInsurance',
+  'careInsurance',
+  'unemploymentInsurance',
+];
+
+/** What a Dreamfund character pays because of the salary: tax and social insurances (zero in a classic game). */
+export function salaryLinkedMinor(
+  state: Partial<Pick<CashflowGameState, 'lineTitles' | 'life'>>,
+  owned: { title: string; amountMinor: number }[],
+): number {
+  if (!state.life || !state.lineTitles) return 0;
+  const titles = SALARY_LINKED_KEYS.map((key) => state.lineTitles?.[key]).filter(
+    (t): t is string => !!t,
+  );
+  return owned
+    .filter((sub) => titles.includes(sub.title) && sub.amountMinor < 0)
+    .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
 }
 
 /** What the funding plans that pay on the next Payday (their dates cover it) take every month, as a positive number. */

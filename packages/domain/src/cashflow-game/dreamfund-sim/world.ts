@@ -1,6 +1,10 @@
 import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
 import { HARVEST_CARDS } from '../../cashflow-harvest-cards';
-import { OPPORTUNITY_CARDS } from '../../cashflow-opportunity-cards';
+import { OPPORTUNITY_CARDS as SKETCH_CARDS } from '../../cashflow-opportunity-cards';
+import { tuneOpportunityCards } from '../../cashflow-opportunity-tuning';
+
+/** The cards as the game plays them: the sketch with the balance of Medium on top. */
+const OPPORTUNITY_CARDS = tuneOpportunityCards(SKETCH_CARDS);
 import { applyEffectsToBooks, type GameBooks } from '../books';
 import { cashOnHandMinor, loanForShortfallMinor } from '../cash';
 import { fixedClock } from '../clock';
@@ -59,10 +63,10 @@ import {
 } from '../opportunity';
 import { payOffLiability } from '../liability-payoff';
 import { rollDie, seededRng, type Rng } from '../rng';
-import { summarizeGameFinances } from '../saved-games';
+import { salaryLinkedMinor, summarizeGameFinances } from '../saved-games';
 import { currentTurn, playTurn, settleDecision } from '../turn';
 import type { CashflowGameSet, CashflowProfession, CashflowGameState } from '../types';
-import type { DreamPolicy, DreamView } from './policies';
+import { expectedMonthlyMinor, type DreamPolicy, type DreamView } from './policies';
 
 /**
  * One whole Dreamfund game played in memory (JFK, 2026-10-26): the same rules the app runs - `playTurn`, the stacks of cards, the
@@ -126,6 +130,19 @@ export interface DreamGameRecord {
   emergenciesPaidMinor: number;
   /** The last cards before the game ended (a bankruptcy shows what broke it). */
   lastEvents: string[];
+  /** Every 10 turns: where the game stood (for finding where a strategy stalls). */
+  trace: {
+    turn: number;
+    cash: number;
+    reserve: number;
+    dream: number;
+    passive: number;
+    expenses: number;
+    living: number;
+    cashflow: number;
+    holdings: number;
+    plans: number;
+  }[];
 }
 
 const TODAY = '2026-11-15';
@@ -256,6 +273,7 @@ export class DreamSim {
       taken: {},
       emergenciesPaidMinor: 0,
       lastEvents: [],
+      trace: [],
     };
   }
 
@@ -431,6 +449,22 @@ export class DreamSim {
   private track(): void {
     const finances = summarizeGameFinances(this.state, this.books.subscriptions);
     const record = this.record;
+    if (this.turns % 10 === 0 && record.trace.at(-1)?.turn !== this.turns) {
+      record.trace.push({
+        turn: this.turns,
+        cash: Math.round(this.cash() / 100),
+        reserve: Math.round(this.reserveMinor / 100),
+        dream: Math.round(this.dreamSavedMinor / 100),
+        passive: Math.round(finances.passiveIncomeMinor / 100),
+        expenses: Math.round(finances.expensesMinor / 100),
+        living: Math.round(
+          (finances.expensesMinor - salaryLinkedMinor(this.state, this.books.subscriptions)) / 100,
+        ),
+        cashflow: Math.round(finances.monthlyCashflowMinor / 100),
+        holdings: (this.state.holdings ?? []).filter((h) => !h.ended).length,
+        plans: this.plans.length,
+      });
+    }
     const expenses = this.monthlyExpenses();
     record.peakPassiveMinor = Math.max(record.peakPassiveMinor, finances.passiveIncomeMinor);
     record.lowestCashMinor = Math.min(record.lowestCashMinor, this.cash());
@@ -441,11 +475,7 @@ export class DreamSim {
       record.reserveFullTurn = this.turns;
     if (!record.debtsRepaidTurn && this.debtsMinor() === 0) record.debtsRepaidTurn = this.turns;
     if (!record.dreamLivedTurn && this.dreamLived) record.dreamLivedTurn = this.turns;
-    if (
-      !record.independentTurn &&
-      expenses > 0 &&
-      finances.passiveIncomeMinor >= finances.expensesMinor
-    ) {
+    if (!record.independentTurn && expenses > 0 && finances.escapedRatRace) {
       record.independentTurn = this.turns;
     }
     if (
@@ -454,7 +484,7 @@ export class DreamSim {
       this.reserveMinor >= expenses * 3 &&
       this.debtsMinor() === 0 &&
       this.dreamLived &&
-      finances.passiveIncomeMinor >= finances.expensesMinor
+      finances.escapedRatRace
     ) {
       record.wonTurn = this.turns;
     }
@@ -562,6 +592,10 @@ export class DreamSim {
       if (priority === 'reserve') {
         set('mojo', 'mojo', Math.max(0, this.monthlyExpenses() * 3 - this.reserveMinor));
       } else if (priority === 'dream') {
+        const wait = policy.dreamAfterPassiveShare;
+        const living =
+          finances.expensesMinor - salaryLinkedMinor(this.state, this.books.subscriptions);
+        if (wait !== undefined && finances.passiveIncomeMinor < living * wait) continue;
         if (!this.dreamLived && this.dreamTargetMinor > 0) {
           set('life', 'life', this.dreamTargetMinor - this.dreamSavedMinor);
         }
@@ -966,7 +1000,13 @@ export class DreamSim {
     let choice = pick.choice;
     let quote = quoteOpportunity(pick.card, choice, context, settings, OPPORTUNITY_CARDS);
     if (quote.needsSwap && quote.sideHustles.length > 0) {
-      choice = { ...choice, swapOut: quote.sideHustles[0].cardId };
+      // give up the weakest hustle, and only for a card that is clearly better
+      const weakest = [...quote.sideHustles].sort(
+        (x, y) => (x.lineMinor ?? x.cashflowMinor) - (y.lineMinor ?? y.cashflowMinor),
+      )[0];
+      const weakestMonthly = Math.max(weakest.lineMinor ?? 0, weakest.cashflowMinor);
+      if (expectedMonthlyMinor(pick.card) < weakestMonthly * 1.3) return;
+      choice = { ...choice, swapOut: weakest.cardId };
       quote = quoteOpportunity(pick.card, choice, context, settings, OPPORTUNITY_CARDS);
     }
     if (!quote.ok) return;

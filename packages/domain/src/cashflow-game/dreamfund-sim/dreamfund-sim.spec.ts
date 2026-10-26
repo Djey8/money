@@ -16,7 +16,7 @@ describe('the Dreamfund simulation', () => {
 
   it('a batch over every strategy runs without engine errors and reports', () => {
     const result = runBatch({ games: 6, maxTurns: 160 });
-    expect(result.records).toHaveLength(36);
+    expect(result.records).toHaveLength(42);
     expect(result.errors).toEqual([]);
     const report = reportMarkdown(result);
     expect(report).toContain('| saver |');
