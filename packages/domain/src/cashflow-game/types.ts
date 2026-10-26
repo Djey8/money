@@ -1,4 +1,7 @@
-import type { EmergencyCard, EmergencyDeckState, InsuranceKind } from './emergency-deck';
+import type { EmergencyCard, EmergencyDeckState, InsuranceKind, Localized } from './emergency-deck';
+import type { DreamCard, DreamLog, DreamSettings } from './dream-deck';
+import type { CareerResult, CareerSnapshot, CareerState, CareerTrack } from './career';
+import type { LifeCard, LifeLine, LifeOutcome, LifeState, ScheduledLife } from './life-deck';
 import type { BoardSetup } from './dreamfund-board';
 import type { GameRules } from './rules';
 /**
@@ -106,6 +109,13 @@ export interface CashflowProfessionProfile {
 }
 
 export interface CashflowProfession {
+  /** The ladder of this character's career (every profession has its own); absent: the Career tile has nothing to give. */
+  career?: CareerTrack;
+  /**
+   * What things cost this character compared with the Dual Student, who is 1 (JFK, 2026-10-26): a higher life level makes the
+   * cards' amounts - emergencies first - higher, so every character has the same chance. Absent: 1.
+   */
+  priceFactor?: number;
   id: string;
   title: string;
   salaryMinor: number;
@@ -236,6 +246,10 @@ export interface CashflowMarketOffer {
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
 
 export interface CashflowDecks {
+  /** The Dream stack of a Dreamfund game: generic dreams to take as Smile projects. */
+  dream?: DreamCard[];
+  /** The Life stack of a Dreamfund game (the heart tile). */
+  life?: LifeCard[];
   /** The Emergency stack of a Dreamfund game (the Fire tile). */
   emergency?: EmergencyCard[];
   dealSmall?: CashflowDealCard[];
@@ -324,6 +338,34 @@ export interface CashflowPendingDecision {
    * With an Emergency tile: the card that was drawn and what has been picked and rolled on it so far (it is kept with the game, so
    * the card stays as it is when the game is closed and opened again).
    */
+  life?: {
+    cardId: string;
+    skipped?: string[];
+    /** What the decision came to (shown afterwards); absent while the card waits. */
+    outcome?: LifeOutcome;
+    decision?: string;
+  };
+  /** With a Career tile: what the roll came to, and the books before and after a promotion (for the comparison). */
+  career?: {
+    result: CareerResult;
+    done?: boolean;
+    before?: CareerSnapshot;
+    after?: CareerSnapshot;
+    /** The stage reached (a promotion). */
+    reached?: string;
+  };
+  /** With a Dream tile: the offered dreams or the moment, and what the player did with them. */
+  dream?: {
+    offers?: string[];
+    moment?: string;
+    /** The Smile project of the dream that was taken. */
+    taken?: string;
+    declined?: boolean;
+    /** A moment that has been applied: what it did, in words for the log. */
+    applied?: { en: string; de: string };
+    /** A swap of dreams waits for the new dream: the project that goes. */
+    swapping?: string;
+  };
   emergency?: {
     cardId: string;
     choiceId?: string;
@@ -424,6 +466,30 @@ export interface CashflowGameState {
     premiums: Record<string, string>;
     pending: { kind: string; on: boolean }[];
   };
+  /** The life of the character (JFK, 2026-10-26): partner, children, pet, car, home, city, job - the badges of the profile. */
+  life?: LifeState;
+  /** The dreams of the game (JFK, 2026-10-26): open, lived, points; and what the player set for them. */
+  dreams?: DreamLog;
+  dreamSettings?: DreamSettings;
+  dreamDeck?: EmergencyDeckState;
+  /** Where the character stands on the career ladder (JFK, 2026-10-26). */
+  career?: CareerState;
+  /** The monthly lines life cards left behind (each is also a subscription of the game). */
+  lifeLines?: LifeLine[];
+  /** What is going to happen at later Paydays (a baby, lent money coming back). */
+  lifeScheduled?: ScheduledLife[];
+  /** The Life stack: what was drawn since the last reshuffle. */
+  lifeDeck?: EmergencyDeckState;
+  /** A job is being looked for (the Paydays left, the roll that finds one). */
+  jobSearch?: { title: Localized; rollFrom: number; paydaysLeft: number; fallbackPercent: number };
+  /** What the last Payday brought to the life of the character (a baby, a job): shown once. */
+  lifeNews?: { kind: string; title: string }[];
+  /** A sponsorship gives two dice for the first turn after each Payday. */
+  sponsorship?: boolean;
+  /** What things cost this character compared with the Dual Student (1): grows with the career. */
+  livingStandard?: number;
+  /** The title the subscription of an expense line was given (by its key): the career changes the tax lines by it. */
+  lineTitles?: Record<string, string>;
   /** What the character owns that cards ask for: `car`, `pet`. */
   possessions?: string[];
   /** What is true of the character (a complete bonus booklet, a side gig); cards read it. */

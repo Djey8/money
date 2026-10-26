@@ -45,6 +45,8 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   @Input() gameDate = '';
   /** In a game: the most a Payday may pay into plans - what the month has free. Null: no limit. */
   @Input() maxPayment: number | null = null;
+  /** A game's emergency: the plan is 3, 6 or 12 Paydays, each with its surcharge (JFK, 2026-10-26). */
+  @Input() surchargePlans = false;
 
   @Output() planCreated = new EventEmitter<PlannedSubscription>();
   @Output() planUpdated = new EventEmitter<PlannedSubscription>();
@@ -99,6 +101,29 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
         }
       }
     }
+  }
+
+  readonly surchargePresets = [
+    { months: 3, percent: 10 },
+    { months: 6, percent: 20 },
+    { months: 12, percent: 35 },
+  ];
+
+  /** The surcharge of the chosen number of Paydays (0 unless this is an emergency plan). */
+  get surchargePercent(): number {
+    if (!this.gameMode || !this.surchargePlans) return 0;
+    return this.surchargePresets.find((preset) => preset.months === this.paydays)?.percent ?? 0;
+  }
+
+  get surchargeAmount(): number {
+    return Math.round(this.totalMissing * this.surchargePercent) / 100;
+  }
+
+  trackPreset = (_index: number, preset: { months: number }): number => preset.months;
+
+  choosePreset(months: number): void {
+    this.paydays = months;
+    this.recalculate();
   }
 
   get gameMode(): boolean {
@@ -249,9 +274,12 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     }
 
     // Calculate suggested payment amount
+    const owed = this.totalMissing + this.surchargeAmount;
+    this.calculatedAmount = this.numberOfPeriods > 0 ? owed / this.numberOfPeriods : owed;
     this.calculatedAmount =
-      this.numberOfPeriods > 0 ? this.totalMissing / this.numberOfPeriods : this.totalMissing;
-    this.calculatedAmount = Math.round(this.calculatedAmount * 100) / 100;
+      this.surchargePercent > 0
+        ? Math.ceil(this.calculatedAmount * 100) / 100
+        : Math.round(this.calculatedAmount * 100) / 100;
 
     // Use manual amount if provided, otherwise use calculated
     const paymentAmount = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
@@ -350,8 +378,17 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       targetDate: this.targetDate,
       frequency: this.frequency,
       account: this.account,
-      manualAmount: this.manualAmount !== null ? this.manualAmount : undefined,
+      manualAmount:
+        this.manualAmount !== null
+          ? this.manualAmount
+          : this.surchargePercent > 0
+            ? finalAmount
+            : undefined,
     });
+    if (this.surchargePercent > 0) {
+      plan.surchargeAmount = this.surchargeAmount;
+      plan.surchargePercent = this.surchargePercent;
+    }
 
     if (this.overBudget) {
       this.showError('The month cannot carry this payment: choose a lower amount or more Paydays.');

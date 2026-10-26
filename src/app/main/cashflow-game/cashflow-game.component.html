@@ -66,6 +66,73 @@
       </div>
 
       <!-- Who the character is, what it takes to win (ticked as it is met) and the three sheets behind panels: the same view as when a character is chosen. -->
+      <!-- what has happened to the character: badges of the life, the career, the dreams (JFK, 2026-10-26) -->
+      <ng-container *ngIf="professionCardView === 'live' && hasActiveGame && lifeBadges.length > 0">
+        <div class="cf-badges">
+          <span class="cf-badge-chip" *ngFor="let badge of lifeBadges; trackBy: trackByKey"
+            >{{ badge.icon }} {{ badge.text }}</span
+          >
+          <span class="cf-badge-chip" *ngIf="careerBadge as career">
+            💼 {{ career.title }} · {{ 'CashflowGame.career.stage' | translate }} {{ career.stage }}
+            {{ career.branch }}
+          </span>
+        </div>
+        <section class="cf-dreams" *ngIf="lifeLinesList.length > 0">
+          <h4>{{ 'CashflowGame.life.running' | translate }}</h4>
+          <div class="cf-dreams-row" *ngFor="let line of lifeLinesList; trackBy: trackById">
+            <span>
+              {{ line.title }}: {{ line.amount > 0 ? '+' : '−'
+              }}{{ line.amount < 0 ? -line.amount : (line.amount | appNumber: '1.2-2' : false) }}
+              {{ appState.currency }}
+              <small *ngIf="line.paydaysLeft"
+                >·
+                {{ 'CashflowGame.life.forPaydays' | translate: { count: line.paydaysLeft } }}</small
+              >
+            </span>
+            <button
+              type="button"
+              class="btn btn--sm"
+              *ngIf="line.endable"
+              (click)="endLifeLine(line.id)"
+            >
+              {{
+                'CashflowGame.life.end'
+                  | translate: { amount: (line.endCost | appNumber: '1.0-0' : false) }
+              }}
+            </button>
+          </div>
+        </section>
+        <section
+          class="cf-dreams"
+          *ngIf="dreamDeckReady && (openDreams.length > 0 || dreamPoints.total > 0)"
+        >
+          <h4>
+            {{ 'CashflowGame.dream.mine' | translate }} · {{ dreamPoints.total }}
+            {{ 'CashflowGame.dream.points' | translate }}
+          </h4>
+          <div class="cf-dreams-row" *ngFor="let entry of openDreams; trackBy: trackByTitle">
+            <span>{{ entry.project.title }} · {{ dreamProgress(entry) }}%</span>
+            <span>
+              <button
+                type="button"
+                class="btn btn--sm"
+                (click)="openDreamProject(entry.project.title)"
+              >
+                {{ 'CashflowGame.dream.openProject' | translate }}
+              </button>
+              <button
+                type="button"
+                class="btn btn--sm btn--primary"
+                *ngIf="dreamIsReady(entry)"
+                [disabled]="isBusy"
+                (click)="liveDream(entry.project.title)"
+              >
+                🌟 {{ 'CashflowGame.dream.live' | translate }}
+              </button>
+            </span>
+          </div>
+        </section>
+      </ng-container>
       <app-character-sheet
         [name]="profileOf(profession)?.name ?? professionTitle(profession)"
         [tagline]="profileOf(profession)?.tagline ?? professionTitle(profession)"
@@ -267,6 +334,41 @@
           {{ showAdvancedRules ? '▾' : '▸' }} {{ 'CashflowGame.rules.advanced' | translate }}
         </button>
         <div class="cf-rules-advanced" *ngIf="showAdvancedRules">
+          <!-- the dreams of a Dreamfund game -->
+          <div class="cf-row cf-row--stack" *ngIf="showBoardChoice">
+            <div class="cf-row-label">
+              <strong>{{ 'CashflowGame.setup.dreamOffers' | translate }}</strong>
+            </div>
+            <div class="cf-seg" role="radiogroup">
+              <button
+                *ngFor="let n of [1, 2, 3]"
+                type="button"
+                role="radio"
+                [class.cf-seg--on]="dreamOffers === n"
+                [attr.aria-checked]="dreamOffers === n"
+                (click)="dreamOffers = n"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </div>
+          <div class="cf-row cf-row--stack" *ngIf="showBoardChoice">
+            <div class="cf-row-label">
+              <strong>{{ 'CashflowGame.setup.maxOpenDreams' | translate }}</strong>
+            </div>
+            <div class="cf-seg" role="radiogroup">
+              <button
+                *ngFor="let n of [1, 2, 3, 4, 5]"
+                type="button"
+                role="radio"
+                [class.cf-seg--on]="maxOpenDreams === n"
+                [attr.aria-checked]="maxOpenDreams === n"
+                (click)="maxOpenDreams = n"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </div>
           <div class="cf-row cf-row--stack">
             <div class="cf-row-label">
               <strong>{{ 'CashflowGame.rules.cardChoice' | translate }}</strong>
@@ -1199,7 +1301,7 @@
                     <strong>{{ tileLabelKey(story.tile) | translate }}</strong>
                   </header>
                   <ng-container
-                    *ngIf="story.tile === 'emergency' && emergencyDeckReady; else fillerText"
+                    *ngIf="story.tile === 'emergency' && emergencyDeckReady; else otherTiles"
                   >
                     <ng-container *ngIf="emergency as e; else emergencyDraw">
                       <p class="cf-em-lucky" *ngIf="e.skipped.length">
@@ -1306,47 +1408,34 @@
 
                       <!-- paying: now, or on a plan of Paydays (a loan is not reworked yet: what cannot be paid at once goes on a plan) -->
                       <div class="cf-em-pay" *ngIf="e.quote.ready && !e.projectTitle">
-                        <p class="cf-em-forced" *ngIf="e.forcedPlan">
-                          {{ 'CashflowGame.emergency.forcedPlan' | translate }}
+                        <p class="cf-em-forced">
+                          {{ 'CashflowGame.emergency.cannotDecline' | translate }}
                         </p>
                         <button
                           type="button"
                           class="btn btn--primary"
-                          [disabled]="isBusy || !e.canPayNow"
-                          (click)="payEmergency()"
+                          [disabled]="isBusy"
+                          (click)="createEmergency()"
                         >
-                          {{ 'CashflowGame.emergency.payNow' | translate }}
-                          {{ toDisplayAmount(e.quote.payMinor) | appNumber: '1.2-2' : false }}
-                          {{ appState.currency }}
+                          🔥 {{ 'CashflowGame.emergency.createProject' | translate }}
                         </button>
-                        <ng-container *ngIf="e.card.payment === 'plan_ok' || e.forcedPlan">
-                          <button
-                            *ngFor="let plan of e.plans; trackBy: trackMonths"
-                            type="button"
-                            class="btn"
-                            [disabled]="
-                              isBusy ||
-                              (!plan.affordable && !e.forcedPlan && hasAffordablePlan(e)) ||
-                              (e.forcedPlan &&
-                                plan.months !== 3 &&
-                                hasAffordablePlan(e) &&
-                                !plan.affordable)
-                            "
-                            (click)="payEmergency(plan.months)"
-                          >
-                            {{
-                              'CashflowGame.emergency.plan'
-                                | translate: { months: plan.months, percent: plan.percent }
-                            }}
-                            · {{ plan.perMonth | appNumber: '1.2-2' : false }}
-                            {{ appState.currency }} / Payday
-                          </button>
-                        </ng-container>
                       </div>
-                      <p class="cf-em-paid" *ngIf="e.projectTitle">
-                        ✓
-                        {{ 'CashflowGame.emergency.paid' | translate: { project: e.projectTitle } }}
-                      </p>
+                      <div class="cf-em-pay" *ngIf="e.projectTitle">
+                        <p class="cf-em-paid">
+                          ✓
+                          {{
+                            'CashflowGame.emergency.created'
+                              | translate: { project: e.projectTitle }
+                          }}
+                        </p>
+                        <button
+                          type="button"
+                          class="btn btn--primary"
+                          (click)="openEmergency(e.projectTitle)"
+                        >
+                          {{ 'CashflowGame.emergency.openProject' | translate }} ›
+                        </button>
+                      </div>
                     </ng-container>
                     <ng-template #emergencyDraw>
                       <p>{{ 'CashflowGame.emergency.intro' | translate }}</p>
@@ -1374,16 +1463,453 @@
                       </div>
                     </ng-template>
                   </ng-container>
-                  <ng-template #fillerText>
-                    <p>{{ 'CashflowGame.tile.' + story.tile + '.filler' | translate }}</p>
+                  <ng-template #otherTiles>
+                    <!-- LIFE: a card of the story of a life -->
+                    <ng-container *ngIf="story.tile === 'life' && lifeDeckReady">
+                      <ng-container *ngIf="lifeView as l; else lifeDraw">
+                        <p class="cf-em-lucky" *ngIf="l.skipped.length">
+                          🍀 {{ 'CashflowGame.life.skipped' | translate }}
+                        </p>
+                        <h4 class="cf-em-title">{{ l.card.title[emergencyLang] }}</h4>
+                        <p>{{ l.card.story[emergencyLang] }}</p>
+                        <ng-container *ngIf="!l.outcome">
+                          <ul class="cf-life-lines" *ngIf="lifePreview(l.card) as effect">
+                            <li *ngFor="let line of effectLines(effect)">{{ line }}</li>
+                          </ul>
+                          <div class="cf-life-actions">
+                            <button
+                              *ngIf="l.card.type === 'fate'"
+                              type="button"
+                              class="btn btn--primary"
+                              [disabled]="isBusy"
+                              (click)="lifeDecide('fate')"
+                            >
+                              {{ 'CashflowGame.life.letItHappen' | translate }}
+                            </button>
+                            <ng-container *ngIf="l.card.type === 'choice' && !l.card.options">
+                              <button
+                                type="button"
+                                class="btn btn--primary"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('accept')"
+                              >
+                                {{ 'CashflowGame.life.accept' | translate }}
+                              </button>
+                              <button
+                                type="button"
+                                class="btn"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('decline')"
+                              >
+                                {{ 'CashflowGame.life.decline' | translate }}
+                              </button>
+                            </ng-container>
+                            <ng-container *ngIf="l.card.options as options">
+                              <button
+                                *ngFor="let option of options; trackBy: trackById"
+                                type="button"
+                                class="btn btn--primary"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('option', option.id)"
+                              >
+                                {{ option.label[emergencyLang] }}
+                                <small *ngFor="let line of effectLines(option.effect)">
+                                  · {{ line }}</small
+                                >
+                              </button>
+                            </ng-container>
+                            <ng-container *ngIf="l.card.type === 'dice'">
+                              <button
+                                type="button"
+                                class="btn btn--primary"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('roll')"
+                              >
+                                🎲 {{ 'CashflowGame.life.rollForIt' | translate }}
+                              </button>
+                              <button
+                                *ngIf="l.card.optional"
+                                type="button"
+                                class="btn"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('pass')"
+                              >
+                                {{ 'CashflowGame.life.pass' | translate }}
+                              </button>
+                            </ng-container>
+                            <ng-container *ngIf="l.card.type === 'giving'">
+                              <button
+                                type="button"
+                                class="btn btn--primary"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('give')"
+                              >
+                                {{ 'CashflowGame.life.give' | translate }}
+                              </button>
+                              <button
+                                *ngIf="l.card.lend"
+                                type="button"
+                                class="btn"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('lend')"
+                              >
+                                {{ 'CashflowGame.life.lend' | translate }}
+                              </button>
+                              <button
+                                type="button"
+                                class="btn"
+                                [disabled]="isBusy"
+                                (click)="lifeDecide('pass')"
+                              >
+                                {{ 'CashflowGame.life.pass' | translate }}
+                              </button>
+                            </ng-container>
+                          </div>
+                        </ng-container>
+                        <ul class="cf-life-lines cf-life-lines--done" *ngIf="l.outcome as outcome">
+                          <li *ngFor="let line of outcomeLines(outcome)">{{ line }}</li>
+                        </ul>
+                      </ng-container>
+                      <ng-template #lifeDraw>
+                        <p>{{ 'CashflowGame.life.intro' | translate }}</p>
+                        <div class="cf-em-draw">
+                          <button
+                            type="button"
+                            class="btn btn--primary"
+                            [disabled]="isBusy"
+                            (click)="drawLife()"
+                          >
+                            ❤ {{ 'CashflowGame.life.draw' | translate }}
+                          </button>
+                          <label class="cf-em-pick">
+                            <span>{{ 'CashflowGame.emergency.orChoose' | translate }}</span>
+                            <select
+                              #lifePick
+                              (change)="drawLife(lifePick.value); lifePick.value = ''"
+                            >
+                              <option value="">…</option>
+                              <option
+                                *ngFor="let card of lifeCardOptions; trackBy: trackById"
+                                [value]="card.id"
+                              >
+                                {{ card.id }} · {{ card.title[emergencyLang] }}
+                              </option>
+                            </select>
+                          </label>
+                        </div>
+                      </ng-template>
+                    </ng-container>
+
+                    <!-- CAREER: the next stage of the ladder, a die decides -->
+                    <ng-container *ngIf="story.tile === 'career' && careerReady">
+                      <p class="cf-career-badge" *ngIf="careerBadge as badge">
+                        💼 <strong>{{ badge.title }}</strong> ·
+                        {{ 'CashflowGame.career.stage' | translate }} {{ badge.stage }}
+                        {{ badge.branch }}
+                        <span class="cf-career-pips">
+                          <span
+                            *ngFor="let on of badge.pips; let i = index; trackBy: trackByIndex"
+                            [class.cf-career-pip--on]="on"
+                            >●</span
+                          >
+                        </span>
+                        <small *ngIf="badge.top">{{ 'CashflowGame.career.top' | translate }}</small>
+                        <small *ngIf="!badge.top && badge.eligibleIn > 0">{{
+                          'CashflowGame.career.eligibleIn' | translate: { count: badge.eligibleIn }
+                        }}</small>
+                      </p>
+                      <ng-container *ngIf="careerView as c; else careerRoll">
+                        <ng-container [ngSwitch]="c.result.kind">
+                          <p *ngSwitchCase="'waiting'">
+                            {{
+                              'CashflowGame.career.waiting'
+                                | translate: { count: $any(c.result).paydaysLeft }
+                            }}
+                          </p>
+                          <p *ngSwitchCase="'top'">
+                            {{ 'CashflowGame.career.topText' | translate }}
+                          </p>
+                          <p *ngSwitchCase="'failed'">
+                            🎲 {{ $any(c.result).roll }} ·
+                            {{ 'CashflowGame.career.failed' | translate }}
+                            <span *ngIf="$any(c.result).retakeMinor">
+                              {{ $any(c.result).retakeLabel?.[emergencyLang] }}:
+                              {{
+                                toDisplayAmount($any(c.result).retakeMinor)
+                                  | appNumber: '1.2-2' : false
+                              }}
+                              {{ appState.currency }}
+                            </span>
+                          </p>
+                          <p *ngSwitchCase="'moment'">
+                            🎲 {{ $any(c.result).roll }} · 🎲 {{ $any(c.result).momentRoll }} ·
+                            {{ careerMomentKey($any(c.result).moment) | translate }}
+                          </p>
+                          <ng-container *ngSwitchCase="'branch'">
+                            <p>
+                              🎲 {{ $any(c.result).roll }} ·
+                              {{ 'CashflowGame.career.chooseBranch' | translate }}
+                            </p>
+                            <div class="cf-life-actions">
+                              <button
+                                *ngFor="let option of c.options; trackBy: trackById"
+                                type="button"
+                                class="btn btn--primary"
+                                [disabled]="isBusy"
+                                (click)="chooseBranch(option.id)"
+                              >
+                                {{ option.branch === 'technical' ? '🔧' : '👥' }}
+                                {{ option.title[emergencyLang] }} ·
+                                {{
+                                  toDisplayAmount(option.grossYearMinor)
+                                    | appNumber: '1.0-0' : false
+                                }}
+                                / {{ 'CashflowGame.career.year' | translate }}
+                              </button>
+                            </div>
+                          </ng-container>
+                        </ng-container>
+                        <!-- Woohoo: the old and the new numbers -->
+                        <div class="cf-woohoo" *ngIf="c.reached && c.before && c.after">
+                          <h4>🎉 Woohoo! {{ c.reached.title[emergencyLang] }}</h4>
+                          <p>{{ c.reached.story[emergencyLang] }}</p>
+                          <table>
+                            <tr>
+                              <th></th>
+                              <th>{{ 'CashflowGame.career.before' | translate }}</th>
+                              <th>{{ 'CashflowGame.career.after' | translate }}</th>
+                            </tr>
+                            <tr>
+                              <td>{{ 'CashflowGame.career.salary' | translate }}</td>
+                              <td>
+                                {{
+                                  toDisplayAmount(c.before.salaryMinor) | appNumber: '1.0-0' : false
+                                }}
+                              </td>
+                              <td>
+                                {{
+                                  toDisplayAmount(c.after.salaryMinor) | appNumber: '1.0-0' : false
+                                }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>{{ 'CashflowGame.career.net' | translate }}</td>
+                              <td>
+                                {{
+                                  toDisplayAmount(c.before.netMinor) | appNumber: '1.0-0' : false
+                                }}
+                              </td>
+                              <td>
+                                {{ toDisplayAmount(c.after.netMinor) | appNumber: '1.0-0' : false }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>{{ 'CashflowGame.career.expenses' | translate }}</td>
+                              <td>
+                                {{
+                                  toDisplayAmount(c.before.expensesMinor)
+                                    | appNumber: '1.0-0' : false
+                                }}
+                              </td>
+                              <td>
+                                {{
+                                  toDisplayAmount(c.after.expensesMinor)
+                                    | appNumber: '1.0-0' : false
+                                }}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>
+                                <strong>{{ 'Cashflow.title' | translate }}</strong>
+                              </td>
+                              <td>
+                                {{
+                                  toDisplayAmount(c.before.cashflowMinor)
+                                    | appNumber: '1.0-0' : false
+                                }}
+                              </td>
+                              <td>
+                                <strong>{{
+                                  toDisplayAmount(c.after.cashflowMinor)
+                                    | appNumber: '1.0-0' : false
+                                }}</strong>
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                      </ng-container>
+                      <ng-template #careerRoll>
+                        <button
+                          type="button"
+                          class="btn btn--primary"
+                          [disabled]="isBusy"
+                          (click)="rollCareer()"
+                        >
+                          🎲 {{ 'CashflowGame.career.roll' | translate }}
+                        </button>
+                      </ng-template>
+                    </ng-container>
+
+                    <!-- DREAM: offers to take as Smile projects, or a moment -->
+                    <ng-container *ngIf="story.tile === 'dream' && dreamDeckReady">
+                      <ng-container *ngIf="dreamView as d; else dreamDraw">
+                        <!-- a moment -->
+                        <ng-container *ngIf="d.moment as moment">
+                          <h4 class="cf-em-title">{{ moment.title[emergencyLang] }}</h4>
+                          <p>{{ moment.story[emergencyLang] }}</p>
+                          <p *ngIf="d.applied" class="cf-em-paid">
+                            ✓ {{ d.applied[emergencyLang] }}
+                          </p>
+                          <ng-container *ngIf="!d.applied">
+                            <button
+                              *ngIf="moment.id === 'M05'"
+                              type="button"
+                              class="btn btn--primary"
+                              [disabled]="isBusy"
+                              (click)="drawDream({ forceOffers: 3 })"
+                            >
+                              {{ 'CashflowGame.dream.threeOffers' | translate }}
+                            </button>
+                            <button
+                              *ngIf="moment.id === 'M07'"
+                              type="button"
+                              class="btn btn--primary"
+                              [disabled]="isBusy"
+                              (click)="applyMoment()"
+                            >
+                              {{ 'CashflowGame.dream.claim' | translate }}
+                            </button>
+                            <ng-container *ngIf="moment.id !== 'M05' && moment.id !== 'M07'">
+                              <p *ngIf="momentTargets.length === 0">
+                                {{ 'CashflowGame.dream.noDreamForMoment' | translate }}
+                              </p>
+                              <p *ngIf="momentTargets.length === 0 && moment.id === 'M02'">
+                                <button
+                                  type="button"
+                                  class="btn btn--primary"
+                                  [disabled]="isBusy"
+                                  (click)="applyMoment()"
+                                >
+                                  {{ 'CashflowGame.dream.takeGift' | translate }}
+                                </button>
+                              </p>
+                              <div class="cf-life-actions" *ngIf="momentTargets.length > 0">
+                                <button
+                                  *ngFor="let entry of momentTargets; trackBy: trackByTitle"
+                                  type="button"
+                                  class="btn btn--primary"
+                                  [disabled]="isBusy"
+                                  (click)="applyMoment(entry.project.title)"
+                                >
+                                  {{ entry.project.title }} · {{ dreamProgress(entry) }}%
+                                </button>
+                              </div>
+                            </ng-container>
+                          </ng-container>
+                        </ng-container>
+                        <!-- offers -->
+                        <ng-container *ngIf="d.offers.length > 0">
+                          <p *ngIf="d.swapping">{{ 'CashflowGame.dream.swapIntro' | translate }}</p>
+                          <p *ngIf="!d.swapping && !d.taken && !d.declined">
+                            {{ 'CashflowGame.dream.offersIntro' | translate: { max: 1 } }}
+                          </p>
+                          <p class="cf-em-uninsured" *ngIf="!d.canTake && !d.taken">
+                            {{ 'CashflowGame.dream.tooMany' | translate: { max: maxOpenDreams } }}
+                          </p>
+                          <div
+                            class="cf-dream-offer"
+                            *ngFor="let offer of d.offers; trackBy: trackById"
+                          >
+                            <h4>
+                              {{ offer.title[emergencyLang] }}
+                              <small
+                                >{{ 'CashflowGame.dream.tier.' + offer.tier | translate }} ·
+                                {{ offer.points }}
+                                {{ 'CashflowGame.dream.points' | translate }}</small
+                              >
+                            </h4>
+                            <p>{{ offer.story[emergencyLang] }}</p>
+                            <ul class="cf-em-buckets">
+                              <li *ngFor="let bucket of offer.buckets; trackBy: trackById">
+                                <span>{{ bucket.title[emergencyLang] }}</span>
+                                <strong
+                                  >{{
+                                    toDisplayAmount(bucket.amountMinor) | appNumber: '1.0-0' : false
+                                  }}
+                                  {{ appState.currency }}</strong
+                                >
+                              </li>
+                              <li>
+                                <strong>{{ 'CashflowGame.total' | translate }}</strong>
+                                <strong
+                                  >{{
+                                    toDisplayAmount(offer.totalMinor) | appNumber: '1.0-0' : false
+                                  }}
+                                  {{ appState.currency }}</strong
+                                >
+                              </li>
+                            </ul>
+                            <button
+                              *ngIf="!d.taken && !d.declined"
+                              type="button"
+                              class="btn btn--primary"
+                              [disabled]="isBusy || !d.canTake"
+                              (click)="takeDream(offer.id)"
+                            >
+                              {{ 'CashflowGame.dream.take' | translate }}
+                            </button>
+                          </div>
+                          <button
+                            *ngIf="!d.taken && !d.declined && !d.swapping"
+                            type="button"
+                            class="btn"
+                            [disabled]="isBusy"
+                            (click)="declineDreams()"
+                          >
+                            {{ 'CashflowGame.dream.declineAll' | translate }}
+                          </button>
+                        </ng-container>
+                        <div class="cf-em-pay" *ngIf="d.taken">
+                          <p class="cf-em-paid">
+                            ✓ {{ 'CashflowGame.dream.taken' | translate: { project: d.taken } }}
+                          </p>
+                          <button
+                            type="button"
+                            class="btn btn--primary"
+                            (click)="openDreamProject(d.taken)"
+                          >
+                            {{ 'CashflowGame.dream.openProject' | translate }} ›
+                          </button>
+                        </div>
+                        <p *ngIf="d.declined">{{ 'CashflowGame.dream.declined' | translate }}</p>
+                        <p *ngIf="d.moment && !d.applied && dreamMomentNothing">
+                          {{ 'CashflowGame.dream.nothingHappens' | translate }}
+                        </p>
+                      </ng-container>
+                      <ng-template #dreamDraw>
+                        <p>{{ 'CashflowGame.dream.intro' | translate }}</p>
+                        <button
+                          type="button"
+                          class="btn btn--primary"
+                          [disabled]="isBusy"
+                          (click)="drawDream()"
+                        >
+                          😊 {{ 'CashflowGame.dream.draw' | translate }}
+                        </button>
+                      </ng-template>
+                    </ng-container>
+
+                    <!-- the rest: the tile's stack is still to come -->
+                    <p *ngIf="!tileHasPanel(story.tile)">
+                      {{
+                        'CashflowGame.tile.' +
+                          story.tile +
+                          (story.tile === 'career' ? '.none' : '.filler') | translate
+                      }}
+                    </p>
                   </ng-template>
                 </div>
-                <div
-                  class="cf-actions"
-                  *ngIf="
-                    !(story.tile === 'emergency' && emergencyDeckReady) || emergency?.projectTitle
-                  "
-                >
+                <div class="cf-actions" *ngIf="storyCanFinish(story.tile)">
                   <button
                     class="btn btn--primary"
                     [disabled]="isBusy"

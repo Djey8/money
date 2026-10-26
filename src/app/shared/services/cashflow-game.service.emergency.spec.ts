@@ -65,25 +65,29 @@ describe('CashflowGameService: emergencies and insurance', () => {
     const view = service.emergencyView!;
     expect(view.card.id).toBe('E02');
     expect(view.quote.payMinor).toBe(2500);
-    expect(view.canPayNow).toBe(true);
+    expect(view.projectTitle).toBeUndefined();
   });
 
-  it('paying now: a Fire project of the card with its bucket full, paid from the Fire account', () => {
+  it('the card becomes a Fire project with its details and nothing paid yet', () => {
     draw('E02');
-    const before = service.cash;
-    const callbacks = ok();
-    service.payEmergency({}, callbacks);
-    expect(callbacks.onError).not.toHaveBeenCalled();
     const state = AppStateService.instance;
+    const before = state.allTransactions.length;
+    const callbacks = ok();
+    service.createEmergencyProject(callbacks);
+    expect(callbacks.onError).not.toHaveBeenCalled();
     const project = state.allFireEmergencies.find((fire) => fire.emergencyCardId === 'E02')!;
     expect(project.buckets).toHaveLength(1);
-    expect(project.buckets[0].target).toBe(25);
+    expect(project.buckets[0]).toMatchObject({ target: 25, amount: 0 });
     expect(project.actionItems.length).toBeGreaterThan(0);
-    const payment = state.allTransactions.find((tx) => tx.category === `@${project.title}`)!;
-    expect(payment).toMatchObject({ account: 'Fire', amount: -25 });
-    expect(payment.comment).toContain('#dreamfund');
-    expect(service.cash).toBeCloseTo(before - 25, 2);
+    expect(project.description).toBeTruthy();
+    // paying is the Fire page's work: no transaction, no plan yet
+    expect(state.allTransactions).toHaveLength(before);
+    expect(project.plannedSubscriptions ?? []).toHaveLength(0);
     expect(service.emergencyView!.projectTitle).toBe(project.title);
+    // the project is made once
+    const again = ok();
+    service.createEmergencyProject(again);
+    expect(again.onError).toHaveBeenCalled();
   });
 
   it('a card with a roll waits for the die, and keeps the roll', () => {
@@ -96,54 +100,52 @@ describe('CashflowGameService: emergencies and insurance', () => {
     expect(service.rollEmergencyDie('main', ok())).toBeNull();
   });
 
-  it('a choice card waits for the choice', () => {
+  it('a choice card waits for the choice, and the choice is the project', () => {
     draw('E09');
     expect(service.emergencyView!.quote.needsChoice).toBe(true);
-    service.chooseEmergencyOption('A', ok());
-    expect(service.emergencyView!.quote.payMinor).toBe(15000);
-  });
-
-  it('a plan: one payment at every Payday with a surcharge bucket, registered with the game', () => {
-    draw('E09');
     service.chooseEmergencyOption('B', ok());
-    const callbacks = ok();
-    service.payEmergency({ months: 6 }, callbacks);
-    expect(callbacks.onError).not.toHaveBeenCalled();
-    const state = AppStateService.instance;
-    const project = state.allFireEmergencies.find((fire) => fire.emergencyCardId === 'E09')!;
-    // 300 + 20% = 360 in 6 parts of 60
-    expect(project.buckets.reduce((sum, bucket) => sum + bucket.target, 0)).toBeCloseTo(360, 2);
-    expect(project.plannedSubscriptions?.[0]).toMatchObject({ status: 'active', amount: 60 });
-    const plan = state.allSubscriptions.find((sub) => sub.category === `@${project.title}`)!;
-    expect(plan).toMatchObject({ account: 'Fire', amount: -60, frequency: 'monthly' });
-    expect(state.cashflowGame.fundingSubscriptionTitles).toContain(plan.title);
-    // a plan is not a monthly expense of the game
-    expect(state.cashflowGame.gameSubscriptionTitles).not.toContain(plan.title);
+    expect(service.emergencyView!.quote.payMinor).toBe(30000);
+    service.createEmergencyProject(ok());
+    const project = AppStateService.instance.allFireEmergencies.find(
+      (fire) => fire.emergencyCardId === 'E09',
+    )!;
+    expect(project.buckets[0].target).toBe(300);
   });
 
-  it('a card that cannot be paid at once goes on the shortest plan, as the loan will later', () => {
+  it('a card with a monthly cost afterwards adds it to the game', () => {
+    draw('E20');
+    service.rollEmergencyDie('main', ok());
     const state = AppStateService.instance;
-    state.allTransactions = state.allTransactions.filter((tx) => tx.account !== 'Income');
-    draw('E26');
-    // the burglary costs the uninsured player thousands of a few hundreds of cash
-    state.cashflowGame = {
-      ...state.cashflowGame,
-      insurance: { ...state.cashflowGame.insurance!, active: [] },
-    };
-    const view = service.emergencyView!;
-    expect(view.quote.payMinor).toBeGreaterThan(100000);
-    expect(view.forcedPlan).toBe(true);
-    // asked to pay at once, it takes the shortest plan: 3 Paydays and 10% on top
-    const callbacks = ok();
-    service.payEmergency({}, callbacks);
-    expect(callbacks.onError).not.toHaveBeenCalled();
-    const project = state.allFireEmergencies.find((fire) => fire.emergencyCardId === 'E26')!;
-    expect(project.plannedSubscriptions?.[0].endDate).not.toBe(
-      project.plannedSubscriptions?.[0].startDate,
+    const subscriptions = state.allSubscriptions.length;
+    service.createEmergencyProject(ok());
+    expect(state.allSubscriptions).toHaveLength(subscriptions + 1);
+    expect(state.allSubscriptions[subscriptions]).toMatchObject({ account: 'Daily', amount: -25 });
+    expect(state.cashflowGame.gameSubscriptionTitles).toContain(
+      state.allSubscriptions[subscriptions].title,
     );
-    const total = project.buckets.reduce((sum, bucket) => sum + bucket.target, 0);
-    expect(total).toBeCloseTo((view.quote.payMinor / 100) * 1.1, 1);
-    expect(state.allFireEmergencies.some((fire) => fire.emergencyCardId === 'E26')).toBe(true);
+  });
+
+  it('a character with a higher price level pays more for the same card, but not for fees fixed by law', () => {
+    const state = AppStateService.instance;
+    const profession = service.gameSets
+      .find((set) => set.id === 'jfk-stories')!
+      .professions.find((candidate) => candidate.id === 'dual-student-informatik')!;
+    (profession as { priceFactor?: number }).priceFactor = 2;
+    try {
+      draw('E02');
+      expect(service.emergencyView!.quote.payMinor).toBe(5000);
+      state.cashflowGame = {
+        ...state.cashflowGame,
+        turn: {
+          ...state.cashflowGame.turn!,
+          pending: { ...state.cashflowGame.turn!.pending!, emergency: undefined },
+        },
+      };
+      draw('E05');
+      expect(service.emergencyView!.quote.payMinor).toBe(3500);
+    } finally {
+      delete (profession as { priceFactor?: number }).priceFactor;
+    }
   });
 
   it('insurance: the burglary costs the insured player 500, the uninsured all of it', () => {

@@ -775,3 +775,14 @@ input::placeholder {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset--on {
+  border-color: var(--color-primary, #2a7de1);
+  font-weight: 700;
+}

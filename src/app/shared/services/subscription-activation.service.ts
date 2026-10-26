@@ -36,7 +36,8 @@ export class SubscriptionActivationService {
 
       // In a game a plan may only take what the month has free: it must never push the cashflow into the red
       const room = CashflowGameService.fundingRoom(plan.title);
-      if (room !== null && plan.amount > room + 0.005) {
+      const emergency = !!(project as { emergencyCardId?: string }).emergencyCardId;
+      if (!emergency && room !== null && plan.amount > room + 0.005) {
         console.warn('The month cannot carry this plan', plan.amount, room);
         return false;
       }

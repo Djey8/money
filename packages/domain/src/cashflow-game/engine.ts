@@ -16,6 +16,8 @@ import {
   CashflowTransactionRecord,
   initialCashflowGameState,
 } from './types';
+import { initialCareer } from './career';
+import { INITIAL_LIFE_STATE } from './life-deck';
 import { applyInsuranceChanges, droppedPremiumTitles, initialInsurance } from './insurance';
 import { findCashflowGameSet, findCashflowProfession } from './game-sets';
 
@@ -140,6 +142,16 @@ export function pickCashflowProfession(
       ...(mode === 'solo' ? { turn: { phase: 'roll' as const, count: 0 } } : {}),
       virtualDate: today,
       gameSubscriptionTitles,
+      ...(profession.profile
+        ? {
+            life: INITIAL_LIFE_STATE,
+            ...(profession.career ? { career: initialCareer(profession.career) } : {}),
+            livingStandard: profession.priceFactor ?? 1,
+            lineTitles: Object.fromEntries(
+              profession.expenses.filter((line) => line.key).map((line) => [line.key!, line.title]),
+            ),
+          }
+        : {}),
       ...(initialInsurance(profession.expenses)
         ? { insurance: initialInsurance(profession.expenses) }
         : {}),

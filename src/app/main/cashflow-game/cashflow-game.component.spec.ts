@@ -23,6 +23,12 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     rollDie: jest.fn(() => 6),
     paydayRollCount: jest.fn(() => 1),
     spacePreview: jest.fn(() => null),
+    consumeLifeNews: jest.fn(() => []),
+    emergencyCards: [],
+    lifeCards: [],
+    dreamCards: [],
+    careerTrack: null,
+    insurances: [],
     doodadLoanNote: jest.fn(() => '🏦 note'),
     resolveGamble: jest.fn(),
     historySteps: jest.fn(() => []),
@@ -2070,6 +2076,8 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       expect.objectContaining({ preset: 'free', cardChoice: 'free', sell: 'always' }),
       // the custom edition played in the app has a map: the ring, medium, unless another is chosen
       expect.objectContaining({ shape: 'ring', size: 'medium' }),
+      // what the player set for the dreams: two offered, three open at once
+      { offersPerLanding: 2, maxOpenDreams: 3 },
     );
     const companion = soloComponent();
     companion.component.setPlayMode('companion');
@@ -2390,6 +2398,16 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.diceTumbling).toBe(false);
     expect(component.shownDice).toEqual([5]);
     expect(component.trackByIndex(1)).toBe(1);
+  });
+
+  it('a tile without a stack of cards of its own is ticked off at once; the ones with a stack wait for what they ask', () => {
+    const { component } = soloComponent();
+    // no game running: no stack, so every tile is just read and ticked off
+    for (const tile of ['opportunity', 'harvest', 'life', 'career', 'dream', 'emergency']) {
+      expect(component.tileHasPanel(tile)).toBe(false);
+      expect(component.storyCanFinish(tile)).toBe(true);
+    }
+    expect(component.lifeBadges).toEqual([]);
   });
 
   it('the character step: a grid with the example characters first, then the chosen one with its numbers', () => {

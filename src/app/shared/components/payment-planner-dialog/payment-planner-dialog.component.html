@@ -112,17 +112,37 @@
       <!-- A game: the plan runs for a number of Paydays (rounds), each pays once -->
       <div class="form-group schedule-section" *ngIf="gameMode">
         <h5>{{ 'PaymentPlannerDialog.paydays' | translate }}</h5>
-        <input
-          type="number"
-          id="paydays"
-          name="paydays"
-          min="1"
-          max="240"
-          step="1"
-          [(ngModel)]="paydays"
-          (ngModelChange)="recalculate()"
-        />
-        <small class="help-text">{{ 'PaymentPlannerDialog.paydaysHelp' | translate }}</small>
+        <div class="preset-row" *ngIf="surchargePlans; else freePaydays">
+          <button
+            *ngFor="let preset of surchargePresets; trackBy: trackPreset"
+            type="button"
+            class="btn btn--sm preset"
+            [class.preset--on]="paydays === preset.months"
+            (click)="choosePreset(preset.months)"
+          >
+            {{ preset.months }} {{ 'PaymentPlannerDialog.paydays' | translate }} · +{{
+              preset.percent
+            }}%
+          </button>
+        </div>
+        <ng-template #freePaydays>
+          <input
+            type="number"
+            id="paydays"
+            name="paydays"
+            min="1"
+            max="240"
+            step="1"
+            [(ngModel)]="paydays"
+            (ngModelChange)="recalculate()"
+          />
+        </ng-template>
+        <small class="help-text">{{
+          (surchargePlans
+            ? 'PaymentPlannerDialog.surchargeHelp'
+            : 'PaymentPlannerDialog.paydaysHelp'
+          ) | translate
+        }}</small>
       </div>
 
       <ng-container *ngIf="!gameMode">
@@ -198,6 +218,10 @@
             <td class="amount suggested">{{ calculatedAmount | appNumber }} / {{ frequency }}</td>
           </tr>
           <ng-container *ngIf="gameMode">
+            <tr *ngIf="surchargePercent > 0">
+              <td>{{ 'PaymentPlannerDialog.surcharge' | translate }} ({{ surchargePercent }}%)</td>
+              <td class="amount">{{ surchargeAmount | appNumber }}</td>
+            </tr>
             <tr>
               <td>{{ 'PaymentPlannerDialog.planCost' | translate }}</td>
               <td class="amount">{{ planCost | appNumber }}</td>

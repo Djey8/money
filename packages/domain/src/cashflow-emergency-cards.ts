@@ -114,6 +114,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'fees',
     type: 'dice',
     payment: 'pay_now',
+    fixedPrice: true,
     title: {
       en: 'Caught Without a Ticket',
       de: 'Ohne Ticket erwischt',
@@ -180,6 +181,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'admin',
     type: 'multi',
     payment: 'pay_now',
+    fixedPrice: true,
     title: {
       en: 'Lost ID Card',
       de: 'Ausweis verloren',
@@ -249,6 +251,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'fees',
     type: 'fixed',
     payment: 'pay_now',
+    fixedPrice: true,
     requires: 'car',
     title: {
       en: 'Flashed!',
@@ -304,6 +307,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'admin',
     type: 'fixed',
     payment: 'pay_now',
+    fixedPrice: true,
     estimate: true,
     title: {
       en: 'Dunning Letter',
@@ -394,6 +398,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'health',
     type: 'multi',
     payment: 'pay_now',
+    fixedPrice: true,
     title: {
       en: 'Three Nights in Hospital',
       de: 'Drei Nächte im Krankenhaus',
@@ -448,6 +453,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'admin',
     type: 'fixed',
     payment: 'pay_now',
+    fixedPrice: true,
     estimate: true,
     title: {
       en: 'Forgotten Free Trial',
@@ -502,6 +508,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     category: 'health',
     type: 'multi',
     payment: 'pay_now',
+    fixedPrice: true,
     estimate: true,
     title: {
       en: 'Sprained Ankle Bouldering',

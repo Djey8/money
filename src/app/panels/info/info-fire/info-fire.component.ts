@@ -186,7 +186,8 @@ export class InfoFireComponent extends BaseInfoComponent {
       this.editingPlanIndex !== null
         ? InfoFireComponent.plannedSubscriptions[this.editingPlanIndex]?.title
         : undefined;
-    return CashflowGameService.fundingRoom(editing);
+    // an emergency cannot be declined: its plans are not held to what the month has free
+    return this.isEmergencyCard ? null : CashflowGameService.fundingRoom(editing);
   }
 
   isPaymentPlannerOpen = false;
@@ -1251,6 +1252,14 @@ export class InfoFireComponent extends BaseInfoComponent {
     }
   }
 
+  /** The project came from an Emergency card of a game: its plans are 3, 6 or 12 Paydays with a surcharge. */
+  get isEmergencyCard(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() &&
+      !!AppStateService.instance.allFireEmergencies[InfoFireComponent.index]?.emergencyCardId
+    );
+  }
+
   /** The emergency reserve of a character is never deleted: it is a condition of winning. */
   get isReserve(): boolean {
     return !!AppStateService.instance.allFireEmergencies[InfoFireComponent.index]?.reserve;
@@ -1343,10 +1352,46 @@ export class InfoFireComponent extends BaseInfoComponent {
     if (!fire.plannedSubscriptions) {
       fire.plannedSubscriptions = [];
     }
-    fire.plannedSubscriptions.push(plan);
+    fire.plannedSubscriptions.push(this.withSurchargeBucket(fire, plan));
     InfoFireComponent.plannedSubscriptions = fire.plannedSubscriptions;
+    InfoFireComponent.buckets = fire.buckets;
     this.isPaymentPlannerOpen = false;
     this.saveProject('Payment plan created');
+  }
+
+  /**
+   * An emergency plan costs more than the buckets: the surcharge is a bucket of its own, so the payments of the plan fit in the project
+   * and the extra can be seen. The plan's payments are then shared over all the buckets, the new one included.
+   */
+  private withSurchargeBucket(fire: Fire, plan: PlannedSubscription): PlannedSubscription {
+    const surcharge = plan.surchargeAmount ?? 0;
+    if (surcharge <= 0) return plan;
+    const title = this.translate.instant('CashflowGame.emergency.surcharge', {
+      percent: plan.surchargePercent ?? 0,
+    });
+    const existing = fire.buckets.find((bucket) => bucket.id === `${fire.title}-surcharge`);
+    if (existing) {
+      existing.target = Math.round((existing.target + surcharge) * 100) / 100;
+    } else {
+      fire.buckets.push({ id: `${fire.title}-surcharge`, title, target: surcharge, amount: 0 });
+    }
+    const rebuilt = this.paymentPlannerService.calculatePaymentPlan({
+      projectType: 'fire',
+      projectTitle: fire.title,
+      planTitle: plan.title,
+      buckets: fire.buckets,
+      selectedBucketIds: [],
+      startDate: plan.startDate,
+      targetDate: plan.targetDate,
+      frequency: plan.frequency,
+      account: plan.account,
+      manualAmount: plan.amount,
+    });
+    return {
+      ...plan,
+      comment: rebuilt.comment,
+      originalCalculatedAmount: plan.originalCalculatedAmount,
+    };
   }
 
   onPlanUpdated(plan: PlannedSubscription) {

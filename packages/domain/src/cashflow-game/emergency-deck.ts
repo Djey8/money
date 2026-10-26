@@ -64,6 +64,8 @@ export interface EmergencyCard {
   requires?: 'car' | 'pet';
   /** The insurance that limits the cost to the deductible. */
   insurance?: InsuranceKind;
+  /** The amounts are fixed by law or fees (an ID card, a fine): they do not grow with the character's price level. */
+  fixedPrice?: boolean;
   /** Removed from the game after its first draw. */
   unique?: boolean;
   /** The amounts are estimates, not published prices. */
@@ -126,8 +128,10 @@ export interface EmergencyContext {
   traits: readonly string[];
   /** Emergencies that are still being paid off. */
   openEmergencies: number;
-  /** The profession's deductible cap; the default when absent. */
+  /** The profession's deductible cap; the default (scaled by the price factor) when absent. */
   deductibleCapMinor?: number;
+  /** What things cost this character compared with the Dual Student (1): a richer life, dearer emergencies. Amounts set by law do not change. */
+  priceFactor?: number;
 }
 
 export interface ResolvedBucket {
@@ -250,9 +254,19 @@ export function quoteEmergency(
     ];
   }
 
+  const factor = card.fixedPrice ? 1 : (context.priceFactor ?? 1);
+  if (factor !== 1) {
+    // whole units of the money, so the amounts stay readable
+    buckets = buckets.map((bucket) => ({
+      ...bucket,
+      amountMinor: Math.round((bucket.amountMinor * factor) / 100) * 100,
+    }));
+  }
   const fullMinor = buckets.reduce((sum, bucket) => sum + bucket.amountMinor, 0);
   const insured = isInsuredAgainst(card, context.insurances);
-  const cap = context.deductibleCapMinor ?? INSURANCE_DEDUCTIBLE_CAP_MINOR;
+  const cap =
+    context.deductibleCapMinor ??
+    Math.round((INSURANCE_DEDUCTIBLE_CAP_MINOR * (context.priceFactor ?? 1)) / 100) * 100;
   let payMinor = fullMinor;
   if (insured && fullMinor > cap && needsRolls.length === 0 && !needsChoice) {
     let extra = 0;

@@ -37,6 +37,38 @@ import {
   CashflowTransactionRecord,
   cashOnHandMinor,
   activeInsurances,
+  applyCareerMoment,
+  applyCareerStage,
+  applyLifeOutcome,
+  canTakeDream,
+  careerSnapshot,
+  DEFAULT_DREAM_SETTINGS,
+  discountRemaining,
+  discountTotal,
+  DREAM_MOMENTS,
+  dreamReady,
+  dreamsForMoment,
+  drawDreamLanding,
+  drawLifeCard,
+  EMPTY_DREAM_LOG,
+  endLifeLine,
+  findStage,
+  lifeContext,
+  livedPoints,
+  netMonthlyMinor,
+  resolveLifeCard,
+  rollCareer,
+  totalDreamPoints,
+  type CareerResult,
+  type CareerSnapshot,
+  type DreamCard,
+  type DreamLog,
+  type DreamMoment,
+  type DreamSettings,
+  type LifeBooks,
+  type LifeCard,
+  type LifeDecision,
+  type LifeOutcome,
   addMonthsToIsoDate,
   drawEmergencyCard,
   emptyEmergencyDeck,
@@ -180,6 +212,7 @@ import { Investment } from '../../interfaces/investment';
 import { Liability } from '../../interfaces/liability';
 import { Smile } from '../../interfaces/smile';
 import { Fire } from '../../interfaces/fire';
+import { settleBucketTransactions } from '../bucket.utils';
 import { Mojo } from '../../interfaces/mojo';
 
 /** What the component composes from a card for the Grow project: its text plus the trading-range strategy. */
@@ -902,6 +935,7 @@ export class CashflowGameService {
     mode: 'companion' | 'solo' = 'companion',
     rules?: Partial<GameRules>,
     boardSetup?: BoardSetup,
+    dreamSettings?: DreamSettings,
   ): void {
     const state = AppStateService.instance;
     let result: ReturnType<typeof pickCashflowProfession>;
@@ -1037,8 +1071,20 @@ export class CashflowGameService {
         translatedPremiums[kind] = at >= 0 ? subscriptionTitles[at + 1] : title;
       }
     }
+    // the expense lines are found by their key (the career changes the tax lines): their titles are the translated ones
+    const lineTitles: Record<string, string> = {};
+    nonZeroExpenses.forEach((line, at) => {
+      if (line.key) lineTitles[line.key] = subscriptionTitles[at + 1];
+    });
     state.cashflowGame = {
       ...result.state,
+      ...(result.state.life
+        ? {
+            lineTitles,
+            dreams: EMPTY_DREAM_LOG,
+            dreamSettings: dreamSettings ?? DEFAULT_DREAM_SETTINGS,
+          }
+        : {}),
       gameSubscriptionTitles: subscriptionTitles,
       ...(insurance ? { insurance: { ...insurance, premiums: translatedPremiums } } : {}),
       budgetPlan: [],
@@ -1478,6 +1524,7 @@ export class CashflowGameService {
       insurances: activeInsurances(game),
       traits: game.traits ?? [],
       openEmergencies: this.openEmergencyCount,
+      priceFactor: this.currentProfession()?.priceFactor ?? 1,
     };
   }
 
@@ -1488,16 +1535,6 @@ export class CashflowGameService {
     quote: EmergencyQuote;
     projectTitle?: string;
     skipped: string[];
-    plans: {
-      months: number;
-      percent: number;
-      perMonth: number;
-      total: number;
-      affordable: boolean;
-    }[];
-    canPayNow: boolean;
-    /** The card cannot be paid now (not enough cash) or says it cannot be spread: the plan is the way. */
-    forcedPlan: boolean;
   } | null {
     const game = AppStateService.instance.cashflowGame;
     const emergency = game.turn?.pending?.emergency;
@@ -1510,31 +1547,12 @@ export class CashflowGameService {
       rerolled: emergency.rerolled,
     };
     const quote = quoteEmergency(card, selection, this.emergencyContext);
-    const room = CashflowGameService.fundingRoom();
-    const plans = quote.ready
-      ? [3, 6, 12].map((months) => {
-          const plan = planQuote(quote.payMinor, months);
-          const perMonth = fromMinorUnits(plan.perMonthMinor);
-          return {
-            months,
-            percent: plan.percent,
-            perMonth,
-            total: fromMinorUnits(plan.totalMinor),
-            affordable: room === null || perMonth <= room + 0.005,
-          };
-        })
-      : [];
-    const cashEnough = quote.ready && fromMinorUnits(quote.payMinor) <= this.cash + 0.005;
     return {
       card,
       selection,
       quote,
       projectTitle: emergency.projectTitle,
       skipped: emergency.skipped ?? [],
-      plans,
-      canPayNow: cashEnough,
-      // a loan is not reworked yet: what cannot be paid at once goes on a plan, as the loan will later
-      forcedPlan: quote.ready && !cashEnough,
     };
   }
 
@@ -1652,34 +1670,24 @@ export class CashflowGameService {
   }
 
   /**
-   * Pays the open card: now, out of the Fire account, or on a plan of 3, 6 or 12 Paydays with its surcharge. Either way the card is a
-   * Fire project of the game (its buckets, links, tasks and notes), so it can be followed on the Fire page. A card that cannot be paid
-   * at once goes on the shortest plan - the stand-in for the bank loan, until that is reworked.
+   * The card is settled into a Fire project (JFK, 2026-10-26): the picked option and the rolled dice become the project's buckets,
+   * with the story, links, tasks and notes of the card - and nothing is paid yet. Paying is the Fire page's own work: add money to
+   * a bucket from any account (the Mojo too), settle it, or set up a payment plan (3, 6 or 12 Paydays, each with its surcharge).
    */
-  payEmergency(how: { months?: number }, callbacks: CashflowGameCallbacks): void {
+  createEmergencyProject(callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     const game = state.cashflowGame;
     const view = this.emergencyView;
     const pending = game.turn?.pending;
     if (!view || !pending?.emergency || view.projectTitle || !view.quote.ready) {
-      callbacks.onError('This emergency cannot be paid now.');
+      callbacks.onError('This emergency cannot be settled now.');
       return;
     }
     const { card, quote } = view;
-    const planMonths = how.months ?? (view.forcedPlan ? 3 : 0);
-    if (planMonths === 0 && !view.canPayNow) {
-      callbacks.onError(this.translate.instant('CashflowGame.emergency.notEnoughCash'));
-      return;
-    }
-    if (planMonths > 0 && card.payment === 'pay_now' && view.canPayNow) {
-      callbacks.onError('This card has to be paid at once.');
-      return;
-    }
     const lang = this.emergencyLang;
     const now = new Date().toISOString();
     const gameDate = game.virtualDate ?? this.clock.todayIso();
     const title = `${card.title[lang]} · M${String(game.round).padStart(2, '0')}`;
-    const plan = planMonths > 0 ? planQuote(quote.payMinor, planMonths) : null;
 
     const buckets = quote.buckets.map((bucket) => ({
       id: `${title}-${bucket.id}`,
@@ -1691,17 +1699,6 @@ export class CashflowGameService {
         ? { targetDate: addMonthsToIsoDate(gameDate, bucket.dueInMonths) }
         : {}),
     }));
-    if (plan && plan.surchargeMinor > 0) {
-      buckets.push({
-        id: `${title}-surcharge`,
-        title: this.translate.instant('CashflowGame.emergency.surcharge', {
-          percent: plan.percent,
-        }),
-        target: fromMinorUnits(plan.surchargeMinor),
-        amount: 0,
-        notes: '',
-      });
-    }
     const insuranceNote = quote.insured
       ? this.translate.instant('CashflowGame.emergency.insuredNote', {
           saved: fromMinorUnits(quote.savedMinor),
@@ -1719,7 +1716,7 @@ export class CashflowGameService {
     const project: Fire = {
       title,
       sub: `${this.translate.instant(`CashflowGame.emergency.tier.${card.tier}`)} · ${card.category}`,
-      phase: plan ? 'saving' : 'ready',
+      phase: 'saving',
       description: card.story[lang],
       buckets,
       links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
@@ -1733,69 +1730,11 @@ export class CashflowGameService {
       createdAt: now,
       updatedAt: now,
     };
-
-    const day = this.clock.todayIso();
-    const subscriptionTitles = [...game.gameSubscriptionTitles];
-    let fundingTitles = game.fundingSubscriptionTitles ?? [];
-    this.ensureGameLocation();
-    if (!plan) {
-      // paid now: every bucket out of the Fire account
-      for (const bucket of buckets) {
-        const transaction: Transaction = {
-          account: 'Fire',
-          amount: -bucket.target,
-          date: day,
-          time: '',
-          category: `@${title}`,
-          comment: `${card.title[lang]}\n#bucket:${bucket.title}:${bucket.target.toFixed(2)}\n#dreamfund`,
-        };
-        this.bookOnGameLocation(transaction);
-        state.allTransactions.push(transaction);
-      }
-    } else {
-      // on a plan: one payment at every Payday from the next one, with the surcharge on top
-      const planTitle = `${title} (${planMonths})`;
-      const endDate = addMonthsToIsoDate(gameDate, planMonths - 1);
-      const subscription: Subscription = {
-        title: planTitle,
-        account: 'Fire',
-        amount: -fromMinorUnits(plan.perMonthMinor),
-        startDate: gameDate,
-        endDate,
-        category: `@${title}`,
-        comment: '#dreamfund',
-        frequency: 'monthly',
-        locationId: GAME_BANK_LOCATION_ID,
-      };
-      state.allSubscriptions.push(subscription);
-      fundingTitles = [...fundingTitles.filter((candidate) => candidate !== planTitle), planTitle];
-      project.plannedSubscriptions = [
-        {
-          id: `${title}-plan`,
-          title: planTitle,
-          status: 'active',
-          projectType: 'fire',
-          projectTitle: title,
-          account: 'Fire',
-          amount: fromMinorUnits(plan.perMonthMinor),
-          startDate: gameDate,
-          endDate,
-          category: `@${title}`,
-          comment: '#dreamfund',
-          frequency: 'monthly',
-          targetDate: endDate,
-          targetBucketIds: [],
-          originalCalculatedAmount: fromMinorUnits(plan.perMonthMinor),
-          manuallyAdjusted: false,
-          createdAt: now,
-          updatedAt: now,
-          activatedAt: now,
-        },
-      ];
-    }
     state.allFireEmergencies = [...state.allFireEmergencies, project];
 
     // what the card leaves behind: a monthly cost for good or for a while
+    const subscriptionTitles = [...game.gameSubscriptionTitles];
+    this.ensureGameLocation();
     if (quote.afterEffect) {
       const line = quote.afterEffect.line[lang];
       const lineTitle = `${line} (${card.id})`;
@@ -1818,7 +1757,6 @@ export class CashflowGameService {
     state.cashflowGame = {
       ...game,
       gameSubscriptionTitles: subscriptionTitles,
-      fundingSubscriptionTitles: fundingTitles,
       flags: quote.sideEffect ? [...(game.flags ?? []), quote.sideEffect] : game.flags,
       turn: {
         ...game.turn!,
@@ -1829,8 +1767,788 @@ export class CashflowGameService {
         },
       },
     };
+    this.persistAll('cashflow_emergency_project', { card: card.id }, callbacks, {
+      includeSubscriptions: true,
+      quiet: true,
+    });
+  }
+
+  // ── The life, the career and the dreams of a character (JFK, 2026-10-26) ──────────────────────────────────────────
+
+  private lifeBooks(): LifeBooks {
+    const state = AppStateService.instance;
+    return {
+      state: state.cashflowGame,
+      subscriptions: state.allSubscriptions.map(toBookSubscription),
+    };
+  }
+
+  private get gameDay(): string {
+    return this.clock.todayIso();
+  }
+
+  /** Puts the pending decision's detail into the game state, after the rule's own effects were applied. */
+  private updatePending(
+    change: (
+      pending: NonNullable<NonNullable<CashflowGameState['turn']>['pending']>,
+    ) => NonNullable<NonNullable<CashflowGameState['turn']>['pending']>,
+  ): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!pending) return;
+    state.cashflowGame = { ...game, turn: { ...game.turn!, pending: change(pending) } };
+  }
+
+  // · Life
+
+  get lifeCards(): LifeCard[] {
+    return this.currentGameSet()?.decks?.life ?? [];
+  }
+
+  /** The card of the Life tile the token stands on: what was drawn, and what it came to once the player decided. */
+  get lifeView(): {
+    card: LifeCard;
+    skipped: string[];
+    outcome?: LifeOutcome;
+    decision?: string;
+  } | null {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    const life = pending?.life;
+    const card = life && this.lifeCards.find((candidate) => candidate.id === life.cardId);
+    if (!life || !card) return null;
+    return { card, skipped: life.skipped ?? [], outcome: life.outcome, decision: life.decision };
+  }
+
+  /** The Life tile draws a card that can happen to this player; a card that cannot is put back and the next one drawn. */
+  drawLife(callbacks: CashflowGameCallbacks, cardId?: string): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    if (!pending || pending.kind !== 'story' || pending.tile !== 'life' || pending.life) {
+      callbacks.onError('There is no life card to draw.');
+      return;
+    }
+    if (!game.life || this.lifeCards.length === 0) {
+      callbacks.onError('This game has no life cards.');
+      return;
+    }
+    const deck = game.lifeDeck ?? emptyEmergencyDeck();
+    const named = cardId ? this.lifeCards.find((candidate) => candidate.id === cardId) : undefined;
+    const draw = named
+      ? {
+          card: named,
+          skipped: [] as string[],
+          deck: { ...deck, seen: [...deck.seen, `${named.id}#0`] },
+        }
+      : drawLifeCard(this.lifeCards, deck, game.life, this.rng);
+    state.cashflowGame = {
+      ...game,
+      lifeDeck: draw.deck,
+      turn: {
+        ...game.turn!,
+        pending: { ...pending, life: { cardId: draw.card.id, skipped: draw.skipped } },
+      },
+    };
+    this.persistAll('cashflow_life_draw', { card: draw.card.id }, callbacks, { quiet: true });
+  }
+
+  /** The player's answer to the card: it happens, is accepted, declined, rolled for, given, lent or passed. */
+  decideLife(decision: LifeDecision, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const view = this.lifeView;
+    if (!view || view.outcome) {
+      callbacks.onError('This card has been dealt with.');
+      return;
+    }
+    const lang = this.emergencyLang;
+    const books = this.lifeBooks();
+    const outcome = resolveLifeCard(view.card, decision, lifeContext(books, lang, this.rng), (id) =>
+      this.lifeCards.find((candidate) => candidate.id === id),
+    );
+    const effects = applyLifeOutcome(books, outcome, { date: this.gameDay, lang });
+    this.applyGameEffects(effects);
+    this.updatePending((pending) => ({
+      ...pending,
+      played: true,
+      life: { ...pending.life!, outcome, decision: decision.kind },
+    }));
     state.transactionsUpdated$.next();
-    this.persistAll('cashflow_emergency_pay', { card: card.id, months: planMonths }, callbacks, {
+    this.persistAll(
+      'cashflow_life_decide',
+      { card: view.card.id, decision: decision.kind },
+      callbacks,
+      {
+        includeSubscriptions: true,
+        quiet: true,
+      },
+    );
+  }
+
+  /** The monthly lines of life the player can end (lifestyle creep for a small fee), with what they cost. */
+  get lifeLines() {
+    const lang = this.emergencyLang;
+    return (AppStateService.instance.cashflowGame.lifeLines ?? []).map((line) => ({
+      id: line.id,
+      title: line.title[lang],
+      amount: fromMinorUnits(line.amountMinor),
+      paydaysLeft: line.paydaysLeft,
+      endable:
+        line.removeCostMinor !== undefined &&
+        (line.minPaydays === undefined || (line.age ?? 0) >= line.minPaydays),
+      endCost: fromMinorUnits(line.removeCostMinor ?? 0),
+    }));
+  }
+
+  endLifeLine(id: string, callbacks: CashflowGameCallbacks): void {
+    const effects = endLifeLine(this.lifeBooks(), id, {
+      date: this.gameDay,
+      lang: this.emergencyLang,
+    });
+    if (!effects) {
+      callbacks.onError('This cannot be ended now.');
+      return;
+    }
+    this.applyGameEffects(effects);
+    this.persistAll('cashflow_life_end_line', { id }, callbacks, {
+      includeSubscriptions: true,
+      quiet: true,
+    });
+  }
+
+  /** What the last Payday brought to the life of the character (a baby, a new job): told once. */
+  consumeLifeNews(): { kind: string; title: string }[] {
+    const state = AppStateService.instance;
+    const news = state.cashflowGame.lifeNews ?? [];
+    if (news.length > 0) state.cashflowGame = { ...state.cashflowGame, lifeNews: [] };
+    return news;
+  }
+
+  // · Career
+
+  get careerTrack() {
+    return this.currentProfession()?.career ?? null;
+  }
+
+  /** Where the character stands on the ladder: the stage, the Paydays in it, what comes next. */
+  get careerStatus() {
+    const game = AppStateService.instance.cashflowGame;
+    const track = this.careerTrack;
+    const career = game.career;
+    const stage = track && career ? findStage(track, career.stage) : undefined;
+    if (!track || !career || !stage) return null;
+    const lang = this.emergencyLang;
+    const total = Math.max(...track.stages.map((candidate) => candidate.stage));
+    return {
+      stage,
+      title: stage.title[lang],
+      stageNumber: stage.stage,
+      pips:
+        stage.branch === 'management' || stage.stage >= 5
+          ? stage.branch === 'management'
+            ? 7
+            : 6
+          : 4,
+      total,
+      paydaysInStage: career.paydaysInStage,
+      eligibleIn: stage.next ? Math.max(0, stage.next.minPaydays - career.paydaysInStage) : 0,
+      top: !stage.next,
+      branch: stage.branch,
+      boost: !!career.boost,
+    };
+  }
+
+  get careerView() {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    const career = pending?.career;
+    const track = this.careerTrack;
+    if (!career || !track) return null;
+    const lang = this.emergencyLang;
+    return {
+      result: career.result,
+      done: !!career.done,
+      before: career.before,
+      after: career.after,
+      reached: career.reached ? findStage(track, career.reached) : undefined,
+      options:
+        career.result.kind === 'branch'
+          ? career.result.options.map((id) => findStage(track, id)!)
+          : [],
+      lang,
+    };
+  }
+
+  /** The token is on a Career tile: a die decides, nothing is applied until it is a promotion. */
+  rollCareerTile(callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    const track = this.careerTrack;
+    if (
+      !pending ||
+      pending.kind !== 'story' ||
+      pending.tile !== 'career' ||
+      pending.career ||
+      !track ||
+      !game.career
+    ) {
+      callbacks.onError('There is no career to roll for.');
+      return;
+    }
+    const result: CareerResult = rollCareer(game.career, track, this.rng);
+    state.cashflowGame = {
+      ...game,
+      turn: { ...game.turn!, pending: { ...pending, career: { result, done: false } } },
+    };
+    // what needs no choice is done at once
+    if (result.kind === 'promoted') {
+      this.reachStage(result.to, callbacks);
+      return;
+    }
+    if (result.kind === 'moment') {
+      const effects = applyCareerMoment(this.lifeBooks(), result.moment, {
+        date: this.gameDay,
+        lang: this.emergencyLang,
+      });
+      this.applyGameEffects(effects);
+      this.updatePending((current) => ({ ...current, career: { result, done: true } }));
+      this.persistAll('cashflow_career_moment', { moment: result.moment }, callbacks, {
+        includeSubscriptions: true,
+        quiet: true,
+      });
+      return;
+    }
+    if (result.kind === 'failed' && result.retakeMinor) {
+      const effects = {
+        ...applyLifeOutcome(
+          this.lifeBooks(),
+          {
+            cardId: 'career',
+            title: result.retakeLabel ?? { en: 'Exam retake', de: 'Prüfung wiederholen' },
+            oneTimeMinor: result.retakeMinor,
+            lines: [],
+            removeGroups: [],
+            life: game.life!,
+            scheduled: [],
+            rolls: [],
+          },
+          { date: this.gameDay, lang: this.emergencyLang },
+        ),
+      };
+      this.applyGameEffects(effects);
+      this.updatePending((current) => ({ ...current, career: { result, done: true } }));
+      this.persistAll('cashflow_career_retake', {}, callbacks, { quiet: true });
+      return;
+    }
+    this.updatePending((current) => ({
+      ...current,
+      career: { result, done: result.kind !== 'branch' },
+    }));
+    this.persistAll('cashflow_career_roll', { result: result.kind }, callbacks, { quiet: true });
+  }
+
+  /** The promotion: the books take the stage; the old and the new numbers are kept for the comparison shown. */
+  reachStage(stageId: string, callbacks: CashflowGameCallbacks): void {
+    const track = this.careerTrack;
+    const game = AppStateService.instance.cashflowGame;
+    const stage = track && findStage(track, stageId);
+    if (!stage || !game.turn?.pending?.career) {
+      callbacks.onError('There is no stage to reach.');
+      return;
+    }
+    const books = this.lifeBooks();
+    const before: CareerSnapshot = careerSnapshot(books);
+    const effects = applyCareerStage(books, stage, {
+      date: this.gameDay,
+      lang: this.emergencyLang,
+    });
+    this.applyGameEffects(effects);
+    const after = careerSnapshot(this.lifeBooks());
+    const result = game.turn.pending.career.result;
+    this.updatePending((current) => ({
+      ...current,
+      played: true,
+      career: { result, done: true, before, after, reached: stageId },
+    }));
+    AppStateService.instance.transactionsUpdated$.next();
+    this.persistAll('cashflow_career_stage', { stage: stageId }, callbacks, {
+      includeSubscriptions: true,
+      quiet: true,
+    });
+  }
+
+  // · Dreams
+
+  get dreamCards(): DreamCard[] {
+    return this.currentGameSet()?.decks?.dream ?? [];
+  }
+
+  get dreamLog(): DreamLog {
+    return AppStateService.instance.cashflowGame.dreams ?? EMPTY_DREAM_LOG;
+  }
+
+  get dreamSettings(): DreamSettings {
+    return AppStateService.instance.cashflowGame.dreamSettings ?? DEFAULT_DREAM_SETTINGS;
+  }
+
+  /** The Smile projects of the dreams the character has taken, with the card each came from. */
+  get openDreams() {
+    const state = AppStateService.instance;
+    return this.dreamLog.open
+      .map((open) => {
+        const card = this.dreamCards.find((candidate) => candidate.id === open.cardId);
+        const project = state.allSmileProjects.find(
+          (candidate) => candidate.title === open.projectTitle,
+        );
+        return card && project ? { open, card, project } : null;
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => !!entry);
+  }
+
+  /** The points of the dreams, so far: lived, partly funded, and for patience. */
+  get dreamPoints() {
+    const state = AppStateService.instance;
+    return totalDreamPoints(this.dreamLog, this.dreamCards, (title) => {
+      const project = state.allSmileProjects.find((candidate) => candidate.title === title);
+      const funded = (project?.buckets ?? [])
+        .filter((bucket) => Number(bucket.amount) + 0.005 >= Number(bucket.target))
+        .reduce((sum, bucket) => sum + Number(bucket.target), 0);
+      return { fundedBucketsMinor: toMinorUnits(funded) };
+    });
+  }
+
+  /** What the Dream tile shows: the offers, or a moment, and what has been done with them. */
+  get dreamView(): {
+    offers: DreamCard[];
+    moment?: DreamMoment;
+    taken?: string;
+    declined: boolean;
+    applied?: { en: string; de: string };
+    swapping?: string;
+    canTake: boolean;
+  } | null {
+    const dream = AppStateService.instance.cashflowGame.turn?.pending?.dream;
+    if (!dream) return null;
+    return {
+      offers: (dream.offers ?? [])
+        .map((id) => this.dreamCards.find((candidate) => candidate.id === id))
+        .filter((card): card is DreamCard => !!card),
+      moment: dream.moment
+        ? DREAM_MOMENTS.find((candidate) => candidate.id === dream.moment)
+        : undefined,
+      taken: dream.taken,
+      declined: !!dream.declined,
+      applied: dream.applied,
+      swapping: dream.swapping,
+      canTake: canTakeDream(this.dreamLog, this.dreamSettings) || !!dream.swapping,
+    };
+  }
+
+  drawDream(
+    callbacks: CashflowGameCallbacks,
+    options: { forceOffers?: number; cardId?: string } = {},
+  ): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    if (
+      !pending ||
+      pending.kind !== 'story' ||
+      pending.tile !== 'dream' ||
+      (pending.dream && !options.forceOffers)
+    ) {
+      callbacks.onError('There is no dream to draw.');
+      return;
+    }
+    if (this.dreamCards.length === 0) {
+      callbacks.onError('This game has no dreams.');
+      return;
+    }
+    const deck = game.dreamDeck ?? emptyEmergencyDeck();
+    let offers: string[] | undefined;
+    let moment: string | undefined;
+    let nextDeck: typeof deck;
+    if (options.cardId && this.dreamCards.some((card) => card.id === options.cardId)) {
+      offers = [options.cardId];
+      nextDeck = { ...deck, seen: [...deck.seen, options.cardId] };
+    } else {
+      const landing = drawDreamLanding(
+        this.dreamCards,
+        DREAM_MOMENTS,
+        deck,
+        {
+          log: this.dreamLog,
+          life: game.life,
+          settings: this.dreamSettings,
+          forceOffers: options.forceOffers,
+        },
+        this.rng,
+      );
+      nextDeck = landing.deck;
+      if (landing.kind === 'offers') offers = landing.offers.map((offer) => offer.id);
+      else moment = landing.moment.id;
+    }
+    state.cashflowGame = {
+      ...game,
+      dreamDeck: nextDeck,
+      turn: {
+        ...game.turn!,
+        pending: {
+          ...pending,
+          dream: { ...(offers ? { offers } : {}), ...(moment ? { moment } : {}) },
+        },
+      },
+    };
+    this.persistAll('cashflow_dream_draw', { offers, moment }, callbacks, { quiet: true });
+  }
+
+  /** A dream is taken: it becomes a Smile project (buckets, links, tasks, notes), to be funded there. */
+  takeDream(cardId: string, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const view = this.dreamView;
+    const card = this.dreamCards.find((candidate) => candidate.id === cardId);
+    if (!view || !card || view.taken) {
+      callbacks.onError('This dream cannot be taken now.');
+      return;
+    }
+    if (!view.canTake) {
+      callbacks.onError(
+        this.translate.instant('CashflowGame.dream.tooMany', {
+          max: this.dreamSettings.maxOpenDreams,
+        }),
+      );
+      return;
+    }
+    const lang = this.emergencyLang;
+    const now = new Date().toISOString();
+    const project: Smile = {
+      title: card.title[lang],
+      sub: `${this.translate.instant(`CashflowGame.dream.tier.${card.tier}`)} · ${this.translate.instant(`CashflowGame.dream.category.${card.category}`)} · ${livedPoints(card)} ${this.translate.instant('CashflowGame.dream.points')}`,
+      dreamCardId: card.id,
+      phase: 'planning',
+      description: card.story[lang],
+      buckets: card.buckets.map((bucket) => ({
+        id: `${card.title[lang]}-${bucket.id}`,
+        title: bucket.title[lang],
+        target: fromMinorUnits(bucket.amountMinor),
+        amount: 0,
+        notes: '',
+      })),
+      links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
+      actionItems: card.actions.map((action) => ({
+        text: action.text[lang],
+        done: false,
+        priority: action.priority,
+      })),
+      notes: [
+        ...(card.stat ? [{ text: card.stat[lang], createdAt: now }] : []),
+        ...(card.monthlyAfterMinor
+          ? [
+              {
+                text: this.translate.instant('CashflowGame.dream.runningCosts', {
+                  amount: fromMinorUnits(card.monthlyAfterMinor),
+                  currency: state.currency,
+                }),
+                createdAt: now,
+              },
+            ]
+          : []),
+      ],
+      createdAt: now,
+      updatedAt: now,
+    };
+    let carried = 0;
+    // a swap: the dream that goes gives back its saved money and the new one starts with it
+    if (view.swapping) {
+      carried = this.releaseDream(view.swapping);
+    }
+    state.allSmileProjects = [
+      ...state.allSmileProjects.filter((existing) => existing.title !== project.title),
+      project,
+    ];
+    if (carried > 0) {
+      const day = this.gameDay;
+      const tx: Transaction = {
+        account: 'Smile',
+        amount: -Math.min(
+          carried,
+          project.buckets.reduce((sum, bucket) => sum + bucket.target, 0),
+        ),
+        date: day,
+        time: '',
+        category: `@${project.title}`,
+        comment: `${project.title}\n#dreamfund`,
+      };
+      this.bookOnGameLocation(tx);
+      state.allTransactions.push(tx);
+    }
+    const log = this.dreamLog;
+    state.cashflowGame = {
+      ...game,
+      dreams: {
+        ...log,
+        open: [
+          ...log.open.filter((open) => open.projectTitle !== view.swapping),
+          { cardId: card.id, projectTitle: project.title, round: game.round },
+        ],
+      },
+      turn: {
+        ...game.turn!,
+        pending: {
+          ...game.turn!.pending!,
+          played: true,
+          dream: { ...game.turn!.pending!.dream, taken: project.title, swapping: undefined },
+        },
+      },
+    };
+    this.persistAll('cashflow_dream_take', { card: card.id }, callbacks, { quiet: true });
+  }
+
+  /** None of the offered dreams is taken: nothing happens, the cards go to the discard pile. */
+  declineDreams(callbacks: CashflowGameCallbacks): void {
+    this.updatePending((pending) => ({ ...pending, dream: { ...pending.dream, declined: true } }));
+    this.persistAll('cashflow_dream_decline', {}, callbacks, { quiet: true });
+  }
+
+  /** The money saved for a dream is given back and the project ends (a swap). Returns what was saved. */
+  private releaseDream(projectTitle: string): number {
+    const state = AppStateService.instance;
+    const project = state.allSmileProjects.find((candidate) => candidate.title === projectTitle);
+    if (!project) return 0;
+    const saved = project.buckets.reduce((sum, bucket) => sum + Number(bucket.amount), 0);
+    for (const bucket of project.buckets) {
+      if (Number(bucket.amount) <= 0) continue;
+      settleBucketTransactions(state.allTransactions, {
+        projectTitle,
+        bucket: { title: bucket.title, amount: Number(bucket.amount) },
+        actual: 0,
+        account: 'Smile',
+        date: this.gameDay,
+        time: '',
+      });
+    }
+    state.allSmileProjects = state.allSmileProjects.filter(
+      (candidate) => candidate.title !== projectTitle,
+    );
+    return saved;
+  }
+
+  /**
+   * A dream moment that needs a dream picked (and a bucket): applies it. `projectTitle` is the dream it is about; `bucketIndex` the bucket
+   * a gift goes to.
+   */
+  applyDreamMoment(
+    moment: string,
+    target: { projectTitle?: string; bucketIndex?: number },
+    callbacks: CashflowGameCallbacks,
+  ): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const lang = this.emergencyLang;
+    const project = state.allSmileProjects.find(
+      (candidate) => candidate.title === target.projectTitle,
+    );
+    const day = this.gameDay;
+    const say = (en: string, de: string) => ({ en, de });
+    let applied: { en: string; de: string } | undefined;
+    const money = (amount: number) => `${amount.toFixed(2)} ${state.currency}`;
+    const addGift = (amount: number) => {
+      const gift: Transaction = {
+        account: 'Smile',
+        amount,
+        date: day,
+        time: '',
+        category: `@${lang === 'de' ? 'Geschenk' : 'Gift'}`,
+        comment: `${moment}\n#dreamfund`,
+      };
+      this.bookOnGameLocation(gift);
+      state.allTransactions.push(gift);
+      if (project) {
+        const bucket = project.buckets[target.bucketIndex ?? 0] ?? project.buckets[0];
+        const put: Transaction = {
+          account: 'Smile',
+          amount: -amount,
+          date: day,
+          time: '',
+          category: `@${project.title}`,
+          comment: `${moment}\n#bucket:${bucket.title}:${amount.toFixed(2)}\n#dreamfund`,
+        };
+        this.bookOnGameLocation(put);
+        state.allTransactions.push(put);
+      }
+    };
+    switch (moment) {
+      case 'M01':
+        if (!project) break;
+        project.buckets = discountRemaining(project.buckets, 15);
+        applied = say(
+          `What is missing of ${project.title} costs 15% less.`,
+          `Was bei ${project.title} noch fehlt, kostet 15 % weniger.`,
+        );
+        break;
+      case 'M03':
+        if (!project) break;
+        project.buckets = discountTotal(project.buckets, 20);
+        applied = say(`${project.title} costs 20% less.`, `${project.title} kostet 20 % weniger.`);
+        break;
+      case 'M04':
+        if (!project) break;
+        project.buckets = discountTotal(project.buckets, 25);
+        applied = say(`${project.title} costs 25% less.`, `${project.title} kostet 25 % weniger.`);
+        break;
+      case 'M02':
+        addGift(300);
+        applied = project
+          ? say(`300 went into ${project.title}.`, `300 gingen in ${project.title}.`)
+          : say('300 went to your Smile account.', '300 gingen auf dein Smile-Konto.');
+        break;
+      case 'M06': {
+        const net = fromMinorUnits(
+          netMonthlyMinor(
+            game,
+            this.gameSubscriptions().map((sub) => ({
+              title: sub.title,
+              amountMinor: sub.amountMinor,
+            })),
+          ),
+        );
+        const amount = Math.round(net * 5) / 100;
+        addGift(amount);
+        applied = project
+          ? say(
+              `${money(amount)} went into ${project.title}.`,
+              `${money(amount)} gingen in ${project.title}.`,
+            )
+          : say(
+              `${money(amount)} went to your Smile account.`,
+              `${money(amount)} gingen auf dein Smile-Konto.`,
+            );
+        break;
+      }
+      case 'M07': {
+        const waiting = this.dreamLog.open.filter(
+          (open) =>
+            game.round - open.round >= 6 &&
+            (state.allSmileProjects.find((p) => p.title === open.projectTitle)?.buckets ?? []).some(
+              (bucket) => Number(bucket.amount) > 0,
+            ),
+        ).length;
+        state.cashflowGame = {
+          ...game,
+          dreams: { ...this.dreamLog, bonusPoints: this.dreamLog.bonusPoints + waiting },
+        };
+        applied = say(`${waiting} point(s) for patience.`, `${waiting} Punkt(e) für deine Geduld.`);
+        break;
+      }
+      case 'M08':
+        if (project) {
+          this.updatePending((pending) => ({
+            ...pending,
+            dream: { ...pending.dream, swapping: project.title },
+          }));
+          this.drawSwapOffers(project, callbacks);
+          return;
+        }
+        break;
+      default:
+        break;
+    }
+    if (!applied) {
+      callbacks.onError('This moment cannot be applied now.');
+      return;
+    }
+    if (project) project.updatedAt = new Date().toISOString();
+    this.updatePending((pending) => ({
+      ...pending,
+      played: true,
+      dream: { ...pending.dream, applied },
+    }));
+    state.transactionsUpdated$.next();
+    this.persistAll('cashflow_dream_moment', { moment }, callbacks, { quiet: true });
+  }
+
+  /** The swap offers dreams of the same tier as the one that goes. */
+  private drawSwapOffers(project: Smile, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const old = this.dreamCards.find((card) => card.id === project.dreamCardId);
+    const taken = new Set([
+      ...this.dreamLog.open.map((d) => d.cardId),
+      ...this.dreamLog.lived.map((d) => d.cardId),
+    ]);
+    const pool = this.dreamCards.filter((card) => card.tier === old?.tier && !taken.has(card.id));
+    const offers = pool
+      .sort(() => this.rng() - 0.5)
+      .slice(0, 2)
+      .map((card) => card.id);
+    this.updatePending((pending) => ({
+      ...pending,
+      dream: { ...pending.dream, offers, moment: undefined, swapping: project.title },
+    }));
+    this.persistAll('cashflow_dream_swap', { offers }, callbacks, { quiet: true });
+    void game;
+  }
+
+  /** A dream whose buckets are all full is lived: it is settled, earns its points and leaves its running costs and car. */
+  liveDream(projectTitle: string, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const entry = this.openDreams.find((candidate) => candidate.project.title === projectTitle);
+    if (!entry || !dreamReady(entry.project.buckets)) {
+      callbacks.onError(this.translate.instant('CashflowGame.dream.notReady'));
+      return;
+    }
+    const { card, project } = entry;
+    const lang = this.emergencyLang;
+    for (const bucket of project.buckets) {
+      settleBucketTransactions(state.allTransactions, {
+        projectTitle,
+        bucket: { title: bucket.title, amount: Number(bucket.amount) },
+        actual: Number(bucket.target),
+        account: 'Smile',
+        date: this.gameDay,
+        time: '',
+      });
+    }
+    project.phase = 'completed';
+    project.completionDate = this.gameDay;
+    project.updatedAt = new Date().toISOString();
+    const points = livedPoints(card);
+    const titles = [...game.gameSubscriptionTitles];
+    if (card.monthlyAfterMinor) {
+      const title = `${card.title[lang]} · ${lang === 'de' ? 'laufende Kosten' : 'running costs'}`;
+      state.allSubscriptions.push({
+        title,
+        account: 'Daily',
+        amount: -fromMinorUnits(card.monthlyAfterMinor),
+        startDate: game.virtualDate ?? this.gameDay,
+        endDate: '',
+        category: `@${title}`,
+        comment: '#dreamfund',
+        frequency: 'monthly',
+        locationId: GAME_BANK_LOCATION_ID,
+      });
+      titles.push(title);
+    }
+    const log = this.dreamLog;
+    state.cashflowGame = {
+      ...game,
+      gameSubscriptionTitles: titles,
+      dreams: {
+        ...log,
+        open: log.open.filter((open) => open.projectTitle !== projectTitle),
+        lived: [...log.lived, { cardId: card.id, points, round: game.round }],
+      },
+      ...(card.carAfter && game.life
+        ? {
+            life: { ...game.life, car: true },
+            possessions: [...(game.possessions ?? []).filter((item) => item !== 'car'), 'car'],
+          }
+        : {}),
+    };
+    state.transactionsUpdated$.next();
+    this.persistAll('cashflow_dream_live', { card: card.id, points }, callbacks, {
       includeSubscriptions: true,
       quiet: true,
     });

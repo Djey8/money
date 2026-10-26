@@ -88,6 +88,23 @@ describe('PaymentPlannerDialogComponent in a game (Paydays)', () => {
     expect(made).toBe(true);
   });
 
+  it('an emergency plan offers 3, 6 or 12 Paydays, each with its surcharge on top of the buckets', () => {
+    fixture.componentRef.setInput('surchargePlans', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.preset')).toHaveLength(3);
+    dialog.choosePreset(6);
+    // 4,000 missing + 20% = 4,800 in 6 parts
+    expect(dialog.surchargePercent).toBe(20);
+    expect(dialog.surchargeAmount).toBe(800);
+    expect(dialog.calculatedAmount).toBe(800);
+    let made: { amount: number; surchargeAmount?: number; endDate: string } | null = null;
+    dialog.planCreated.subscribe((plan) => (made = plan));
+    dialog.savePlan();
+    expect(made!.amount).toBe(800);
+    expect(made!.surchargeAmount).toBe(800);
+    expect(made!.endDate).toBe('2027-04-15');
+  });
+
   it('keeps the end of a short month on its last day', () => {
     fixture.componentRef.setInput('gameDate', '2026-01-31');
     dialog.paydays = 2;

@@ -1,4 +1,7 @@
+import type { Rng } from './rng';
 import { applyInsuranceChanges } from './insurance';
+import { tickCareer } from './career';
+import { tickLife } from './life-books';
 import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
 import {
@@ -57,6 +60,9 @@ export interface RoundBooks {
 export interface RoundDeps {
   clock: Clock;
   text: GameText;
+  /** The language of the texts a life line gets (English where absent). */
+  lang?: 'en' | 'de';
+  rng?: Rng;
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -200,7 +206,25 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
     };
   }
 
-  return {
+  // the life of the character goes on: lines run out, a baby arrives, a job is found
+  const life = next.life
+    ? tickLife(
+        { state: next, subscriptions: books.subscriptions },
+        {
+          date: appendedTransactions[0]?.date ?? today,
+          lang: deps.lang ?? 'en',
+          rng: deps.rng,
+        },
+      )
+    : null;
+  if (life) next = { ...life.effects.state, lifeNews: life.events };
+  // a Payday in the stage of the career; the bonus when it is due
+  const career = next.career
+    ? tickCareer(next, { date: appendedTransactions[0]?.date ?? today, lang: deps.lang ?? 'en' })
+    : null;
+  if (career) next = career.state;
+
+  const payday = {
     ...emptyEffects(next, {
       kind: 'payday',
       detail: `${deps.text('CashflowGame.Round')} ${result.state.round}`,
@@ -211,6 +235,17 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
     persist: { subscriptions: false, grow: hadOffers, balanceSheet: false },
     decisionNeeded: recurring.length > 0,
   };
+  if (career?.bonus) payday.appendedTransactions = [...payday.appendedTransactions, career.bonus];
+  if (life) {
+    payday.appendedTransactions = [
+      ...payday.appendedTransactions,
+      ...life.effects.appendedTransactions,
+    ];
+    payday.subscriptionUpserts = life.effects.subscriptionUpserts;
+    payday.subscriptionRemovals = life.effects.subscriptionRemovals;
+    payday.persist = { ...payday.persist, subscriptions: life.effects.persist.subscriptions };
+  }
+  return payday;
 }
 
 /**
