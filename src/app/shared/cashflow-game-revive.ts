@@ -109,6 +109,8 @@ export const REVIVED_GAME_FIELDS = [
   // the budget the game planned: months of rows (a tag and an amount)
   'budgetPlan',
   'customRules',
+  // what cards ask to be paid, in the Add dialog
+  'paymentsDue',
 ] as const;
 
 /** What a tile asks of the turn besides its kind and place: the card drawn and what was done with it. */

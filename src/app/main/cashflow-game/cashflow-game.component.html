@@ -1010,44 +1010,7 @@
               </p>
             </ng-template>
           </div>
-          <div class="cf-solo-board" [class.cf-solo-board--card]="cardOverWheel">
-            <!-- The card of a tile with a stack lies over the whole wheel; the map can be looked at for a moment (JFK, 2026-10-26) -->
-            <div
-              class="cf-card-overlay"
-              *ngIf="cardOverWheel && pendingStory as story"
-              [style.--tc]="tileColor(story.tile)"
-              role="dialog"
-              [attr.aria-label]="tileLabelKey(story.tile) | translate"
-            >
-              <header class="cf-story-head">
-                <span class="cf-story-icon" aria-hidden="true">
-                  <img *ngIf="tileImageOf(story.tile)" [src]="tileImageOf(story.tile)" alt="" />
-                  <svg *ngIf="story.tile === 'opportunity'" viewBox="0 0 24 24">
-                    <path [attr.d]="sproutPath" />
-                  </svg>
-                  <span *ngIf="tileGlyphOf(story.tile)">{{ tileGlyphOf(story.tile) }}</span>
-                </span>
-                <strong>{{ tileLabelKey(story.tile) | translate }}</strong>
-                <button type="button" class="cf-peek" (click)="peekMap = true">
-                  {{ 'CashflowGame.tile.showMap' | translate }}
-                </button>
-              </header>
-              <app-tile-card
-                [tile]="story.tile"
-                [currency]="appState.currency"
-                (finish)="finishSoloDecision('done')"
-                (openFire)="openEmergency($event)"
-                (openSmile)="openDreamProject($event)"
-              ></app-tile-card>
-            </div>
-            <button
-              type="button"
-              class="cf-peek cf-peek--back"
-              *ngIf="peekMap && pendingStory && tileHasPanel(pendingStory.tile)"
-              (click)="peekMap = false"
-            >
-              {{ 'CashflowGame.tile.showCard' | translate }}
-            </button>
+          <div class="cf-solo-board">
             <div class="cf-ring" [class.cf-ring--map]="!!boardMap">
               <app-dream-board
                 *ngIf="boardMap as map; else classicBoard"
@@ -1236,6 +1199,16 @@
                     {{ banner.text }}
                   </p>
                   <!-- strict rules: an emergency has to be paid or planned before the game goes on -->
+                  <!-- a payment a card asked for: made in the Add dialog before the game goes on -->
+                  <div class="cf-settle-first" *ngFor="let due of paymentsDue" role="alert">
+                    <p>
+                      {{ 'CashflowGame.pay.due' | translate: { title: due.title } }}:
+                      {{ cardAmount(due.costMinor) }}
+                    </p>
+                    <button type="button" class="btn btn--sm btn--primary" (click)="payDue(due.id)">
+                      {{ 'CashflowGame.pay.button' | translate }}
+                    </button>
+                  </div>
                   <div class="cf-settle-first" *ngIf="unsettledEmergencies[0] as open" role="alert">
                     <p>
                       {{
@@ -1331,7 +1304,70 @@
                   </p>
                 </div>
               </div>
-              <!-- A tile of a Dreamfund map: the card of its stack (open it, read it, deal with it), or just its text (JFK, 2026-10-26) -->
+              <!-- A tile with a stack of cards (emergency, life, dream): the small decision panel of the classic edition - the dice stay in view, -->
+              <!-- the card is opened in a view of its own (JFK, 2026-10-26) -->
+              <div
+                class="cf-solo-decision cf-story"
+                *ngIf="
+                  soloTurn.phase === 'decide' && !walking && !diceActionOpen && stackTile as story
+                "
+                role="group"
+                [style.--tc]="tileColor(story.tile)"
+              >
+                <div class="cf-solo-decision-head">
+                  <ng-container *ngTemplateOutlet="soloDice"></ng-container>
+                  <h3>
+                    {{ 'CashflowGame.solo.decisionTitle' | translate: { space: pendingSpaceName } }}
+                  </h3>
+                </div>
+                <p class="cf-solo-decision-hint">
+                  {{ 'CashflowGame.tile.' + story.tile + '.landed' | translate }}
+                </p>
+                <div
+                  class="cf-actions cf-solo-decision-actions"
+                  [attr.data-buttons]="stackCanSkip ? 2 : 1"
+                >
+                  <button
+                    class="btn btn--primary"
+                    [disabled]="isBusy || appState.isSaving"
+                    (click)="openStackTile()"
+                  >
+                    {{ 'CashflowGame.solo.openCard' | translate }}
+                  </button>
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    *ngIf="stackCanSkip"
+                    [disabled]="isBusy"
+                    (click)="passStackTile()"
+                  >
+                    {{ 'CashflowGame.solo.pass' | translate }}
+                  </button>
+                </div>
+              </div>
+              <!-- The Career tile: the ladder card sits below the wheel -->
+              <div
+                class="cf-solo-decision cf-story"
+                *ngIf="
+                  soloTurn.phase === 'decide' && !walking && !diceActionOpen && careerTile as story
+                "
+                role="group"
+                [style.--tc]="tileColor(story.tile)"
+              >
+                <header class="cf-story-head">
+                  <span class="cf-story-icon" aria-hidden="true">
+                    <img *ngIf="tileImageOf(story.tile)" [src]="tileImageOf(story.tile)" alt="" />
+                    <span *ngIf="tileGlyphOf(story.tile)">{{ tileGlyphOf(story.tile) }}</span>
+                  </span>
+                  <strong>{{ tileLabelKey(story.tile) | translate }}</strong>
+                </header>
+                <app-tile-card
+                  [tile]="story.tile"
+                  [currency]="appState.currency"
+                  (finish)="finishSoloDecision('done')"
+                  (pay)="payDue($event)"
+                ></app-tile-card>
+              </div>
+              <!-- A tile without a stack: just its text -->
               <div
                 class="cf-solo-decision cf-story"
                 *ngIf="
@@ -1355,15 +1391,13 @@
                     </span>
                     <strong>{{ tileLabelKey(story.tile) | translate }}</strong>
                   </header>
-                  <ng-container>
-                    <p>
-                      {{
-                        'CashflowGame.tile.' +
-                          story.tile +
-                          (story.tile === 'career' ? '.none' : '.filler') | translate
-                      }}
-                    </p>
-                  </ng-container>
+                  <p>
+                    {{
+                      'CashflowGame.tile.' +
+                        story.tile +
+                        (story.tile === 'career' ? '.none' : '.filler') | translate
+                    }}
+                  </p>
                 </div>
                 <div class="cf-actions">
                   <button
@@ -1966,9 +2000,15 @@
                 <span class="cf-history-title">{{
                   'CashflowGame.step.' + step.kind | translate
                 }}</span>
-                <span class="cf-history-detail" *ngIf="step.detail && step.kind !== 'cardPicked'">{{
-                  step.detail
-                }}</span>
+                <span
+                  class="cf-history-detail"
+                  *ngIf="
+                    step.detail &&
+                    step.kind !== 'cardPicked' &&
+                    (!step.cardId || step.kind === 'lifeDecision')
+                  "
+                  >{{ step.detail }}</span
+                >
                 <span
                   class="cf-history-detail cf-history-card"
                   *ngIf="step.cardId"
@@ -2021,6 +2061,43 @@
             </ul>
           </li>
         </ul>
+      </div>
+
+      <!-- a card of the Dreamfund stacks, read again from the History -->
+      <div class="cf-card" *ngIf="dashboardView === 'historyTile' && historyTileCard as card">
+        <button class="cf-back-btn" (click)="dashboardView = 'history'">
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
+        </button>
+        <h3>{{ card.title }}</h3>
+        <p class="cf-solo-hint">{{ 'CashflowGame.cardFromHistory' | translate }}</p>
+        <p>{{ card.story }}</p>
+      </div>
+
+      <!-- The card of a tile with a stack: its own view, one box that keeps its place, with the way back to the map (JFK, 2026-10-26) -->
+      <div
+        class="cf-card cf-tile-view"
+        *ngIf="dashboardView === 'tile' && pendingStory as story"
+        [style.--tc]="tileColor(story.tile)"
+      >
+        <button class="cf-back-btn" (click)="backToMain()">
+          <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.tile.showMap' | translate }}
+        </button>
+        <h3 class="cf-heading-with-tile">
+          <span>{{ tileLabelKey(story.tile) | translate }}</span>
+          <span class="cf-story-icon" aria-hidden="true">
+            <img *ngIf="tileImageOf(story.tile)" [src]="tileImageOf(story.tile)" alt="" />
+            <span *ngIf="tileGlyphOf(story.tile)">{{ tileGlyphOf(story.tile) }}</span>
+          </span>
+        </h3>
+        <app-tile-card
+          [tile]="story.tile"
+          [currency]="appState.currency"
+          [autoOpen]="true"
+          (finish)="finishSoloDecision('done')"
+          (openFire)="openEmergency($event)"
+          (openSmile)="openDreamProject($event)"
+          (pay)="payDue($event)"
+        ></app-tile-card>
       </div>
 
       <!-- Bringing a card into play, two ways (todo/cashflow-game.md decision 16): draw at random -->

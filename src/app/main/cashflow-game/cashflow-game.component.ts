@@ -47,6 +47,8 @@ import {
   type GameRules,
   dreamsForMoment,
   CUSTOM_RULE_PRESETS,
+  paymentDueComment,
+  type PaymentDue,
   droppedPremiumTitles,
   classicRulesOfMode,
   isPresetMode,
@@ -249,6 +251,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     | 'main'
     | 'dealPile'
     | 'cards'
+    | 'tile'
+    | 'historyTile'
     | 'bankLoan'
     | 'payLoan'
     | 'history'
@@ -448,6 +452,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   showHistoryCard(cardId: string): void {
     const decks = this.currentGameSet?.decks;
     if (!decks) return;
+    // a card of the Dreamfund stacks is read as text: its title and its story
+    const own = this.tileCardOfHistory(cardId);
+    if (own) {
+      this.historyTileCard = own;
+      this.dashboardView = 'historyTile';
+      return;
+    }
     for (const kind of ['dealSmall', 'dealBig', 'market', 'doodad'] as const) {
       const card = (decks[kind] as { id: string }[] | undefined)?.find((c) => c.id === cardId);
       if (!card) continue;
@@ -461,8 +472,31 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
   }
 
+  /** The Emergency, Life or Dream card of the History that is being read again. */
+  historyTileCard: { deck: string; title: string; story: string } | null = null;
+
+  private tileCardOfHistory(cardId: string) {
+    const decks = this.currentGameSet?.decks;
+    const lang = this.language.current === 'de' ? 'de' : 'en';
+    const lists: [
+      string,
+      { id: string; title: { en: string; de: string }; story: { en: string; de: string } }[],
+    ][] = [
+      ['emergency', (decks?.emergency ?? []) as never],
+      ['life', (decks?.life ?? []) as never],
+      ['dream', (decks?.dream ?? []) as never],
+    ];
+    for (const [deck, cards] of lists) {
+      const card = cards.find((candidate) => candidate.id === cardId);
+      if (card) return { deck, title: card.title[lang], story: card.story[lang] };
+    }
+    return null;
+  }
+
   /** What a card in the History was (a picked card, or the card a pass left), by its id. */
   cardLabelOf(cardId: string): string {
+    const own = this.tileCardOfHistory(cardId);
+    if (own) return own.title;
     const decks = this.currentGameSet?.decks;
     const card = [
       ...(decks?.dealSmall ?? []),
@@ -977,21 +1011,40 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return !this.remote && this.cashflowGameService.dreamCards.length > 0;
   }
 
-  /** The tile has a stack of cards in this game, and so a panel of its own. */
-  /** The player has looked away from the card to see the map. */
-  peekMap = false;
-
-  /** The card of a tile with a stack lies over the whole wheel (not while the token walks, or when the map is being looked at). */
-  get cardOverWheel(): boolean {
+  /** The tile under the token has a stack of cards that is opened in a view of its own (not the career ladder). */
+  get stackTile(): { tile: DreamfundTile; cardId: string } | null {
     const story = this.pendingStory;
-    return (
-      !!story &&
-      this.soloTurn.phase === 'decide' &&
-      !this.walking &&
-      !this.diceActionOpen &&
-      !this.peekMap &&
-      this.tileHasPanel(story.tile)
-    );
+    return story && story.tile !== 'career' && this.tileHasPanel(story.tile) ? story : null;
+  }
+
+  /** The Career tile with a ladder: its card sits below the wheel. */
+  get careerTile(): { tile: DreamfundTile; cardId: string } | null {
+    const story = this.pendingStory;
+    return story?.tile === 'career' && this.careerReady ? story : null;
+  }
+
+  /** Whether the stack tile may be left without opening its card: a dream may be refused, anything goes in the free game. */
+  get stackCanSkip(): boolean {
+    const story = this.stackTile;
+    if (!story) return false;
+    const rules = this.cashflowGameService.customRules;
+    if (rules?.mode === 'free') return true;
+    return story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
+  }
+
+  openStackTile(): void {
+    this.dashboardView = 'tile';
+  }
+
+  /** The tile is left without a card (a dream refused, or a free game's choice). */
+  passStackTile(): void {
+    if (this.stackTile?.tile === 'dream' && !this.appState.cashflowGame.turn?.pending?.dream) {
+      this.cashflowGameService.declineDreams({
+        onSuccess: () => undefined,
+        onError: () => undefined,
+      });
+    }
+    this.finishSoloDecision('done');
   }
 
   /** The tile under the token has no stack of cards: its text is shown below the wheel and ticked off. */
@@ -1650,6 +1703,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       ],
     },
     { key: 'ownProjects', options: this.yesNo() },
+    {
+      key: 'bankInterestPercent',
+      options: [5, 8, 10, 12, 15].map((n) => ({ value: n, label: `${n} %` })),
+    },
   ];
 
   private yesNo(): { value: boolean; label: string }[] {
@@ -3982,6 +4039,22 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       category: this.doodadCategory,
       costMinor: card.costMinor,
       comment,
+    });
+  }
+
+  get paymentsDue(): PaymentDue[] {
+    return this.cashflowGameService.paymentsDue;
+  }
+
+  /** Opens the Add dialog for a payment a card asked for: filled in, paid by the player (JFK, 2026-10-26). */
+  payDue(id: string): void {
+    const due = this.paymentsDue.find((item) => item.id === id);
+    if (!due) return;
+    void this.openAddDialog({
+      account: due.account,
+      category: due.category,
+      costMinor: due.costMinor,
+      comment: paymentDueComment(due),
     });
   }
 

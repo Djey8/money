@@ -19,6 +19,18 @@ export type GameStepKind =
   | 'doodad'
   | 'marketCard'
   | 'marketCost'
+  | 'cardPayment'
+  | 'tileCard'
+  | 'emergencyProject'
+  | 'lifeDecision'
+  | 'lifeLineEnded'
+  | 'careerRoll'
+  | 'careerStage'
+  | 'dreamTaken'
+  | 'dreamDeclined'
+  | 'dreamMoment'
+  | 'dreamLived'
+  | 'insurance'
   | 'priceUpdate'
   | 'shareSplit'
   | 'shareReverseSplit'
@@ -42,7 +54,7 @@ export interface GameStep {
   /** For `cardPicked`: the exact card (its id in the game set's deck), so a game can be analysed card by card. */
   cardId?: string;
   /** For `cardPicked`: the deck it came from. */
-  deck?: 'dealSmall' | 'dealBig' | 'market' | 'doodad';
+  deck?: 'dealSmall' | 'dealBig' | 'market' | 'doodad' | 'emergency' | 'life' | 'dream';
 }
 
 /**

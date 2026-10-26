@@ -8,6 +8,7 @@ import {
   type LifeLine,
   type LifeOutcome,
 } from './life-deck';
+import { bookOneTime } from './payments-due';
 import { rollDie, systemRng, type Rng } from './rng';
 import type { CashflowGameState, CashflowTransactionRecord } from './types';
 
@@ -92,6 +93,7 @@ function lineSubscription(line: LifeLine, lang: EmergencyLang, date: string): Bo
   };
 }
 
+/** What a scheduled outcome books at a Payday (the month's own money, not a payment the player makes). */
 function transaction(
   outcome: Pick<LifeOutcome, 'title'>,
   amountMinor: number,
@@ -104,7 +106,8 @@ function transaction(
     date,
     time: '',
     category: `@${outcome.title[lang]}`,
-    comment: `${outcome.title[lang]}\n#dreamfund`,
+    comment: `${outcome.title[lang]}
+#dreamfund`,
   };
 }
 
@@ -141,14 +144,13 @@ export function applyLifeOutcome(
   }
   for (const line of added) titles.push(lineSubscriptionTitle(line, lang));
 
-  if (outcome.oneTimeMinor !== 0) {
-    effects.appendedTransactions.push(transaction(outcome, outcome.oneTimeMinor, date, lang));
-  }
+  // money that comes is booked; a cost becomes a payment the player makes in the Add dialog
+  const paying = bookOneTime(state, effects, outcome.title, outcome.oneTimeMinor, date, lang);
   effects.subscriptionUpserts = added.map((line) => lineSubscription(line, lang, date));
   effects.subscriptionRemovals = endedTitles;
   effects.persist = { ...effects.persist, subscriptions: true };
   effects.state = {
-    ...state,
+    ...paying,
     life: outcome.life,
     lifeLines: [...kept, ...added],
     gameSubscriptionTitles: titles,
@@ -182,15 +184,13 @@ export function endLifeLine(
   if (line.minPaydays !== undefined && (line.age ?? 0) < line.minPaydays) return null;
   const effects = emptyEffects(state, null);
   const title = lineSubscriptionTitle(line, options.lang);
-  if (line.removeCostMinor) {
-    effects.appendedTransactions.push(
-      transaction({ title: line.title }, -line.removeCostMinor, options.date, options.lang),
-    );
-  }
+  const paying = line.removeCostMinor
+    ? bookOneTime(state, effects, line.title, -line.removeCostMinor, options.date, options.lang)
+    : state;
   effects.subscriptionRemovals = [title];
   effects.persist = { ...effects.persist, subscriptions: true };
   effects.state = {
-    ...state,
+    ...paying,
     lifeLines: (state.lifeLines ?? []).filter((candidate) => candidate.id !== lineId),
     gameSubscriptionTitles: state.gameSubscriptionTitles.filter((candidate) => candidate !== title),
   };

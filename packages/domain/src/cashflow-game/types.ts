@@ -1,3 +1,4 @@
+import type { PaymentDue } from './payments-due';
 import type { EmergencyCard, EmergencyDeckState, InsuranceKind, Localized } from './emergency-deck';
 import type { CustomRules } from './custom-rules';
 import type { DreamCard, DreamLog, DreamSettings } from './dream-deck';
@@ -481,6 +482,8 @@ export interface CashflowGameState {
   lifeLines?: LifeLine[];
   /** What is going to happen at later Paydays (a baby, lent money coming back). */
   lifeScheduled?: ScheduledLife[];
+  /** What cards ask to be paid, to be paid in the Add dialog (JFK, 2026-10-26). */
+  paymentsDue?: PaymentDue[];
   /** The Life stack: what was drawn since the last reshuffle. */
   lifeDeck?: EmergencyDeckState;
   /** A job is being looked for (the Paydays left, the roll that finds one). */

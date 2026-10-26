@@ -245,7 +245,9 @@ describe('the Life stack (temp_cards v0.3)', () => {
     const creep = play(start(), 'L21', { kind: 'fate' });
     const line = creep.state.lifeLines![0];
     const ended = endLifeLine(creep, line.id, { date: '2026-12-15', lang: 'en' })!;
-    expect(ended.appendedTransactions[0].amountMinor).toBe(-2000);
+    // a cost is not booked by the rules: it waits as a payment due, paid in the Add dialog
+    expect(ended.appendedTransactions).toHaveLength(0);
+    expect(ended.state.paymentsDue?.[0]).toMatchObject({ costMinor: 2000, account: 'Daily' });
     expect(ended.state.lifeLines).toHaveLength(0);
     const gym = play(start(), 'L26', { kind: 'accept' });
     expect(

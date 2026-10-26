@@ -5,6 +5,7 @@ import {
   EventEmitter,
   Input,
   OnDestroy,
+  OnInit,
   Output,
   ViewEncapsulation,
   inject,
@@ -683,6 +684,15 @@ const ROLL_MS = 1000;
         </div>
       </ng-template>
 
+      <!-- what the card asks to be paid is paid in the Add dialog, by the player -->
+      <div class="tc-due" *ngFor="let due of dues; trackBy: trackId" role="alert">
+        <span>{{ 'CashflowGame.pay.due' | translate: { title: due.title } }}</span>
+        <strong>{{ amount(due.costMinor) }} {{ currency }}</strong>
+        <button type="button" class="tc-btn tc-btn--primary" (click)="pay.emit(due.id)">
+          {{ 'CashflowGame.pay.button' | translate }}
+        </button>
+      </div>
+
       <button
         *ngIf="canFinish"
         type="button"
@@ -1031,6 +1041,20 @@ const ROLL_MS = 1000;
         text-align: start;
         cursor: pointer;
       }
+      .tc-due {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 8px 0;
+        padding: 8px 10px;
+        border: 2px solid var(--color-danger, #c0392b);
+        border-radius: var(--radius-md, 8px);
+      }
+      .tc-due span {
+        flex: 1 1 140px;
+        font-weight: 600;
+      }
       .tc-shuffle {
         position: relative;
         display: grid;
@@ -1089,7 +1113,7 @@ const ROLL_MS = 1000;
     `,
   ],
 })
-export class TileCardComponent implements OnDestroy {
+export class TileCardComponent implements OnInit, OnDestroy {
   private readonly service = inject(CashflowGameService);
   private readonly translate = inject(TranslateService);
   private readonly toast = inject(ToastService);
@@ -1097,10 +1121,14 @@ export class TileCardComponent implements OnDestroy {
 
   @Input({ required: true }) tile = '';
   @Input() currency = '';
+  /** The card is opened as the view appears (the player already chose "open the card" on the tile). */
+  @Input() autoOpen = false;
   /** The turn can go on. */
   @Output() finish = new EventEmitter<void>();
   @Output() openFire = new EventEmitter<string>();
   @Output() openSmile = new EventEmitter<string>();
+  /** The player wants to pay a payment due (its id): the Add dialog opens. */
+  @Output() pay = new EventEmitter<string>();
 
   busy = false;
   opening = false;
@@ -1110,6 +1138,19 @@ export class TileCardComponent implements OnDestroy {
   faces: number[] = [];
   rolling = false;
   private timer: ReturnType<typeof setInterval> | undefined;
+
+  ngOnInit(): void {
+    if (!this.autoOpen) return;
+    const shown =
+      this.tile === 'emergency'
+        ? this.service.emergencyView
+        : this.tile === 'life'
+          ? this.service.lifeView
+          : this.tile === 'dream'
+            ? this.service.dreamView
+            : null;
+    if (!shown) this.open();
+  }
 
   ngOnDestroy(): void {
     clearInterval(this.timer);
@@ -1279,7 +1320,14 @@ export class TileCardComponent implements OnDestroy {
 
   // ── what is finished ──
 
+  /** What the cards asked to be paid and is still open. */
+  get dues() {
+    return this.service.paymentsDue;
+  }
+
   get canFinish(): boolean {
+    // a payment is made before the turn goes on (the free game is for trying things out)
+    if (this.service.cannotRollBecause === 'PAYMENT_DUE') return false;
     switch (this.tile) {
       case 'emergency':
         return !!this.emergency?.projectTitle;

@@ -42,7 +42,10 @@ import {
   applyLifeOutcome,
   canTakeDream,
   normalizeCustomRules,
+  paymentsDueOf,
+  withPaymentSettled,
   type CustomRules,
+  type PaymentDue,
   careerSnapshot,
   DEFAULT_DREAM_SETTINGS,
   discountRemaining,
@@ -784,7 +787,16 @@ export class CashflowGameService {
     if (!state.tier3BalanceLoaded || !state.tier3GrowLoaded) {
       return { borrowed: 0, converted: false, nextDate: this.nextGameTransactionDate() };
     }
-    const purchase = tradePurchase(comment, toMinorUnits(expenseAmount));
+    // anything the player pays in a game is covered by a Bank loan first when the account is short: the balance never goes negative
+    // (JFK, 2026-10-26)
+    const expenseMinor = toMinorUnits(expenseAmount);
+    const purchase =
+      tradePurchase(comment, expenseMinor) ??
+      (this.customRules &&
+      expenseMinor > 0 &&
+      gameTradeStep(comment, category).kind === 'transaction'
+        ? { title: '', costMinor: expenseMinor }
+        : null);
     const gameSet = this.currentGameSet();
     let borrowedMinor = 0;
     let converted = false;
@@ -823,6 +835,10 @@ export class CashflowGameService {
     this.pushUndoSnapshot(tradeStep); // step 2 (or the only step): the trade itself
     if (tradeStep.kind === 'buyInvestment' || tradeStep.kind === 'buyAsset') this.markPurchased();
     if (tradeStep.kind === 'doodad' || tradeStep.kind === 'marketCost') this.markCardPlayed();
+    if (tradeStep.kind === 'cardPayment') {
+      // the payment a card asked for is made: it comes off the list (the undo step above brings it back)
+      state.cashflowGame = withPaymentSettled(state.cashflowGame, comment, category);
+    }
     this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
     // that follows gets the next free slot after it.
@@ -1675,6 +1691,7 @@ export class CashflowGameService {
           deck: { ...deck, seen: [...deck.seen.filter((id) => id !== named.id), named.id] },
         }
       : drawEmergencyCard(cards, deck, game.possessions ?? [], this.rng);
+    this.recordTileCard('emergency', draw.card);
     state.cashflowGame = {
       ...game,
       emergencyDeck: draw.deck,
@@ -1684,6 +1701,22 @@ export class CashflowGameService {
       },
     };
     this.persistAll('cashflow_emergency_draw', { card: draw.card.id }, callbacks, { quiet: true });
+  }
+
+  /**
+   * A card of a tile is drawn: one step of the History, with the id of the card so it can be read again (JFK, 2026-10-26). The snapshot
+   * is taken before the card is dealt, so undoing it puts the card back and leaves the tile open.
+   */
+  private recordTileCard(
+    deck: 'emergency' | 'life' | 'dream',
+    card: { id: string; title: { en: string; de: string } },
+  ): void {
+    this.pushUndoSnapshot({
+      kind: 'tileCard',
+      detail: card.title[this.emergencyLang],
+      cardId: card.id,
+      deck,
+    });
   }
 
   /** Records what was picked or rolled on the open card. */
@@ -1746,6 +1779,7 @@ export class CashflowGameService {
       callbacks.onSuccess();
       return;
     }
+    this.pushUndoSnapshot({ kind: 'insurance', detail: `${kind} ${on ? '+' : '-'}` });
     state.cashflowGame = next;
     this.persistAll('cashflow_insurance', { kind, on }, callbacks, { quiet: true });
   }
@@ -1824,6 +1858,7 @@ export class CashflowGameService {
       createdAt: now,
       updatedAt: now,
     };
+    this.pushUndoSnapshot({ kind: 'emergencyProject', detail: title });
     state.allFireEmergencies = [...state.allFireEmergencies, project];
 
     // what the card leaves behind: a monthly cost for good or for a while
@@ -1936,6 +1971,7 @@ export class CashflowGameService {
           deck: { ...deck, seen: [...deck.seen, `${named.id}#0`] },
         }
       : drawLifeCard(this.lifeCards, deck, game.life, this.rng);
+    this.recordTileCard('life', draw.card);
     state.cashflowGame = {
       ...game,
       lifeDeck: draw.deck,
@@ -2014,6 +2050,12 @@ export class CashflowGameService {
       this.lifeCards.find((candidate) => candidate.id === id),
     );
     const effects = applyLifeOutcome(books, outcome, { date: this.gameDay, lang });
+    this.pushUndoSnapshot({
+      kind: 'lifeDecision',
+      detail: decision.kind,
+      cardId: view.card.id,
+      deck: 'life',
+    });
     this.applyGameEffects(effects);
     this.updatePending((pending) => ({
       ...pending,
@@ -2056,6 +2098,10 @@ export class CashflowGameService {
       callbacks.onError('This cannot be ended now.');
       return;
     }
+    this.pushUndoSnapshot({
+      kind: 'lifeLineEnded',
+      detail: this.lifeLines.find((line) => line.id === id)?.title ?? id,
+    });
     this.applyGameEffects(effects);
     this.persistAll('cashflow_life_end_line', { id }, callbacks, {
       includeSubscriptions: true,
@@ -2174,13 +2220,14 @@ export class CashflowGameService {
       return;
     }
     const result: CareerResult = rollCareer(game.career, track, this.rng);
+    this.pushUndoSnapshot({ kind: 'careerRoll', detail: result.kind });
     state.cashflowGame = {
       ...game,
       turn: { ...game.turn!, pending: { ...pending, career: { result, done: false } } },
     };
     // what needs no choice is done at once
     if (result.kind === 'promoted') {
-      this.reachStage(result.to, callbacks);
+      this.reachStage(result.to, callbacks, false);
       return;
     }
     if (result.kind === 'moment') {
@@ -2226,7 +2273,7 @@ export class CashflowGameService {
   }
 
   /** The promotion: the books take the stage; the old and the new numbers are kept for the comparison shown. */
-  reachStage(stageId: string, callbacks: CashflowGameCallbacks): void {
+  reachStage(stageId: string, callbacks: CashflowGameCallbacks, record = true): void {
     const track = this.careerTrack;
     const game = AppStateService.instance.cashflowGame;
     const stage = track && findStage(track, stageId);
@@ -2235,6 +2282,9 @@ export class CashflowGameService {
       return;
     }
     const books = this.lifeBooks();
+    // a promotion after a roll is part of that roll's step; a stage chosen at a branch is a step of its own
+    if (record)
+      this.pushUndoSnapshot({ kind: 'careerStage', detail: stage.title[this.emergencyLang] });
     const before: CareerSnapshot = careerSnapshot(books);
     const effects = applyCareerStage(books, stage, {
       date: this.gameDay,
@@ -2374,6 +2424,9 @@ export class CashflowGameService {
       if (landing.kind === 'offers') offers = landing.offers.map((offer) => offer.id);
       else moment = landing.moment.id;
     }
+    const firstOffer = this.dreamCards.find((card) => card.id === offers?.[0]);
+    if (firstOffer) this.recordTileCard('dream', firstOffer);
+    else this.pushUndoSnapshot({ kind: 'tileCard', detail: moment });
     state.cashflowGame = {
       ...game,
       dreamDeck: nextDeck,
@@ -2407,6 +2460,12 @@ export class CashflowGameService {
       return;
     }
     const lang = this.emergencyLang;
+    this.pushUndoSnapshot({
+      kind: 'dreamTaken',
+      detail: card.title[lang],
+      cardId: card.id,
+      deck: 'dream',
+    });
     const now = new Date().toISOString();
     const project: Smile = {
       title: card.title[lang],
@@ -2493,6 +2552,7 @@ export class CashflowGameService {
 
   /** None of the offered dreams is taken: nothing happens, the cards go to the discard pile. */
   declineDreams(callbacks: CashflowGameCallbacks): void {
+    this.pushUndoSnapshot({ kind: 'dreamDeclined' });
     this.updatePending((pending) => ({ ...pending, dream: { ...pending.dream, declined: true } }));
     this.persistAll('cashflow_dream_decline', {}, callbacks, { quiet: true });
   }
@@ -2532,6 +2592,7 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     const game = state.cashflowGame;
     const lang = this.emergencyLang;
+    this.pushUndoSnapshot({ kind: 'dreamMoment', detail: moment });
     const project = state.allSmileProjects.find(
       (candidate) => candidate.title === target.projectTitle,
     );
@@ -2687,6 +2748,12 @@ export class CashflowGameService {
     }
     const { card, project } = entry;
     const lang = this.emergencyLang;
+    this.pushUndoSnapshot({
+      kind: 'dreamLived',
+      detail: card.title[lang],
+      cardId: card.id,
+      deck: 'dream',
+    });
     for (const bucket of project.buckets) {
       settleBucketTransactions(state.allTransactions, {
         projectTitle,
@@ -2769,7 +2836,17 @@ export class CashflowGameService {
     const reason = whyCannotRoll(AppStateService.instance.cashflowGame);
     if (reason) return reason;
     // an emergency has to be paid (or planned) before the game goes on, where the rules say so
-    return this.unsettledEmergencies.length > 0 ? 'EMERGENCY_UNSETTLED' : null;
+    if (this.unsettledEmergencies.length > 0) return 'EMERGENCY_UNSETTLED';
+    // a payment a card asked for is made before the game goes on (not in the free game, which is for trying things)
+    if (this.paymentsDue.length > 0 && this.customRules && this.customRules.mode !== 'free') {
+      return 'PAYMENT_DUE';
+    }
+    return null;
+  }
+
+  /** The payments cards asked for that have not been made yet (they are paid in the Add dialog). */
+  get paymentsDue(): PaymentDue[] {
+    return paymentsDueOf(AppStateService.instance.cashflowGame);
   }
 
   /** How a finished solo game ended, with the closing numbers. */
@@ -3940,7 +4017,12 @@ export class CashflowGameService {
     const step = gameTradeStep(comment, category);
     // While a Doodad has to be paid, only its payment is booked (a Bank loan is not an Add-dialog trade)
     const waiting = whyPaymentPending(game);
-    if (waiting && step.kind !== 'doodad' && step.kind !== 'marketCost')
+    if (
+      waiting &&
+      step.kind !== 'doodad' &&
+      step.kind !== 'marketCost' &&
+      step.kind !== 'cardPayment'
+    )
       return CashflowGameService.ruleText(waiting);
     if (step.kind === 'transaction') return this.freeAmountRefusal(amountMinor);
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
@@ -4277,7 +4359,18 @@ export class CashflowGameService {
 
   private currentGameSet(): CashflowGameSet | undefined {
     const { gameSetId } = AppStateService.instance.cashflowGame;
-    return gameSetId ? this.gameSets.find((set) => set.id === gameSetId) : undefined;
+    const set = gameSetId
+      ? this.gameSets.find((candidate) => candidate.id === gameSetId)
+      : undefined;
+    const custom = set ? this.customRules : null;
+    if (!set || !custom || set.loanRule.monthlyInterestPercent === custom.bankInterestPercent) {
+      return set;
+    }
+    // the Bank loan of a custom game costs what its setting says
+    return {
+      ...set,
+      loanRule: { ...set.loanRule, monthlyInterestPercent: custom.bankInterestPercent },
+    };
   }
 
   /** The running game's profession, in the game's language - null before a game is started. */

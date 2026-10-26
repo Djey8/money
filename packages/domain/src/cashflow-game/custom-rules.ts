@@ -37,6 +37,8 @@ export interface CustomRules {
   emergencySettle: EmergencySettle;
   /** The player may add Smile and Fire projects of their own, besides the ones the cards bring. */
   ownProjects: boolean;
+  /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
+  bankInterestPercent: number;
 }
 
 export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
@@ -50,6 +52,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     careerMustRoll: false,
     emergencySettle: 'never',
     ownProjects: true,
+    bankInterestPercent: 10,
   },
   guided: {
     mode: 'guided',
@@ -61,17 +64,20 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     careerMustRoll: true,
     emergencySettle: 'payNow',
     ownProjects: true,
+    bankInterestPercent: 10,
   },
   strict: {
     mode: 'strict',
     cardChoice: 'random',
     dreamOffers: 2,
     maxOpenDreams: 3,
-    dreamMayDecline: false,
+    // the dreams of the cards are for the points of a ranked game: they may be refused or given up; the life dream is the aim
+    dreamMayDecline: true,
     lifeMayDecline: false,
     careerMustRoll: true,
     emergencySettle: 'all',
     ownProjects: false,
+    bankInterestPercent: 10,
   },
 };
 
@@ -101,6 +107,7 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
         ? raw.emergencySettle
         : base.emergencySettle,
     ownProjects: typeof raw?.ownProjects === 'boolean' ? raw.ownProjects : base.ownProjects,
+    bankInterestPercent: clamp(raw?.bankInterestPercent, 1, 30, base.bankInterestPercent),
   };
 }
 

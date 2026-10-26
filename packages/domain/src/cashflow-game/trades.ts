@@ -1,4 +1,5 @@
 import { parseGrowComment, type ParsedGrowStatement } from '../grow/dsl';
+import { GAME_PAY_MARK } from './payments-due';
 import type { GameText } from './game-text';
 import type { GameStep } from './steps';
 
@@ -37,6 +38,7 @@ function firstOf<K extends ParsedGrowStatement['kind']>(
 export function gameTradeStep(comment: string, category: string): GameStep {
   if (DOODAD_MARK.test(comment)) return { kind: 'doodad', detail: stripAt(category) };
   if (MARKET_COST_MARK.test(comment)) return { kind: 'marketCost', detail: stripAt(category) };
+  if (GAME_PAY_MARK.test(comment)) return { kind: 'cardPayment', detail: stripAt(category) };
   const statements = parseGrowComment(comment);
   const named = [
     ['buyShare', 'buyShare'],
@@ -87,6 +89,7 @@ export function tradePurchase(comment: string, expenseMinor = 0): TradePurchase 
   if (
     (DOODAD_MARK.test(comment) ||
       MARKET_COST_MARK.test(comment) ||
+      GAME_PAY_MARK.test(comment) ||
       comment.includes('Sell Investment')) &&
     expenseMinor > 0
   ) {

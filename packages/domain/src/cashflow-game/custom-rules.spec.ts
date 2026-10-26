@@ -26,8 +26,9 @@ describe('the rules of the Custom JFK edition', () => {
       cardChoice: 'random',
       emergencySettle: 'all',
       lifeMayDecline: false,
-      dreamMayDecline: false,
+      dreamMayDecline: true,
       ownProjects: false,
+      bankInterestPercent: 10,
     });
   });
 

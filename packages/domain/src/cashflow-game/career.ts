@@ -6,6 +6,7 @@ import {
   netMonthlyMinor,
   type LifeBooks,
 } from './life-books';
+import { bookOneTime } from './payments-due';
 import { rollDie, systemRng, type Rng } from './rng';
 import type { CashflowGameState, CashflowTransactionRecord } from './types';
 
@@ -239,13 +240,13 @@ export function applyCareerStage(
     });
     titles.push(lifestyleTitle);
   }
-  if (stage.oneTimeMinor) {
-    effects.appendedTransactions.push(payment(stage.title, stage.oneTimeMinor, date, lang));
-  }
+  const paying = stage.oneTimeMinor
+    ? bookOneTime(state, effects, stage.title, stage.oneTimeMinor, date, lang)
+    : state;
   effects.subscriptionUpserts = upserts;
   effects.persist = { ...effects.persist, subscriptions: upserts.length > 0 };
   effects.state = {
-    ...state,
+    ...paying,
     gameSubscriptionTitles: titles,
     livingStandard: stage.livingStandard,
     career: {

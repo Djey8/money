@@ -1,4 +1,4 @@
-import { CUSTOM_RULE_PRESETS } from '@money/domain';
+import { CUSTOM_RULE_PRESETS, paymentDueComment } from '@money/domain';
 import { AppStateService } from './app-state.service';
 import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
@@ -86,13 +86,57 @@ describe('CashflowGameService: life, career and dreams', () => {
     }
   });
 
-  it('a payment of a Life card is a transaction', () => {
+  it('a payment of a Life card waits for the Add dialog: nothing is booked, the roll is blocked until it is paid', () => {
     landOn('life');
     service.drawLife(ok(), 'L08');
     const before = state().allTransactions.length;
     service.decideLife({ kind: 'fate' }, ok());
-    expect(state().allTransactions.length).toBe(before + 1);
-    expect(state().allTransactions[before]).toMatchObject({ amount: -400, account: 'Daily' });
+    expect(state().allTransactions.length).toBe(before);
+    const [due] = service.paymentsDue;
+    expect(due).toMatchObject({ costMinor: 40000, account: 'Daily' });
+    // the card is dealt with: the next roll waits for the payment
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      turn: { phase: 'roll', count: 1 },
+    };
+    expect(service.cannotRollBecause).toBe(
+      service.customRules?.mode === 'free' ? null : 'PAYMENT_DUE',
+    );
+    // the Add dialog books it with the tag; the due payment is settled and the step is in the History
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    service.beforeGrowTrade(paymentDueComment(due), 0, undefined, `@${due.category}`, 400);
+    expect(service.paymentsDue).toHaveLength(0);
+  });
+
+  it('every move of a card is a step of the History, with the card to read again, and can be undone', () => {
+    landOn('life');
+    service.drawLife(ok(), 'L08');
+    service.decideLife({ kind: 'fate' }, ok());
+    const kinds = service.historySteps().map((step) => step.kind);
+    expect(kinds.slice(0, 2)).toEqual(['lifeDecision', 'tileCard']);
+    const drawn = service.historySteps()[1];
+    expect(drawn).toMatchObject({ cardId: 'L08', deck: 'life' });
+    // undoing the decision brings the card back undecided
+    service.undoLastAction(ok());
+    expect(service.lifeView!.outcome).toBeUndefined();
+    expect(service.paymentsDue).toHaveLength(0);
+  });
+
+  it('what a player pays in a custom game is covered by a Bank loan first; it never goes below zero', () => {
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    const cash = service.cash;
+    const trade = service.beforeGrowTrade('Something', 0, undefined, '@Food', cash + 500);
+    expect(trade.borrowed).toBeGreaterThan(0);
+  });
+
+  it('the interest of the Bank loan is a setting of the game', () => {
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      customRules: { ...CUSTOM_RULE_PRESETS.guided, bankInterestPercent: 12 },
+    };
+    expect((service as any).currentGameSet().loanRule.monthlyInterestPercent).toBe(12);
   });
 
   it('the Career tile: too early nothing, then a roll; a promotion changes the salary and shows the comparison', () => {
