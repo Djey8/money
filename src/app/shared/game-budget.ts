@@ -69,10 +69,28 @@ export function applyPlanChange(
   const next = budgets.filter((row) => !dropped.has(key(row))).map((row) => ({ ...row }));
   for (const cell of afterCells) {
     const row = next.find((candidate) => key(candidate) === key(cell));
-    if (row) row.amount = cell.amount;
-    else next.push({ date: cell.date, tag: cell.tag, amount: cell.amount });
+    if (row) {
+      row.amount = cell.amount;
+      row.game = true;
+    } else next.push({ date: cell.date, tag: cell.tag, amount: cell.amount, game: true });
   }
   return next;
+}
+
+/**
+ * Cells of the game's own categories that the plan does not have (JFK, 2026-10-26: the budget began a year before the game, with far
+ * too much planned): what an earlier game or version left behind goes - the rows it flagged as the game's, and rows of the game's
+ * categories outside the plan. What the player planned in other categories stays.
+ */
+export function dropStaleRows(
+  budgets: Budget[],
+  plan: PlanMonth[],
+  gameTags: Set<string>,
+): Budget[] {
+  const planned = new Set(cellsOf(plan).map((cell) => `${cell.date}|${cell.tag}`));
+  return budgets.filter(
+    (row) => planned.has(`${row.date}|${row.tag}`) || (!row.game && !gameTags.has(row.tag)),
+  );
 }
 
 /**
@@ -100,7 +118,7 @@ export function fillMissing(budgets: Budget[], plan: PlanMonth[]): Budget[] {
   const next = budgets.map((row) => ({ ...row }));
   for (const cell of cellsOf(plan)) {
     if (!next.some((row) => row.date === cell.date && row.tag === cell.tag)) {
-      next.push({ date: cell.date, tag: cell.tag, amount: cell.amount });
+      next.push({ date: cell.date, tag: cell.tag, amount: cell.amount, game: true });
     }
   }
   return next;

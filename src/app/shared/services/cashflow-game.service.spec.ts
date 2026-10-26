@@ -300,7 +300,7 @@ describe('CashflowGameService', () => {
       expect(service.backfillBudget()).toBe(true);
       const planned = state.allBudgets.filter((b) => b.tag === '@Placeholder Expenses');
       expect(planned).toHaveLength(3);
-      expect(planned.every((b) => b.amount === 1800 && !b.game)).toBe(true);
+      expect(planned.every((b) => b.amount === 1800)).toBe(true);
       expect(state.allBudgets.some((b) => b.tag === '@Mine')).toBe(true);
       expect(service.backfillBudget()).toBe(false); // only once
       gameAccount.mockRestore();

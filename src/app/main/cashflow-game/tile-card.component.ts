@@ -1073,19 +1073,22 @@ const ROLL_MS = 1000;
       }
       .tc-shuffle {
         position: relative;
-        display: grid;
-        place-items: center;
-        min-height: 150px;
+        min-height: 175px;
         margin: 8px 0;
       }
       .tc-shuffle p {
         position: absolute;
         bottom: 0;
+        left: 0;
+        right: 0;
         margin: 0;
+        text-align: center;
         font-weight: 600;
       }
       .tc-back {
         position: absolute;
+        top: 8px;
+        left: calc(50% - 38px);
         width: 76px;
         height: 108px;
         border-radius: 10px;

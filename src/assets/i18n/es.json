@@ -1681,7 +1681,7 @@
   "CashflowGame.tile.life.landed": "Life happens. Open the card to see what comes your way.",
   "CashflowGame.tile.dream.landed": "A moment for your dreams. Open the card to see what is on offer.",
   "CashflowGame.tile.shuffling": "Shuffling the cards...",
-  "CashflowGame.tile.showMap": "Map",
+  "CashflowGame.tile.showMap": "Back",
   "CashflowGame.tile.showCard": "Back to the card",
   "CashflowGame.career.startsWith": "You start here. The first promotion opens after {{count}} Paydays in this stage.",
   "CashflowGame.custom.title": "Game mode",

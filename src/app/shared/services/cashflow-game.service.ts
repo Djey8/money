@@ -5,6 +5,7 @@ import { reconcileLocationBooking } from '../location-balance';
 import {
   applyPlanChange,
   fillMissing,
+  dropStaleRows,
   healLegacyRows,
   planFromPaydays,
   sameRows,
@@ -1219,10 +1220,14 @@ export class CashflowGameService {
     const state = AppStateService.instance;
     const monthOf = (effects: GameEffects) =>
       (effects.appendedTransactions[0]?.date ?? this.clock.todayIso()).slice(0, 7);
+    // payment plans for a dream are saving, not an expense of the month: they are not planned
+    const funding = this.fundingCategories();
     const rowsOf = (
       transactions: { account: string; amountMinor: number; date: string; category?: string }[],
     ) =>
-      plannedBudgetFromPayday(transactions).map((row) => ({
+      plannedBudgetFromPayday(
+        transactions.filter((transaction) => !funding.has(transaction.category ?? '')),
+      ).map((row) => ({
         tag: row.tag,
         amountMinor: row.amountMinor,
       }));
@@ -1234,13 +1239,27 @@ export class CashflowGameService {
     return this.setBudgetPlan(before, after);
   }
 
+  /** The categories of the payment plans of the game (their projects): money saved, not planned as a cost. */
+  private fundingCategories(): Set<string> {
+    const state = AppStateService.instance;
+    return new Set(
+      (state.cashflowGame.fundingSubscriptionTitles ?? [])
+        .map((title) => state.allSubscriptions.find((sub) => sub.title === title)?.category)
+        .filter((category): category is string => !!category),
+    );
+  }
+
   /** The plan of a game that never recorded one: from the Paydays in its history, the latest in `current`. */
   private planFromHistory(current: string, heal = true): boolean {
     const state = AppStateService.instance;
     const paydays = (state.cashflowGame.history ?? [])
       .filter((entry) => entry.kind === 'payday')
       .map((entry) =>
-        plannedBudgetFromPayday(entry.createdTransactions).map((row) => ({
+        plannedBudgetFromPayday(
+          entry.createdTransactions.filter(
+            (transaction) => !this.fundingCategories().has(transaction.category ?? ''),
+          ),
+        ).map((row) => ({
           tag: row.tag,
           amountMinor: row.amountMinor,
         })),
@@ -1305,8 +1324,16 @@ export class CashflowGameService {
       changed = this.planFromHistory((latest ?? this.clock.todayIso()).slice(0, 7));
     } else {
       const before = state.allBudgets ?? [];
-      const filled = fillMissing(before, game.budgetPlan);
-      changed = filled.length !== before.length;
+      // what earlier games left behind goes, the plan of this one is filled in
+      const tags = new Set<string>([
+        ...state.allSubscriptions
+          .filter((sub) => sub.account !== 'Income' && sub.category)
+          .map((sub) => sub.category),
+        ...game.budgetPlan.flatMap((month) => month.rows.map((row) => row.tag)),
+      ]);
+      const cleaned = dropStaleRows(before, game.budgetPlan, tags);
+      const filled = fillMissing(cleaned, game.budgetPlan);
+      changed = JSON.stringify(filled) !== JSON.stringify(before);
       if (changed) state.allBudgets = filled;
     }
     if (changed) {
@@ -4056,7 +4083,7 @@ export class CashflowGameService {
     if (step.kind === 'transaction') {
       // paying into a project of the game (a Fire emergency, a dream) or into the reserve is not a free amount: it is how the card is
       // paid (JFK, 2026-10-26)
-      if (this.paysGameProject(category)) return null;
+      if (this.paysGameProject(category) || /#bucket:|#settle:/.test(comment)) return null;
       return this.freeAmountRefusal(amountMinor);
     }
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {

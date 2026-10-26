@@ -1,4 +1,5 @@
 import {
+  dropStaleRows,
   applyPlanChange,
   fillMissing,
   healLegacyRows,
@@ -83,6 +84,22 @@ describe('the budget a game plans', () => {
     const plan = withPayday([], '2026-10', rows(['@Taxes', 90000]));
     const kept = [{ date: '2026-10', tag: '@Taxes', amount: 5 }];
     expect(fillMissing(kept, plan)).toEqual(kept);
-    expect(fillMissing([], plan)).toEqual([{ date: '2026-10', tag: '@Taxes', amount: 900 }]);
+    expect(fillMissing([], plan)).toEqual([
+      { date: '2026-10', tag: '@Taxes', amount: 900, game: true },
+    ]);
+  });
+
+  it('drops what an earlier game left in the categories of this one, and keeps the rest', () => {
+    const plan = withPayday([], '2026-10', rows(['@Rent', 80000]));
+    const budgets = [
+      { date: '2025-08', tag: '@Rent', amount: 700 },
+      { date: '2026-10', tag: '@Rent', amount: 800, game: true },
+      { date: '2026-09', tag: '@Old', amount: 1, game: true },
+      { date: '2026-10', tag: '@Holiday', amount: 300 },
+    ];
+    expect(dropStaleRows(budgets, plan, new Set(['@Rent']))).toEqual([
+      { date: '2026-10', tag: '@Rent', amount: 800, game: true },
+      { date: '2026-10', tag: '@Holiday', amount: 300 },
+    ]);
   });
 });

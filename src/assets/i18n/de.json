@@ -1737,7 +1737,7 @@
   "CashflowGame.tile.life.landed": "Das Leben passiert. Öffne die Karte, um zu sehen, was auf dich zukommt.",
   "CashflowGame.tile.dream.landed": "Ein Moment für deine Träume. Öffne die Karte, um zu sehen, was angeboten wird.",
   "CashflowGame.tile.shuffling": "Die Karten werden gemischt...",
-  "CashflowGame.tile.showMap": "Karte",
+  "CashflowGame.tile.showMap": "Zurück",
   "CashflowGame.tile.showCard": "Zurück zur Karte",
   "CashflowGame.career.startsWith": "Hier startest du. Die erste Beförderung öffnet sich nach {{count}} Zahltagen in dieser Stufe.",
   "CashflowGame.custom.title": "Spielmodus",
