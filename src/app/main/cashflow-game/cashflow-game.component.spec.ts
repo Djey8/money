@@ -2409,6 +2409,43 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.lifeBadges).toEqual([]);
   });
 
+  it('the traits of the character are chips under the profession; one opens a small card that says what it means', () => {
+    const { component } = soloComponent();
+    component.appState.cashflowGame = {
+      ...component.appState.cashflowGame,
+      professionId: 'dual-student-informatik',
+      life: {
+        relationship: 'partner',
+        kids: 1,
+        pet: 'cat',
+        car: true,
+        home: 'own_flat',
+        location: 'home_city',
+        employment: 'employed',
+      },
+    };
+    const keys = component.traitChips.map((chip) => chip.key);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'relationship',
+        'kids',
+        'home',
+        'location',
+        'employment',
+        'pet',
+        'car',
+      ]),
+    );
+    expect(component.traitInfo).toBeNull();
+    component.toggleTrait('kids');
+    expect(component.traitInfo).toMatchObject({
+      title: expect.any(String),
+      text: expect.any(String),
+    });
+    component.toggleTrait('kids');
+    expect(component.traitInfo).toBeNull();
+  });
+
   it('the character step: a grid with the example characters first, then the chosen one with its numbers', () => {
     const { component } = soloComponent();
     component.appState.currency = '€';

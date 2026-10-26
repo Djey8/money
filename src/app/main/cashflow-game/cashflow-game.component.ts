@@ -311,7 +311,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   static open(): void {
     if (!CashflowGameService.isCashflowGame()) return;
     CashflowGameComponent.isOpen = true;
-    CashflowGameComponent.instance?.appData.loadCashflowGameData();
+    const instance = CashflowGameComponent.instance;
+    // a game saved before the marks of its projects were kept gets them back once it is loaded
+    void Promise.resolve(instance?.appData.loadCashflowGameData()).then(() => {
+      instance?.cashflowGameService.repairGameProjects?.();
+      // the money of the game (Dream Taler or Traumtaler) is on again after a reload, not only after the start
+      instance?.applyGameCurrency();
+    });
     // The list of saved games is small and always shown on the start screen.
     CashflowGameComponent.instance?.savedGames.refresh().catch(() => undefined);
   }
@@ -907,9 +913,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The tile the turn waits on, with the card drawn from its stack (a filler card for now). */
   get pendingStory(): { tile: DreamfundTile; cardId: string } | null {
     const pending = this.soloTurn.pending;
-    return pending?.kind === 'story' && pending.tile
-      ? { tile: pending.tile as DreamfundTile, cardId: pending.storyCardId ?? '' }
-      : null;
+    if (pending?.kind !== 'story') return null;
+    // a game that was saved without the tile (before it was kept): the tile is the one the token stands on
+    const tile = pending.tile ?? this.board[pending.spaceIndex]?.kind;
+    return tile ? { tile: tile as DreamfundTile, cardId: pending.storyCardId ?? '' } : null;
   }
 
   /** The insurances of the running game, for the character view (rebuilt only when something changes, so the rows are not drawn again). */
@@ -979,6 +986,63 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       default:
         return false;
     }
+  }
+
+  /** The trait whose small card is open (none at first). */
+  openTrait: string | null = null;
+
+  toggleTrait(key: string): void {
+    this.openTrait = this.openTrait === key ? null : key;
+  }
+
+  private traitChipsCache: {
+    key: string;
+    chips: { key: string; icon: string; text: string }[];
+  } | null = null;
+
+  /** The traits of the character as chips: what has happened to them, and their step on the career ladder. */
+  get traitChips(): { key: string; icon: string; text: string }[] {
+    const chips = [...this.lifeBadges];
+    const career = this.careerBadge;
+    if (career) {
+      chips.push({
+        key: 'career',
+        icon: '💼',
+        text: `${career.title} · ${this.translate.instant('CashflowGame.career.stage')} ${career.stage}`,
+      });
+    }
+    const key = JSON.stringify(chips);
+    if (this.traitChipsCache?.key !== key) this.traitChipsCache = { key, chips };
+    return this.traitChipsCache.chips;
+  }
+
+  /** The small card of the open trait: what it is, what it is now and what it does in the game. */
+  get traitInfo(): {
+    icon: string;
+    title: string;
+    value: string;
+    text: string;
+    extra?: string;
+  } | null {
+    const chip = this.traitChips.find((candidate) => candidate.key === this.openTrait);
+    if (!chip) return null;
+    const t = (key: string) => this.translate.instant(key);
+    let extra: string | undefined;
+    if (chip.key === 'career') {
+      const status = this.careerStatus;
+      const next = this.cashflowGameService.careerNext;
+      if (status?.top) extra = t('CashflowGame.career.topText');
+      else if (next) {
+        extra = `${this.translate.instant('CashflowGame.career.paydaysIn', { now: next.paydaysIn, min: next.minPaydays })} · ${this.translate.instant('CashflowGame.career.needs', { roll: next.rollFrom })}`;
+      }
+    }
+    return {
+      icon: chip.icon,
+      title: t(`CashflowGame.life.badge.${chip.key}`),
+      value: chip.text,
+      text: t(`CashflowGame.life.info.${chip.key}`),
+      ...(extra ? { extra } : {}),
+    };
   }
 
   get careerStatus() {

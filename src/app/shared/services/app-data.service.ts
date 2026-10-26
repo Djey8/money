@@ -1,3 +1,4 @@
+import { reviveGameExtras, revivePendingExtras } from '../cashflow-game-revive';
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { firstValueFrom } from 'rxjs';
@@ -653,6 +654,8 @@ export class AppDataService {
                         NonNullable<CashflowGameState['turn']>['pending']
                       >['kind'],
                       spaceIndex: num(raw.turn.pending.spaceIndex),
+                      // what a tile of a Dreamfund map asks (the card drawn and what was done with it)
+                      ...revivePendingExtras(raw.turn.pending, str),
                       ...(raw.turn.pending.played != null
                         ? { played: str(raw.turn.pending.played) === 'true' }
                         : {}),
@@ -723,6 +726,8 @@ export class AppDataService {
             } as GameRules,
           }
         : {}),
+      // the life, the career, the dreams, the insurances of a Dreamfund game
+      ...(reviveGameExtras(raw, str) as Partial<CashflowGameState>),
       ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),
       ...(raw.gameName != null ? { gameName: optionalStr(raw.gameName) } : {}),
     };
@@ -1211,9 +1216,26 @@ export class AppDataService {
                 completedAt: plan.completedAt
                   ? this.cryptic.decrypt(plan.completedAt, 'database')
                   : undefined,
+                ...(plan.surchargeAmount != null
+                  ? {
+                      surchargeAmount: parseFloat(
+                        this.cryptic.decrypt(plan.surchargeAmount, 'database'),
+                      ),
+                      surchargePercent: parseFloat(
+                        this.cryptic.decrypt(plan.surchargePercent, 'database'),
+                      ),
+                    }
+                  : {}),
               }));
             }
 
+            // a project that is a part of a game: the dream of a character (protected), a dream taken from the stack
+            if (raw[k].dream != null) {
+              rawSmile.dream = this.cryptic.decrypt(raw[k].dream, 'database') === 'true';
+            }
+            if (raw[k].dreamCardId) {
+              rawSmile.dreamCardId = this.cryptic.decrypt(raw[k].dreamCardId, 'database');
+            }
             mySmile.push(rawSmile);
           }
           // Apply migration to convert legacy format to new format
@@ -1353,9 +1375,26 @@ export class AppDataService {
                 completedAt: plan.completedAt
                   ? this.cryptic.decrypt(plan.completedAt, 'database')
                   : undefined,
+                ...(plan.surchargeAmount != null
+                  ? {
+                      surchargeAmount: parseFloat(
+                        this.cryptic.decrypt(plan.surchargeAmount, 'database'),
+                      ),
+                      surchargePercent: parseFloat(
+                        this.cryptic.decrypt(plan.surchargePercent, 'database'),
+                      ),
+                    }
+                  : {}),
               }));
             }
 
+            // a project that is a part of a game: the reserve of a character (protected), an emergency card
+            if (raw[k].reserve != null) {
+              rawFire.reserve = this.cryptic.decrypt(raw[k].reserve, 'database') === 'true';
+            }
+            if (raw[k].emergencyCardId) {
+              rawFire.emergencyCardId = this.cryptic.decrypt(raw[k].emergencyCardId, 'database');
+            }
             // Migrate to current schema
             const fire: Fire = migrateFire(rawFire);
             myFire.push(fire);

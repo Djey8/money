@@ -1501,6 +1501,25 @@ export class CashflowGameService {
 
   // ── The emergency reserve, kept up to date (JFK, 2026-10-26) ──
 
+  /**
+   * A game saved before the marks of its projects were kept (the dream, the reserve) has them again: the two projects of the character
+   * are found by their titles, in the language they were made in.
+   */
+  repairGameProjects(): void {
+    const state = AppStateService.instance;
+    const profession = this.currentProfession();
+    if (!profession?.profile || !state.cashflowGame.professionId) return;
+    const texts = Object.values(profession.profile.texts);
+    const dreamTitles = texts.map((text) => text.dream.project?.title);
+    const reserveTitles = texts.map((text) => text.reserve?.project.title);
+    for (const project of state.allSmileProjects) {
+      if (!project.dream && dreamTitles.includes(project.title)) project.dream = true;
+    }
+    for (const project of state.allFireEmergencies) {
+      if (!project.reserve && reserveTitles.includes(project.title)) project.reserve = true;
+    }
+  }
+
   /** The Fire project of the character's emergency reserve (a win condition), if the game has one. */
   private get reserveProject(): Fire | undefined {
     return AppStateService.instance.allFireEmergencies.find((fire) => fire.reserve);
@@ -4274,6 +4293,7 @@ export class CashflowGameService {
     } = {},
   ): void {
     const state = AppStateService.instance;
+    this.repairGameProjects();
     this.refreshReserveTarget();
     this.incomeStatement.recalculate();
     if (!options.quiet) state.isSaving = true;

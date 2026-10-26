@@ -66,17 +66,8 @@
       </div>
 
       <!-- Who the character is, what it takes to win (ticked as it is met) and the three sheets behind panels: the same view as when a character is chosen. -->
-      <!-- what has happened to the character: badges of the life, the career, the dreams (JFK, 2026-10-26) -->
+      <!-- what is going on in the life of the character: the lines of life and the dreams (the traits are on the main view) -->
       <ng-container *ngIf="professionCardView === 'live' && hasActiveGame && lifeBadges.length > 0">
-        <div class="cf-badges">
-          <span class="cf-badge-chip" *ngFor="let badge of lifeBadges; trackBy: trackByKey"
-            >{{ badge.icon }} {{ badge.text }}</span
-          >
-          <span class="cf-badge-chip" *ngIf="careerBadge as career">
-            💼 {{ career.title }} · {{ 'CashflowGame.career.stage' | translate }} {{ career.stage }}
-            {{ career.branch }}
-          </span>
-        </div>
         <section class="cf-dreams" *ngIf="lifeLinesList.length > 0">
           <h4>{{ 'CashflowGame.life.running' | translate }}</h4>
           <div class="cf-dreams-row" *ngFor="let line of lifeLinesList; trackBy: trackById">
@@ -830,6 +821,25 @@
             >
               ℹ
             </button>
+          </div>
+
+          <!-- the traits of the character, each with a small card that says what it means (JFK, 2026-10-26) -->
+          <div class="cf-traits" *ngIf="traitChips.length > 0">
+            <button
+              *ngFor="let chip of traitChips; trackBy: trackByKey"
+              type="button"
+              class="cf-trait"
+              [class.cf-trait--on]="openTrait === chip.key"
+              [attr.aria-expanded]="openTrait === chip.key"
+              (click)="toggleTrait(chip.key)"
+            >
+              {{ chip.icon }} {{ chip.text }}
+            </button>
+            <article class="cf-trait-card" *ngIf="traitInfo as info" role="note">
+              <h5>{{ info.icon }} {{ info.title }}: {{ info.value }}</h5>
+              <p>{{ info.text }}</p>
+              <p class="cf-trait-extra" *ngIf="info.extra">{{ info.extra }}</p>
+            </article>
           </div>
 
           <div class="cf-stat-row">
