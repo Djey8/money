@@ -1234,7 +1234,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (career) {
       chips.push({
         key: 'career',
-        icon: '🪜',
+        icon: this.tileGlyphOf('career'),
         // the chip says "Career" and the step; the title of the stage is for the card that opens
         text: `${this.translate.instant('CashflowGame.life.badge.career')} ${career.stage}`,
         detail: `${career.title} · ${this.translate.instant('CashflowGame.career.stage')} ${career.stage}`,
@@ -1320,7 +1320,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       { key: 'relationship', icon: '❤️', text: v(life.relationship) },
       { key: 'home', icon: '🏠', text: v(life.home) },
       { key: 'location', icon: '📍', text: v(life.location) },
-      { key: 'employment', icon: '👔', text: v(life.employment) },
+      { key: 'employment', icon: '💼', text: v(life.employment) },
     ];
     if (life.kids > 0) badges.splice(1, 0, { key: 'kids', icon: '👶', text: `× ${life.kids}` });
     if (life.pet !== 'none')
