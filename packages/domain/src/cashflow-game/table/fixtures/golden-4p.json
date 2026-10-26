@@ -1,5 +1,5 @@
 {
-  "digest": "fd9895d9",
+  "digest": "cb3ff915",
   "script": {
     "create": {
       "id": "sim-table",
@@ -1043,7 +1043,638 @@
         "actor": "acct-sim-0",
         "command": { "type": "draw_card", "deck": "market" }
       },
-      { "at": 1792055568003, "actor": "acct-sim-0", "command": { "type": "finish_card" } }
+      { "at": 1792055568003, "actor": "acct-sim-0", "command": { "type": "finish_card" } },
+      { "at": 1792055569003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055570003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055571003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055572003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 2 } },
+      { "at": 1792055573003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055574003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055575003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055576003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055577003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055578003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055579003,
+        "actor": "acct-sim-0",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055580003, "actor": "acct-sim-0", "command": { "type": "pass_card" } },
+      { "at": 1792055581003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055582003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055583003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055584003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055585003,
+        "actor": "acct-sim-2",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055586003, "actor": "acct-sim-2", "command": { "type": "pass_card" } },
+      { "at": 1792055587003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055588003,
+        "actor": "acct-sim-0",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055589003,
+        "actor": "acct-sim-0",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-watch" }
+      },
+      { "at": 1792055590003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055591003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055592003,
+        "actor": "acct-sim-2",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055593003, "actor": "acct-sim-2", "command": { "type": "pass_card" } },
+      { "at": 1792055594003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055595003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055596003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055597003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055598003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055599003,
+        "actor": "acct-sim-2",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055600003, "actor": "acct-sim-2", "command": { "type": "pass_card" } },
+      { "at": 1792055601003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055602003,
+        "actor": "acct-sim-0",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055603003, "actor": "acct-sim-0", "command": { "type": "pass_card" } },
+      { "at": 1792055604003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055605003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055606003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055607003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055608003,
+        "actor": "acct-sim-2",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055609003, "actor": "acct-sim-2", "command": { "type": "pass_card" } },
+      { "at": 1792055610003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055611003,
+        "actor": "acct-sim-0",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055612003, "actor": "acct-sim-0", "command": { "type": "pass_card" } },
+      { "at": 1792055613003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055614003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055615003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055616003,
+        "actor": "acct-sim-0",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055617003, "actor": "acct-sim-0", "command": { "type": "pass_card" } },
+      { "at": 1792055618003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 2 } },
+      { "at": 1792055619003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055620003, "actor": "acct-sim-0", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055621003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055622003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055623003,
+        "actor": "acct-sim-2",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055624003,
+        "actor": "acct-sim-2",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-kitchen" }
+      },
+      { "at": 1792055625003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055626003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055627003,
+        "actor": "acct-sim-2",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055628003, "actor": "acct-sim-2", "command": { "type": "finish_card" } },
+      { "at": 1792055629003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055630003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055631003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055632003, "actor": "acct-sim-2", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055633003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055634003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055635003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-friendsdinner" }
+      },
+      { "at": 1792055636003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055637003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055638003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055639003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055640003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055641003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-date" }
+      },
+      { "at": 1792055642003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055643003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055644003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055645003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-efh-50k-2k" }
+      },
+      { "at": 1792055646003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055647003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      {
+        "at": 1792055648003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_market", "cardId": "classic-market-cost-tenant-1k" }
+      },
+      { "at": 1792055649003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055650003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055651003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055652003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055653003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055654003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055655003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-efh-65k-5k" }
+      },
+      { "at": 1792055656003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055657003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055658003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055659003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055660003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055661003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-etw-55k-5k" }
+      },
+      { "at": 1792055662003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055663003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055664003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055665003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055666003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055667003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055668003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055669003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055670003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055671003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-efh-45k-2k" }
+      },
+      { "at": 1792055672003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055673003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055674003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055675003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055676003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055677003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      {
+        "at": 1792055678003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_market", "cardId": "classic-market-cost-pipe-1k" }
+      },
+      { "at": 1792055679003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055680003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055681003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055682003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055683003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055684003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055685003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055686003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055687003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055688003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055689003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055690003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055691003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-foodprocessor" }
+      },
+      { "at": 1792055692003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055693003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055694003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-etw-40k-4k" }
+      },
+      { "at": 1792055695003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055696003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055697003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055698003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055699003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055700003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-massagesuit" }
+      },
+      { "at": 1792055701003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055702003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055703003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055704003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055705003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055706003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055707003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055708003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055709003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055710003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055711003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055712003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055713003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055714003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055715003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-golfclub" }
+      },
+      { "at": 1792055716003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055717003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055718003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055719003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055720003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055721003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055722003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055723003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055724003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055725003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055726003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055727003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055728003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055729003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055730003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055731003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-cappuccino" }
+      },
+      { "at": 1792055732003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055733003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055734003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055735003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055736003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055737003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-trainingwear" }
+      },
+      { "at": 1792055738003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055739003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055740003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055741003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055742003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055743003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055744003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055745003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055746003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055747003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055748003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055749003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-braces" }
+      },
+      { "at": 1792055750003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055751003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055752003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055753003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055754003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055755003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055756003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055757003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055758003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      {
+        "at": 1792055759003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_market", "cardId": "classic-market-cost-tenant-500-a" }
+      },
+      { "at": 1792055760003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055761003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055762003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-boat" }
+      },
+      { "at": 1792055763003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055764003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055765003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-efh" }
+      },
+      { "at": 1792055766003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055767003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055768003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055769003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055770003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055771003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 2 } },
+      { "at": 1792055772003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 2 } },
+      { "at": 1792055773003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 2 } },
+      {
+        "at": 1792055774003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055775003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055776003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055777003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055778003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055779003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055780003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055781003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055782003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055783003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055784003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-efh-50k-2k" }
+      },
+      { "at": 1792055785003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055786003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055787003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055788003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055789003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "doodad" }
+      },
+      {
+        "at": 1792055790003,
+        "actor": "acct-sim-1",
+        "command": { "type": "pay_doodad", "cardId": "classic-doodad-dentist" }
+      },
+      { "at": 1792055791003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055792003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055793003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055794003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055795003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055796003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055797003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055798003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055799003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "market" }
+      },
+      { "at": 1792055800003, "actor": "acct-sim-1", "command": { "type": "finish_card" } },
+      { "at": 1792055801003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055802003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055803003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055804003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055805003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055806003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055807003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      { "at": 1792055808003, "actor": "acct-sim-1", "command": { "type": "pass_card" } },
+      { "at": 1792055809003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      { "at": 1792055810003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055811003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055812003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-efh-65k-5k" }
+      },
+      { "at": 1792055813003, "actor": "acct-sim-1", "command": { "type": "roll", "dice": 1 } },
+      {
+        "at": 1792055814003,
+        "actor": "acct-sim-1",
+        "command": { "type": "draw_card", "deck": "dealSmall" }
+      },
+      {
+        "at": 1792055815003,
+        "actor": "acct-sim-1",
+        "command": { "type": "buy_deal", "cardId": "classic-small-etw-40k-5k" }
+      }
     ]
   }
 }

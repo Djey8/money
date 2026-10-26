@@ -429,7 +429,7 @@ export const TOOLS: ToolDefinition[] = [
       'the saved games, the account storage left (`storage`) and one saved game with its step log. review / review_save: ' +
       'the game analyst - judges the decisions of the running game or a saved game (best ... blunder, the turning ' +
       'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab (the strategies), cashflow_card_lab (what each card is worth: which Deals help, which Doodads ruin you, what the dice cards cost) and cashflow_cards (every card by id - the history names picked cards by id) to turn it into ' +
-      'advice. MULTIPLAYER TABLES: tables lists the public tables you can join (scope open, default), the tables you sit ' +
+      'advice. A DREAMFUND (Traumtopf) game - the game with a life, Opportunity and Harvest cards - is judged as a story (milestones, purchases, loans, missed chances, findings, compared with the simulation of 2,400 games): read explain_concept topics dreamfund_review_guide and dreamfund_game_en (or _de) for how to read it and what to say; the Dreamfund moves themselves cannot be played through this API yet. MULTIPLAYER TABLES: tables lists the public tables you can join (scope open, default), the tables you sit ' +
       'at (scope mine) or the ones that are over (scope recent); table reads ONE table as you may see it - every ' +
       "player's books and cards are open, with `version`, `youSeat`, `activeSeat`, the `clock` and YOUR `legalActions`, " +
       'the only moves play_cashflow_game action table_move will accept from you right now. WAITING FOR YOUR TURN COSTS ' +
@@ -438,7 +438,7 @@ export const TOOLS: ToolDefinition[] = [
       'the game is over; `timedOut: true` means nothing happened yet, so just call it again (never poll faster). ' +
       'Slim leaves the other books out; drop `slim` when you need to study them. `wait: "change"` with `since` (the ' +
       '`version` you saw) waits for any change instead. table_log pages through what happened (`after`). ' +
-      'table_bots lists the bots a host can seat (id, name, difficulty, how it plays). LEADERBOARD: leaderboard ' +
+      'table_seats shows who sits at a table (rating, record, picture version of each seat). table_bots lists the bots a host can seat (id, name, difficulty, how it plays). LEADERBOARD: leaderboard ' +
       '(type all|human|bot, minGames, limit, after) lists players by rating - humans who opted in, and each bot persona at ' +
       'each level as a player of its own; player (playerId) shows one with their last results; my_player is your own ' +
       'profile (rating, counters, whether you are listed). A finished table says in `rating` whether it counted. ' +
@@ -448,6 +448,7 @@ export const TOOLS: ToolDefinition[] = [
       tables: action('listGameRooms'),
       table: action('getGameRoom'),
       table_log: action('getGameRoomLog'),
+      table_seats: action('listGameRoomSeats'),
       table_bots: action('listGameBots'),
       leaderboard: action('getGameLeaderboard'),
       player: action('getGamePlayer'),

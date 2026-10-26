@@ -4,6 +4,7 @@ import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
+import { dreamToSmile } from './dream-project';
 import { CashflowGameComponent } from './cashflow-game.component';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
@@ -22,6 +23,12 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     rollDie: jest.fn(() => 6),
     paydayRollCount: jest.fn(() => 1),
     spacePreview: jest.fn(() => null),
+    consumeLifeNews: jest.fn(() => []),
+    emergencyCards: [],
+    lifeCards: [],
+    dreamCards: [],
+    careerTrack: null,
+    insurances: [],
     doodadLoanNote: jest.fn(() => '🏦 note'),
     resolveGamble: jest.fn(),
     historySteps: jest.fn(() => []),
@@ -63,8 +70,16 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
   };
   // The confirm dialog answers yes at once, so tests see what happens after "yes".
   const confirm = { confirm: jest.fn((_message: string, onConfirm: () => void) => onConfirm()) };
-  const translate = { instant: (key: string) => key };
+  const translate = { instant: (key: string) => key, onLangChange: { subscribe: jest.fn() } };
+  const stored = new Map<string, string>();
+  const local = {
+    getData: (key: string) => stored.get(key) ?? '',
+    saveData: (key: string, value: string) => void stored.set(key, value),
+    removeData: (key: string) => void stored.delete(key),
+  };
 
+  // the account's books have been read (a game saves its Smile project on top of them)
+  AppStateService.instance.tier2Loaded = true;
   const component = new CashflowGameComponent(
     router as any,
     appData as any,
@@ -83,6 +98,7 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     { current: 'en', use: jest.fn(async () => undefined) } as any,
     savedGames as any,
     confirm as any,
+    local as any,
   );
   const language = (component as any).language;
   return {
@@ -114,16 +130,20 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('field defaults', () => {
-    it('pre-selects the first playable profession at construction time, independent of auth/profile timing', () => {
+    it('pre-selects the custom edition and its first character at construction time, independent of auth/profile timing', () => {
       // This component is hosted eagerly at app bootstrap (like every other panel), so its
       // constructor can run before login/profile data has loaded — defaults must not depend on
       // `ProfileComponent.mail`/`isCashflowGame()` being accurate yet.
       ProfileComponent.mail = '';
       const { component } = makeComponent();
 
-      const cashflowSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'cashflow')!;
-      expect(component.selectedGameSetId).toBe(cashflowSet.id);
-      expect(component.selectedProfessionId).toBe(cashflowSet.professions[0].id);
+      const customSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories')!;
+      expect(component.selectedGameSetId).toBe(customSet.id);
+      expect(component.selectedProfessionId).toBe(customSet.professions[0].id);
+      // the solo app is how it is played unless the physical board is asked for
+      expect(component.playMode).toBe('solo');
+      // the old test characters are not offered
+      expect(component.editionOptions.map((set) => set.id)).toEqual(['jfk-stories', 'cashflow']);
     });
   });
 
@@ -193,17 +213,7 @@ describe('CashflowGameComponent', () => {
       expect(component.professionCardView).toBe('live');
     });
 
-    it('shuffleProfession also opens the card on the correct default view', () => {
-      const { component } = makeComponent();
-      component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;
-
-      component.shuffleProfession();
-
-      expect(component.viewedProfession).not.toBeNull();
-      expect(component.professionCardView).toBe('start');
-    });
-
-    it('shuffleProfession picks a profession from the selected game set and opens its card', () => {
+    it('shuffleProfession picks a profession from the selected game set', () => {
       const { component } = makeComponent();
       component.selectedGameSetId = CASHFLOW_GAME_SETS[0].id;
 
@@ -213,7 +223,6 @@ describe('CashflowGameComponent', () => {
         (p) => p.id === component.selectedProfessionId,
       );
       expect(picked).toBeDefined();
-      expect(component.viewedProfession).toBe(picked);
     });
 
     it('professionStartingCash is savings plus one month of cashflow, in decimal', () => {
@@ -765,7 +774,7 @@ describe('CashflowGameComponent', () => {
       startDate: '2026-10-01',
       endDate: '',
       category: '',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: 'monthly',
     });
 
@@ -1101,17 +1110,18 @@ describe('CashflowGameComponent', () => {
   });
 
   describe('starting from the profession card', () => {
-    it('shuffling opens the card, and Start there picks that profession and moves on to the language question', () => {
+    it('Start on a viewed card picks that profession and moves on to the character step', () => {
       const { component, cashflowGameService } = makeComponent();
+      component.chooseEdition('cashflow');
       component.selectedProfessionId = '';
       const lehrer = component.selectedGameSet!.professions[1];
 
-      component.openProfessionCard(lehrer); // what shuffle does after picking one
+      component.openProfessionCard(lehrer);
       component.startFromCard(lehrer);
 
       expect(component.selectedProfessionId).toBe(lehrer.id);
       expect(component.viewedProfession).toBeNull(); // the card closes
-      expect(component.choosingLanguage).toBe(true); // next step
+      expect(component.choosingCharacter).toBe(true); // next step
       expect(cashflowGameService.pickProfession).not.toHaveBeenCalled(); // not started yet
     });
   });
@@ -1120,17 +1130,17 @@ describe('CashflowGameComponent', () => {
     it('Start opens the question first - it does not start the game yet', () => {
       const { component, cashflowGameService } = makeComponent();
 
-      component.askLanguage();
+      component.toCharacter();
 
-      expect(component.choosingLanguage).toBe(true);
+      expect(component.choosingCharacter).toBe(true);
       expect(cashflowGameService.pickProfession).not.toHaveBeenCalled();
     });
 
     it('stays put when no profession is picked', () => {
       const { component } = makeComponent();
       component.selectedProfessionId = '';
-      component.askLanguage();
-      expect(component.choosingLanguage).toBe(false);
+      component.toCharacter();
+      expect(component.choosingCharacter).toBe(false);
     });
 
     it('picking a language switches the app and waits for it', async () => {
@@ -1144,14 +1154,14 @@ describe('CashflowGameComponent', () => {
 
     it('Back closes the question, and Start then starts the game and closes it', () => {
       const { component, cashflowGameService } = makeComponent();
-      component.askLanguage();
-      component.cancelLanguage();
-      expect(component.choosingLanguage).toBe(false);
+      component.toCharacter();
+      component.backToSetup();
+      expect(component.choosingCharacter).toBe(false);
 
-      component.askLanguage();
+      component.toCharacter();
       component.startGame();
       cashflowGameService.pickProfession.mock.calls[0][2].onSuccess();
-      expect(component.choosingLanguage).toBe(false);
+      expect(component.choosingCharacter).toBe(false);
     });
   });
 
@@ -2064,8 +2074,16 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       expect.any(Object),
       'solo',
       expect.objectContaining({ preset: 'free', cardChoice: 'free', sell: 'always' }),
+      // the custom edition played in the app has a map: the ring, medium, unless another is chosen
+      expect.objectContaining({ shape: 'ring', size: 'medium' }),
+      // what the player set for the dreams: two offered, three open at once
+      expect.objectContaining({ mode: 'free', cardChoice: 'free', lifeMayDecline: true }),
+      undefined,
     );
     const companion = soloComponent();
+    companion.component.setPlayMode('companion');
+    // the physical board plays the classic edition only
+    expect(companion.component.selectedGameSet?.edition).not.toBe('custom');
     companion.component.startGame();
     expect(companion.cashflowGameService.pickProfession.mock.calls[0][3]).toBe('companion');
   });
@@ -2073,6 +2091,9 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
   it('starts the game under the rules chosen on the start panel, and a preset fills them in', () => {
     const { component, cashflowGameService } = soloComponent();
     component.playMode = 'solo';
+    // the classic rules belong to the classic edition
+    component.chooseEdition('cashflow');
+    component.selectedProfessionId = component.selectedGameSet!.professions[0].id;
     component.choosePreset('strict');
     expect(component.rulePresetNow).toBe('strict');
     component.startGame();
@@ -2084,8 +2105,31 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     });
   });
 
+  it('the Custom JFK edition has rules of its own: a mode fills them in, the classic rules are those of the mode', () => {
+    const { component, cashflowGameService } = soloComponent();
+    component.playMode = 'solo';
+    expect(component.showBoardChoice).toBe(true);
+    component.chooseCustomMode('strict');
+    expect(component.customDraft).toMatchObject({
+      mode: 'strict',
+      cardChoice: 'random',
+      lifeMayDecline: false,
+      emergencySettle: 'all',
+      ownProjects: false,
+    });
+    expect(component.customIsPreset).toBe(true);
+    component.setCustom('dreamOffers', 3);
+    expect(component.customIsPreset).toBe(false);
+    component.startGame();
+    const call = cashflowGameService.pickProfession.mock.calls[0];
+    expect(call[4]).toMatchObject({ preset: 'strict', manualTransactions: 'forbidden' });
+    expect(call[6]).toMatchObject({ mode: 'strict', dreamOffers: 3 });
+  });
+
   it('a changed setting makes the rules custom, and the limits are typed in the currency', () => {
     const { component, cashflowGameService } = soloComponent();
+    component.chooseEdition('cashflow');
+    component.selectedProfessionId = component.selectedGameSet!.professions[0].id;
     component.choosePreset('guided');
     component.ruleDraft.sellOfferRolls = 2;
     component.maxFreeText = '250';
@@ -2383,6 +2427,226 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
+  it('a tile without a stack of cards of its own is only read and ticked off', () => {
+    const { component } = soloComponent();
+    // no game running: no stack, so no tile has a card panel
+    for (const tile of ['opportunity', 'harvest', 'life', 'career', 'dream', 'emergency']) {
+      expect(component.tileHasPanel(tile)).toBe(false);
+    }
+    expect(component.lifeBadges).toEqual([]);
+  });
+
+  it('the traits of the character are chips under the profession; one opens a small card that says what it means', () => {
+    const { component } = soloComponent();
+    component.appState.cashflowGame = {
+      ...component.appState.cashflowGame,
+      professionId: 'dual-student-informatik',
+      life: {
+        relationship: 'partner',
+        kids: 1,
+        pet: 'cat',
+        car: true,
+        home: 'own_flat',
+        location: 'home_city',
+        employment: 'employed',
+      },
+    };
+    const keys = component.traitChips.map((chip) => chip.key);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'relationship',
+        'kids',
+        'home',
+        'location',
+        'employment',
+        'pet',
+        'car',
+      ]),
+    );
+    expect(component.traitInfo).toBeNull();
+    component.toggleTrait('kids');
+    expect(component.traitInfo).toMatchObject({
+      title: expect.any(String),
+      text: expect.any(String),
+    });
+    component.toggleTrait('kids');
+    expect(component.traitInfo).toBeNull();
+  });
+
+  it('the character step: a grid with the example characters first, then the chosen one with its numbers', () => {
+    const { component } = soloComponent();
+    component.appState.currency = '€';
+    component.toCharacter();
+    expect(component.characterChosen).toBe(false);
+    const names = component.characterOptions.map((option) => option.name);
+    expect(names[0]).toBe('Jonas');
+    // lowest monthly cashflow first
+    const flows = component.characterOptions.map((option) => option.cashflow);
+    expect(flows).toEqual([...flows].sort((a, b) => a - b));
+    // the test characters are in the grid as examples
+    expect(names).toEqual(expect.arrayContaining(['Softwareentwickler/in', 'Freiberufler/in']));
+
+    component.pickCharacter(component.characterOptions[0]);
+    expect(component.characterChosen).toBe(true);
+    expect(component.selectedProfessionId).toBe('dual-student-informatik');
+    // the numbers: the month's cashflow is 500, and the assets list the cash, the BMW share and the crypto held as shares
+    const sheets = component.setupSheets!;
+    expect(sheets.cashTotal).toBe(500);
+    // the numbers are shown in the money of the game: Dream Taler
+    expect(component.setupCurrency).toBe('DT');
+    expect(sheets.assets.map((line) => line.name.split(' ')[0])).toEqual(
+      expect.arrayContaining(['BMW', 'IOTA']),
+    );
+    expect(Math.round(sheets.assets.find((line) => line.name.startsWith('IOTA'))!.amount)).toBe(
+      815,
+    );
+
+    // looking at a character of the custom edition shows its money; leaving brings the account's own back
+    expect(component.appState.currency).toBe('DT');
+    // back goes to the grid first, then to the setup
+    component.backToSetup();
+    expect(component.characterChosen).toBe(false);
+    expect(component.choosingCharacter).toBe(true);
+    component.backToSetup();
+    expect(component.choosingCharacter).toBe(false);
+    expect(component.appState.currency).toBe('€');
+  });
+
+  it('the winning list is ticked off once the debts are paid, and the game plays in Dream Taler or Traumtaler', () => {
+    const { component } = soloComponent();
+    component.chooseEdition('jfk-stories');
+    const state = component.appState;
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      gameSetId: 'jfk-stories',
+      professionId: 'dual-student-informatik',
+    };
+    state.liabilities = [
+      { tag: 'Eltern-Darlehen', amount: 1500, investment: false, credit: 0 },
+      { tag: 'Autokredit', amount: 1500, investment: false, credit: 0 },
+    ] as never;
+    expect(component.goalChecks).toMatchObject({
+      parentsLoan: false,
+      carLoan: false,
+      dream: false,
+    });
+    state.liabilities = [
+      { tag: 'Autokredit', amount: 1500, investment: false, credit: 0 },
+    ] as never;
+    expect(component.goalChecks).toMatchObject({ parentsLoan: true, carLoan: false });
+    // the same object while nothing changes, so the list is not drawn again
+    expect(component.goalChecks).toBe(component.goalChecks);
+
+    state.currency = '€';
+    (component as any).applyGameCurrency('en');
+    expect(state.currency).toBe('DT');
+    (component as any).applyGameCurrency('de');
+    expect(state.currency).toBe('TT');
+    // the game is gone: the account's own currency comes back
+    state.cashflowGame = { ...state.cashflowGame, professionId: undefined } as never;
+    (component as any).applyGameCurrency('de');
+    expect(state.currency).toBe('€');
+  });
+
+  it("the currency is chosen in the setup: the money of the game by default, or a real one - and the account's own comes back", () => {
+    const { component } = soloComponent();
+    const state = component.appState;
+    state.currency = '€';
+    expect(component.currencyChoice).toBe('game');
+    expect(component.currencyChoices.map((option) => option.label)).toEqual([
+      'DT',
+      '€',
+      '$',
+      '£',
+      '¥',
+      'CHF',
+    ]);
+    component.toCharacter();
+    expect(state.currency).toBe('DT');
+    component.backToSetup();
+    expect(state.currency).toBe('€');
+    component.setCurrency('$');
+    component.toCharacter();
+    expect(state.currency).toBe('$');
+    component.backToSetup();
+    expect(state.currency).toBe('€');
+  });
+
+  it("the dream project is marked as the character's dream, which cannot be deleted", () => {
+    const project = dreamToSmile(
+      CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories')!.professions[0].profile!.texts[
+        'en'
+      ].dream.project!,
+      '2026-10-25T10:00:00.000Z',
+    );
+    expect(project.dream).toBe(true);
+  });
+
+  it('the map is chosen after the edition: shape and size, only for the custom edition in the app, and goes with the start', () => {
+    const { component, cashflowGameService } = soloComponent();
+    expect(component.showBoardChoice).toBe(true);
+    component.chooseBoardShape('mountain');
+    component.chooseBoardSize('large');
+    expect(component.tileCount('large')).toBe(48);
+    const seed = component.boardSeed;
+    component.anotherLayout();
+    expect(component.boardSeed).not.toBe(seed);
+    component.startGame();
+    expect(cashflowGameService.pickProfession.mock.calls[0][5]).toMatchObject({
+      shape: 'mountain',
+      size: 'large',
+    });
+    // the physical board and the classic edition have no map to choose
+    component.setPlayMode('companion');
+    expect(component.showBoardChoice).toBe(false);
+    component.setPlayMode('solo');
+    component.chooseEdition('cashflow');
+    expect(component.showBoardChoice).toBe(false);
+  });
+
+  it('a card action that takes a moment raises the spinner, and takes it down when it is done', () => {
+    jest.useFakeTimers();
+    try {
+      const { component } = soloComponent();
+      component.isBusy = true;
+      jest.advanceTimersByTime(100);
+      expect(component.appState.isSaving).toBe(false); // short waits just happen
+      jest.advanceTimersByTime(300);
+      expect(component.appState.isSaving).toBe(true);
+      component.isBusy = false;
+      expect(component.appState.isSaving).toBe(false);
+      // the dice and the walking token are their own feedback: no spinner over them
+      component.walking = true;
+      component.isBusy = true;
+      jest.advanceTimersByTime(600);
+      expect(component.appState.isSaving).toBe(false);
+      component.isBusy = false;
+      component.walking = false;
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('the big Payday popup steps aside after a few seconds and leaves the small Latest line, until the next roll', () => {
+    jest.useFakeTimers();
+    try {
+      const { component } = soloComponent();
+      const summary = { count: 1, incomeMinor: 300000, expensesMinor: 270000, netMinor: 30000 };
+      (component as any).paydaySummary = summary;
+      (component as any).showPayday();
+      expect(component.paydayBanner).toEqual(summary);
+      expect(component.paydayLatest).toBeNull();
+      jest.advanceTimersByTime(4000);
+      expect(component.paydayBanner).toBeNull();
+      expect(component.paydayLatest).toEqual(summary);
+      // the next roll starts: the last Payday is history
+      (component as any).clearPayday();
+      expect(component.paydayLatest).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('info banners go with the next thing the player does: any click clears them, the click’s own notice stays', () => {
     const { component } = soloComponent();
     component.paydayBanner = { count: 1, incomeMinor: 1, expensesMinor: 0, netMinor: 1 };
@@ -2516,6 +2780,37 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     component.rollSolo();
     await settle();
     expect(component.paydayBanner).toBeNull();
+  });
+
+  it('the Payday banner comes when the token gets there, not while it is still walking - the opening Payday when it has landed', async () => {
+    const { component, rollTurn } = soloComponent();
+    setSoloState();
+    const payday = { appendedTransactions: [{ amountMinor: 300000 }, { amountMinor: -120000 }] };
+    rollTurn.mockImplementation((_d: number, callbacks: any) => {
+      callbacks.onSuccess();
+      return {
+        roll: { dice: [2], total: 2 },
+        move: {
+          entered: [{ index: 1 }, { index: 2 }],
+          paydays: 0,
+          landed: { kind: 'deal', index: 2 },
+        },
+        effects: [payday],
+        openingPayday: true,
+      };
+    });
+    (window as any).matchMedia = jest.fn(() => ({ matches: false })); // the token really walks, step by step
+    const seen: unknown[] = [];
+    const walked = jest.spyOn(component as any, 'pause').mockImplementation(async () => {
+      seen.push(component.paydayBanner); // what is on the screen at each step of the walk
+    });
+    component.rollSolo();
+    await settle();
+    // while the token walked, no banner; once it had landed, the opening Payday was told
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((banner) => banner === null)).toBe(true);
+    expect(component.paydayBanner).toMatchObject({ count: 1 });
+    walked.mockRestore();
   });
 
   it('under Charity two dice are the default and the player may change to one; landing on Charity selects two again', async () => {

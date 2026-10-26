@@ -1352,6 +1352,10 @@ export class SettingsComponent implements DoCheck {
     // underneath these two.
     ProfileComponent.isProfile = false;
     SettingsComponent.isSettings = false;
+    // the settings window itself (isInfo) is what is on screen; closing only its inner page left it open on top
+    this.closeWindow();
+    SettingsComponent.isInfo = false;
+    SettingsComponent.isSettings = false;
     if (this.personalAccessTokensLink) this.router.navigate([this.personalAccessTokensLink.route]);
   }
 

@@ -1,3 +1,4 @@
+import { splitTrade } from 'src/app/shared/utils/split-trade';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -327,11 +328,11 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
       // Update existing transaction (PATCH)
       if (clean_comment.includes('Buy Asset')) {
-        const split_old = clean_comment.split(' ');
+        const split_old = splitTrade(clean_comment, 'Buy Asset', 3);
         const quantity_old = split_old[3];
         const price_old = split_old[5];
         const amount_old = parseFloat(quantity_old) * parseFloat(price_old);
-        const split = clean_local_comment.split(' ');
+        const split = splitTrade(clean_local_comment, 'Buy Asset', 3);
         const title = split[2];
         const quantity = split[3];
 
@@ -358,12 +359,12 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
 
       // Update existing transaction (PATCH)
       if (clean_comment.includes('Sell Asset')) {
-        const split_old = clean_comment.split(' ');
+        const split_old = splitTrade(clean_comment, 'Sell Asset', 3);
         const quantity_old = split_old[3];
         const price_old = split_old[5];
         const amount_old = parseFloat(quantity_old) * parseFloat(price_old);
 
-        const split = clean_local_comment.split(' ');
+        const split = splitTrade(clean_local_comment, 'Sell Asset', 3);
         const title = split[2];
         const quantity = split[3];
 
@@ -393,11 +394,11 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Buy Share')) {
-        const split_old = clean_comment.split(' ');
+        const split_old = splitTrade(clean_comment, 'Buy Share', 3);
         const quantity_old = split_old[3];
         const price_old = split_old[5];
 
-        const split = clean_local_comment.split(' ');
+        const split = splitTrade(clean_local_comment, 'Buy Share', 3);
         const title = split[2];
         const quantity = split[3];
 
@@ -429,10 +430,10 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
 
       // Update existing transaction (PATCH)
       if (clean_comment.includes('Sell Share')) {
-        const split_old = clean_comment.split(' ');
+        const split_old = splitTrade(clean_comment, 'Sell Share', 3);
         const quantity_old = split_old[3];
 
-        const split = clean_local_comment.split(' ');
+        const split = splitTrade(clean_local_comment, 'Sell Share', 3);
         const title = split[2];
         const quantity = split[3];
 
@@ -471,11 +472,11 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Buy Investment')) {
-        const split_old = clean_comment.split(' ');
+        const split_old = splitTrade(clean_comment, 'Buy Investment', 2);
         const deposit_old = split_old[3];
         const mortage_old = split_old[4];
 
-        const split = clean_local_comment.split(' ');
+        const split = splitTrade(clean_local_comment, 'Buy Investment', 2);
         const title = split[2];
         const deposit = split[3];
         const mortage = split[4];
@@ -794,11 +795,11 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Sell Investment')) {
-        const split_old = clean_comment.split(' ');
+        const split_old = splitTrade(clean_comment, 'Sell Investment', 2);
         const deposit_old = split_old[3];
         const mortage_old = split_old[4];
 
-        const split = clean_local_comment.split(' ');
+        const split = splitTrade(clean_local_comment, 'Sell Investment', 2);
         const title = split[2];
         const deposit = split[3];
         const mortage = split[4];
@@ -1097,7 +1098,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
         clean_comment = clean_comment.trimStart();
       }
       if (clean_comment.includes('Buy Asset')) {
-        const split = clean_comment.split(' ');
+        const split = splitTrade(clean_comment, 'Buy Asset', 3);
         const title = split[2];
         const quantity = parseFloat(split[3]);
         const price = parseFloat(split[5]);
@@ -1125,7 +1126,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Sell Asset')) {
-        const split = clean_comment.split(' ');
+        const split = splitTrade(clean_comment, 'Sell Asset', 3);
         const title = split[2];
         const quantity = parseFloat(split[3]);
         const price = parseFloat(split[5]);
@@ -1167,7 +1168,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
         }
       }
       if (clean_comment.includes('Buy Share')) {
-        const split = clean_comment.split(' ');
+        const split = splitTrade(clean_comment, 'Buy Share', 3);
         const title = split[2];
         const quantity = parseFloat(split[3]);
         const price = parseFloat(split[5]);
@@ -1199,7 +1200,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Sell Share')) {
-        const split = clean_comment.split(' ');
+        const split = splitTrade(clean_comment, 'Sell Share', 3);
         const title = split[2];
         const quantity = parseFloat(split[3]);
         const price = parseFloat(split[5]);
@@ -1250,7 +1251,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Buy Investment')) {
-        const split = clean_comment.split(' ');
+        const split = splitTrade(clean_comment, 'Buy Investment', 2);
         const title = split[2];
         const deposit = parseFloat(split[3]);
         const mortage = parseFloat(split[4]);
@@ -1314,7 +1315,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
       }
 
       if (clean_comment.includes('Sell Investment')) {
-        const split = clean_comment.split(' ');
+        const split = splitTrade(clean_comment, 'Sell Investment', 2);
         const title = split[2];
         const deposit = parseFloat(split[3]);
         const mortage = parseFloat(split[4]);

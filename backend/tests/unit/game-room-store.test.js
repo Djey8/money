@@ -318,7 +318,7 @@ describe('the service over a fake database', () => {
     now += 2 * 24 * 60 * 60 * 1000;
     expect(await service.sweep()).toEqual({ closed: 1, deleted: 0 });
     expect(await service.listRooms('u2')).toEqual([]);
-    now += 8 * 24 * 60 * 60 * 1000;
+    now += 91 * 24 * 60 * 60 * 1000; // a finished table is kept for three months
     expect(await service.sweep()).toEqual({ closed: 0, deleted: 1 });
     await expect(service.getRoom('u1', view.id)).rejects.toMatchObject({ code: 'room_not_found' });
   });

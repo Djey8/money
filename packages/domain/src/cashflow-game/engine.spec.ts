@@ -1,3 +1,4 @@
+import { fundingRoomMinor, summarizeGameFinances } from './saved-games';
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import {
   addMonthsToIsoDate,
@@ -5,6 +6,7 @@ import {
   clearCashflowStatus,
   computeCashflowProfessionMonthlyCashflowMinor,
   computeMonthlyCashflowMinor,
+  paydaySubscriptions,
   pickCashflowProfession,
   resolveCashflowBaby,
   resolveCashflowCharity,
@@ -14,6 +16,177 @@ import {
 } from './engine';
 import { CashflowGameSubscription } from './engine';
 import { initialCashflowGameState } from './types';
+
+describe('funding plans at Payday (JFK, 2026-10-25)', () => {
+  const started = (virtualDate: string) => ({
+    ...initialCashflowGameState(),
+    professionId: 'p',
+    gameSetId: 'g',
+    virtualDate,
+    gameSubscriptionTitles: ['Salary'],
+    fundingSubscriptionTitles: ['Save for the guide'],
+  });
+  const subs = [
+    { title: 'Salary', account: 'Income', amountMinor: 100000 },
+    {
+      title: 'Save for the guide',
+      account: 'Daily',
+      amountMinor: -30000,
+      category: '@Mountain guide',
+      comment: '#bucket:Equipment:300.00',
+      startDate: '2026-11-15',
+      endDate: '2027-01-15', // three paydays: 15 Nov, 15 Dec, 15 Jan
+    },
+  ];
+
+  it('are posted on the Paydays between their start and their end - and only on those', () => {
+    const dates = ['2026-10-15', '2026-11-15', '2026-12-15', '2027-01-15', '2027-02-15'];
+    const counts = dates.map((date) => paydaySubscriptions(started(date), subs).length);
+    expect(counts).toEqual([1, 2, 2, 2, 1]);
+  });
+
+  it('carry their bucket tag and category into the transaction, and are not part of the monthly picture', () => {
+    const state = started('2026-12-15');
+    const { transactions } = runCashflowPayday(state, subs);
+    expect(transactions).toHaveLength(2);
+    expect(transactions[1]).toMatchObject({
+      amountMinor: -30000,
+      category: '@Mountain guide',
+    });
+    expect(transactions[1].comment).toContain('#bucket:Equipment:300.00');
+    // the monthly picture reads the game's own subscriptions only
+    expect(summarizeGameFinances(state, subs).expensesMinor).toBe(0);
+  });
+});
+
+describe('what the month has free for funding plans', () => {
+  const state = {
+    ...initialCashflowGameState(),
+    professionId: 'p',
+    gameSetId: 'g',
+    virtualDate: '2026-12-15',
+    gameSubscriptionTitles: ['Salary', 'Rent'],
+    fundingSubscriptionTitles: ['Plan A', 'Plan B'],
+  };
+  const subs = [
+    { title: 'Salary', amountMinor: 283300 },
+    { title: 'Rent', amountMinor: -233300 },
+    { title: 'Plan A', amountMinor: -20000, endDate: '2027-06-15' },
+    { title: 'Plan B', amountMinor: -10000, endDate: '2026-11-15' }, // over
+  ];
+
+  it('is the cashflow of the month less what the running plans pay: a plan that is over takes nothing', () => {
+    expect(fundingRoomMinor(state, subs)).toBe(30000); // 500 - 200
+    expect(fundingRoomMinor(state, subs, 'Plan A')).toBe(50000); // changing Plan A: it is not counted against itself
+  });
+
+  it('is never below zero', () => {
+    const heavy = [
+      ...subs.slice(0, 2),
+      { title: 'Plan A', amountMinor: -900000, endDate: '2030-01-01' },
+    ];
+    expect(fundingRoomMinor(state, heavy)).toBe(0);
+  });
+});
+
+describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
+  const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories')!;
+  const student = set.professions.find(
+    (profession) => profession.id === 'dual-student-informatik',
+  )!;
+
+  it('is the only character of the edition, with a story in English and German and a checklist to win', () => {
+    expect(set.edition).toBe('custom');
+    expect(set.professions.map((profession) => profession.id)).toEqual(['dual-student-informatik']);
+    expect(student.profile?.texts['en'].dream.title).toBeTruthy();
+    expect(student.profile?.texts['de'].goal).toBeTruthy();
+    for (const lang of ['en', 'de']) {
+      expect(student.profile?.texts[lang].goalItems.map((item) => item.id)).toEqual([
+        'parentsLoan',
+        'carLoan',
+        'dream',
+        'reserve',
+        'independence',
+      ]);
+    }
+  });
+
+  it('has an emergency reserve of three monthly expenses as a Fire project in both languages', () => {
+    const monthly = student.expenses.reduce((sum, line) => sum + line.amountMinor, 0);
+    for (const lang of ['en', 'de']) {
+      const project = student.profile?.texts[lang].reserve?.project;
+      expect(project?.buckets).toHaveLength(3);
+      expect(project?.buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0)).toBe(
+        3 * monthly,
+      );
+    }
+  });
+
+  it('pays every account from its own share of the salary, none of them into the red (60 / 10 / 20, Smile stays free)', () => {
+    const paid = (account: string) =>
+      student.expenses
+        .filter((line) => (line.account ?? 'Daily') === account)
+        .reduce((sum, line) => sum + line.amountMinor, 0);
+    expect(paid('Daily')).toBeLessThanOrEqual(student.salaryMinor * 0.6);
+    expect(paid('Splurge')).toBeLessThanOrEqual(student.salaryMinor * 0.1);
+    expect(paid('Fire')).toBeLessThan(student.salaryMinor * 0.2);
+    expect(paid('Smile')).toBe(0);
+  });
+
+  it('keeps 500 euros a month: 34.000 a year gross, 845 of it for tax and the social insurances', () => {
+    expect(student.salaryMinor).toBe(283300);
+    expect(computeCashflowProfessionMonthlyCashflowMinor(student)).toBe(50000);
+    const deductions = [
+      'incomeTax',
+      'pension',
+      'healthInsurance',
+      'careInsurance',
+      'unemploymentInsurance',
+    ];
+    const taken = student.expenses
+      .filter((line) => deductions.includes(line.key ?? ''))
+      .reduce((sum, line) => sum + line.amountMinor, 0);
+    expect(taken).toBe(84500);
+  });
+
+  it('starts with the dream as a Smile project: eight buckets, about 24.500, with notes, links and tasks, in both languages', () => {
+    for (const lang of ['en', 'de']) {
+      const project = student.profile!.texts[lang].dream.project!;
+      expect(project.buckets).toHaveLength(8);
+      expect(project.buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0)).toBe(2450000);
+      expect(project.buckets.every((bucket) => bucket.notes.length > 20)).toBe(true);
+      expect(project.links.length).toBeGreaterThan(2);
+      expect(project.actionItems.length).toBeGreaterThan(5);
+      expect(project.title).toBeTruthy();
+    }
+    const ids = student.profile!.texts['en'].dream.project!.buckets.map((bucket) => bucket.id);
+    expect(student.profile!.texts['de'].dream.project!.buckets.map((bucket) => bucket.id)).toEqual(
+      ids,
+    );
+  });
+
+  it('books leisure to Splurge and the rest to Daily, and starts with two small debts (3.000 together) and almost no assets', () => {
+    const picked = pickCashflowProfession(
+      CASHFLOW_GAME_SETS,
+      'jfk-stories',
+      'dual-student-informatik',
+      '2026-10-25',
+      'solo',
+    );
+    const accounts = new Map(picked.subscriptions.map((sub) => [sub.title, sub.account]));
+    expect(accounts.get('Klettern')).toBe('Splurge');
+    expect(accounts.get('Restaurant')).toBe('Splurge');
+    expect(accounts.get('Miete')).toBe('Daily');
+    expect(picked.starterKit.liabilities?.map((debt) => debt.amountMinor)).toEqual([
+      150000, 150000,
+    ]);
+    expect(picked.starterKit.shares?.[0]).toMatchObject({ tag: 'BMW', quantity: 1 });
+    // the crypto is held as shares: 3.705 coins at 0,22 are about 815
+    const iota = picked.starterKit.shares?.[1];
+    expect(iota?.tag).toBe('IOTA');
+    expect(Math.round(((iota?.quantity ?? 0) * (iota?.priceMinor ?? 0)) / 100)).toBe(815);
+  });
+});
 
 describe('CASHFLOW_GAME_SETS profession data (todo/cashflow-game.md decision 49)', () => {
   it('every Classic/Custom-JFK profession\'s monthly cashflow matches its own card\'s printed "Monatlicher Cashflow" — catches a transcription slip in any single expense line', () => {
@@ -157,7 +330,7 @@ describe('runCashflowPayday', () => {
     expect(state.history).toHaveLength(1);
   });
 
-  it('marks every created transaction with the #cashflow tag', () => {
+  it('marks every created transaction with the #dreamfund tag', () => {
     const { state: started } = pickCashflowProfession(
       CASHFLOW_GAME_SETS,
       'placeholder',
@@ -165,7 +338,7 @@ describe('runCashflowPayday', () => {
       '2026-09-25',
     );
     const { transactions } = runCashflowPayday(started, gameSubscriptions);
-    expect(transactions.every((t) => t.comment.includes('#cashflow'))).toBe(true);
+    expect(transactions.every((t) => t.comment.includes('#dreamfund'))).toBe(true);
   });
 
   it('refuses to run before a profession is picked', () => {

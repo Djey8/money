@@ -271,6 +271,12 @@
           >{{ project.monthlySavings | appNumber }} {{ settingsReference.currency }}</span
         >
       </div>
+      <div class="metric metric-savings" *ngIf="savedSoFarOf(project) as saved">
+        <span class="metric-label">{{ 'Grow.savedSoFar' | translate }}</span>
+        <span class="metric-value amount-positive"
+          >{{ saved.amount | appNumber }} {{ settingsReference.currency }}</span
+        >
+      </div>
       <div class="metric metric-savings" *ngIf="project.annualSavings !== undefined">
         <span class="metric-label">{{ 'Grow.annualSavings' | translate }}</span>
         <span class="metric-value amount-positive"

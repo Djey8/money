@@ -1,3 +1,4 @@
+import { droppedPremiumTitles } from './insurance';
 import type { CashflowGameState } from './types';
 
 /**
@@ -69,6 +70,12 @@ export interface CashflowFinanceSummary {
   passiveIncomeMinor: number;
   expensesMinor: number;
   monthlyCashflowMinor: number;
+  /** What the payment plans running at the next Payday pay every month (JFK, 2026-10-26): saving, but money that leaves the month. */
+  fundingMinor: number;
+  /** What is left of the month after the plans: the cashflow the player lives on. */
+  cashflowAfterPlansMinor: number;
+  /** What the salary costs (income tax, social insurances): it stops with the salary, so a Dreamfund game does not count it against the passive income. */
+  salaryLinkedMinor: number;
   /** Passive income covers every monthly expense - out of the rat race. */
   escapedRatRace: boolean;
   /** The monthly cashflow is negative: how you lose the game. */
@@ -82,10 +89,15 @@ export interface CashflowFinanceSummary {
  * rat-race banner, so a saved game and the live view always agree.
  */
 export function summarizeGameFinances(
-  state: Pick<CashflowGameState, 'gameSubscriptionTitles'>,
-  subscriptions: { title: string; amountMinor: number }[],
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles' | 'insurance'> &
+    Partial<
+      Pick<CashflowGameState, 'fundingSubscriptionTitles' | 'virtualDate' | 'lineTitles' | 'life'>
+    >,
+  subscriptions: { title: string; amountMinor: number; startDate?: string; endDate?: string }[],
 ): CashflowFinanceSummary {
-  const titles = state.gameSubscriptionTitles;
+  // an insurance that is dropped costs nothing: its premium is not part of the month
+  const dropped = droppedPremiumTitles(state);
+  const titles = state.gameSubscriptionTitles.filter((title) => !dropped.has(title));
   const owned = subscriptions.filter((sub) => titles.includes(sub.title));
   const salary = owned.find((sub) => sub.title === titles[0]);
   const salaryMinor = salary && salary.amountMinor > 0 ? salary.amountMinor : 0;
@@ -96,12 +108,19 @@ export function summarizeGameFinances(
     .filter((sub) => sub.amountMinor < 0)
     .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
   const monthlyCashflowMinor = owned.reduce((sum, sub) => sum + sub.amountMinor, 0);
+  const fundingMinor = runningFundingMinor(state, subscriptions);
+  const linkedMinor = salaryLinkedMinor(state, owned);
   return {
+    fundingMinor,
+    salaryLinkedMinor: linkedMinor,
+    cashflowAfterPlansMinor: monthlyCashflowMinor - fundingMinor,
     salaryMinor,
     passiveIncomeMinor,
     expensesMinor,
     monthlyCashflowMinor,
-    escapedRatRace: expensesMinor > 0 && passiveIncomeMinor >= expensesMinor,
+    // in a Dreamfund game independence means the passive income pays for the way of living: what the salary pays to the state and the
+    // social insurances (a tax that goes with the job) is not part of it (JFK, 2026-10-26)
+    escapedRatRace: expensesMinor > 0 && passiveIncomeMinor >= expensesMinor - linkedMinor,
     bankrupt: monthlyCashflowMinor < 0,
   };
 }
@@ -116,7 +135,71 @@ export function savedGameStatus(
   return 'playing';
 }
 
+const SALARY_LINKED_KEYS = [
+  'incomeTax',
+  'pension',
+  'healthInsurance',
+  'careInsurance',
+  'unemploymentInsurance',
+];
+
+/** What a Dreamfund character pays because of the salary: tax and social insurances (zero in a classic game). */
+export function salaryLinkedMinor(
+  state: Partial<Pick<CashflowGameState, 'lineTitles' | 'life'>>,
+  owned: { title: string; amountMinor: number }[],
+): number {
+  if (!state.life || !state.lineTitles) return 0;
+  const titles = SALARY_LINKED_KEYS.map((key) => state.lineTitles?.[key]).filter(
+    (t): t is string => !!t,
+  );
+  return owned
+    .filter((sub) => titles.includes(sub.title) && sub.amountMinor < 0)
+    .reduce((sum, sub) => sum + Math.abs(sub.amountMinor), 0);
+}
+
+/** What the funding plans that pay on the next Payday (their dates cover it) take every month, as a positive number. */
+export function runningFundingMinor(
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles'> &
+    Partial<Pick<CashflowGameState, 'fundingSubscriptionTitles' | 'virtualDate'>>,
+  subscriptions: { title: string; amountMinor: number; startDate?: string; endDate?: string }[],
+): number {
+  const date = state.virtualDate ?? '';
+  return (state.fundingSubscriptionTitles ?? [])
+    .filter((title) => !state.gameSubscriptionTitles.includes(title))
+    .map((title) => subscriptions.find((sub) => sub.title === title))
+    .filter(
+      (sub) =>
+        sub !== undefined &&
+        (!sub.startDate || sub.startDate <= date) &&
+        (!sub.endDate || date <= sub.endDate),
+    )
+    .reduce((sum, sub) => sum + Math.abs(sub!.amountMinor), 0);
+}
+
 /** Most recently saved first. */
 export function sortSavedGames(games: SavedGameSummary[]): SavedGameSummary[] {
   return [...games].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+/**
+ * How much of the month is still free for funding plans (JFK, 2026-10-25): the monthly cashflow of the game minus what the running
+ * plans already pay every Payday. A plan may never take more than this - paying for a dream must not push the month into the red.
+ * `except` leaves one plan out (the one being changed).
+ */
+export function fundingRoomMinor(
+  state: Pick<
+    CashflowGameState,
+    'gameSubscriptionTitles' | 'fundingSubscriptionTitles' | 'virtualDate'
+  >,
+  subscriptions: { title: string; amountMinor: number; endDate?: string }[],
+  except?: string,
+): number {
+  const date = state.virtualDate ?? '';
+  const committed = (state.fundingSubscriptionTitles ?? [])
+    .filter((title) => title !== except && !state.gameSubscriptionTitles.includes(title))
+    .map((title) => subscriptions.find((sub) => sub.title === title))
+    .filter((sub) => sub !== undefined && (!sub.endDate || date <= sub.endDate))
+    .reduce((sum, sub) => sum + Math.abs(sub!.amountMinor), 0);
+  const month = summarizeGameFinances(state, subscriptions).monthlyCashflowMinor;
+  return Math.max(0, month - committed);
 }

@@ -86,6 +86,24 @@ export interface BookGrowUpdate {
   /** The project's whole note list afterwards. */
   notes?: { text: string; createdAt: string }[];
   updatedAt?: string;
+  /** What a card tells about its project (type, risks, links, tasks, the saving): written when the project is made or changed. */
+  details?: {
+    type?: string;
+    category?: string;
+    pattern?: string;
+    reasoning?: string;
+    risks?: string;
+    riskScore?: number;
+    insights?: string;
+    alternative?: string;
+    alternativeCostMinor?: number;
+    links?: { label: string; url: string }[];
+    actionItems?: { text: string; priority: 'low' | 'medium' | 'high' }[];
+    currentCostMinor?: number;
+    targetCostMinor?: number;
+    monthlySavingsMinor?: number;
+    annualSavingsMinor?: number;
+  };
 }
 
 export interface GameEffects {

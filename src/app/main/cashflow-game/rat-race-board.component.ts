@@ -49,6 +49,12 @@ const LABEL_KEYS: Record<RatRaceSpaceKind, string> = {
   charity: 'CashflowGame.charity',
   downsized: 'CashflowGame.downsized',
   baby: 'CashflowGame.baby',
+  dream: 'CashflowGame.tile.dream',
+  emergency: 'CashflowGame.tile.emergency',
+  opportunity: 'CashflowGame.tile.opportunity',
+  harvest: 'CashflowGame.tile.harvest',
+  life: 'CashflowGame.tile.life',
+  career: 'CashflowGame.tile.career',
 };
 
 /** The symbol each kind of space wears - on the ring, and on the card screens that go with it. */
@@ -60,6 +66,12 @@ export const SPACE_GLYPHS: Record<RatRaceSpaceKind, string> = {
   charity: '❤',
   downsized: '🔧',
   baby: '👶',
+  dream: '😊',
+  emergency: '🔥',
+  opportunity: '🌱',
+  harvest: '🌾',
+  life: '❤',
+  career: '🎓',
 };
 
 /** Where a point at `degrees` clockwise from the top lies on a circle of `radius` round the centre. */

@@ -7013,9 +7013,13 @@ paths:
                     properties:
                       recent:
                         type: array
+                        description: The player's last games (up to 100), newest first.
                         items:
                           type: object
                           properties:
+                            tableId:
+                              type: string
+                              description: The table the game was played at. A finished table stays readable for three months (`GET /game/rooms/{id}`; a private one only for the people who sat at it).
                             table:
                               type: string
                             endedAt:
@@ -7079,6 +7083,41 @@ paths:
               schema:
                 type: string
                 format: binary
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /game/rooms/{roomId}/seats:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listGameRoomSeats
+      summary: Who sits at a table
+      description: >-
+        Game accounts only; requires `game:r`. Every seat of a table you may look at with the public profile of the person or bot: name, colour, `bot`, rating, the numbers of their games and the picture version. A person who is not on the leaderboard (`listed: false`) shows only the starting rating.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The seats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seats:
+                    type: array
+                    items:
+                      type: object
+              example:
+                seats:
+                  - { seat: 0, name: Ada, bot: false, listed: true, rating: 1534, ratedGames: 7 }
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -7590,7 +7629,7 @@ paths:
       operationId: playGameRoomCommand
       summary: Make a move at a running table
       description: >-
-        Game accounts only; requires `game:w`. One move of play by the caller: `{command, clientCommandId?, expectedVersion?}`. Whether it is allowed now - your turn, the card in your hand, the clock, a pause - is the table's rule, not the request's: a move that is not allowed is refused and changes nothing (409 `table_not_your_turn`, `table_paused`, `table_time_up`; 422 `table_illegal_move` with the rule's own words, for example "A card was already offered on this space"). Every response carries your `legalActions`, the commands the table would accept from you right now - **play only from that list**. The moves, by `command.type`: `roll` (`dice` 1 or 2, two only while Charity allows), `draw_card` (`deck`: `dealSmall`, `dealBig`, `market`, `doodad`; a Market card takes effect for every player at once, a Market space draws it for you), `buy_deal` (`cardId`, `quantity?`), `pay_doodad` (`cardId`), `pay_market` (`cardId`: a Market cost card - a sewer pipe, a roof - applies only to the player who drew it and who owns a property: nothing is booked when it is drawn, the table waits for this payment, which a clock that runs out also makes; without a property the card is ignored), `roll_decision` (`title?`), `pass_card`, `bank_loan` (`amountMinor`, negative repays - a repayment is allowed at any time, also off your turn, unless the table's `repayOffTurn` setting is off; borrowing only in your turn), `pay_liability` (`tag`: one liability from your books - a mortgage, car loan, credit card debt, student loan - paid off in ONE payment of the full amount; its monthly expense ends; short of cash the normal Bank loan is taken first, refused when that would leave your monthly cashflow negative; same off-turn rule as repaying the bank), `sell_position` (`input: {title, quantity?, priceMinor?, salePriceMinor?}` - only into a buyer's offer that is open for you, on or off your turn), `offer_trade` (`priceMinor`, `toSeat?`: the Deal card in your hand, a property or asset card, never a share), `counter_trade` (`priceMinor`), `accept_trade` (a buyer takes the asking price; the seller names `fromSeat` to take that buyer's price), `decline_trade`, `withdraw_trade`, and the host's `pause` / `resume`, `back` for a player who was marked away, `away` to go away on purpose (your turns are then played passively at once - the most passive legal turn, the same a timeout plays: a Market card is opened, a Doodad paid, everything else passed - and the table never waits for you to say `done`; `back`, or any move of your own, returns you), and `done`: when a turn is over the table holds (`holdSeats` in the table lists who it waits for): the player who moved ends their turn with `done`, and anyone whom a Market card or a stock price card lets sell may sell first and says `done` too; bots and players who are away are not waited for. `done` is only in `legalActions` for those players (and not while a card of theirs still has a die to roll - `roll_decision` and `bank_loan` stay open meanwhile). `propose_undo` asks the table to go back one turn and `vote_undo` (`yes`) answers an open ask - more than half of the people must agree (see `rewindGameRoom`). Joining, leaving, readiness and settings have their own routes; the clock's timeout is the server's. Players are named by `seat`, never by account. **`clientCommandId`** (1-64 letters, digits, `_.:-`) makes a retry safe: the move is applied at most once, and a repeat - after a lost response, or two identical requests at once - answers the table with `replayed: true` and `appliedVersion` of the first. **`expectedVersion`** refuses a move on a table that has moved on (409 `room_conflict`).
+        Game accounts only; requires `game:w`. One move of play by the caller: `{command, clientCommandId?, expectedVersion?}`. Whether it is allowed now - your turn, the card in your hand, the clock, a pause - is the table's rule, not the request's: a move that is not allowed is refused and changes nothing (409 `table_not_your_turn`, `table_paused`, `table_time_up`; 422 `table_illegal_move` with the rule's own words, for example "A card was already offered on this space"). Every response carries your `legalActions`, the commands the table would accept from you right now - **play only from that list**. The moves, by `command.type`: `roll` (`dice` 1 or 2, two only while Charity allows), `draw_card` (`deck`: `dealSmall`, `dealBig`, `market`, `doodad`; a Market card takes effect for every player at once, a Market space draws it for you), `buy_deal` (`cardId`, `quantity?`), `pay_doodad` (`cardId`), `pay_market` (`cardId`: a Market cost card - a sewer pipe, a roof - applies only to the player who drew it and who owns a property: nothing is booked when it is drawn, the table waits for this payment, which a clock that runs out also makes; without a property the card is ignored), `roll_decision` (`title?`), `pass_card`, `bank_loan` (`amountMinor`, negative repays - a repayment is allowed at any time, also off your turn, unless the table's `repayOffTurn` setting is off; borrowing only in your turn), `pay_liability` (`tag`: one liability from your books - a mortgage, car loan, credit card debt, student loan - paid off in ONE payment of the full amount; its monthly expense ends; short of cash the normal Bank loan is taken first, refused when that would leave your monthly cashflow negative; same off-turn rule as repaying the bank), `sell_position` (`input: {title, quantity?, priceMinor?, salePriceMinor?}` - only into a buyer's offer that is open for you, on or off your turn), `offer_trade` (`priceMinor`, `toSeat?`: the Deal card in your hand, a property or asset card, never a share), `counter_trade` (`priceMinor`), `accept_trade` (a buyer takes the asking price; the seller names `fromSeat` to take that buyer's price), `decline_trade`, `withdraw_trade`, and the host's `pause` / `resume`, `back` for a player who was marked away, `away` to go away on purpose (your turns are then played passively at once - the most passive legal turn, the same a timeout plays: a Market card is opened, a Doodad paid, everything else passed - and the table never waits for you to say `done`; `back`, or any move of your own, returns you), and `done`: when a turn is over the table holds (`holdSeats` in the table lists who it waits for): the player who moved ends their turn with `done`, and anyone whom a Market card or a stock price card lets sell may sell first and says `done` too; bots and players who are away are not waited for. `done` is only in `legalActions` for those players (and not while a card of theirs still has a die to roll - `roll_decision` and `bank_loan` stay open meanwhile). `propose_undo` asks the table to go back one turn and `vote_undo` (`yes`) answers an open ask - more than half of the people must agree (see `rewindGameRoom`). Joining, leaving, readiness and settings have their own routes; the clock's timeout is the server's. Players are named by `seat`, never by account. **`clientCommandId`** (1-64 letters, digits, `_.:-`) makes a retry safe: the move is applied at most once, and a repeat - after a lost response, or two identical requests at once - answers the table with `replayed: true` and `appliedVersion` of the first. **`expectedVersion`** refuses a move on a table that has moved on (409 `room_conflict`). **The line:** every move at a table - a person's, a bot's, a clock's timeout - waits in one line per table, in the order it reached the server, and is judged by the rules against the table as it is when its turn comes; a move of somebody else a moment earlier does not make yours fail (leave `expectedVersion` out unless you really want that), and a move that is no longer legal is refused with the rule's own words. Tables never wait for each other.
       security:
         - bearerAuth: []
       requestBody:
@@ -11128,6 +11167,11 @@ components:
           additionalProperties:
             type: integer
           example: { master: 1650, strong: 1590, casual: 1480, beginner: 1210 }
+        playerIds:
+          type: object
+          description: The leaderboard player of each skill level, so a client can open the bot's stats (`getGamePlayer`).
+          additionalProperties:
+            type: string
     GameRoomCommandBody:
       type: object
       description: Every table change takes an optional `expectedVersion`, the table version the caller last saw; if the table has moved on the change is refused with 409 `room_conflict` and nothing happens.
@@ -11282,6 +11326,15 @@ components:
           description: >-
             Whether a player may pay the bank loan back (`bank_loan` with a negative `amountMinor`) at any time, also when it is not their turn;
             the repayment is told in the history for everybody. Off: only in their own turn. Borrowing is always only in the player's own turn. Frozen when play starts.
+        leaveFreeRounds:
+          type: integer
+          minimum: 0
+          maximum: 3
+          default: 0
+          description: >-
+            Ranked tables: how many table rounds a person may leave a game that has started without it counting against them. 0 (the default):
+            leaving a started game is a loss from its first moment. When the last person leaves a ranked game that is past its free rounds, the
+            bots play it to its end at once and it is recorded (a loss for the person who left). Frozen when play starts.
         showProgress:
           type: boolean
           default: true
@@ -11347,6 +11400,31 @@ components:
         humans:
           type: integer
           description: How many people (not bots) are still playing at the table.
+        seats:
+          type: array
+          description: Who sits at the table (list calls only), so a player sees who is there before joining. A person who is not on the leaderboard shows only the rating.
+          items:
+            type: object
+            properties:
+              seat:
+                type: integer
+              name:
+                type: string
+              bot:
+                type: boolean
+              listed:
+                type: boolean
+              rating:
+                type: integer
+              ratedGames:
+                type: integer
+              level:
+                type: string
+                enum: [master, strong, casual, beginner]
+              playerId:
+                type: string
+              pictureVersion:
+                type: integer
         result:
           type: object
           nullable: true

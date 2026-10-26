@@ -7,6 +7,8 @@ const {
   botFallbackCommand,
   createTable,
   nextBotCommand,
+  humansAreOut,
+  canAnswerTrade,
   seededRng,
   nextDeadline,
   rewindTable,
@@ -20,6 +22,7 @@ const { botPolicy } = require('@money/domain/dist/cashflow-game/table/bot-catalo
 const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
+const { createRoomQueue } = require('./room-queue');
 const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
 const { createGameText } = require('./game-text');
 const { createCardTextSource } = require('./game-card-text');
@@ -38,6 +41,9 @@ const OPEN_PHASES = ['lobby', 'picking', 'playing'];
 const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_LENGTH = 8;
 const MAX_COMMAND_ATTEMPTS = 6;
+/** When only bots are left: the moves played in one go before the table is saved, and the clock's step between two of them. */
+const FAST_BATCH = 400;
+const FAST_TICK_MS = 5000;
 const COMMAND_LOG_SIZE = 200;
 const FILING_STALE_MS = 60 * 1000;
 const SWEEP_EVERY_MS = 5 * 60 * 1000;
@@ -56,7 +62,8 @@ function limits() {
     maxOpen: number('GAME_ROOMS_MAX_OPEN', 200),
     lobbyIdleMs: number('GAME_ROOMS_LOBBY_IDLE_MS', DAY_MS),
     playingIdleMs: number('GAME_ROOMS_PLAYING_IDLE_MS', 7 * DAY_MS),
-    retentionMs: number('GAME_ROOMS_RETENTION_MS', 7 * DAY_MS),
+    // a finished table stays readable for the people who played it, and from the leaderboard, for three months
+    retentionMs: number('GAME_ROOMS_RETENTION_MS', 90 * DAY_MS),
   };
 }
 
@@ -207,6 +214,8 @@ function createGameRoomService({
   filer = null,
 }) {
   let lastSweep = -Infinity;
+  /** Everything that changes a table waits in this line, in the order it arrived (services/room-queue.js). */
+  const queue = createRoomQueue();
 
   const contexts = new Map();
   /** What the domain needs from outside for a table played in `language` (with this service's clock). */
@@ -378,7 +387,11 @@ function createGameRoomService({
    * retry - after a lost response, or two identical requests at once - finds it and gets `replayed: true` instead of a second
    * move. Returns `{ view, events, replayed, appliedVersion }`.
    */
-  async function execute(
+  function execute(userId, roomId, compute, options = {}) {
+    return queue.run(roomId, () => executeNow(userId, roomId, compute, options));
+  }
+
+  async function executeNow(
     userId,
     roomId,
     compute,
@@ -484,7 +497,11 @@ function createGameRoomService({
    * played for them, saved and told to everyone like any other change; if not (they moved, the game is paused, the timer was a
    * hair early) the table just arms for the deadline it has. Safe to call at any time.
    */
-  async function runTimeout(roomId) {
+  function runTimeout(roomId) {
+    return queue.run(roomId, () => runTimeoutNow(roomId));
+  }
+
+  async function runTimeoutNow(roomId) {
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await store.getRoom(db, roomId);
       if (!doc || doc.table.phase !== 'playing') {
@@ -515,12 +532,76 @@ function createGameRoomService({
    * person's move - and the save wakes the driver again for the next. A move the rules refuse is replaced by the most passive
    * legal one; if even that is refused the bots wait for the table to change. Returns whether a bot moved.
    */
-  async function runBots(roomId) {
+  /** The next move of the first bot that has one (the player on the move first), played through the rules; null when none has. */
+  function botStep(table, ctx, now, roomId) {
+    const order = [
+      ...table.players.filter((p) => p.id === table.activePlayerId),
+      ...table.players.filter((p) => p.id !== table.activePlayerId),
+    ].filter((p) => p.bot && p.status === 'active');
+    for (const bot of order) {
+      const policy = botPolicy(bot.bot.policyId);
+      if (!policy) continue;
+      const coin = seededRng((table.version * 2654435761) >>> 0);
+      const command = nextBotCommand(table, bot.id, policy, coin, now);
+      if (!command) continue;
+      try {
+        return applyCommand(table, bot.id, command, ctx);
+      } catch (error) {
+        if (!(error instanceof TableCommandError)) throw error;
+        const fallback = botFallbackCommand(table, bot.id);
+        if (!fallback) continue;
+        try {
+          return applyCommand(table, bot.id, fallback, ctx);
+        } catch (again) {
+          if (!(again instanceof TableCommandError)) throw again;
+          log('game_room_bot_stuck', { roomId, bot: bot.name, message: again.message });
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Only bots are left in the game (every person escaped, went bankrupt or left): they play it to its end at once, no waiting between
+   * moves - time is moved on with every move, so a bot waiting for answers to its offer is not waited for in real time. The moves are saved in
+   * batches, so a table of ten bots is over in seconds, and the result is recorded like any other.
+   */
+  async function runBotsFast(doc, roomId) {
+    let table = doc.table;
+    const ctx = contextFor(doc.language);
+    const events = [];
+    let moved = false;
+    const startedAt = Date.now();
+    for (let step = 0; step < FAST_BATCH && table.phase === 'playing'; step += 1) {
+      // time moves on with every move, so a bot waiting for answers to its offer is not waited for in real time
+      const result = botStep(table, ctx, startedAt + step * FAST_TICK_MS, roomId);
+      if (!result) break;
+      table = result.table;
+      events.push(...result.events);
+      moved = true;
+    }
+    if (!moved) return { moved: false };
+    try {
+      await persist(doc, table, events, doc.table);
+      return { moved: true };
+    } catch (error) {
+      if (!(error instanceof store.RoomConflictError)) throw error;
+      // somebody moved meanwhile: look at the table again a moment later
+      return { moved: false, waiting: true };
+    }
+  }
+
+  function runBots(roomId) {
+    return queue.run(roomId, () => runBotsNow(roomId));
+  }
+
+  async function runBotsNow(roomId) {
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await store.getRoom(db, roomId);
       if (!doc || doc.table.phase !== 'playing') return { moved: false };
       const table = doc.table;
       if (!table.players.some((p) => p.bot)) return { moved: false };
+      if (humansAreOut(table)) return runBotsFast(doc, roomId);
       const ctx = contextFor(doc.language);
       // the player on the move first, then the others (selling off turn, answering a trade offer)
       const order = [
@@ -553,7 +634,15 @@ function createGameRoomService({
       if (!result) {
         // a bot that has put a card to the table waits for the answers: it looks again a little later, nothing else wakes it
         const trade = table.trade;
-        const waiting = !!trade && table.players.some((p) => p.id === trade.sellerId && p.bot);
+        // a bot is also waiting while it lets an offer be before it answers (a person gets the first chance)
+        const waiting =
+          !!trade &&
+          table.players.some(
+            (p) =>
+              p.bot &&
+              p.status === 'active' &&
+              (p.id === trade.sellerId || canAnswerTrade(table, p.id)),
+          );
         return { moved: false, waiting };
       }
       try {
@@ -612,6 +701,52 @@ function createGameRoomService({
     return joined.view;
   }
 
+  /** Who sits at a table, for the lobby: the public profile of every seat (picture, rating, numbers) - for those who may see the table. */
+  async function seatsOfRoom(userId, roomId) {
+    const doc = await loadFor(userId, roomId);
+    if (!stats) return [];
+    return stats.seatsOf(doc.table);
+  }
+
+  /** Whether both accounts sit at this table (a table-mate may see the other's picture, listed or not). */
+  async function sitTogether(roomId, accountA, accountB) {
+    const doc = await store.getRoom(db, roomId);
+    if (!doc) return false;
+    const ids = doc.table.players.map((p) => p.id);
+    return ids.includes(accountA) && ids.includes(accountB);
+  }
+
+  /** The lobby lists carry who sits at each table (a short preview: name, picture, rating), so a player sees who is there before joining. */
+  async function withSeats(summaries, docs) {
+    if (!stats) return summaries;
+    const byId = new Map(docs.map((doc) => [doc.roomId, doc]));
+    const out = [];
+    for (const summary of summaries) {
+      const doc = byId.get(summary.id);
+      let seats = [];
+      try {
+        seats = doc ? await stats.seatsOf(doc.table) : [];
+      } catch (error) {
+        log('game_room_seats_failed', { roomId: summary.id, message: error.message });
+      }
+      out.push({
+        ...summary,
+        seats: seats.map((seat) => ({
+          seat: seat.seat,
+          name: seat.name,
+          bot: seat.bot,
+          listed: seat.listed,
+          rating: seat.rating,
+          ratedGames: seat.ratedGames,
+          ...(seat.level ? { level: seat.level } : {}),
+          ...(seat.playerId ? { playerId: seat.playerId } : {}),
+          ...(seat.pictureVersion ? { pictureVersion: seat.pictureVersion } : {}),
+        })),
+      });
+    }
+    return out;
+  }
+
   /** The public tables with a free seat, or the tables `userId` sits at. */
   async function listRooms(userId, { scope = 'open', limit = 50 } = {}) {
     await maybeSweep();
@@ -624,22 +759,30 @@ function createGameRoomService({
         db,
         markers.map((m) => m.roomId),
       );
-      return docs
+      const picked = docs
         .filter((doc) => OPEN_PHASES.includes(doc.phase) !== wantClosed)
         .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
-        .slice(0, limit)
-        .map((doc) => roomSummary(doc, userId));
+        .slice(0, limit);
+      return withSeats(
+        picked.map((doc) => roomSummary(doc, userId)),
+        picked,
+      );
     }
-    const docs = await store.listPublicRooms(db, 'lobby', limit);
-    return docs
-      .filter((doc) => doc.seatsTaken < doc.maxSeats)
-      .map((doc) => roomSummary(doc, userId));
+    const docs = (await store.listPublicRooms(db, 'lobby', limit)).filter(
+      (doc) => doc.seatsTaken < doc.maxSeats,
+    );
+    return withSeats(
+      docs.map((doc) => roomSummary(doc, userId)),
+      docs,
+    );
   }
 
   /** Who may follow a table: a seated player, or anyone with a game account at a public table that allows spectators. */
   function assertCanWatch(doc, userId) {
     const seated = doc.table.players.some((p) => p.id === userId);
-    if (!seated && !(doc.visibility === 'public' && doc.table.settings.spectators)) {
+    // a game that is over can be read by anyone with a game account (it opens from the leaderboard), at a public table
+    const over = doc.table.phase === 'finished';
+    if (!seated && !(doc.visibility === 'public' && (doc.table.settings.spectators || over))) {
       throw new RoomError('room_forbidden', 403, 'This table does not allow spectators.');
     }
   }
@@ -935,6 +1078,8 @@ function createGameRoomService({
   return {
     createRoom,
     getRoom,
+    seatsOfRoom,
+    sitTogether,
     runCommand,
     removeRoom,
     forgetRoom,

@@ -153,6 +153,45 @@ describe('the game rules in the app', () => {
     }
   });
 
+  it('the stock price card I drew myself lets me buy at its price as well as sell, at a table', () => {
+    startGame(RULE_PRESETS.guided);
+    const game = AppStateService.instance.cashflowGame;
+    game.turn = {
+      phase: 'decide',
+      count: 4,
+      pending: {
+        kind: 'deal',
+        offered: { deck: 'dealSmall', cardId: 'd1', title: 'Other card' },
+        played: true,
+      },
+    } as never;
+    game.marketOffers = [
+      {
+        title: 'OK4U',
+        salePriceMinor: 7000,
+        cardId: 'd1',
+        label: '7',
+        pricePerShareMinor: 700,
+        offeredAtRoll: 4,
+      },
+    ];
+    RemoteGameHook.current = { canAct: () => true } as unknown as RemoteGame;
+    try {
+      expect(CashflowGameService.buyRefusalFor('OK4U')).toBeNull();
+      // somebody else's card (another id) is still only a buyer for the shares
+      game.turn = {
+        ...game.turn!,
+        pending: {
+          ...game.turn!.pending!,
+          offered: { deck: 'dealSmall', cardId: 'zzz', title: 'Other card' },
+        },
+      } as never;
+      expect(CashflowGameService.buyRefusalFor('OK4U')).toMatch(/only allow buying/);
+    } finally {
+      RemoteGameHook.current = null;
+    }
+  });
+
   it('a property that is owned is not bought a second time, whatever the rules', () => {
     startGame();
     AppStateService.instance.allInvestments = [{ tag: 'EFH', amount: 1, deposit: 1 }] as never;

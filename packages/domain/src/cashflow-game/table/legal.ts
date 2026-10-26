@@ -6,7 +6,7 @@ import { BANK_LOAN_TAG } from '../loan';
 import { whyPaymentPending } from '../rules';
 import { canSellNow } from './sell-check';
 import { undoVoters } from './undo-vote';
-import { canAnswerTrade, whyCannotOfferTrade } from './trade';
+import { canAnswerTrade, quoteTrade, whyCannotOfferTrade } from './trade';
 import type { Table, TableCommand } from './types';
 
 /**
@@ -181,12 +181,22 @@ export function tableLegalActions(table: Table, playerId: string): TableLegalAct
   const offer = table.trade;
   if (offer && offer.sellerId === playerId) {
     add('withdraw_trade', 'Take your offer back.');
-    if (offer.counters.length > 0) {
+    // only a counter that still holds: the buyer's cash or cashflow may have moved since they made it
+    const standing = offer.counters.some((counter) => {
+      const buyer = table.players.find((p) => p.id === counter.playerId);
+      return (
+        !!buyer?.books && quoteTrade(buyer.books, offer.deck, offer.cardId, counter.priceMinor).ok
+      );
+    });
+    if (standing) {
       add('accept_trade', 'Accept the price a buyer proposed (name the buyer).');
     }
   } else if (canAnswerTrade(table, playerId)) {
-    add('accept_trade', `Take the card at the asking price.`);
-    add('counter_trade', 'Propose another price for the card.');
+    // taking it at the asking price is only offered to someone who can pay it: nobody goes bankrupt on an offer
+    if (me.books && quoteTrade(me.books, offer!.deck, offer!.cardId, offer!.priceMinor).ok) {
+      add('accept_trade', `Take the card at the asking price.`);
+    }
+    add('counter_trade', 'Propose another price for the card (at most what you can afford).');
     add('decline_trade', 'Turn the offer down.');
   }
 

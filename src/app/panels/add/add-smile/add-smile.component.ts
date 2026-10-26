@@ -1,3 +1,4 @@
+import { CashflowGameService } from '../../../shared/services/cashflow-game.service';
 import { Component } from '@angular/core';
 import { gotoTop } from 'src/app/shared/scroll.utils';
 import { Router } from '@angular/router';
@@ -529,6 +530,13 @@ export class AddSmileComponent extends BaseAddComponent {
     this.clearError();
     this.resetForm();
     this.closeWindow();
+    // in the game a new project is opened at once, to be funded or planned (JFK, 2026-10-26)
+    if (CashflowGameService.isCashflowGame()) {
+      const index = AppStateService.instance.allSmileProjects.length - 1;
+      void import('../../info/info-smile/info-smile.component').then((m) =>
+        m.InfoSmileComponent.setInfoSmileComponent(index, newSmile),
+      );
+    }
     AppStateService.instance.isSaving = true;
     this.persistence.writeAndSync({
       tag: 'smile',

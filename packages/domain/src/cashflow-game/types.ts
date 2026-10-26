@@ -1,3 +1,14 @@
+import type { OpportunityCard } from './opportunity-deck';
+import type { HarvestCard } from './harvest-deck';
+import type { PaymentDue } from './payments-due';
+import type { OpportunityDeckState, OpportunityHolding } from './opportunity';
+import type { HarvestPending } from './harvest';
+import type { EmergencyCard, EmergencyDeckState, InsuranceKind, Localized } from './emergency-deck';
+import type { CustomRules } from './custom-rules';
+import type { DreamCard, DreamLog, DreamSettings } from './dream-deck';
+import type { CareerResult, CareerSnapshot, CareerState, CareerTrack } from './career';
+import type { LifeCard, LifeLine, LifeOutcome, LifeState, ScheduledLife } from './life-deck';
+import type { BoardSetup } from './dreamfund-board';
 import type { GameRules } from './rules';
 /**
  * Types for the Cashflow (board game) MVP — see todo/cashflow-game.md for the
@@ -53,9 +64,64 @@ export interface CashflowExpenseLine {
   amountMinor: number;
   /** Stable, language-independent id for this line — lets the frontend look up a translated label without changing `title` itself, which stays the literal value used to build the real Subscription's title/category (todo/cashflow-game.md decision 48). Optional: a game set with no translations authored yet just falls back to `title` as-is. */
   key?: string;
+  /** The account the monthly payment is booked to (default `Daily`): leisure belongs to `Splurge`, insurances to `Fire`. */
+  account?: 'Daily' | 'Splurge' | 'Fire';
+  /** The line is the premium of this insurance (liability, household...): it is paid while the insurance is held and stops when it is dropped. */
+  insurance?: InsuranceKind;
+}
+
+/** The Smile project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
+export interface CashflowDreamProject {
+  /** The project's name: also the category its payments carry. */
+  title: string;
+  sub: string;
+  description: string;
+  buckets: {
+    id: string;
+    title: string;
+    targetMinor: number;
+    notes: string;
+    links?: { label: string; url: string }[];
+  }[];
+  links: { label: string; url: string }[];
+  actionItems: { text: string; priority: 'low' | 'medium' | 'high' }[];
+  /** What the character thinks and finds on the way, as notes of the project. */
+  notes: string[];
+}
+
+/** The conditions of winning a character has; each is ticked off once it is met. */
+export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'reserve' | 'independence';
+
+/** What a character is about, in one language (JFK, 2026-10-25): shown when a character is chosen. */
+export interface CashflowProfileTexts {
+  name: string;
+  /** One line under the name. */
+  tagline: string;
+  background: string;
+  /** What matters to this character. */
+  values: string[];
+  /** What it takes to win: a lead-in line, then the conditions as a checklist (all of them have to come true). */
+  goal: string;
+  goalItems: { id: CashflowGoalId; text: string }[];
+  /** The dream the character starts with (their first Smile project). */
+  dream: { title: string; summary: string; project?: CashflowDreamProject };
+  /** The emergency reserve every character has to build (three monthly expenses): a Fire project from the first day. */
+  reserve?: { summary: string; project: CashflowDreamProject };
+}
+
+/** The story of a character of a custom edition, by language code; a language without an entry falls back to `en`. */
+export interface CashflowProfessionProfile {
+  texts: Record<string, CashflowProfileTexts> & { en: CashflowProfileTexts };
 }
 
 export interface CashflowProfession {
+  /** The ladder of this character's career (every profession has its own); absent: the Career tile has nothing to give. */
+  career?: CareerTrack;
+  /**
+   * What things cost this character compared with the Dual Student, who is 1 (JFK, 2026-10-26): a higher life level makes the
+   * cards' amounts - emergencies first - higher, so every character has the same chance. Absent: 1.
+   */
+  priceFactor?: number;
   id: string;
   title: string;
   salaryMinor: number;
@@ -66,6 +132,8 @@ export interface CashflowProfession {
   /** "Ersparnisse" — the card's starting savings figure. Starting cash is computed, not stored: savings plus one month's cashflow (salary minus `expenses`) — JFK, 2026-09-26. */
   savingsMinor: number;
   starterKit: CashflowStarterKit;
+  /** Custom editions: who this is, what matters to them and what they dream of. The classic cards have none. */
+  profile?: CashflowProfessionProfile;
 }
 
 export interface CashflowLoanRule {
@@ -184,6 +252,16 @@ export interface CashflowMarketOffer {
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
 
 export interface CashflowDecks {
+  /** The Dream stack of a Dreamfund game: generic dreams to take as Smile projects. */
+  dream?: DreamCard[];
+  /** The Life stack of a Dreamfund game (the heart tile). */
+  life?: LifeCard[];
+  /** The Emergency stack of a Dreamfund game (the Fire tile). */
+  emergency?: EmergencyCard[];
+  /** The Opportunity stack (Seed, Sapling, Tree): ways to raise the monthly cash flow, each becoming a Grow project. */
+  opportunity?: OpportunityCard[];
+  /** The Harvest stack: the market (indices, buyers, hype, traps revealed). */
+  harvest?: HarvestCard[];
   dealSmall?: CashflowDealCard[];
   dealBig?: CashflowDealCard[];
   market?: CashflowMarketCard[];
@@ -193,6 +271,8 @@ export interface CashflowDecks {
 export interface CashflowGameSet {
   id: string;
   title: string;
+  /** `custom`: JFK's own characters with a story and a dream; `classic`: the printed professions. Absent: classic. */
+  edition?: 'classic' | 'custom';
   loanRule: CashflowLoanRule;
   professions: CashflowProfession[];
   /**
@@ -256,8 +336,87 @@ export interface CashflowAssetDeal {
 }
 
 /** A card space the token landed on, waiting for the player to deal with its card (or pass). */
+type DreamfundTileKind = 'dream' | 'emergency' | 'opportunity' | 'harvest' | 'life' | 'career';
+
 export interface CashflowPendingDecision {
-  kind: 'deal' | 'market' | 'doodad';
+  /**
+   * `story`: a tile of a Dreamfund map (dream, emergency, opportunity, harvest, life, career) - its card is read and ticked off;
+   * what the tiles do comes with their cards (`tile` says which).
+   */
+  kind: 'deal' | 'market' | 'doodad' | 'story';
+  /**
+   * With an Emergency tile: the card that was drawn and what has been picked and rolled on it so far (it is kept with the game, so
+   * the card stays as it is when the game is closed and opened again).
+   */
+  life?: {
+    cardId: string;
+    skipped?: string[];
+    /** What the decision came to (shown afterwards); absent while the card waits. */
+    outcome?: LifeOutcome;
+    decision?: string;
+  };
+  /** With a Career tile: what the roll came to, and the books before and after a promotion (for the comparison). */
+  career?: {
+    result: CareerResult;
+    done?: boolean;
+    before?: CareerSnapshot;
+    after?: CareerSnapshot;
+    /** The stage reached (a promotion). */
+    reached?: string;
+  };
+  /** With a Dream tile: the offered dreams or the moment, and what the player did with them. */
+  dream?: {
+    offers?: string[];
+    moment?: string;
+    /** The Smile project of the dream that was taken. */
+    taken?: string;
+    declined?: boolean;
+    /** A moment that has been applied: what it did, in words for the log. */
+    applied?: { en: string; de: string };
+    /** A swap of dreams waits for the new dream: the project that goes. */
+    swapping?: string;
+  };
+  /** With a Harvest tile: what the card did, and what the player may do about it (sell, ride a hype). */
+  harvest?: HarvestPending;
+  /** With an Opportunity tile: the pile chosen, the cards offered, and what the player did with them. */
+  opportunity?: {
+    pile?: string;
+    offers?: string[];
+    /** The card taken (its id), and the choice made on it. */
+    taken?: string;
+    units?: number;
+    steps?: number;
+    swapOut?: string;
+    passed?: boolean;
+    /** The card is bought but its die has not been thrown: the player throws it (JFK, 2026-10-26: every die is the player's own). */
+    rollFor?: {
+      cardId: string;
+      units?: number;
+      steps?: number;
+      swapOut?: string;
+      indexPercent?: number;
+      light?: boolean;
+    };
+    /** What the dice said, in words (kept so the card can be read again). */
+    told?: string[];
+    /** The card was bought and its project made (or planned in Grow: `planned`). */
+    projectTitle?: string;
+    planned?: boolean;
+  };
+  emergency?: {
+    cardId: string;
+    choiceId?: string;
+    rolls?: Record<string, number>;
+    rerolled?: boolean;
+    /** Cards that did not apply on the way (lucky: nothing happened). */
+    skipped?: string[];
+    /** The Fire project the card became. */
+    projectTitle?: string;
+  };
+  /** With `story`: which tile it is. */
+  tile?: DreamfundTileKind;
+  /** With `story`: the card drawn from the tile's stack. */
+  storyCardId?: string;
   /** The ring index of the space. A Deals space leaves the pile (Small or Big) to the player. */
   spaceIndex: number;
   /**
@@ -325,6 +484,74 @@ export interface CashflowGameState {
   unemployedRoundsLeft: number;
   /** Which real Subscription titles belong to this game — Payday only ever acts on these. */
   gameSubscriptionTitles: string[];
+  /**
+   * Payment plans that fund a Smile project or a Fire emergency (JFK, 2026-10-25): Payday posts them like the game's own
+   * subscriptions - one payment per Payday, from the plan's start to its end in game dates - but they are savings, not expenses, so
+   * they are never part of the monthly picture (`summarizeGameFinances` reads `gameSubscriptionTitles` only).
+   */
+  fundingSubscriptionTitles?: string[];
+  /** The map of a Dreamfund game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
+  boardSetup?: BoardSetup;
+  /** The Emergency stack: what was drawn since the last reshuffle, and what is out of the game for good. */
+  emergencyDeck?: EmergencyDeckState;
+  /**
+   * The insurances of the character (JFK, 2026-10-25): which are held, the premium line each one pays, and the changes waiting for the
+   * next Payday (hop in, hop out - they take effect with the next Payday, for the premium and for the cover alike).
+   */
+  insurance?: {
+    active: string[];
+    premiums: Record<string, string>;
+    pending: { kind: string; on: boolean }[];
+  };
+  /** The life of the character (JFK, 2026-10-26): partner, children, pet, car, home, city, job - the badges of the profile. */
+  life?: LifeState;
+  /** The dreams of the game (JFK, 2026-10-26): open, lived, points; and what the player set for them. */
+  dreams?: DreamLog;
+  dreamSettings?: DreamSettings;
+  /** The rules of the Custom JFK edition: what the player may decide and what the cards decide (JFK, 2026-10-26). */
+  customRules?: CustomRules;
+  dreamDeck?: EmergencyDeckState;
+  /** Where the character stands on the career ladder (JFK, 2026-10-26). */
+  career?: CareerState;
+  /** The monthly lines life cards left behind (each is also a subscription of the game). */
+  lifeLines?: LifeLine[];
+  /** What is going to happen at later Paydays (a baby, lent money coming back). */
+  lifeScheduled?: ScheduledLife[];
+  /** What cards ask to be paid, to be paid in the Add dialog (JFK, 2026-10-26). */
+  paymentsDue?: PaymentDue[];
+  /** The Opportunity piles: what each has been through since it was last shuffled. */
+  opportunityDeck?: OpportunityDeckState;
+  /** What the player owns of the Opportunity cards (and what is still running of them). */
+  holdings?: OpportunityHolding[];
+  /** The Grow projects planned from Opportunity cards (the plan becomes a holding when it is bought in Grow). */
+  opportunityPlans?: { title: string; cardId: string; swapOut?: string; turnsLeft?: number }[];
+  /** The indices of the markets (1.00 at the start) that the Harvest cards move, and the Harvest pile. */
+  markets?: Record<string, number>;
+  harvestDeck?: EmergencyDeckState;
+  /** What a card of the market said would come at the next Payday (indices), and costs that run for some Paydays. */
+  nextPaydayIndex?: Record<string, number>;
+  marketEffects?: { title: string; paydaysLeft: number; expensesMinor: number }[];
+  /** Living costs and mortgage rates that the market changed for good. */
+  expensesPercentTotal?: number;
+  mortgageRatePp?: number;
+  /** The Life stack: what was drawn since the last reshuffle. */
+  lifeDeck?: EmergencyDeckState;
+  /** A job is being looked for (the Paydays left, the roll that finds one). */
+  jobSearch?: { title: Localized; rollFrom: number; paydaysLeft: number; fallbackPercent: number };
+  /** What the last Payday brought to the life of the character (a baby, a job): shown once. */
+  lifeNews?: { kind: string; title: string }[];
+  /** A sponsorship gives two dice for the first turn after each Payday. */
+  sponsorship?: boolean;
+  /** What things cost this character compared with the Dual Student (1): grows with the career. */
+  livingStandard?: number;
+  /** The title the subscription of an expense line was given (by its key): the career changes the tax lines by it. */
+  lineTitles?: Record<string, string>;
+  /** What the character owns that cards ask for: `car`, `pet`. */
+  possessions?: string[];
+  /** What is true of the character (a complete bonus booklet, a side gig); cards read it. */
+  traits?: string[];
+  /** One-off effects waiting to be used (skip the next Career card). */
+  flags?: string[];
   /** Card ids drawn since the deck's last reshuffle, per deck — the "discard pile" a random draw skips and a reshuffle clears. */
   drawnCardIds: Record<CashflowDeckKind, string[]>;
   history: CashflowLogEntry[];

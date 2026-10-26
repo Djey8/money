@@ -41,9 +41,21 @@ function fakeSession(view: unknown, legal: string[] = []) {
 
 const settings = {
   name: 'Friday',
+  visibility: 'public',
   maxSeats: 6,
   gameSetId: 'cashflow',
+  professions: 'duplicates',
+  endCondition: 'first-escape',
   clock: { mode: 'none' },
+  pace: 'normal',
+  ranked: true,
+  spectators: false,
+  allowRewind: true,
+  repayOffTurn: true,
+  turnGate: true,
+  showProgress: true,
+  leaveFreeRounds: 0,
+  rules: { sellOfferRolls: 3 },
 };
 const players = (over: Record<string, unknown>[] = []) =>
   [
@@ -364,7 +376,7 @@ describe('TableRoomComponent', () => {
     });
   });
 
-  describe('bots in the lobby', () => {
+  describe('the waiting room', () => {
     const lobbyView = (youSeat: number, extra: Record<string, unknown>[] = []) => ({
       id: 'r1',
       version: 2,
@@ -398,6 +410,7 @@ describe('TableRoomComponent', () => {
           difficulty: 'easy',
           description: 'Never invests.',
           ratings: { master: 1000, casual: 1000 },
+          playerIds: { master: 'bot-never-buy' },
         },
         {
           id: 'all-rounder',
@@ -405,70 +418,158 @@ describe('TableRoomComponent', () => {
           difficulty: 'hard',
           description: 'Does it all.',
           ratings: { master: 1650, casual: 1480 },
+          playerIds: { master: 'bot-all-rounder' },
         },
       ],
     };
+    const seatsOf = (extra: Record<string, unknown>[] = []) => ({
+      seats: [
+        {
+          seat: 0,
+          name: 'Ann',
+          bot: false,
+          listed: true,
+          rating: 1534,
+          ratedGames: 7,
+          playerId: 'p-ann',
+        },
+        { seat: 1, name: 'Bob', bot: false, listed: false, rating: 1500, ratedGames: 0 },
+        ...extra,
+      ],
+    });
     const button = (fixture: { nativeElement: HTMLElement }, text: string) =>
       Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
         (b as HTMLElement).textContent!.includes(text),
       ) as HTMLButtonElement | undefined;
+    const flushSeats = (fixture: ComponentFixture<TableRoomComponent>, body = seatsOf()) => {
+      TestBed.inject(HttpTestingController)
+        .expectOne((r) => r.url.endsWith('/v1/game/rooms/r1/seats'))
+        .flush(body);
+      fixture.detectChanges();
+    };
 
-    it('the host sees the catalog and seats the chosen bot', async () => {
+    it('tells everybody what the table is: its settings, in short', async () => {
+      const fixture = await render(fakeSession(lobbyView(1)));
+      const text = fixture.nativeElement.textContent as string;
+      expect(text).toContain('Table settings');
+      expect(text).toContain('Ranked');
+      expect(text).toContain('6 seats');
+      expect(text).toContain('Only the host can change these.');
+      // a guest cannot change them
+      expect(button(fixture, 'Change settings')).toBeUndefined();
+      button(fixture, 'All rules')!.click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.wr-rules')).not.toBeNull();
+    });
+
+    it('shows a card for every player with the rating, and a free seat for the rest', async () => {
+      const fixture = await render(fakeSession(lobbyView(0)));
+      flushSeats(fixture);
+      const cards = fixture.nativeElement.querySelectorAll('.wr-seat:not(.wr-seat--free)');
+      expect(cards).toHaveLength(2);
+      expect(cards[0].textContent).toContain('1534');
+      expect(cards[0].textContent).toContain('7 rated');
+      expect(cards[1].textContent).toContain('Not on the leaderboard');
+      expect(fixture.nativeElement.querySelectorAll('.wr-seat--free')).toHaveLength(4);
+    });
+
+    it('a tap on a listed player opens their stats; an unlisted one has none to open', async () => {
+      const fixture = await render(fakeSession(lobbyView(0)));
+      flushSeats(fixture);
+      const cards = fixture.nativeElement.querySelectorAll(
+        '.wr-seat-main:not(.wr-seat-main--free)',
+      );
+      expect((cards[1] as HTMLButtonElement).disabled).toBe(true);
+      (cards[0] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('app-table-player-info')).not.toBeNull();
+      TestBed.inject(HttpTestingController)
+        .expectOne((r) => r.url.endsWith('/v1/game/players/p-ann'))
+        .flush({});
+    });
+
+    it('the host changes the settings with the panel that opens a table', async () => {
       const session = fakeSession(lobbyView(0));
       const fixture = await render(session);
+      button(fixture, 'Change settings')!.click();
+      fixture.detectChanges();
+      // the panel starts from what the table has now
+      const name = fixture.nativeElement.querySelector('input[name="name"]') as HTMLInputElement;
+      await Promise.resolve();
+      expect(name.value).toBe('Friday');
+      button(fixture, 'Save settings')!.click();
+      await Promise.resolve();
+      expect(session.lobby).toHaveBeenCalledWith(
+        'settings',
+        expect.objectContaining({
+          settings: expect.objectContaining({ name: 'Friday', maxSeats: 6, ranked: true }),
+        }),
+      );
+    });
+
+    it('the host picks a bot from the list and seats it at the chosen skill', async () => {
+      const session = fakeSession(lobbyView(0));
+      const fixture = await render(session);
+      button(fixture, 'Add a bot')!.click();
       TestBed.inject(HttpTestingController)
         .expectOne((r) => r.url.endsWith('/v1/game/rooms/bots'))
         .flush(catalog);
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('Add a bot');
-      expect(fixture.nativeElement.textContent).toContain('Sleepy Sam - easy');
-      // the bots come highest rating first (at the chosen skill level), and the best one is the one picked at first
-      const names = Array.from(
-        fixture.nativeElement.querySelectorAll('.tr-bot-select:first-of-type option'),
-      ).map((option) => (option as HTMLElement).textContent!.trim());
-      expect(names).toEqual(['Allie All-Round - hard · 1650', 'Sleepy Sam - easy · 1000']);
+      // the best bot first, at the skill level shown
+      const names = Array.from(fixture.nativeElement.querySelectorAll('.wr-bot strong')).map((e) =>
+        (e as HTMLElement).textContent!.trim(),
+      );
+      expect(names).toEqual(['Allie All-Round', 'Sleepy Sam']);
+      expect(fixture.nativeElement.textContent).toContain('hard · 1650');
       expect(fixture.nativeElement.textContent).toContain('Does it all.');
-      const select = fixture.nativeElement.querySelector('.tr-bot-select') as HTMLSelectElement;
-      select.value = 'all-rounder';
-      select.dispatchEvent(new Event('change'));
+      button(fixture, 'Casual')!.click();
       fixture.detectChanges();
-      button(fixture, 'Add a bot')!.click();
-      const level = fixture.nativeElement.querySelectorAll(
-        '.tr-bot-select',
-      )[1] as HTMLSelectElement;
-      level.value = 'casual';
-      level.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
-      button(fixture, 'Add a bot')!.click();
+      expect(fixture.nativeElement.textContent).toContain('hard · 1480');
+      (
+        fixture.nativeElement.querySelector('.wr-bot .tx-btn--primary') as HTMLButtonElement
+      ).click();
       expect(session.lobby).toHaveBeenCalledWith('bots', {
         policyId: 'all-rounder',
         level: 'casual',
       });
     });
 
-    it('a guest does not see the catalog, and nothing is fetched for them', async () => {
+    it('a guest has no bot picker and no settings button', async () => {
       const fixture = await render(fakeSession(lobbyView(1)));
-      TestBed.inject(HttpTestingController).expectNone((r) => r.url.endsWith('/bots'));
-      expect(fixture.nativeElement.textContent).not.toContain('Add a bot');
+      expect(button(fixture, 'Add a bot')).toBeUndefined();
+      expect(button(fixture, 'Change settings')).toBeUndefined();
     });
 
-    it('a bot shows with its marker, and only the host can remove it', async () => {
+    it('a bot sits as a card with its level, and only the host can remove it', async () => {
       const session = fakeSession(lobbyView(0, [bot]));
       const fixture = await render(session);
-      TestBed.inject(HttpTestingController)
-        .match(() => true)
-        .forEach((r) => r.flush(catalog));
-      fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('Allie All-Round');
-      expect(fixture.nativeElement.textContent).toContain('🤖 bot');
-      button(fixture, 'Remove')!.click();
+      flushSeats(
+        fixture,
+        seatsOf([
+          {
+            seat: 2,
+            name: 'Allie All-Round',
+            bot: true,
+            listed: true,
+            rating: 1650,
+            ratedGames: 40,
+            level: 'master',
+            playerId: 'bot-all-rounder',
+          },
+        ]),
+      );
+      const text = fixture.nativeElement.textContent as string;
+      expect(text).toContain('Allie All-Round');
+      expect(text).toContain('1650');
+      expect(text).toContain('🤖 Master');
+      (fixture.nativeElement.querySelector('.wr-x') as HTMLButtonElement).click();
       expect(session.lobby).toHaveBeenCalledWith('kick', { seat: 2 });
     });
 
     it('a guest sees the bot but has no remove button', async () => {
       const fixture = await render(fakeSession(lobbyView(1, [bot])));
-      expect(fixture.nativeElement.textContent).toContain('🤖 bot');
-      expect(button(fixture, 'Remove')).toBeUndefined();
+      expect(fixture.nativeElement.textContent).toContain('🤖');
+      expect(fixture.nativeElement.querySelector('.wr-x')).toBeNull();
     });
   });
 });

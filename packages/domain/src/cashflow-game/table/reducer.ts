@@ -136,6 +136,10 @@ export function applyCommand(
 ): CommandResult {
   const me = table.players.find((player) => player.id === playerId);
   if (command.type !== 'join' && !me) fail('NOT_A_MEMBER', 'You are not at this table.');
+  // somebody who left a running game is out of it: the seat stays for the books, but it commands nothing any more
+  if (me && me.status === 'left' && table.phase === 'playing') {
+    fail('NOT_A_MEMBER', 'You have left this game.');
+  }
   const version = table.version + 1;
   if (isTradeCommand(command)) {
     const traded = applyTradeCommand(
@@ -423,14 +427,26 @@ function leave(
   const events: TableEvent[] = [emit('player_left', playerId)];
   let next: Table = { ...table, version, players };
   if (activePlayers(next).filter((p) => !p.bot).length === 0) {
-    next = { ...next, phase: 'abandoned', activePlayerId: null };
-    events.push(emit('table_closed', playerId, { reason: 'everyone_left' }));
-    return { table: next, events };
+    // On a ranked table nobody walks away from a game for free (a bad profession): once the free rounds are over the last person
+    // leaving is a loss, so the bots play the game to its end at once and it is recorded. Otherwise the table just closes.
+    const recorded =
+      table.settings.ranked !== false &&
+      table.tableRound > (table.settings.leaveFreeRounds ?? 0) &&
+      activePlayers(next).some((p) => p.bot);
+    if (!recorded) {
+      next = { ...next, phase: 'abandoned', activePlayerId: null };
+      events.push(emit('table_closed', playerId, { reason: 'everyone_left' }));
+      return { table: next, events };
+    }
   }
   if (table.hostId === playerId) {
-    const heir = activePlayers(next).filter((p) => !p.bot)[0];
-    next = { ...next, hostId: heir.id };
-    events.push(emit('host_changed', heir.id));
+    // no person is left to take over: a bot holds the table (it never gives a host's command), the one who left holds nothing
+    const heir =
+      activePlayers(next).filter((p) => !p.bot)[0] ?? activePlayers(next).find((p) => p.bot);
+    if (heir) {
+      next = { ...next, hostId: heir.id };
+      events.push(emit('host_changed', heir.id));
+    }
   }
   next = settleTable(next, (type, who, data) => events.push(emit(type, who, data)), nowOf(ctx));
   return runAwayTurns({ table: next, events }, version, ctx);

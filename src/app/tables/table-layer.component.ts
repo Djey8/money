@@ -10,12 +10,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { GameBooks } from '@money/domain';
-import { CashflowGameService } from '../shared/services/cashflow-game.service';
 import { formatClock, clockReading } from './table-clock';
 import { standings } from './table-statements';
 import { tableLayerTexts } from './table-layer.texts';
 import { TableModeService } from './table-mode.service';
 import { TableStageComponent } from './table-stage.component';
+import { TradeOfferComponent } from './trade-offer.component';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
 
@@ -28,7 +28,7 @@ import { TablesApiService } from './tables-api.service';
 @Component({
   selector: 'app-table-layer',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableStageComponent],
+  imports: [CommonModule, FormsModule, TableStageComponent, TradeOfferComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
   template: `
@@ -45,7 +45,6 @@ import { TablesApiService } from './tables-api.service';
         >
       </div>
 
-      <p class="tl-connection" *ngIf="lost()" role="alert">{{ t.connectionLost }}</p>
       <div class="tl-away" *ngIf="iAmAway()" role="status">
         <span>{{ t.awayNote }}</span>
         <button type="button" class="tx-btn tx-btn--primary tx-btn--small" (click)="comeBack()">
@@ -63,12 +62,6 @@ import { TablesApiService } from './tables-api.service';
           {{ t.resumeButton }}
         </button>
       </p>
-      <div class="tl-hold" *ngIf="holdText() as hold" role="status">
-        <span>{{ hold }}</span>
-      </div>
-
-      <p class="tl-problem" *ngIf="problem() as problem" role="alert">{{ problem }}</p>
-
       <div
         class="tl-offers"
         *ngIf="offers().length"
@@ -91,59 +84,14 @@ import { TablesApiService } from './tables-api.service';
         </div>
       </div>
 
-      <div class="tl-trade" *ngIf="trade() as deal" role="region">
-        <span>{{ deal.text }}</span>
-        <div class="tl-row" *ngIf="deal.mine">
-          <button
-            type="button"
-            class="tx-btn tx-btn--small"
-            *ngFor="let counter of deal.counters"
-            (click)="acceptCounter(counter.seat)"
-          >
-            {{ t.accept }}: {{ counter.text }}
-          </button>
-          <button
-            type="button"
-            class="tx-btn tx-btn--small"
-            (click)="move({ type: 'withdraw_trade' })"
-          >
-            {{ t.withdraw }}
-          </button>
-        </div>
-        <div class="tl-row" *ngIf="deal.canAnswer">
-          <button
-            type="button"
-            class="tx-btn tx-btn--primary tx-btn--small"
-            (click)="move({ type: 'accept_trade' })"
-          >
-            {{ t.takeIt }}
-          </button>
-          <input
-            class="tl-input"
-            type="number"
-            min="0"
-            inputmode="decimal"
-            [placeholder]="t.yourPrice"
-            [attr.aria-label]="t.yourPrice"
-            [(ngModel)]="counterPrice"
-          />
-          <button
-            type="button"
-            class="tx-btn tx-btn--small"
-            [disabled]="!counterPrice || counterPrice <= 0"
-            (click)="counter()"
-          >
-            {{ t.counter }}
-          </button>
-          <button
-            type="button"
-            class="tx-btn tx-btn--small"
-            (click)="move({ type: 'decline_trade' })"
-          >
-            {{ t.decline }}
-          </button>
-        </div>
-      </div>
+      <!-- a card on offer: every player who may answer reads it as a card, and the seller sees the offers that came in -->
+      <app-trade-offer
+        *ngIf="table.trade && (table.trade.you || table.trade.sellerSeat === table.youSeat)"
+        [view]="table"
+        [lang]="lang"
+        [busy]="busy()"
+        (move)="move($event)"
+      ></app-trade-offer>
 
       <div class="tl-players" role="tablist" [attr.aria-label]="t.players">
         <button
@@ -154,6 +102,8 @@ import { TablesApiService } from './tables-api.service';
           [class.tl-player--active]="row.seat === table.activeSeat"
           [style.--pc]="row.color"
           [class.tl-player--looked]="row.seat === shownSeat()"
+          [class.tl-player--out]="row.outcome !== 'playing'"
+          [class.tl-player--bankrupt]="row.outcome === 'bankrupt'"
           [attr.aria-selected]="row.seat === shownSeat()"
           [title]="
             t.lookAt +
@@ -166,6 +116,14 @@ import { TablesApiService } from './tables-api.service';
           <span class="tl-swatch" [style.background]="row.color"></span>
           <span class="tl-name"> {{ row.name }}</span>
           <span class="tl-sub">
+            <span
+              class="tl-place"
+              *ngIf="row.rank"
+              [class.tl-place--escaped]="row.outcome === 'escaped'"
+              [class.tl-place--out]="row.outcome === 'bankrupt' || row.outcome === 'left'"
+              [title]="placeTitle(row)"
+              >{{ placeLabel(row) }}</span
+            >
             <span class="tl-playing" *ngIf="row.seat === table.activeSeat">{{ t.playingNow }}</span>
             <span class="tl-tag" *ngIf="row.seat === table.youSeat">{{ t.you }}</span>
             <span class="tl-tag" *ngIf="row.bot">🤖 {{ t.bot }}</span>
@@ -185,7 +143,14 @@ import { TablesApiService } from './tables-api.service';
       </div>
 
       <!-- always there, so the bar keeps its height before the first move and after it -->
-      <p class="tl-latest">
+      <p
+        class="tl-latest"
+        [class.tl-latest--card]="!!latest()?.cardId"
+        [attr.role]="latest()?.cardId ? 'link' : null"
+        [attr.tabindex]="latest()?.cardId ? 0 : null"
+        (click)="openCard(latest()?.cardId)"
+        (keydown.enter)="openCard(latest()?.cardId)"
+      >
         <ng-container *ngIf="latest() as last"
           ><span class="tl-meta">{{ t.latest }}:</span> <strong>{{ last.who }}</strong>
           {{ last.title }} {{ last.detail }}</ng-container
@@ -202,6 +167,35 @@ import { TablesApiService } from './tables-api.service';
             {{ t.no }}
           </button>
         </ng-container>
+      </div>
+
+      <!-- the short notices (who the table waits for, a refusal, a lost connection) hang over the wheel with an x: they never push it down -->
+      <div class="tl-float-slot">
+        <div class="tl-float">
+          <p class="tl-connection" *ngIf="lost()" role="alert">{{ t.connectionLost }}</p>
+          <div class="tl-hold" *ngIf="floatHold() as hold" role="status">
+            <span>{{ hold }}</span>
+            <button
+              type="button"
+              class="tl-float-x"
+              [attr.aria-label]="t.hide"
+              (click)="hide(hold)"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="tl-problem" *ngIf="floatProblem() as problem" role="alert">
+            <span>{{ problem }}</span>
+            <button
+              type="button"
+              class="tl-float-x"
+              [attr.aria-label]="t.hide"
+              (click)="hide(problem)"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- what the others do floats over the dashboard: telling a move never pushes the screen about -->
@@ -331,6 +325,23 @@ import { TablesApiService } from './tables-api.service';
         height: 18px;
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 35%, transparent);
       }
+      /* where a player stands: the ones who are out hold their final place, the others their place as it is now */
+      .tl-place {
+        font-weight: 700;
+        opacity: 0.9;
+      }
+      .tl-place--escaped {
+        color: var(--color-success, #2e7d32);
+      }
+      .tl-place--out {
+        color: var(--color-danger, #c62828);
+      }
+      .tl-player--out {
+        opacity: 0.7;
+      }
+      .tl-player--bankrupt .tl-name {
+        text-decoration: line-through;
+      }
       .tl-playing {
         font-weight: 700;
         color: var(--pc);
@@ -391,8 +402,7 @@ import { TablesApiService } from './tables-api.service';
       .tl-num {
         font-variant-numeric: tabular-nums;
       }
-      .tl-offers,
-      .tl-trade {
+      .tl-offers {
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -434,12 +444,66 @@ import { TablesApiService } from './tables-api.service';
       .tl-latest .tl-meta {
         margin-inline-end: 0.4em;
       }
+      .tl-latest--card {
+        cursor: pointer;
+        text-decoration: underline dotted;
+      }
       .tl-latest {
         margin: 0;
         min-height: 1.3em;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .tl-float-slot {
+        position: relative;
+        height: 0;
+        z-index: 7;
+        overflow: visible;
+      }
+      .tl-float {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        pointer-events: none;
+      }
+      .tl-float > * {
+        pointer-events: auto;
+        margin: 0;
+        box-shadow: var(--shadow-lg, 0 6px 18px rgba(0, 0, 0, 0.25));
+      }
+      .tl-float .tl-hold,
+      .tl-float .tl-problem {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: var(--color-surface, #fff);
+        border: 1px solid var(--color-border, #ddd);
+      }
+      .tl-float .tl-problem {
+        border-color: var(--color-danger, #c0392b);
+      }
+      .tl-float .tl-hold > span,
+      .tl-float .tl-problem > span {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .tl-float-x {
+        flex: none;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 1.1rem;
+        line-height: 1;
+        padding: 2px 6px;
+        cursor: pointer;
       }
       .tl-overlay-slot {
         position: sticky;
@@ -473,9 +537,10 @@ import { TablesApiService } from './tables-api.service';
 export class TableLayerComponent implements OnDestroy {
   private readonly mode = inject(TableModeService);
   private readonly injector = inject(Injector);
-  counterPrice: number | null = null;
 
   readonly view = this.mode.view;
+  /** A move of mine is on its way to the server. */
+  readonly busy = computed(() => this.mode.session()?.busy() ?? false);
   readonly presenter = this.mode.presenter;
   readonly stage = this.mode.presenter.stage;
   readonly faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -486,14 +551,36 @@ export class TableLayerComponent implements OnDestroy {
   get t() {
     return tableLayerTexts(this.mode.lang);
   }
+  /** The language of the table's texts (for the panels the layer opens). */
+  get lang(): string {
+    return this.mode.lang;
+  }
   get rtl(): boolean {
     return this.mode.lang.toLowerCase().startsWith('ar');
+  }
+
+  /** The place of a player as the badge shows it: a medal for the first three out, a cross for those who are out of the game. */
+  placeLabel(row: { rank: number; outcome: string }): string {
+    if (row.outcome === 'escaped') {
+      return `${['🥇', '🥈', '🥉'][row.rank - 1] ?? '✓'} #${row.rank}`;
+    }
+    if (row.outcome === 'bankrupt' || row.outcome === 'left') return `✖ #${row.rank}`;
+    return `#${row.rank}`;
+  }
+
+  placeTitle(row: { rank: number; outcome: string }): string {
+    const t = this.t;
+    if (row.outcome === 'escaped') return `${t.placeEscaped}: #${row.rank}`;
+    if (row.outcome === 'bankrupt') return `${t.placeBankrupt} - ${t.placeOut}: #${row.rank}`;
+    if (row.outcome === 'left') return `${t.placeLeft} - ${t.placeOut}: #${row.rank}`;
+    return `${t.placeNow}: #${row.rank}`;
   }
 
   readonly rows = computed(() => {
     const table = this.view();
     if (!table) return [];
     const byCoverage = new Map(standings(table).map((row) => [row.seat, row.coverage]));
+    const placed = new Map((table.standings ?? []).map((row) => [row.seat, row]));
     const rows = table.players.map((player) => ({
       seat: player.seat,
       name: player.name,
@@ -501,6 +588,9 @@ export class TableLayerComponent implements OnDestroy {
       bot: !!player.bot,
       away: player.away,
       coverage: byCoverage.get(player.seat) ?? 0,
+      rank: placed.get(player.seat)?.rank ?? 0,
+      outcome: (placed.get(player.seat)?.outcome ?? 'playing') as
+        'escaped' | 'playing' | 'bankrupt' | 'left',
     }));
     // In the order they play, the one on the move first: the line moves up one with every turn, and the player who just played
     // jumps to the end - so it is plain who still comes before me.
@@ -625,6 +715,21 @@ export class TableLayerComponent implements OnDestroy {
 
   readonly problem = computed(() => this.mode.session()?.problem() ?? null);
 
+  /** The notice the player hid (by its text): it stays hidden until the text changes. */
+  private readonly hidden = signal('');
+  readonly floatHold = computed(() => {
+    const text = this.holdText();
+    return text && text !== this.hidden() ? text : null;
+  });
+  readonly floatProblem = computed(() => {
+    const text = this.problem();
+    return text && text !== this.hidden() ? text : null;
+  });
+
+  hide(text: string): void {
+    this.hidden.set(text);
+  }
+
   private money(minor: number): string {
     return (minor / 100).toLocaleString(undefined, { maximumFractionDigits: 0 });
   }
@@ -645,44 +750,6 @@ export class TableLayerComponent implements OnDestroy {
     return left <= 1 ? this.t.offerLeftOne : this.t.offerLeft.replace('{n}', String(left));
   }
 
-  /** The Deal card on offer at the table: mine to withdraw or hand to a buyer, or someone's to take, counter or decline. */
-  readonly trade = computed(() => {
-    const table = this.view();
-    const deal = table?.trade;
-    const session = this.mode.session();
-    if (!table || !deal || !session) return null;
-    const seller = table.players[deal.sellerSeat]?.name ?? '';
-    const card = this.cardTitle(deal.deck, deal.cardId);
-    const price = this.money(deal.priceMinor);
-    const mine = deal.sellerSeat === table.youSeat;
-    return {
-      mine,
-      canAnswer: session.can('counter_trade') || session.can('decline_trade'),
-      text: (mine ? this.t.youOffer : this.t.tradeOffered)
-        .replace('{name}', seller)
-        .replace('{card}', card)
-        .replace('{price}', price),
-      counters: deal.counters.map((counter) => ({
-        seat: counter.seat,
-        text: this.t.counterFrom
-          .replace('{name}', table.players[counter.seat]?.name ?? '')
-          .replace('{price}', this.money(counter.priceMinor)),
-      })),
-    };
-  });
-
-  private cardTitle(deck: 'dealSmall' | 'dealBig', cardId: string): string {
-    try {
-      const card = this.injector
-        .get(CashflowGameService)
-        .browseCards(deck, '')
-        .find((c: { id: string }) => c.id === cardId);
-      return card ? String((card as { title?: string }).title ?? cardId) : cardId;
-    } catch {
-      return cardId;
-    }
-  }
-
   async sell(title: string): Promise<void> {
     await this.mode.session()?.play({ type: 'sell_position', input: { title } });
   }
@@ -691,17 +758,9 @@ export class TableLayerComponent implements OnDestroy {
     await this.mode.session()?.play(command);
   }
 
-  async acceptCounter(fromSeat: number): Promise<void> {
-    await this.mode.session()?.play({ type: 'accept_trade', fromSeat });
-  }
-
-  async counter(): Promise<void> {
-    if (!this.counterPrice || this.counterPrice <= 0) return;
-    const ok = await this.mode.session()?.play({
-      type: 'counter_trade',
-      priceMinor: Math.round(this.counterPrice * 100),
-    });
-    if (ok) this.counterPrice = null;
+  /** The card the latest line is about opens, to be read. */
+  openCard(cardId: string | undefined): void {
+    if (cardId) RemoteGameHook.openCard?.(cardId);
   }
 
   trackSeat(_index: number, row: { seat: number }): number {

@@ -40,6 +40,9 @@ export interface PlannedSubscription {
   // - [] = ALL buckets (smart allocation)
   // - ['bucket-id-1'] = ONE specific bucket (100% to it)
   // - ['id-1', 'id-2'] = SUBSET (smart allocation across these)
+  /** A game's emergency plan: the extra the plan costs on top of the buckets (the project gets a bucket for it). */
+  surchargeAmount?: number;
+  surchargePercent?: number;
   originalCalculatedAmount: number; // Auto-calculated amount before user adjustment
   manuallyAdjusted: boolean; // Did user override the calculation?
 

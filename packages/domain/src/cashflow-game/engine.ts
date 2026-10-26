@@ -5,6 +5,7 @@
  * `CashflowGameService` applies its output to `AppStateService`. See
  * todo/cashflow-game.md.
  */
+import type { BoardSetup } from './dreamfund-board';
 import type { GameRules } from './rules';
 import {
   CashflowGameSet,
@@ -15,6 +16,9 @@ import {
   CashflowTransactionRecord,
   initialCashflowGameState,
 } from './types';
+import { initialCareer } from './career';
+import { INITIAL_LIFE_STATE } from './life-deck';
+import { applyInsuranceChanges, droppedPremiumTitles, initialInsurance } from './insurance';
 import { findCashflowGameSet, findCashflowProfession } from './game-sets';
 
 function formatIsoDate(date: Date): string {
@@ -86,6 +90,7 @@ export function pickCashflowProfession(
   today: string,
   mode: 'companion' | 'solo' = 'companion',
   rules?: GameRules,
+  boardSetup?: BoardSetup,
 ): PickProfessionResult {
   const gameSet = findCashflowGameSet(gameSets, gameSetId);
   const profession = findCashflowProfession(gameSet, professionId);
@@ -101,7 +106,7 @@ export function pickCashflowProfession(
     .filter((line) => line.amountMinor !== 0)
     .map((line) => ({
       title: line.title,
-      account: 'Daily',
+      account: line.account ?? 'Daily',
       amountMinor: -line.amountMinor,
       frequency: 'monthly',
       category: `@${line.title}`,
@@ -121,7 +126,7 @@ export function pickCashflowProfession(
       date: today,
       time: '',
       category: '@Savings',
-      comment: `${profession.title} savings\n#cashflow`,
+      comment: `${profession.title} savings\n#dreamfund`,
     },
   ];
 
@@ -132,10 +137,24 @@ export function pickCashflowProfession(
       professionId,
       mode,
       ...(rules ? { rules } : {}),
+      ...(boardSetup ? { boardSetup } : {}),
       boardPosition: null, // a solo token starts at START, just before space 0
       ...(mode === 'solo' ? { turn: { phase: 'roll' as const, count: 0 } } : {}),
       virtualDate: today,
       gameSubscriptionTitles,
+      ...(profession.profile
+        ? {
+            life: INITIAL_LIFE_STATE,
+            ...(profession.career ? { career: initialCareer(profession.career) } : {}),
+            livingStandard: profession.priceFactor ?? 1,
+            lineTitles: Object.fromEntries(
+              profession.expenses.filter((line) => line.key).map((line) => [line.key!, line.title]),
+            ),
+          }
+        : {}),
+      ...(initialInsurance(profession.expenses)
+        ? { insurance: initialInsurance(profession.expenses) }
+        : {}),
     },
     profession,
     subscriptions,
@@ -150,6 +169,9 @@ export interface CashflowGameSubscription {
   amountMinor: number;
   category?: string;
   comment?: string;
+  /** Game dates: a funding plan pays from its start to its end (both inclusive). */
+  startDate?: string;
+  endDate?: string;
 }
 
 /** The real Subscriptions matching `state.gameSubscriptionTitles`, in that order — what Payday/Charity/Downsized act on. */
@@ -158,9 +180,33 @@ export function ownedGameSubscriptions(
   subscriptions: CashflowGameSubscription[],
 ): CashflowGameSubscription[] {
   const byTitle = new Map(subscriptions.map((sub) => [sub.title, sub]));
+  const dropped = droppedPremiumTitles(state);
   return state.gameSubscriptionTitles
+    .filter((title) => !dropped.has(title))
     .map((title) => byTitle.get(title))
     .filter((sub): sub is CashflowGameSubscription => sub !== undefined);
+}
+
+/**
+ * What Payday posts: the game's own subscriptions, then the funding plans that run on this Payday's date. A plan is there from its
+ * start date to its end date (the dates of the game's calendar), so a plan for N paydays pays exactly N times.
+ */
+export function paydaySubscriptions(
+  state: CashflowGameState,
+  subscriptions: CashflowGameSubscription[],
+): CashflowGameSubscription[] {
+  const date = state.virtualDate ?? '';
+  const byTitle = new Map(subscriptions.map((sub) => [sub.title, sub]));
+  const funding = (state.fundingSubscriptionTitles ?? [])
+    .filter((title) => !state.gameSubscriptionTitles.includes(title))
+    .map((title) => byTitle.get(title))
+    .filter(
+      (sub): sub is CashflowGameSubscription =>
+        sub !== undefined &&
+        (!sub.startDate || sub.startDate <= date) &&
+        (!sub.endDate || date <= sub.endDate),
+    );
+  return [...ownedGameSubscriptions(state, subscriptions), ...funding];
 }
 
 function cashflowTransaction(
@@ -176,7 +222,7 @@ function cashflowTransaction(
     date,
     time: '',
     category,
-    comment: comment ? `${comment}\n#cashflow` : '#cashflow',
+    comment: comment ? `${comment}\n#dreamfund` : '#dreamfund',
   };
 }
 
@@ -201,21 +247,21 @@ export interface PaydayResult {
  * see `clearCashflowStatus`.
  */
 export function runCashflowPayday(
-  state: CashflowGameState,
+  stateBefore: CashflowGameState,
   subscriptions: CashflowGameSubscription[],
 ): PaydayResult {
+  // the insurances the player hopped in or out of take effect now, before this Payday posts its premiums
+  const state = applyInsuranceChanges(stateBefore);
   const date = requireStarted(state, 'running Payday');
-  const transactions: CashflowTransactionRecord[] = ownedGameSubscriptions(
-    state,
-    subscriptions,
-  ).map((sub) =>
-    cashflowTransaction(
-      sub.account,
-      sub.amountMinor,
-      date,
-      sub.comment ? sub.comment : '',
-      sub.category ?? '',
-    ),
+  const transactions: CashflowTransactionRecord[] = paydaySubscriptions(state, subscriptions).map(
+    (sub) =>
+      cashflowTransaction(
+        sub.account,
+        sub.amountMinor,
+        date,
+        sub.comment ? sub.comment : '',
+        sub.category ?? '',
+      ),
   );
 
   const nextRound = state.round + 1;

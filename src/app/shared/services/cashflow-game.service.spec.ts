@@ -106,7 +106,7 @@ describe('CashflowGameService', () => {
         amount: -1800,
         category: '@Placeholder Expenses',
       });
-      expect(state.allSubscriptions.every((s) => s.comment.includes('#cashflow'))).toBe(true);
+      expect(state.allSubscriptions.every((s) => s.comment.includes('#dreamfund'))).toBe(true);
       // Only Savings posts immediately — Salary/Expenses become real transactions on the first
       // Payday instead, once the player has had a chance to edit their Subscriptions (JFK, 2026-09-29).
       expect(state.allTransactions).toHaveLength(1);
@@ -261,7 +261,7 @@ describe('CashflowGameService', () => {
         startDate: '2026-10-05',
         endDate: '',
         category: '@Kids',
-        comment: '#cashflow',
+        comment: '#dreamfund',
         frequency: 'monthly',
       } as any);
       state.cashflowGame = {
@@ -300,7 +300,7 @@ describe('CashflowGameService', () => {
       expect(service.backfillBudget()).toBe(true);
       const planned = state.allBudgets.filter((b) => b.tag === '@Placeholder Expenses');
       expect(planned).toHaveLength(3);
-      expect(planned.every((b) => b.amount === 1800 && !b.game)).toBe(true);
+      expect(planned.every((b) => b.amount === 1800)).toBe(true);
       expect(state.allBudgets.some((b) => b.tag === '@Mine')).toBe(true);
       expect(service.backfillBudget()).toBe(false); // only once
       gameAccount.mockRestore();
@@ -528,6 +528,7 @@ describe('CashflowGameService', () => {
       it('survives a page reload: the stored history is read back', () => {
         started();
         service.payday(cb());
+        service.flushUndoStack();
         const reloaded = new CashflowGameService(
           persistence as any,
           new IncomeStatementService({ saveData: jest.fn() } as any),
@@ -640,7 +641,7 @@ describe('CashflowGameService', () => {
       const state = AppStateService.instance;
       const base = { account: 'Fire', amount: -5000, time: '', category: '@GRO4US' };
       state.allTransactions.push(
-        { ...base, date: '2026-10-15', comment: 'Buy Share GRO4US 100 x 50;\n#cashflow' },
+        { ...base, date: '2026-10-15', comment: 'Buy Share GRO4US 100 x 50;\n#dreamfund' },
         { ...base, date: '2026-10-15', comment: 'Buy Share GRO4US 100 x 50;' }, // before the tag existed
         { ...base, date: '2026-10-15', comment: 'my own note' },
       );
@@ -648,7 +649,7 @@ describe('CashflowGameService', () => {
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
 
       const byComment = (c: string) => state.allTransactions.find((t) => t.comment === c)!;
-      expect(byComment('Buy Share GRO4US 100 x 50;\n#cashflow').date).toBe('2026-09-15');
+      expect(byComment('Buy Share GRO4US 100 x 50;\n#dreamfund').date).toBe('2026-09-15');
       expect(byComment('Buy Share GRO4US 100 x 50;').date).toBe('2026-09-15');
       expect(byComment('my own note').date).toBe('2026-10-15');
     });
@@ -714,13 +715,13 @@ describe('CashflowGameService', () => {
       expect(salaryTx.date).toBe('2026-09-30');
     });
 
-    it('shifts every existing #cashflow transaction back a month before posting the new round', () => {
+    it('shifts every existing #dreamfund transaction back a month before posting the new round', () => {
       started();
       expect(AppStateService.instance.allTransactions[0].date).toBe('2026-09-15');
 
       service.payday({ onSuccess: jest.fn(), onError: jest.fn() });
 
-      // The Savings transaction (already #cashflow-tagged) ages back a month.
+      // The Savings transaction (already #dreamfund-tagged) ages back a month.
       expect(AppStateService.instance.allTransactions[0].date).toBe('2026-08-15');
     });
 
@@ -1226,7 +1227,7 @@ describe('CashflowGameService', () => {
           startDate: '2025-01-01',
           endDate: '',
           category: '',
-          comment: '#cashflow',
+          comment: '#dreamfund',
           frequency: 'monthly',
         });
         expect(dayOf(service.nextGameTransactionDate())).toBe(3);
@@ -2584,7 +2585,7 @@ describe('CashflowGameService', () => {
           const income = state.allTransactions.slice(before);
           expect(income).toHaveLength(1);
           expect(income[0]).toMatchObject({ account: 'Income', amount: 10000, category: '@LOAN' });
-          expect(income[0].comment).toContain('#cashflow');
+          expect(income[0].comment).toContain('#dreamfund');
           expect(state.allAssets).toHaveLength(0);
           expect(state.cashflowGame.assetDeals![0].stage).toBe('paidBack');
           expect(state.allGrowProjects[0]).toMatchObject({ phase: 'completed' });
@@ -3036,7 +3037,7 @@ describe('CashflowGameService', () => {
       expect(state.allTransactions).toHaveLength(before);
     });
 
-    it('writes the card sale’s comment in the language the game is played in, keeping the #cashflow tag', () => {
+    it('writes the card sale’s comment in the language the game is played in, keeping the #dreamfund tag', () => {
       const english = translate.instant.getMockImplementation()!;
       translate.instant.mockImplementation((key: string, params?: Record<string, string>) =>
         key === 'CashflowGame.cardSaleComment'
@@ -3048,7 +3049,7 @@ describe('CashflowGameService', () => {
       service.sellCardToFriend(house, 500, callbacks());
 
       expect(AppStateService.instance.allTransactions[before].comment).toBe(
-        'Karte EFH an einen Freund verkauft\n#cashflow',
+        'Karte EFH an einen Freund verkauft\n#dreamfund',
       );
       // The category stays a literal key: History and old games recognise a card sale by it.
       expect(AppStateService.instance.allTransactions[before].category).toBe('@EFH card sale');
@@ -3063,7 +3064,7 @@ describe('CashflowGameService', () => {
       const taken = new Set(
         [
           ...state.allSubscriptions
-            .filter((s) => s.comment?.includes('#cashflow'))
+            .filter((s) => s.comment?.includes('#dreamfund'))
             .map((s) => s.startDate),
         ].filter((d) => d?.startsWith(monthPrefix)),
       );
@@ -3286,6 +3287,7 @@ describe('CashflowGameService', () => {
       started();
       service.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
       expect(service.canUndo).toBe(true);
+      service.flushUndoStack();
 
       // A page reload/dev-server restart creates a brand-new service instance from scratch.
       const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
@@ -3303,6 +3305,7 @@ describe('CashflowGameService', () => {
     it('clearPersistedUndoStack empties the in-memory stack and localStorage — JFK, 2026-09-29+: "when we logout we remove also this part for the localStorage. So logout login we dont have a history"', () => {
       started();
       expect(service.canUndo).toBe(true);
+      service.flushUndoStack();
       expect(localStorage.getItem('cashflowUndoStack')).not.toBeNull();
 
       service.clearPersistedUndoStack();
@@ -3555,7 +3558,7 @@ describe('CashflowGameService', () => {
         startDate: '2026-10-05',
         endDate: '',
         category: '',
-        comment: '#cashflow',
+        comment: '#dreamfund',
         frequency: 'monthly',
       } as any);
       state.cashflowGame = {
@@ -4117,7 +4120,7 @@ describe('CashflowGameService', () => {
       service.payday(ok());
 
       const posted = AppStateService.instance.allTransactions.filter((t) =>
-        t.comment.includes('#cashflow'),
+        t.comment.includes('#dreamfund'),
       );
       expect(posted.length).toBeGreaterThan(1);
       expect(
@@ -4149,6 +4152,16 @@ describe('CashflowGameService', () => {
 
       service.removeSubscriptionByTitle('nope');
       expect(state.allSubscriptions.map((s) => s.title)).toEqual(['A', 'C']);
+    });
+  });
+
+  describe("the player's own settings", () => {
+    it('keeps the switch for the small confirmations in the browser', () => {
+      service.setSetting('toasts', false);
+      expect(service.settings.toasts).toBe(false);
+      expect(localStorage.getItem('mm.game.toasts')).toBe('0');
+      service.setSetting('toasts', true);
+      expect(localStorage.getItem('mm.game.toasts')).toBe('1');
     });
   });
 });

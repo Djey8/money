@@ -15,8 +15,8 @@ export const START_RATING = 1500;
 export const RATING_FLOOR = 100;
 /** Tables of fewer rounds than this do not count, unless somebody escaped. */
 export const MIN_RATED_ROUNDS = 8;
-/** Leaving a game that is further on than this round is a loss; leaving earlier costs nothing. */
-export const LEAVE_LOSS_AFTER_ROUND = 3;
+/** The default of a table's `leaveFreeRounds`: leaving a game that has started is a loss from its first moment. */
+export const LEAVE_LOSS_AFTER_ROUND = 0;
 /** The number of rated games a player is "provisional" for in the listing. */
 export const PROVISIONAL_GAMES = 5;
 
@@ -65,6 +65,8 @@ export interface RankedFacts {
   tableRound: number;
   /** Somebody escaped the rat race. */
   escaped: boolean;
+  /** A person left the game after its free rounds: the game counts however short it was (leaving is a loss, not an escape from one). */
+  abandoned?: boolean;
 }
 
 /** Whether a finished table counts for the rating, and the first reason it does not (for the player to read). */
@@ -73,7 +75,7 @@ export function rankedEligibility(facts: RankedFacts): { counts: boolean; why: s
   if (facts.phase !== 'finished') return { counts: false, why: 'not-finished' };
   if (facts.seats < 2) return { counts: false, why: 'too-few-seats' };
   if (facts.humans < 1) return { counts: false, why: 'no-human' };
-  if (!facts.escaped && facts.tableRound < MIN_RATED_ROUNDS)
+  if (!facts.escaped && !facts.abandoned && facts.tableRound < MIN_RATED_ROUNDS)
     return { counts: false, why: 'too-short' };
   return { counts: true, why: null };
 }

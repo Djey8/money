@@ -1,5 +1,6 @@
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import { CLASSIC_RAT_RACE_BOARD as board } from './board';
+import { buildDreamfundBoard } from './dreamfund-board';
 import { applyEffectsToBooks, type GameBooks } from './books';
 import { fixedClock } from './clock';
 import { pickCashflowProfession } from './engine';
@@ -53,7 +54,7 @@ function solo(extra: Partial<CashflowGameState> = {}): GameBooks {
       startDate: `2026-09-${index === 0 ? '01' : '03'}`,
       endDate: '',
       category: sub.category ?? '',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: sub.frequency,
     })),
     transactions: [],
@@ -296,5 +297,39 @@ describe('a whole seeded game of turns', () => {
     expect(first.books.state.round).toBe(first.paydays);
     expect(first.books.state.turn?.count).toBe(300);
     expect(JSON.stringify(play(21).books)).toBe(JSON.stringify(first.books));
+  });
+});
+
+describe('the tiles of a Dreamfund map (JFK, 2026-10-25)', () => {
+  const map = buildDreamfundBoard({ shape: 'ring', size: 'medium', seed: 3 });
+  const dreamfundDeps = (rng: Rng): TurnDeps => ({ ...deps(rng), board: map.board });
+  const firstOf = (kind: string) => map.board.findIndex((space) => space.kind === kind);
+
+  it('a tile other than Payday opens a story card of its stack, to be ticked off, and the next roll is open after', () => {
+    for (const kind of ['dream', 'emergency', 'opportunity', 'harvest', 'life', 'career']) {
+      const at = firstOf(kind);
+      // from START a roll of n lands on tile n - 1, so reach it with two rolls when it is far: put the token next to it
+      const books = solo({ boardPosition: at === 0 ? map.board.length - 1 : at - 1 });
+      const result = playTurn(books, dreamfundDeps(dice(1)), {});
+      expect(result.move.landed.kind).toBe(kind);
+      const pending = currentTurn(result.state).pending;
+      expect(pending).toMatchObject({ kind: 'story', tile: kind, storyCardId: `${kind}-filler` });
+      expect(currentTurn(result.state).phase).toBe('decide');
+      const settled = settleDecision(result.state, 'done');
+      expect(currentTurn(settled.state).phase).toBe('roll');
+      expect(currentTurn(settled.state).pending).toBeUndefined();
+    }
+  });
+
+  it('a Payday tile pays the month and opens no card', () => {
+    const at = firstOf('payday');
+    const books = solo({
+      boardPosition: at === 0 ? map.board.length - 1 : at - 1,
+      turn: { phase: 'roll', count: 1 },
+    });
+    const result = playTurn(books, dreamfundDeps(dice(1)), {});
+    expect(result.move.landedOnPayday).toBe(true);
+    expect(result.move.paydays).toBe(1);
+    expect(currentTurn(result.state).phase).toBe('roll');
   });
 });

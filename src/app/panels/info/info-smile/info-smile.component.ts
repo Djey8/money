@@ -1,3 +1,4 @@
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -104,7 +105,19 @@ export class InfoSmileComponent extends BaseInfoComponent {
   // Current detail tab
   static activeTab: 'overview' | 'buckets' | 'actions' | 'notes' | 'paymentPlans' = 'overview';
 
+  /** The project is only looked at (a character's dream before the game starts): nothing can be changed or saved. */
+  static preview = false;
+
+  /** Shows a project that is not in the account (yet), read only, above whatever is open. */
+  static openPreview(project: Smile, zIndex: number) {
+    InfoSmileComponent.setInfoSmileComponent(-1, project);
+    InfoSmileComponent.preview = true;
+    InfoSmileComponent.zIndex = zIndex;
+    InfoSmileComponent.isInfo = true;
+  }
+
   static setInfoSmileComponent(id: number, project: Smile) {
+    InfoSmileComponent.preview = false;
     InfoSmileComponent.index = id;
     InfoSmileComponent.title = project.title;
     InfoSmileComponent.sub = project.sub || '';
@@ -175,11 +188,29 @@ export class InfoSmileComponent extends BaseInfoComponent {
   editingActionPriority: 'low' | 'medium' | 'high' = 'medium';
   editingActionDueDate = '';
 
+  /** In a game the payment plans run in Paydays: the date of the next one (empty outside a game). */
+  get gameDate(): string {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && game.professionId
+      ? (game.virtualDate ?? '')
+      : '';
+  }
+
+  /** In a game: what the month has free for plans, the plan being changed left out (null outside a game). */
+  get maxPayment(): number | null {
+    const editing =
+      this.editingPlanIndex !== null
+        ? InfoSmileComponent.plannedSubscriptions[this.editingPlanIndex]?.title
+        : undefined;
+    return CashflowGameService.fundingRoom(editing);
+  }
+
   // Payment Plans
   isPaymentPlannerOpen = false;
   editingPlanIndex: number | null = null;
 
   get notesList(): SmileNote[] {
+    if (InfoSmileComponent.preview) return InfoSmileComponent.notes;
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     return project?.notes || [];
   }
@@ -513,6 +544,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
     AddSmileComponent.zIndex = 0;
   }
 
+  /** In a game a payment is called a payment: the button that adds money to a project says so (JFK, 2026-10-26). */
+  get inGame(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() && !!AppStateService.instance.cashflowGame.professionId
+    );
+  }
+
   add() {
     // General add without specific bucket - will distribute equally across all buckets
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
@@ -521,6 +559,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     AddComponent.categoryTextField = `@${InfoSmileComponent.title}`;
     AddComponent.selectedOption = 'Smile';
     AddComponent.commentTextField = `${InfoSmileComponent.title} ${totalRemaining}`;
+    if (this.inGame && totalRemaining > 0) {
+      AddComponent.amountTextField = (Math.round(totalRemaining * 100) / -100).toString();
+    }
 
     AddComponent.url = '/smileprojects';
     AddComponent.isAdd = true;
@@ -1159,6 +1200,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
   }
 
   override closeWindow() {
+    InfoSmileComponent.preview = false;
     InfoSmileComponent.isInfo = false;
     InfoSmileComponent.isEdit = false;
   }
@@ -1261,7 +1303,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
     });
   }
 
+  /** The dream of a character is never deleted: it is the point of the game. */
+  get isDream(): boolean {
+    return !!AppStateService.instance.allSmileProjects[InfoSmileComponent.index]?.dream;
+  }
+
   deleteSmile(index: number) {
+    if (AppStateService.instance.allSmileProjects[index]?.dream) return;
     this.confirmService.confirm(this.translate.instant('Confirm.deleteSmile'), () => {
       // Save title before deleting
       const deletedTitle = AppStateService.instance.allSmileProjects[index].title;
@@ -1426,7 +1474,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
     this.confirmService.confirm(
       `Activate payment plan "${plan.title}"? This will create a recurring subscription.`,
       () => {
-        this.subscriptionActivationService.activatePlannedSubscription(plan, project);
+        if (!this.subscriptionActivationService.activatePlannedSubscription(plan, project)) {
+          this.toastService.show(
+            this.translate.instant('PaymentPlannerDialog.tooMuchToActivate'),
+            'error',
+          );
+          return;
+        }
         InfoSmileComponent.plannedSubscriptions = project.plannedSubscriptions || [];
         this.saveProject('Payment plan activated');
       },

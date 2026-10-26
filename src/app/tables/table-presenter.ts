@@ -12,6 +12,8 @@ export interface Stage {
   dice?: number[];
   tumbling?: boolean;
   card?: {
+    /** For opening it to be read. */
+    id?: string;
     title: string;
     deck: string;
     tone: 'deal' | 'market' | 'doodad';
@@ -25,6 +27,15 @@ const MESSAGES_KEY = 'mm.tables.messages';
 function readMessages(): boolean {
   try {
     return localStorage.getItem(MESSAGES_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+const TOASTS_KEY = 'mm.tables.toasts';
+function readToasts(): boolean {
+  try {
+    return localStorage.getItem(TOASTS_KEY) !== '0';
   } catch {
     return true;
   }
@@ -95,6 +106,16 @@ export class TablePresenter {
       // a convenience only
     }
   }
+  /** Whether the small confirmations of the app (saved, done ...) show while a game with others is on the screen. */
+  readonly toasts = signal(readToasts());
+  setToasts(on: boolean): void {
+    this.toasts.set(on);
+    try {
+      localStorage.setItem(TOASTS_KEY, on ? '1' : '0');
+    } catch {
+      // a convenience only
+    }
+  }
   /** The dice of the roll being told: shown in the game screen's own dice, next to the roll button. */
   readonly dice = signal<{ faces: number[]; tumbling: boolean } | null>(null);
 
@@ -121,6 +142,13 @@ export class TablePresenter {
   /** The events a table update brought, before its books are shown: the walks they tell start from where tokens were. */
   push(lines: TableEventLine[], view: TableView | null): void {
     if (!view || this.stopped) return;
+    // only bots are left and they play to the end at full speed: nothing is told step by step, nobody waits for it
+    if (view.fastForward) {
+      this.queue = [];
+      this.stage.set(null);
+      this.dice.set(null);
+      return;
+    }
     const mine = view.youSeat;
     for (const line of lines) {
       if (line.seat === null || !TOLD.has(line.type)) continue;
@@ -377,6 +405,7 @@ export class TablePresenter {
     add(t.deposit, card['depositMinor']);
     add(t.cashflow, card['cashflowMinor']);
     return {
+      id: typeof card['id'] === 'string' ? card['id'] : undefined,
       title,
       deck: names[deck] ?? '',
       tone,

@@ -104,6 +104,11 @@ export interface TableSettings {
    * the history for everybody. Off: only in their own turn. Default on; the host chooses when the table is opened.
    */
   repayOffTurn: boolean;
+  /**
+   * Ranked tables: how many table rounds a player may leave a game that has started without it counting against them. 0 (the default):
+   * from the moment play starts, leaving is a loss - nobody can quit a bad profession for free. The host chooses when the table is opened.
+   */
+  leaveFreeRounds: number;
 }
 
 /** What a host may send: everything optional except the name; a few rule settings are the host's to tune. */
@@ -247,6 +252,9 @@ export interface TableStanding {
    * which is what places those still playing - fair across professions and across players who borrowed. Absent in older results.
    */
   expensesMinor?: number;
+  /** The cash on hand and the debts (every liability, mortgages and the Bank loan) when the standing was taken: they break a tie. */
+  cashMinor?: number;
+  debtMinor?: number;
 }
 
 /** How a finished game ended and how everyone placed: escapees first (earliest first), then by passive income, then the bankrupt, then those who left. */

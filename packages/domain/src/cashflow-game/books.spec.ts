@@ -51,7 +51,7 @@ const sub = (title: string, amountMinor = 100) => ({
   startDate: '2026-10-01',
   endDate: '',
   category: '',
-  comment: '#cashflow',
+  comment: '#dreamfund',
   frequency: 'monthly' as const,
 });
 

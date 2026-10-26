@@ -765,3 +765,24 @@ input::placeholder {
   background: rgba(147, 51, 234, 0.1);
   border: 1px solid rgba(147, 51, 234, 0.3);
 }
+
+.amount--over {
+  color: var(--color-danger, #c0392b);
+  font-weight: 700;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset--on {
+  border-color: var(--color-primary, #2a7de1);
+  font-weight: 700;
+}

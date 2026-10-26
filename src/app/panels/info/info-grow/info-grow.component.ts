@@ -1,3 +1,4 @@
+import { fromMinorUnits } from '@money/domain';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { PersistenceService } from 'src/app/shared/services/persistence.service';
@@ -215,6 +216,13 @@ export class InfoGrowComponent extends BaseInfoComponent {
   static isInfo;
   static isError;
   public classReference = InfoGrowComponent;
+
+  /** What a saving of the game has saved so far (Cashflow game only). */
+  get savedSoFar(): { amount: number; paydays: number } | null {
+    if (!CashflowGameService.isCashflowGame()) return null;
+    const saved = CashflowGameService.savedSoFarFor(InfoGrowComponent.title);
+    return saved ? { amount: fromMinorUnits(saved.minor), paydays: saved.paydays } : null;
+  }
   public settingsReference = SettingsComponent;
   constructor(
     router: Router,

@@ -1,3 +1,4 @@
+import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -114,7 +115,19 @@ export class InfoFireComponent extends BaseInfoComponent {
   // Current detail tab
   static activeTab: 'overview' | 'buckets' | 'paymentPlans' | 'actions' | 'notes' = 'overview';
 
+  /** The reserve is only looked at (a character's reserve before the game starts): nothing can be changed or saved. */
+  static preview = false;
+
+  /** Shows a project that is not in the account (yet), read only, above whatever is open. */
+  static openPreview(fire: Fire, zIndex: number) {
+    InfoFireComponent.setInfoFireComponent(-1, fire);
+    InfoFireComponent.preview = true;
+    InfoFireComponent.zIndex = zIndex;
+    InfoFireComponent.isInfo = true;
+  }
+
   static setInfoFireComponent(id: number, fire: Fire) {
+    InfoFireComponent.preview = false;
     InfoFireComponent.index = id;
     InfoFireComponent.title = fire.title;
     InfoFireComponent.sub = fire.sub || '';
@@ -158,7 +171,32 @@ export class InfoFireComponent extends BaseInfoComponent {
   newActionPriority: 'low' | 'medium' | 'high' = 'medium';
   newActionDueDate = '';
 
+  /** In a game a payment is called a payment: the button that adds money to a project says so (JFK, 2026-10-26). */
+  get inGame(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() && !!AppStateService.instance.cashflowGame.professionId
+    );
+  }
+
   // Payment Plans management
+  /** In a game the payment plans run in Paydays: the date of the next one (empty outside a game). */
+  get gameDate(): string {
+    const game = AppStateService.instance.cashflowGame;
+    return CashflowGameService.isCashflowGame() && game.professionId
+      ? (game.virtualDate ?? '')
+      : '';
+  }
+
+  /** In a game: what the month has free for plans, the plan being changed left out (null outside a game). */
+  get maxPayment(): number | null {
+    const editing =
+      this.editingPlanIndex !== null
+        ? InfoFireComponent.plannedSubscriptions[this.editingPlanIndex]?.title
+        : undefined;
+    // an emergency cannot be declined: its plans are not held to what the month has free
+    return this.isEmergencyCard ? null : CashflowGameService.fundingRoom(editing);
+  }
+
   isPaymentPlannerOpen = false;
   editingPlanIndex: number | null = null;
   newBucketTitle = '';
@@ -190,6 +228,7 @@ export class InfoFireComponent extends BaseInfoComponent {
   editingActionDueDate = '';
 
   get notesList(): FireNote[] {
+    if (InfoFireComponent.preview) return InfoFireComponent.notes;
     const fire = AppStateService.instance.allFireEmergencies[InfoFireComponent.index];
     return fire?.notes || [];
   }
@@ -478,6 +517,7 @@ export class InfoFireComponent extends BaseInfoComponent {
   }
 
   override closeWindow() {
+    InfoFireComponent.preview = false;
     InfoFireComponent.isEdit = false;
     super.closeWindow();
   }
@@ -486,11 +526,37 @@ export class InfoFireComponent extends BaseInfoComponent {
     InfoFireComponent.activeTab = tab;
   }
 
+  /** The reserve of a game is the Mojo: the money is booked into the category @Mojo, from any account. */
+  payIntoMojo(): void {
+    const mojo = AppStateService.instance.mojo;
+    const missing = Math.max(
+      0,
+      Math.round((Number(mojo.target) - Number(mojo.amount)) * 100) / 100,
+    );
+    AddComponent.categoryTextField = '@Mojo';
+    AddComponent.selectedOption = 'Daily';
+    AddComponent.amountTextField = (missing * -1).toString();
+    AddComponent.commentTextField = InfoFireComponent.title;
+    AddComponent.url = '/fireemergencies';
+    InfoFireComponent.isInfo = false;
+    AddComponent.isAdd = true;
+    MenuComponent.isMenu = false;
+    InfoComponent.isInfo = false;
+  }
+
   add() {
+    if (this.isReserve) {
+      this.payIntoMojo();
+      return;
+    }
     AddComponent.categoryTextField = `@${InfoFireComponent.title}`;
     AddComponent.selectedOption = 'Fire';
     AddComponent.url = '/fireemergencies';
     const remaining = this.getTotalTarget() - this.getTotalAmount();
+    // in a game the amount that finishes the project is already filled in
+    if (this.inGame && remaining > 0) {
+      AddComponent.amountTextField = (Math.round(remaining * 100) / -100).toString();
+    }
     AddComponent.commentTextField = `${InfoFireComponent.title} ${remaining} `;
     InfoFireComponent.isInfo = false;
     AddComponent.isAdd = true;
@@ -1219,7 +1285,21 @@ export class InfoFireComponent extends BaseInfoComponent {
     }
   }
 
+  /** The project came from an Emergency card of a game: its plans are 3, 6 or 12 Paydays with a surcharge. */
+  get isEmergencyCard(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() &&
+      !!AppStateService.instance.allFireEmergencies[InfoFireComponent.index]?.emergencyCardId
+    );
+  }
+
+  /** The emergency reserve of a character is never deleted: it is a condition of winning. */
+  get isReserve(): boolean {
+    return !!AppStateService.instance.allFireEmergencies[InfoFireComponent.index]?.reserve;
+  }
+
   deleteFire(index: number) {
+    if (AppStateService.instance.allFireEmergencies[index]?.reserve) return;
     this.confirmService.confirm(this.translate.instant('Confirm.deleteFire'), () => {
       const fire = AppStateService.instance.allFireEmergencies[index];
       const deletedTitle = fire.title;
@@ -1305,10 +1385,51 @@ export class InfoFireComponent extends BaseInfoComponent {
     if (!fire.plannedSubscriptions) {
       fire.plannedSubscriptions = [];
     }
-    fire.plannedSubscriptions.push(plan);
+    // the reserve is the Mojo: its plans book into the category @Mojo, without bucket tags
+    if (fire.reserve) {
+      plan.category = '@Mojo';
+      plan.comment = '';
+    }
+    fire.plannedSubscriptions.push(this.withSurchargeBucket(fire, plan));
     InfoFireComponent.plannedSubscriptions = fire.plannedSubscriptions;
+    InfoFireComponent.buckets = fire.buckets;
     this.isPaymentPlannerOpen = false;
     this.saveProject('Payment plan created');
+  }
+
+  /**
+   * An emergency plan costs more than the buckets: the surcharge is a bucket of its own, so the payments of the plan fit in the project
+   * and the extra can be seen. The plan's payments are then shared over all the buckets, the new one included.
+   */
+  private withSurchargeBucket(fire: Fire, plan: PlannedSubscription): PlannedSubscription {
+    const surcharge = plan.surchargeAmount ?? 0;
+    if (surcharge <= 0) return plan;
+    const title = this.translate.instant('CashflowGame.emergency.surcharge', {
+      percent: plan.surchargePercent ?? 0,
+    });
+    const existing = fire.buckets.find((bucket) => bucket.id === `${fire.title}-surcharge`);
+    if (existing) {
+      existing.target = Math.round((existing.target + surcharge) * 100) / 100;
+    } else {
+      fire.buckets.push({ id: `${fire.title}-surcharge`, title, target: surcharge, amount: 0 });
+    }
+    const rebuilt = this.paymentPlannerService.calculatePaymentPlan({
+      projectType: 'fire',
+      projectTitle: fire.title,
+      planTitle: plan.title,
+      buckets: fire.buckets,
+      selectedBucketIds: [],
+      startDate: plan.startDate,
+      targetDate: plan.targetDate,
+      frequency: plan.frequency,
+      account: plan.account,
+      manualAmount: plan.amount,
+    });
+    return {
+      ...plan,
+      comment: rebuilt.comment,
+      originalCalculatedAmount: plan.originalCalculatedAmount,
+    };
   }
 
   onPlanUpdated(plan: PlannedSubscription) {
@@ -1332,7 +1453,13 @@ export class InfoFireComponent extends BaseInfoComponent {
     this.confirmService.confirm(
       `Activate payment plan "${plan.title}"? This will create a recurring subscription.`,
       () => {
-        this.subscriptionActivationService.activatePlannedSubscription(plan, fire);
+        if (!this.subscriptionActivationService.activatePlannedSubscription(plan, fire)) {
+          this.toastService.show(
+            this.translate.instant('PaymentPlannerDialog.tooMuchToActivate'),
+            'error',
+          );
+          return;
+        }
         InfoFireComponent.plannedSubscriptions = fire.plannedSubscriptions || [];
         this.saveProject('Payment plan activated');
       },

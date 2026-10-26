@@ -41,6 +41,12 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   @Input() projectTargetDate = ''; // Project target date to prefill
   @Input() buckets: (SmileBucket | FireBucket)[] = [];
   @Input() existingPlan?: PlannedSubscription; // For editing
+  /** The date of the game's next Payday: given, the plan is made in Paydays (rounds), not in calendar dates (JFK, 2026-10-25). */
+  @Input() gameDate = '';
+  /** In a game: the most a Payday may pay into plans - what the month has free. Null: no limit. */
+  @Input() maxPayment: number | null = null;
+  /** A game's emergency: the plan is 3, 6 or 12 Paydays, each with its surcharge (JFK, 2026-10-26). */
+  @Input() surchargePlans = false;
 
   @Output() planCreated = new EventEmitter<PlannedSubscription>();
   @Output() planUpdated = new EventEmitter<PlannedSubscription>();
@@ -61,6 +67,8 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
   account = '';
   manualAmount: number | null = null;
 
+  /** Game: how many Paydays the plan runs. */
+  paydays = 12;
   // Calculated values
   totalMissing = 0;
   numberOfPeriods = 0;
@@ -95,6 +103,63 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     }
   }
 
+  readonly surchargePresets = [
+    { months: 3, percent: 10 },
+    { months: 6, percent: 20 },
+    { months: 12, percent: 35 },
+  ];
+
+  /** The surcharge of the chosen number of Paydays (0 unless this is an emergency plan). */
+  get surchargePercent(): number {
+    if (!this.gameMode || !this.surchargePlans) return 0;
+    return this.surchargePresets.find((preset) => preset.months === this.paydays)?.percent ?? 0;
+  }
+
+  get surchargeAmount(): number {
+    return Math.round(this.totalMissing * this.surchargePercent) / 100;
+  }
+
+  trackPreset = (_index: number, preset: { months: number }): number => preset.months;
+
+  choosePreset(months: number): void {
+    this.paydays = months;
+    this.recalculate();
+  }
+
+  get gameMode(): boolean {
+    return this.gameDate !== '';
+  }
+
+  /** Game: the Paydays the buckets would need at the chosen payment (0 without a payment). */
+  get paydaysNeeded(): number {
+    const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
+    return payment > 0 ? Math.ceil(this.totalMissing / payment) : 0;
+  }
+
+  /** Game: the payment is more than the month can carry (the cashflow would go into the red). */
+  get overBudget(): boolean {
+    if (!this.gameMode || this.maxPayment === null) return false;
+    const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
+    return payment > this.maxPayment + 0.005;
+  }
+
+  /** Game: what the plan costs in all, paid over its Paydays. */
+  get planCost(): number {
+    const payment = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
+    return Math.round(payment * this.paydays * 100) / 100;
+  }
+
+  /** A date some months on (the game's calendar moves by whole months). */
+  private addMonths(date: string, months: number): string {
+    const [year, month, day] = date.split('-').map(Number);
+    const target = new Date(Date.UTC(year, month - 1 + months, 1));
+    const last = new Date(
+      Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    target.setUTCDate(Math.min(day, last));
+    return target.toISOString().split('T')[0];
+  }
+
   ngOnInit(): void {
     // Initialize accounts with the same options as subscriptions
     this.accounts = ['Daily', 'Splurge', 'Smile', 'Fire', 'Income', 'Mojo'];
@@ -123,9 +188,9 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       this.selectedBucketIds = [];
       this.selectedSingleBucketId = '';
 
-      // Set start date to today
+      // Set start date to today (in a game: the next Payday)
       const today = new Date();
-      this.startDate = today.toISOString().split('T')[0];
+      this.startDate = this.gameMode ? this.gameDate : today.toISOString().split('T')[0];
 
       // Prefill target date from project if available
       if (this.projectTargetDate && this.projectTargetDate.trim() !== '') {
@@ -156,6 +221,12 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     this.targetDate = this.existingPlan.targetDate.split('T')[0];
     this.frequency = this.existingPlan.frequency;
     this.account = this.existingPlan.account;
+    if (this.gameMode) {
+      // the plan's end is its last Payday: the Paydays are the months from the start to the end, and one
+      const [sy, sm] = this.existingPlan.startDate.split('-').map(Number);
+      const [ey, em] = this.existingPlan.endDate.split('-').map(Number);
+      this.paydays = Math.max(1, (ey - sy) * 12 + (em - sm) + 1);
+    }
 
     // Determine bucket selection mode
     if (this.existingPlan.targetBucketIds.length === 0) {
@@ -188,7 +259,13 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     );
 
     // Calculate number of periods
-    if (this.startDate && this.targetDate) {
+    if (this.gameMode) {
+      this.frequency = 'monthly';
+      this.paydays = Math.max(1, Math.min(240, Math.round(Number(this.paydays) || 1)));
+      this.startDate = this.gameDate;
+      this.targetDate = this.addMonths(this.gameDate, this.paydays);
+      this.numberOfPeriods = this.paydays;
+    } else if (this.startDate && this.targetDate) {
       this.numberOfPeriods = this.paymentPlannerService.calculateNumberOfPeriods(
         this.startDate,
         this.targetDate,
@@ -197,9 +274,12 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
     }
 
     // Calculate suggested payment amount
+    const owed = this.totalMissing + this.surchargeAmount;
+    this.calculatedAmount = this.numberOfPeriods > 0 ? owed / this.numberOfPeriods : owed;
     this.calculatedAmount =
-      this.numberOfPeriods > 0 ? this.totalMissing / this.numberOfPeriods : this.totalMissing;
-    this.calculatedAmount = Math.round(this.calculatedAmount * 100) / 100;
+      this.surchargePercent > 0
+        ? Math.ceil(this.calculatedAmount * 100) / 100
+        : Math.round(this.calculatedAmount * 100) / 100;
 
     // Use manual amount if provided, otherwise use calculated
     const paymentAmount = this.manualAmount !== null ? this.manualAmount : this.calculatedAmount;
@@ -298,8 +378,24 @@ export class PaymentPlannerDialogComponent implements OnInit, OnChanges {
       targetDate: this.targetDate,
       frequency: this.frequency,
       account: this.account,
-      manualAmount: this.manualAmount !== null ? this.manualAmount : undefined,
+      manualAmount:
+        this.manualAmount !== null
+          ? this.manualAmount
+          : this.surchargePercent > 0
+            ? finalAmount
+            : undefined,
     });
+    if (this.surchargePercent > 0) {
+      plan.surchargeAmount = this.surchargeAmount;
+      plan.surchargePercent = this.surchargePercent;
+    }
+
+    if (this.overBudget) {
+      this.showError('The month cannot carry this payment: choose a lower amount or more Paydays.');
+      return;
+    }
+    // In a game the plan pays once at each of its Paydays: it ends on the last of them
+    if (this.gameMode) plan.endDate = this.addMonths(this.startDate, this.paydays - 1);
 
     // Validate plan
     const validation = this.paymentPlannerService.validatePaymentPlan(plan);

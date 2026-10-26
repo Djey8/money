@@ -44,29 +44,108 @@ describe('TablesLobbyComponent', () => {
   const answer = (open: unknown[], mine: unknown[]) => {
     http.expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=open')).flush({ items: open });
     http.expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=mine')).flush({ items: mine });
-    http.expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=recent')).flush({ items: [] });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/players/me'))
+      .flush({ playerId: 'me', name: 'Me', rating: 1520, provisional: false });
+    fixture.detectChanges();
+  };
+  const cards = () => Array.from(element.querySelectorAll('.tl-card'));
+  const click = (selector: string, text?: string) => {
+    const target = Array.from(element.querySelectorAll<HTMLElement>(selector)).find(
+      (e) => !text || e.textContent!.includes(text),
+    );
+    target!.click();
     fixture.detectChanges();
   };
 
-  it('lists open tables, and the ones you are in apart from them', () => {
+  it('lists open tables as cards, and the ones you are in apart from them', () => {
     answer(
       [row({ id: 'a', name: 'Open one' }), row({ id: 'b', name: 'Mine', joined: true })],
       [row({ id: 'b', name: 'Mine', joined: true })],
     );
     const text = element.textContent!;
     expect(text).toContain('Open one');
-    expect(text).toContain('2/6 seats');
-    const lists = Array.from(element.querySelectorAll('.tl-list')).filter(
-      (list) => !list.closest('app-tables-leaderboard'),
-    );
-    expect(lists).toHaveLength(2);
-    // the joined table shows under My tables only, not again under Open tables
+    // the joined table shows under Your tables only, not again under Open tables
     expect(text.match(/Mine/g)!.length).toBe(1);
+    expect(cards()).toHaveLength(2);
+    expect(cards()[1].textContent).toContain('4 free');
   });
 
-  it('says so when no table is open', () => {
+  it('shows who sits at a table before joining, and opens their stats with a tap', () => {
+    answer(
+      [
+        row({
+          id: 'a',
+          name: 'Open one',
+          seats: [
+            {
+              seat: 0,
+              name: 'Ann',
+              bot: false,
+              listed: true,
+              rating: 1534,
+              ratedGames: 7,
+              playerId: 'p-ann',
+            },
+            { seat: 1, name: 'Bob', bot: false, listed: false, rating: 1500, ratedGames: 0 },
+          ],
+        }),
+      ],
+      [],
+    );
+    const seats = element.querySelectorAll('button.tl-seat');
+    expect(seats).toHaveLength(2);
+    expect(seats[0].textContent).toContain('Ann');
+    expect(seats[0].textContent).toContain('1534');
+    // somebody who is not on the leaderboard has no stats to open
+    expect((seats[1] as HTMLButtonElement).disabled).toBe(true);
+    (seats[0] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-table-player-info')).not.toBeNull();
+    http.expectOne((r) => r.url.endsWith('/v1/game/players/p-ann')).flush({});
+  });
+
+  it('says so when no table is open, with a way to open one', () => {
     answer([], []);
     expect(element.textContent).toContain(tablesTexts('en').noOpen);
+    expect(element.querySelector('.tl-empty-box button')).not.toBeNull();
+  });
+
+  it('filters the open tables by what you want to play, and keeps the choice', () => {
+    answer(
+      [
+        row({ id: 'a', name: 'Ranked one', ranked: true, language: 'en' }),
+        row({ id: 'b', name: 'Friendly one', ranked: false, language: 'de' }),
+        row({
+          id: 'c',
+          name: 'Timed one',
+          ranked: true,
+          clock: { mode: 'per-move', secondsPerMove: 60 },
+        }),
+      ],
+      [],
+    );
+    expect(cards()).toHaveLength(3);
+    click('.tl-head-buttons button', 'Filters');
+    click('.tl-filter .tl-seg button', 'Friendly');
+    expect(cards().map((c) => c.querySelector('h4')!.textContent)).toEqual(['Friendly one']);
+    expect(element.querySelector('.tl-count')!.textContent).toBe('1');
+    expect(JSON.parse(localStorage.getItem('mm.tables.filters')!).game).toBe('friendly');
+    click('.tl-reset');
+    click('.tl-filter:nth-of-type(3) .tl-seg button', 'With clock');
+    expect(cards().map((c) => c.querySelector('h4')!.textContent)).toEqual(['Timed one']);
+    click('.tl-reset');
+    expect(cards()).toHaveLength(3);
+    // the game is offered in English and German for now
+    expect(
+      Array.from(element.querySelectorAll('button.tl-flag[title]')).map((e) =>
+        e.getAttribute('title'),
+      ),
+    ).toEqual(['English', 'Deutsch']);
+    // no table fits: it says so, not that nobody is playing
+    (element.querySelector('button.tl-flag[title="Deutsch"]') as HTMLButtonElement).click();
+    click('.tl-filter .tl-seg button', 'Ranked');
+    expect(element.textContent).toContain('No open table fits these filters.');
   });
 
   it('opens the add-table panel with the plus button, and goes to the table it opened', () => {
@@ -91,9 +170,7 @@ describe('TablesLobbyComponent', () => {
       ],
       [],
     );
-    const names = Array.from(element.querySelectorAll('.tl-list--scroll .tl-row strong')).map((e) =>
-      e.textContent!.trim(),
-    );
+    const names = cards().map((c) => c.querySelector('h4')!.textContent!.trim());
     expect(names).toEqual(['Newer', 'Older']);
     expect(element.textContent).toContain(tablesTexts('en').openedAt);
   });

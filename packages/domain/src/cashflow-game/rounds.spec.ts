@@ -42,7 +42,7 @@ function startedBooks(extra: Partial<RoundBooks> = {}): RoundBooks {
     startDate: `2026-09-${index === 0 ? '01' : '03'}`,
     endDate: '',
     category: sub.category ?? '',
-    comment: '#cashflow',
+    comment: '#dreamfund',
     frequency: sub.frequency,
   }));
   return { state: picked.state, subscriptions, transactions: [], ...extra };
@@ -62,7 +62,7 @@ describe('playPayday', () => {
       date: '2026-10-01',
     });
     expect(effects.appendedTransactions[1]).toMatchObject({ account: 'Daily', date: '2026-10-03' });
-    expect(effects.appendedTransactions.every((t) => t.comment.includes('#cashflow'))).toBe(true);
+    expect(effects.appendedTransactions.every((t) => t.comment.includes('#dreamfund'))).toBe(true);
   });
 
   it('advances the round and the game calendar, and names the step', () => {
@@ -82,7 +82,7 @@ describe('playPayday', () => {
     const effects = playPayday(
       startedBooks({
         transactions: [
-          { date: '2026-10-31', comment: 'Salary\n#cashflow' },
+          { date: '2026-10-31', comment: 'Salary\n#dreamfund' },
           { date: '2026-10-05', comment: 'Groceries' },
           { date: '2026-09-15', comment: 'Buy Share OK4U 250 x 10;' },
         ],
@@ -174,7 +174,7 @@ describe('playBaby', () => {
       account: 'Daily',
       amountMinor: -profession.perChildExpenseMinor,
       category: '@CashflowGame.childrenExpenses',
-      comment: '#cashflow',
+      comment: '#dreamfund',
     });
     // 1st and 3rd are the profession's own days; the next free slot is the 5th.
     expect(sub.startDate).toBe('2026-10-05');
@@ -260,7 +260,7 @@ describe('placeOneOffTransactions', () => {
     date: 'game-calendar',
     time: '',
     category: '',
-    comment: '#cashflow',
+    comment: '#dreamfund',
   });
 
   it('gives consecutive records different free days, skipping the ones this month already uses', () => {
@@ -297,7 +297,7 @@ describe('upsertBookSubscription', () => {
       startDate: '2026-10-01',
       endDate: '',
       category: '@Bank loan',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: 'monthly',
     });
   });
@@ -319,7 +319,7 @@ describe('upsertBookSubscription', () => {
       amountMinor: -10000,
       frequency: 'monthly',
       category: '@Mine',
-      comment: 'my note\n#cashflow',
+      comment: 'my note\n#dreamfund',
     });
   });
 });

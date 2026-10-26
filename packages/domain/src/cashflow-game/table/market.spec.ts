@@ -380,6 +380,18 @@ describe('the other Market cards', () => {
     }
   });
 
+  it('the new management system helps only the player who drew it, the small Business Boom everybody', () => {
+    const mgmt = marketCards.find((c) => c.id === 'classic-market-boost-mgmt-400')!;
+    const table = owns(owns(owns(playingTable(), 'host', efh), 'p1', efh), 'p2', efh);
+    const cashflow = (t: Table, id: string) =>
+      booksOf(t, id).growProjects.find((p) => p.title === 'EFH')?.cashflowMinor;
+    const drawn = draw(table, 'market', mgmt.id);
+    expect(cashflow(drawn.table, 'host')).toBe(cashflow(table, 'host')! + mgmt.boost!.addMinor);
+    expect(cashflow(drawn.table, 'p1')).toBe(cashflow(table, 'p1'));
+    expect(cashflow(drawn.table, 'p2')).toBe(cashflow(table, 'p2'));
+    expect(effectsOf(drawn.events).map((e) => e.playerId)).toEqual(['host']);
+  });
+
   it('a stock card moves the price for every other holder, who may then sell at it', () => {
     const [cheap, dear] = shareCards('OK4U');
     expect(dear.priceMinor).toBeGreaterThan(cheap.priceMinor!);

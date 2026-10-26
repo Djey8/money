@@ -3,6 +3,7 @@
   role="dialog"
   aria-modal="true"
   appTrapFocus
+  [class.preview]="classReference.preview"
   *ngIf="classReference.isInfo"
   (click)="highlight()"
   [style.z-index]="classReference.zIndex + 1001"
@@ -93,6 +94,15 @@
       <div class="info-section" *ngIf="classReference.description">
         <h5 class="section-label">{{ 'AddGrow.description' | translate }}</h5>
         <pre class="section-text">{{ classReference.description }}</pre>
+      </div>
+
+      <!-- the reserve of a game is the Mojo: this project follows it (JFK, 2026-10-26) -->
+      <div class="info-section reserve-note" *ngIf="isReserve">
+        <h5 class="section-label">{{ 'Fire.reserveMojoTitle' | translate }}</h5>
+        <p class="section-text">{{ 'Fire.reserveMojo' | translate }}</p>
+        <button type="button" class="btn btn--fire" (click)="payIntoMojo()">
+          {{ 'Fire.payIntoMojo' | translate }}
+        </button>
       </div>
 
       <!-- Overall Progress -->
@@ -277,7 +287,7 @@
             </div>
           </div>
 
-          <div class="bucket-settle-buttons" *ngIf="settlingBucketId !== bucket.id">
+          <div class="bucket-settle-buttons" *ngIf="settlingBucketId !== bucket.id && !isReserve">
             <button class="btn btn--sm" (click)="openSettle(bucket)">
               {{ (isSettled(bucket) ? 'Bucket.resettle' : 'Bucket.settle') | translate }}
             </button>
@@ -289,10 +299,14 @@
           <!-- Add to This Bucket Button -->
           <button
             class="btn btn--sm btn--fire bucket-add-btn"
-            *ngIf="!isSettled(bucket) && bucket.amount < bucket.target"
+            *ngIf="!isReserve && !isSettled(bucket) && bucket.amount < bucket.target"
             (click)="addBucketToTransaction(bucket.id, bucket.title, bucket.target - bucket.amount)"
           >
-            + {{ 'Fire.addToBucket' | translate }}
+            {{
+              inGame
+                ? ('CashflowGame.pay.payShort' | translate)
+                : '+ ' + ('Fire.addToBucket' | translate)
+            }}
           </button>
 
           <!-- Related Transactions for this bucket -->
@@ -835,7 +849,9 @@
       </ng-template>
     </div>
 
-    <button id="addbtn" (click)="add()">{{ 'AddAsset.add' | translate }}</button>
+    <button id="addbtn" (click)="add()">
+      {{ (inGame ? 'CashflowGame.pay.payShort' : 'AddAsset.add') | translate }}
+    </button>
     <button id="editbtn" class="btn btn--action" (click)="editFireEmergencie()">
       {{ 'Info.edit' | translate }}
     </button>
@@ -1464,7 +1480,7 @@
 
     <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
     <button id="addbtn" (click)="updateFireEmergencie()">{{ 'Info.update' | translate }}</button>
-    <button id="deletebtn" (click)="deleteFire(classReference.index)">
+    <button id="deletebtn" *ngIf="!isReserve" (click)="deleteFire(classReference.index)">
       {{ 'Info.delete' | translate }}
     </button>
     <button id="canclebtn" (click)="closeWindow()">{{ 'Info.cancel' | translate }}</button>
@@ -1476,6 +1492,9 @@
     [projectType]="'fire'"
     [projectTitle]="classReference.title"
     [projectTargetDate]="classReference.targetDate"
+    [gameDate]="gameDate"
+    [maxPayment]="maxPayment"
+    [surchargePlans]="isEmergencyCard"
     [buckets]="classReference.buckets"
     [existingPlan]="
       editingPlanIndex !== null ? classReference.plannedSubscriptions[editingPlanIndex] : undefined

@@ -9,6 +9,10 @@ import { nextOneOffDate, placeOneOffTransactions } from '../rounds';
 import { currentTurn, settleDecision } from '../turn';
 import type { CashflowDealCard } from '../types';
 import { endIfOver } from '../game-end';
+import { fixedClock } from '../clock';
+import { identityText } from '../game-text';
+import { summarizeGameFinances } from '../saved-games';
+import type { Rng } from '../rng';
 import { resetTimeouts, whyClockBlocks } from './clock';
 import { applyPlan, type PlayDeps } from './play';
 import { tableRng } from './table-rng';
@@ -170,7 +174,7 @@ function payForCard(
         date: '',
         time: '',
         category: `@${name} card purchase`,
-        comment: `${textOrFallback(deps.text, 'CashflowGame.cardPurchaseComment', `Bought the ${name} card from a friend`)}\n#cashflow`,
+        comment: `${textOrFallback(deps.text, 'CashflowGame.cardPurchaseComment', `Bought the ${name} card from a friend`)}\n#dreamfund`,
       },
     ],
     working,
@@ -178,6 +182,168 @@ function payForCard(
   );
   steps.push(pay);
   return steps;
+}
+
+/** The planning dependencies for a quote: a fixed day and the card's own words, so nothing here needs the table's language. */
+function planningDeps(books: GameBooks): PlayDeps {
+  const day = books.state.virtualDate || '2026-01-01';
+  return {
+    clock: fixedClock(day, `${day}T00:00:00.000Z`),
+    text: identityText,
+    money: (minor) => String(minor / 100),
+    plainMoney: (minor) => String(minor / 100),
+    cards: {
+      textFor: () => ({}),
+      symbolFor: (symbol) => symbol,
+      sharedText: (key) => key,
+      groupName: (group) => group,
+    },
+  };
+}
+
+/**
+ * The buyer's side of a trade, on a copy: pays the seller (a Bank loan first when the cash falls short), then buys the card on its
+ * normal terms as if it were theirs in hand. Refused when afterwards their monthly cashflow would be below zero - nobody can take a
+ * deal that leaves them bankrupt (JFK, 2026-10-24) - or when the card's own terms cannot be met.
+ */
+function buyerSide(
+  books: GameBooks,
+  deck: 'dealSmall' | 'dealBig',
+  cardId: string,
+  spaceIndex: number,
+  priceMinor: number,
+  name: string,
+  deps: PlayDeps,
+  rng: Rng,
+): { books: GameBooks; result: Record<string, unknown> } {
+  let bBooks = books;
+  for (const step of payForCard(bBooks, priceMinor, name, deps)) {
+    bBooks = applyEffectsToBooks(bBooks, step);
+  }
+  const before = bBooks.state.turn;
+  const lent: GameBooks = {
+    ...bBooks,
+    state: {
+      ...bBooks.state,
+      turn: {
+        ...(before ?? { count: 0 }),
+        phase: 'decide',
+        pending: { kind: 'deal', spaceIndex, offered: { deck, cardId } },
+      },
+    },
+  };
+  const plan = buyDealAction(lent, { cardId }, { ...deps, rng });
+  bBooks = applyPlan(lent, plan);
+  // The buyer was not on a space: their own turn state comes back (unless the purchase ended their game).
+  if (currentTurn(bBooks.state).phase !== 'over') {
+    const restored = { ...bBooks.state };
+    if (before) restored.turn = before;
+    else delete restored.turn;
+    bBooks = { ...bBooks, state: restored };
+  }
+  const cashflowAfter = summarizeGameFinances(
+    bBooks.state,
+    bBooks.subscriptions,
+  ).monthlyCashflowMinor;
+  if (cashflowAfter < 0) {
+    refuse(
+      `You cannot afford this: after the Bank loan your monthly cashflow would be ${deps.plainMoney(cashflowAfter)}. It has to stay at 0 or more.`,
+    );
+  }
+  return { books: bBooks, result: { ...(plan.result ?? {}) } };
+}
+
+export interface TradeQuote {
+  /** The buyer can take the card at this price: the cash (and the Bank loan it needs) is there and the cashflow stays 0 or more. */
+  ok: boolean;
+  reason: string | null;
+  priceMinor: number;
+  /** The Bank loan the purchase takes first, to pay the seller. */
+  loanMinor: number;
+  /** The buyer's monthly cashflow once the card is theirs; null when the quote is refused. */
+  cashflowAfterMinor: number | null;
+}
+
+/** What buying the card at this price would do to this player's books - the exact rule, on a copy, nothing changes. */
+export function quoteTrade(
+  books: GameBooks,
+  deck: 'dealSmall' | 'dealBig',
+  cardId: string,
+  priceMinor: number,
+  deps: PlayDeps = planningDeps(books),
+): TradeQuote {
+  const card = books.gameSet?.decks?.[deck]?.find((c) => c.id === cardId);
+  const name = card ? (card.symbol ?? card.title) : cardId;
+  const loanMinor = planAutoLoan({
+    costMinor: priceMinor,
+    cashMinor: cashOnHandMinor(books.transactions, books.allocation),
+    financedMinor: 0,
+    incrementMinor: books.gameSet?.loanRule.incrementMinor ?? 0,
+  }).loanMinor;
+  try {
+    const bought = buyerSide(books, deck, cardId, 0, priceMinor, name, deps, () => 0.5);
+    return {
+      ok: true,
+      reason: null,
+      priceMinor,
+      loanMinor,
+      cashflowAfterMinor: summarizeGameFinances(bought.books.state, bought.books.subscriptions)
+        .monthlyCashflowMinor,
+    };
+  } catch (error) {
+    // only the rules' own refusals mean "cannot": anything else is a bug and must not hide behind a quote
+    if (!(error instanceof TableCommandError)) throw error;
+    return {
+      ok: false,
+      reason: (error as Error).message,
+      priceMinor,
+      loanMinor,
+      cashflowAfterMinor: null,
+    };
+  }
+}
+
+/** The most this player can pay for the card (whole units of money), or 0 when they cannot take it at any price. */
+export function maxTradePriceMinor(
+  books: GameBooks,
+  deck: 'dealSmall' | 'dealBig',
+  cardId: string,
+  deps?: PlayDeps,
+): number {
+  const memo = MAX_PRICE_MEMO.get(books) ?? new Map<string, number>();
+  const key = `${deck}|${cardId}`;
+  const known = memo.get(key);
+  if (known !== undefined) return known;
+  const found = searchMaxPrice(books, deck, cardId, deps ?? planningDeps(books));
+  memo.set(key, found);
+  MAX_PRICE_MEMO.set(books, memo);
+  return found;
+}
+
+/** The search is about fifty purchases on a copy: the books of a player (they change with every move) are the key, so it runs once per state. */
+const MAX_PRICE_MEMO = new WeakMap<GameBooks, Map<string, number>>();
+
+function searchMaxPrice(
+  books: GameBooks,
+  deck: 'dealSmall' | 'dealBig',
+  cardId: string,
+  deps: PlayDeps,
+): number {
+  const unit = 100;
+  if (!quoteTrade(books, deck, cardId, unit, deps).ok) return 0;
+  let low = 1;
+  let high = 1;
+  // double until it no longer fits (a purchase never costs more than a few million), then narrow it down
+  while (high < 100_000_000 && quoteTrade(books, deck, cardId, high * unit, deps).ok) {
+    low = high;
+    high *= 2;
+  }
+  while (high - low > 1) {
+    const mid = Math.floor((low + high) / 2);
+    if (quoteTrade(books, deck, cardId, mid * unit, deps).ok) low = mid;
+    else high = mid;
+  }
+  return low * unit;
 }
 
 /**
@@ -219,36 +385,18 @@ function trade(
       ),
     };
 
-    // The buyer: pays the seller, then buys the card on its normal terms as if it were theirs in hand.
-    let bBooks = buyer.books;
-    for (const step of payForCard(bBooks, priceMinor, name, deps)) {
-      bBooks = applyEffectsToBooks(bBooks, step);
-    }
-    const before = bBooks.state.turn;
-    const lent: GameBooks = {
-      ...bBooks,
-      state: {
-        ...bBooks.state,
-        turn: {
-          ...(before ?? { count: 0 }),
-          phase: 'decide',
-          pending: {
-            kind: 'deal',
-            spaceIndex: turn.pending?.spaceIndex ?? 0,
-            offered: { deck: offer.deck, cardId: offer.cardId },
-          },
-        },
-      },
-    };
-    const plan = buyDealAction(lent, { cardId: offer.cardId }, { ...deps, rng: stream.rng });
-    bBooks = applyPlan(lent, plan);
-    // The buyer was not on a space: their own turn state comes back (unless the purchase ended their game).
-    if (currentTurn(bBooks.state).phase !== 'over') {
-      const restored = { ...bBooks.state };
-      if (before) restored.turn = before;
-      else delete restored.turn;
-      bBooks = { ...bBooks, state: restored };
-    }
+    const bought = buyerSide(
+      buyer.books,
+      offer.deck,
+      offer.cardId,
+      turn.pending?.spaceIndex ?? 0,
+      priceMinor,
+      name,
+      deps,
+      stream.rng,
+    );
+    const bBooks = bought.books;
+    const plan = { result: bought.result };
 
     return {
       buyResult: { ...(plan.result ?? {}) },
@@ -358,8 +506,18 @@ export function applyTradeCommand(
 
     case 'counter_trade': {
       if (!offer) refuse('There is no card on offer.');
-      buyerOf(table, offer!, playerId);
+      const proposer = buyerOf(table, offer!, playerId);
       const priceMinor = whole(command.priceMinor);
+      // a price nobody could pay is not an offer: at most what the buyer can afford (their cashflow stays 0 or more after the loan)
+      const quote = quoteTrade(proposer.books, offer!.deck, offer!.cardId, priceMinor, deps);
+      if (!quote.ok) {
+        const most = maxTradePriceMinor(proposer.books, offer!.deck, offer!.cardId, deps);
+        refuse(
+          most > 0
+            ? `You cannot offer that much: the most you can afford for this card is ${deps.plainMoney(most)}.`
+            : `You cannot afford this card at any price. ${quote.reason ?? ''}`.trim(),
+        );
+      }
       const counters = [
         ...offer!.counters.filter((c) => c.playerId !== playerId),
         { playerId, priceMinor },

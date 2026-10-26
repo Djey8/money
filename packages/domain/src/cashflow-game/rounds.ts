@@ -1,3 +1,11 @@
+import type { Rng } from './rng';
+import { applyInsuranceChanges } from './insurance';
+import { tickCareer } from './career';
+import { tickLife } from './life-books';
+import { tickWorld } from './harvest';
+import type { Difficulty } from './difficulty';
+import type { OpportunityCard } from './opportunity-deck';
+import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
 import {
   emptyEffects,
@@ -6,7 +14,7 @@ import {
   type GameEffects,
 } from './effects';
 import {
-  ownedGameSubscriptions,
+  paydaySubscriptions,
   resolveCashflowBaby,
   resolveCashflowCharity,
   resolveCashflowDownsized,
@@ -55,6 +63,13 @@ export interface RoundBooks {
 export interface RoundDeps {
   clock: Clock;
   text: GameText;
+  /** The language of the texts a life line gets (English where absent). */
+  lang?: 'en' | 'de';
+  rng?: Rng;
+  /** The Opportunity cards of the game: what the Paydays do to what the player owns of them. */
+  opportunityCards?: readonly OpportunityCard[];
+  /** The level of the game: the markets drift by it. */
+  difficulty?: Difficulty;
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -74,6 +89,8 @@ function engineSubscriptions(subscriptions: BookSubscription[]) {
     amountMinor: sub.amountMinor,
     category: sub.category,
     comment: sub.comment,
+    startDate: sub.startDate,
+    endDate: sub.endDate,
   }));
 }
 
@@ -106,7 +123,7 @@ export function placeOneOffTransactions(
 /**
  * Creates or updates a Subscription by title - the "recomputed every time, never hand-edited" pattern Baby and the
  * bank loan share. An existing one keeps its own date and takes the new account, amount and frequency (and the
- * category, when one is given); a new one is dated on the next free day slot. Either way it carries `#cashflow`.
+ * category, when one is given); a new one is dated on the next free day slot. Either way it carries `#dreamfund`.
  */
 export function upsertBookSubscription(
   subscriptions: BookSubscription[],
@@ -121,11 +138,11 @@ export function upsertBookSubscription(
       amountMinor: upsert.amountMinor,
       frequency: upsert.frequency,
       category: upsert.category ?? existing.category,
-      comment: existing.comment.includes('#cashflow')
+      comment: hasGameTag(existing.comment)
         ? existing.comment
         : existing.comment
-          ? `${existing.comment}\n#cashflow`
-          : '#cashflow',
+          ? `${existing.comment}\n#dreamfund`
+          : '#dreamfund',
     };
   }
   return {
@@ -135,7 +152,7 @@ export function upsertBookSubscription(
     startDate: nextSmartDate(gameSubscriptionDays(subscriptions), today),
     endDate: '',
     category: upsert.category ?? '',
-    comment: upsert.comment ? `${upsert.comment}\n#cashflow` : '#cashflow',
+    comment: upsert.comment ? `${upsert.comment}\n#dreamfund` : '#dreamfund',
     frequency: upsert.frequency,
   };
 }
@@ -152,10 +169,11 @@ export function professionTitleText(text: GameText, profession: CashflowProfessi
  * always runs - Charity and Downsized never gate it. Throws if no profession has been picked yet.
  */
 export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
-  const { state } = books;
+  // the insurances the player hopped in or out of take effect with this Payday: the premiums posted follow them
+  const state = applyInsuranceChanges(books.state);
   const subscriptions = engineSubscriptions(books.subscriptions);
   const result = runCashflowPayday(state, subscriptions);
-  const owned = ownedGameSubscriptions(state, subscriptions);
+  const owned = paydaySubscriptions(state, subscriptions);
   const byTitle = new Map(books.subscriptions.map((sub) => [sub.title, sub]));
   const today = deps.clock.todayIso();
 
@@ -195,7 +213,48 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
     };
   }
 
-  return {
+  // the life of the character goes on: lines run out, a baby arrives, a job is found
+  const life = next.life
+    ? tickLife(
+        { state: next, subscriptions: books.subscriptions },
+        {
+          date: appendedTransactions[0]?.date ?? today,
+          lang: deps.lang ?? 'en',
+          rng: deps.rng,
+        },
+      )
+    : null;
+  if (life) next = { ...life.effects.state, lifeNews: life.events };
+  // a Payday in the stage of the career; the bonus when it is due
+  const career = next.career
+    ? tickCareer(next, { date: appendedTransactions[0]?.date ?? today, lang: deps.lang ?? 'en' })
+    : null;
+  if (career) next = career.state;
+  // what the player owns of the Opportunity cards: a business starts, locked money returns, a trap pays and stops
+  const opportunities =
+    deps.opportunityCards && deps.opportunityCards.length > 0 && next.life
+      ? tickWorld(
+          { state: next, subscriptions: books.subscriptions, growProjects: books.growNotes ?? [] },
+          deps.opportunityCards,
+          {
+            date: appendedTransactions[0]?.date ?? today,
+            lang: deps.lang ?? 'en',
+            rng: deps.rng,
+            difficulty: deps.difficulty,
+          },
+        )
+      : null;
+  if (opportunities) {
+    next = {
+      ...opportunities.effects.state,
+      lifeNews: [
+        ...(next.lifeNews ?? []),
+        ...opportunities.news.map((title) => ({ kind: 'opportunity', title })),
+      ],
+    };
+  }
+
+  const payday = {
     ...emptyEffects(next, {
       kind: 'payday',
       detail: `${deps.text('CashflowGame.Round')} ${result.state.round}`,
@@ -206,6 +265,30 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
     persist: { subscriptions: false, grow: hadOffers, balanceSheet: false },
     decisionNeeded: recurring.length > 0,
   };
+  if (career?.bonus) payday.appendedTransactions = [...payday.appendedTransactions, career.bonus];
+  if (life) {
+    payday.appendedTransactions = [
+      ...payday.appendedTransactions,
+      ...life.effects.appendedTransactions,
+    ];
+    payday.subscriptionUpserts = life.effects.subscriptionUpserts;
+    payday.subscriptionRemovals = life.effects.subscriptionRemovals;
+    payday.persist = { ...payday.persist, subscriptions: life.effects.persist.subscriptions };
+  }
+  if (opportunities) {
+    const own = opportunities.effects;
+    payday.appendedTransactions = [...payday.appendedTransactions, ...own.appendedTransactions];
+    payday.subscriptionUpserts = [...payday.subscriptionUpserts, ...own.subscriptionUpserts];
+    payday.subscriptionRemovals = [...payday.subscriptionRemovals, ...own.subscriptionRemovals];
+    payday.shareRemovals = own.shareRemovals;
+    payday.growUpdates = [...payday.growUpdates, ...own.growUpdates];
+    payday.persist = {
+      subscriptions: payday.persist.subscriptions || own.persist.subscriptions,
+      grow: payday.persist.grow || own.persist.grow,
+      balanceSheet: payday.persist.balanceSheet || own.persist.balanceSheet,
+    };
+  }
+  return payday;
 }
 
 /**

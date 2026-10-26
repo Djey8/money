@@ -12,8 +12,8 @@ import { SelfhostedService } from '../shared/services/selfhosted.service';
 import { FrontendLoggerService } from '../shared/services/frontend-logger.service';
 import { ErrorMapperService } from '../shared/services/error-mapper.service';
 import { environment } from '../../environments/environment';
-import { from, of, concat } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { from, of, concat, type Observable } from 'rxjs';
+import { catchError, concatMap, retry } from 'rxjs/operators';
 import { AppStateService } from '../shared/services/app-state.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -147,6 +147,41 @@ export class RegistrationComponent implements OnInit, OnDestroy {
    * @param password - The password of the user.
    * @returns A promise that resolves when the user is registered successfully.
    */
+  /** How long a first write waits before it is tried again. */
+  retryDelayMs = 300;
+
+  /**
+   * The empty starting data of a new account, one write after the other, each tried again once or twice. Nothing it does can fail
+   * the registration: whatever happens, `done` runs and the account is signed in.
+   */
+  layDownFirstData(
+    writes: { tag: string; data: unknown }[],
+    done: () => void,
+    writeObservable: (tag: string, data: unknown) => Observable<unknown> = (tag, data) =>
+      this.database.writeObject(tag, data) || of(null),
+  ): void {
+    // A new account starts from its own baseline: nothing of an earlier account's version may carry over.
+    AppStateService.instance.lastUpdatedAt = null;
+    from(writes)
+      .pipe(
+        concatMap((write) =>
+          writeObservable(write.tag, write.data).pipe(
+            retry({ count: 2, ...(this.retryDelayMs > 0 ? { delay: this.retryDelayMs } : {}) }),
+            catchError((error) => {
+              console.warn('Initial data write skipped:', write.tag, error);
+              return of(null);
+            }),
+          ),
+        ),
+      )
+      .subscribe({ complete: done, error: done });
+  }
+
+  /** To the start page, signed in (a full load, so the app starts from the new account). */
+  goHome(): void {
+    window.location.href = '/';
+  }
+
   SignUp(email: string, password: string) {
     if (this.mode === 'selfhosted') {
       // Selfhosted mode - use backend API
@@ -178,13 +213,6 @@ export class RegistrationComponent implements OnInit, OnDestroy {
           // All data is stored in a single document with nested paths
           // MUST be sequential to avoid CouchDB revision conflicts
 
-          // Helper function that wraps writeObject to always return an Observable
-          const writeObservable = (tag: string, data: any) => {
-            const result = this.database.writeObject(tag, data);
-            // If selfhosted mode, returns Observable; if Firebase, returns void
-            return result || of(null);
-          };
-
           // Define all writes to be executed sequentially
           const writes = [
             { tag: 'info/username', data: this.usernameTextField },
@@ -195,43 +223,32 @@ export class RegistrationComponent implements OnInit, OnDestroy {
             { tag: 'mojo', data: { target: 2000.0, amount: 0 } },
           ];
 
-          // Execute writes sequentially using concatMap
-          from(writes)
-            .pipe(concatMap((write) => writeObservable(write.tag, write.data)))
-            .subscribe({
-              next: () => {
-                // Each write completes
-              },
-              error: (error) => {
-                console.error('Error writing initial data:', error);
-                this.isError = true;
-                this.errorMessageLable = 'Failed to initialize user data';
-                this.isLoading = false;
-              },
-              complete: () => {
-                ProfileComponent.username = this.usernameTextField;
-                ProfileComponent.mail = this.emailTextField;
-                ProfileComponent.isUser = true;
+          // The account exists and is signed in from here on (the server made it with its name and email). What follows only
+          // lays down the empty starting data and the encryption settings: if a write of it fails - a slow connection, a clash
+          // with another request, the server's limit - the account is not "failed" and nobody is shown an error for it. The app
+          // creates the missing starting data itself the first time it needs it (JFK, 2026-10-25: a new game account showed an
+          // error, and a refresh found it signed in).
+          const finish = () => {
+            ProfileComponent.username = this.usernameTextField;
+            ProfileComponent.mail = this.emailTextField;
+            ProfileComponent.isUser = true;
 
-                // Save encryption config to server after registration
-                const key = this.cryptic.getKey() || 'default';
-                const encryptLocal = this.cryptic.getEncryptionLocalEnabled();
-                const encryptDatabase = this.cryptic.getEncryptionDatabaseEnabled();
-                this.selfhosted.saveEncryptionConfig(key, encryptLocal, encryptDatabase).subscribe({
-                  complete: () => {
-                    // Trigger onboarding tour for new user
-                    localStorage.setItem('onboarding_pending', 'true');
-                    // Redirect only after all writes are complete
-                    window.location.href = '/';
-                  },
-                  error: () => {
-                    // Still redirect even if config save fails — it can be set later
-                    localStorage.setItem('onboarding_pending', 'true');
-                    window.location.href = '/';
-                  },
-                });
-              },
-            });
+            // Save encryption config to server after registration
+            const key = this.cryptic.getKey() || 'default';
+            const encryptLocal = this.cryptic.getEncryptionLocalEnabled();
+            const encryptDatabase = this.cryptic.getEncryptionDatabaseEnabled();
+            const redirect = () => {
+              // Trigger onboarding tour for new user
+              localStorage.setItem('onboarding_pending', 'true');
+              // Redirect only after all writes are complete
+              this.goHome();
+            };
+            this.selfhosted
+              .saveEncryptionConfig(key, encryptLocal, encryptDatabase)
+              .subscribe({ complete: redirect, error: redirect });
+          };
+
+          this.layDownFirstData(writes, finish);
         })
         .catch((error) => {
           this.isError = true;

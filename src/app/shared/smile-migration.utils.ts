@@ -107,6 +107,9 @@ export function migrateSmile(raw: any): Smile {
   const result: Smile = {
     title: raw.title || 'Untitled Project',
     sub: raw.sub || '',
+    // what makes a project a part of a game: the dream of a character, a dream taken from the stack
+    ...(raw.dream ? { dream: true } : {}),
+    ...(raw.dreamCardId ? { dreamCardId: raw.dreamCardId } : {}),
     phase,
     description: raw.description || '',
     targetDate: raw.targetDate || undefined,

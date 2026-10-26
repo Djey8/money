@@ -14,11 +14,14 @@ export type GameOutcome = 'playing' | 'escaped' | 'bankrupt';
 
 /** How the books stand: still playing, escaped (checked first), or bankrupt. */
 export function gameOutcome(
-  state: Pick<CashflowGameState, 'gameSubscriptionTitles'>,
+  state: Pick<CashflowGameState, 'gameSubscriptionTitles'> &
+    Partial<Pick<CashflowGameState, 'life'>>,
   subscriptions: { title: string; amountMinor: number }[],
 ): GameOutcome {
   const finances = summarizeGameFinances(state, subscriptions);
-  if (finances.escapedRatRace) return 'escaped';
+  // a Dreamfund game is not won by the passive income alone: the reserve, the debts and the dream come first (JFK, 2026-10-26), so
+  // only bankruptcy ends it by itself
+  if (finances.escapedRatRace && !state.life) return 'escaped';
   if (finances.bankrupt) return 'bankrupt';
   return 'playing';
 }

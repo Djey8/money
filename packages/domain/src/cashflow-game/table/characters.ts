@@ -16,387 +16,395 @@ export interface CharacterEntry {
 }
 
 export const CHARACTERS: Record<string, CharacterEntry> = {
-  "any": {
-    "name": "Champion",
-    "summary": "The best strategy over every profession.",
-    "winRate": 0.6033333333333334,
-    "interval": {
-      "low": 0.5857058780749074,
-      "high": 0.6206964834876998
+  any: {
+    name: 'Champion',
+    summary: 'The best strategy over every profession.',
+    winRate: 0.6033333333333334,
+    interval: {
+      low: 0.5857058780749074,
+      high: 0.6206964834876998,
     },
-    "tables": 3000,
-    "championV1WinRate": 0.6033333333333334,
-    "spec": {
-      "id": "champion-v1",
-      "label": "Champion (v1)",
-      "description": "The best strategy the tournament search found: any 2% property with no reserve, loans when covered 1.5x, Big Deals from 10,000 cash, marketing, stock trading, selling at 12 months of profit - and it takes more risk when a rival pulls ahead.",
-      "overrides": {
-        "minMonthlyReturn": 0.02,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1.5,
-        "bigDealFromCashMinor": 1000000,
-        "buyMlm": true,
-        "buyGambles": false,
-        "shares": {
-          "buyBelowMinor": 1000,
-          "sellAboveMinor": 2500,
-          "maxLotShare": 0.4
+    tables: 3000,
+    championV1WinRate: 0.6033333333333334,
+    spec: {
+      id: 'champion-v1',
+      label: 'Champion (v1)',
+      description:
+        'The best strategy the tournament search found: any 2% property with no reserve, loans when covered 1.5x, Big Deals from 10,000 cash, marketing, stock trading, selling at 12 months of profit - and it takes more risk when a rival pulls ahead.',
+      overrides: {
+        minMonthlyReturn: 0.02,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1.5,
+        bigDealFromCashMinor: 1000000,
+        buyMlm: true,
+        buyGambles: false,
+        shares: {
+          buyBelowMinor: 1000,
+          sellAboveMinor: 2500,
+          maxLotShare: 0.4,
         },
-        "sellWhenProfitMonths": 12,
-        "repayLoans": true,
-        "catchUp": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 0.8,
-          "loanCoverageFactor": 1,
-          "reserveFactor": 0.3
+        sellWhenProfitMonths: 12,
+        repayLoans: true,
+        catchUp: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 0.8,
+          loanCoverageFactor: 1,
+          reserveFactor: 0.3,
         },
-        "protectLead": null
-      }
-    }
+        protectLead: null,
+      },
+    },
   },
-  "investor": {
-    "name": "Investor Ines",
-    "summary": "Only properties: no marketing, no stocks, no gambles.",
-    "winRate": 0.5946666666666667,
-    "interval": {
-      "low": 0.5696095912096982,
-      "high": 0.6192400855115735
+  investor: {
+    name: 'Investor Ines',
+    summary: 'Only properties: no marketing, no stocks, no gambles.',
+    winRate: 0.5946666666666667,
+    interval: {
+      low: 0.5696095912096982,
+      high: 0.6192400855115735,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.6026666666666667,
-    "spec": {
-      "id": "character-investor",
-      "label": "Investor Ines",
-      "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 0 cash, buys shares only when a 3x card is still in the pile, draws from the pile with the better cards left, scales its bar by what is left in the pile (1), sells at 18 months of profit, takes more risk when 30+ points behind",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.02,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1.5,
-        "bigDealFromCashMinor": 0,
-        "buyMlm": false,
-        "buyGambles": false,
-        "shares": null,
-        "sellWhenProfitMonths": 18,
-        "repayLoans": true,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.3,
-          "minMonthlyReturnFactor": 0.3,
-          "loanCoverageFactor": 0.5,
-          "reserveFactor": 1
+    tables: 1500,
+    championV1WinRate: 0.6026666666666667,
+    spec: {
+      id: 'character-investor',
+      label: 'Investor Ines',
+      description:
+        'properties paying at least 2.0% a month, no reserve, borrows when covered 1.5x, Big Deals from 0 cash, buys shares only when a 3x card is still in the pile, draws from the pile with the better cards left, scales its bar by what is left in the pile (1), sells at 18 months of profit, takes more risk when 30+ points behind',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.02,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1.5,
+        bigDealFromCashMinor: 0,
+        buyMlm: false,
+        buyGambles: false,
+        shares: null,
+        sellWhenProfitMonths: 18,
+        repayLoans: true,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.3,
+          minMonthlyReturnFactor: 0.3,
+          loanCoverageFactor: 0.5,
+          reserveFactor: 1,
         },
-        "protectLead": null,
-        "countShares": {
-          "minGain": 3,
-          "maxWaitDraws": 12,
-          "maxLotShare": 0.6,
-          "sellAboveMinor": 1500
+        protectLead: null,
+        countShares: {
+          minGain: 3,
+          maxWaitDraws: 12,
+          maxLotShare: 0.6,
+          sellAboveMinor: 1500,
         },
-        "pileByCount": true,
-        "countReturnFactor": 1,
-        "speculate": null
-      }
-    }
+        pileByCount: true,
+        countReturnFactor: 1,
+        speculate: null,
+      },
+    },
   },
-  "trader": {
-    "name": "Stock Sasha",
-    "summary": "Trades stocks alongside properties.",
-    "winRate": 0.6093333333333333,
-    "interval": {
-      "low": 0.5843928773255617,
-      "high": 0.6337152000144985
+  trader: {
+    name: 'Stock Sasha',
+    summary: 'Trades stocks alongside properties.',
+    winRate: 0.6093333333333333,
+    interval: {
+      low: 0.5843928773255617,
+      high: 0.6337152000144985,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.6046666666666667,
-    "spec": {
-      "id": "character-trader",
-      "label": "Stock Sasha",
-      "description": "properties paying at least 0.5% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, draws from the pile with the better cards left, scales its bar by what is left in the pile (1), buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.005,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1,
-        "bigDealFromCashMinor": 1000000,
-        "buyMlm": false,
-        "buyGambles": false,
-        "shares": {
-          "buyBelowMinor": 1000,
-          "sellAboveMinor": 2500,
-          "maxLotShare": 0.4
+    tables: 1500,
+    championV1WinRate: 0.6046666666666667,
+    spec: {
+      id: 'character-trader',
+      label: 'Stock Sasha',
+      description:
+        'properties paying at least 0.5% a month, no reserve, borrows when covered 1x, Big Deals from 10000 cash, draws from the pile with the better cards left, scales its bar by what is left in the pile (1), buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.005,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1,
+        bigDealFromCashMinor: 1000000,
+        buyMlm: false,
+        buyGambles: false,
+        shares: {
+          buyBelowMinor: 1000,
+          sellAboveMinor: 2500,
+          maxLotShare: 0.4,
         },
-        "sellWhenProfitMonths": 12,
-        "repayLoans": true,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 0.8,
-          "loanCoverageFactor": 1,
-          "reserveFactor": 0.3
+        sellWhenProfitMonths: 12,
+        repayLoans: true,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 0.8,
+          loanCoverageFactor: 1,
+          reserveFactor: 0.3,
         },
-        "protectLead": null,
-        "countShares": null,
-        "pileByCount": true,
-        "countReturnFactor": 1,
-        "speculate": {
-          "maxWaitDraws": 8,
-          "minEvRatio": 1
-        }
-      }
-    }
+        protectLead: null,
+        countShares: null,
+        pileByCount: true,
+        countReturnFactor: 1,
+        speculate: {
+          maxWaitDraws: 8,
+          minEvRatio: 1,
+        },
+      },
+    },
   },
-  "marketer": {
-    "name": "Network Nils",
-    "summary": "Builds on Multi-Level-Marketing cards.",
-    "winRate": 0.636,
-    "interval": {
-      "low": 0.6113317437329664,
-      "high": 0.659973425641255
+  marketer: {
+    name: 'Network Nils',
+    summary: 'Builds on Multi-Level-Marketing cards.',
+    winRate: 0.636,
+    interval: {
+      low: 0.6113317437329664,
+      high: 0.659973425641255,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.5866666666666667,
-    "spec": {
-      "id": "character-marketer",
-      "label": "Network Nils",
-      "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys shares only when a 3x card is still in the pile, scales its bar by what is left in the pile (1), buys a flat property when buyers are still in the Market pile, sells at 12 months of profit, takes more risk when 10+ points behind",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.02,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1.25,
-        "bigDealFromCashMinor": 1000000,
-        "buyMlm": true,
-        "buyGambles": false,
-        "shares": null,
-        "sellWhenProfitMonths": 12,
-        "repayLoans": true,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 0.8,
-          "loanCoverageFactor": 1,
-          "reserveFactor": 0.3
+    tables: 1500,
+    championV1WinRate: 0.5866666666666667,
+    spec: {
+      id: 'character-marketer',
+      label: 'Network Nils',
+      description:
+        'properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys shares only when a 3x card is still in the pile, scales its bar by what is left in the pile (1), buys a flat property when buyers are still in the Market pile, sells at 12 months of profit, takes more risk when 10+ points behind',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.02,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1.25,
+        bigDealFromCashMinor: 1000000,
+        buyMlm: true,
+        buyGambles: false,
+        shares: null,
+        sellWhenProfitMonths: 12,
+        repayLoans: true,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 0.8,
+          loanCoverageFactor: 1,
+          reserveFactor: 0.3,
         },
-        "protectLead": null,
-        "countShares": {
-          "minGain": 3,
-          "maxWaitDraws": 12,
-          "maxLotShare": 0.6,
-          "sellAboveMinor": 1500
+        protectLead: null,
+        countShares: {
+          minGain: 3,
+          maxWaitDraws: 12,
+          maxLotShare: 0.6,
+          sellAboveMinor: 1500,
         },
-        "pileByCount": false,
-        "countReturnFactor": 1,
-        "speculate": {
-          "maxWaitDraws": 8,
-          "minEvRatio": 0.5
-        }
-      }
-    }
+        pileByCount: false,
+        countReturnFactor: 1,
+        speculate: {
+          maxWaitDraws: 8,
+          minEvRatio: 0.5,
+        },
+      },
+    },
   },
-  "banker": {
-    "name": "Leverage Leo",
-    "summary": "Borrows early and often to buy faster.",
-    "winRate": 0.6213333333333333,
-    "interval": {
-      "low": 0.5965056353318312,
-      "high": 0.6455411334236014
+  banker: {
+    name: 'Leverage Leo',
+    summary: 'Borrows early and often to buy faster.',
+    winRate: 0.6213333333333333,
+    interval: {
+      low: 0.5965056353318312,
+      high: 0.6455411334236014,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.5966666666666667,
-    "spec": {
-      "id": "character-banker",
-      "label": "Leverage Leo",
-      "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 15000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.02,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1.25,
-        "bigDealFromCashMinor": 1500000,
-        "buyMlm": true,
-        "buyGambles": false,
-        "shares": {
-          "buyBelowMinor": 1000,
-          "sellAboveMinor": 2500,
-          "maxLotShare": 0.4
+    tables: 1500,
+    championV1WinRate: 0.5966666666666667,
+    spec: {
+      id: 'character-banker',
+      label: 'Leverage Leo',
+      description:
+        'properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 15000 cash, Multi-Level-Marketing, draws from the pile with the better cards left, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.02,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1.25,
+        bigDealFromCashMinor: 1500000,
+        buyMlm: true,
+        buyGambles: false,
+        shares: {
+          buyBelowMinor: 1000,
+          sellAboveMinor: 2500,
+          maxLotShare: 0.4,
         },
-        "sellWhenProfitMonths": 12,
-        "repayLoans": true,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 0.8,
-          "loanCoverageFactor": 1,
-          "reserveFactor": 0.3
+        sellWhenProfitMonths: 12,
+        repayLoans: true,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 0.8,
+          loanCoverageFactor: 1,
+          reserveFactor: 0.3,
         },
-        "protectLead": null,
-        "countShares": null,
-        "pileByCount": true,
-        "countReturnFactor": 0,
-        "speculate": {
-          "maxWaitDraws": 4,
-          "minEvRatio": 0.3
-        }
-      }
-    }
+        protectLead: null,
+        countShares: null,
+        pileByCount: true,
+        countReturnFactor: 0,
+        speculate: {
+          maxWaitDraws: 4,
+          minEvRatio: 0.3,
+        },
+      },
+    },
   },
-  "gambler": {
-    "name": "Lucky Lena",
-    "summary": "Takes the dice cards and the marketing cards: fast when luck is on her side.",
-    "winRate": 0.6126666666666667,
-    "interval": {
-      "low": 0.5877559537673387,
-      "high": 0.6370017600769918
+  gambler: {
+    name: 'Lucky Lena',
+    summary: 'Takes the dice cards and the marketing cards: fast when luck is on her side.',
+    winRate: 0.6126666666666667,
+    interval: {
+      low: 0.5877559537673387,
+      high: 0.6370017600769918,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.5973333333333334,
-    "spec": {
-      "id": "character-gambler",
-      "label": "Lucky Lena",
-      "description": "properties paying at least 2.5% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, scales its bar by what is left in the pile (0.5), trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.025,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1.25,
-        "bigDealFromCashMinor": 1000000,
-        "buyMlm": true,
-        "buyGambles": true,
-        "shares": {
-          "buyBelowMinor": 800,
-          "sellAboveMinor": 3000,
-          "maxLotShare": 0.5
+    tables: 1500,
+    championV1WinRate: 0.5973333333333334,
+    spec: {
+      id: 'character-gambler',
+      label: 'Lucky Lena',
+      description:
+        'properties paying at least 2.5% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, dice gambles, draws from the pile with the better cards left, scales its bar by what is left in the pile (0.5), trades stocks, sells at 12 months of profit, takes more risk when 10+ points behind',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.025,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1.25,
+        bigDealFromCashMinor: 1000000,
+        buyMlm: true,
+        buyGambles: true,
+        shares: {
+          buyBelowMinor: 800,
+          sellAboveMinor: 3000,
+          maxLotShare: 0.5,
         },
-        "sellWhenProfitMonths": 12,
-        "repayLoans": true,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 0.8,
-          "loanCoverageFactor": 1,
-          "reserveFactor": 0.3
+        sellWhenProfitMonths: 12,
+        repayLoans: true,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 0.8,
+          loanCoverageFactor: 1,
+          reserveFactor: 0.3,
         },
-        "protectLead": null,
-        "countShares": null,
-        "pileByCount": true,
-        "countReturnFactor": 0.5,
-        "speculate": null
-      }
-    }
+        protectLead: null,
+        countShares: null,
+        pileByCount: true,
+        countReturnFactor: 0.5,
+        speculate: null,
+      },
+    },
   },
-  "cautious": {
-    "name": "Prudent Paula",
-    "summary": "No loans, a reserve in the bank, and plays safe when she leads.",
-    "winRate": 0.46266666666666667,
-    "interval": {
-      "low": 0.4375612469810065,
-      "high": 0.48796282417116804
+  cautious: {
+    name: 'Prudent Paula',
+    summary: 'No loans, a reserve in the bank, and plays safe when she leads.',
+    winRate: 0.46266666666666667,
+    interval: {
+      low: 0.4375612469810065,
+      high: 0.48796282417116804,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.5806666666666667,
-    "spec": {
-      "id": "character-cautious",
-      "label": "Prudent Paula",
-      "description": "properties paying at least 2.0% a month, 1500 kept in reserve, no loans, Big Deals from 20000 cash, Multi-Level-Marketing, scales its bar by what is left in the pile (1), buys a flat property when buyers are still in the Market pile, trades stocks, sells at 18 months of profit, takes more risk when 30+ points behind, plays safe when 10+ points ahead",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.02,
-        "reserveMinor": 150000,
-        "loans": "never",
-        "loanCoverage": 2,
-        "bigDealFromCashMinor": 2000000,
-        "buyMlm": true,
-        "buyGambles": false,
-        "shares": {
-          "buyBelowMinor": 1000,
-          "sellAboveMinor": 2500,
-          "maxLotShare": 0.4
+    tables: 1500,
+    championV1WinRate: 0.5806666666666667,
+    spec: {
+      id: 'character-cautious',
+      label: 'Prudent Paula',
+      description:
+        'properties paying at least 2.0% a month, 1500 kept in reserve, no loans, Big Deals from 20000 cash, Multi-Level-Marketing, scales its bar by what is left in the pile (1), buys a flat property when buyers are still in the Market pile, trades stocks, sells at 18 months of profit, takes more risk when 30+ points behind, plays safe when 10+ points ahead',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.02,
+        reserveMinor: 150000,
+        loans: 'never',
+        loanCoverage: 2,
+        bigDealFromCashMinor: 2000000,
+        buyMlm: true,
+        buyGambles: false,
+        shares: {
+          buyBelowMinor: 1000,
+          sellAboveMinor: 2500,
+          maxLotShare: 0.4,
         },
-        "sellWhenProfitMonths": 18,
-        "repayLoans": false,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.3,
-          "minMonthlyReturnFactor": 0.9,
-          "loanCoverageFactor": 0.5,
-          "reserveFactor": 0
+        sellWhenProfitMonths: 18,
+        repayLoans: false,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.3,
+          minMonthlyReturnFactor: 0.9,
+          loanCoverageFactor: 0.5,
+          reserveFactor: 0,
         },
-        "protectLead": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 1.25,
-          "loanCoverageFactor": 1.25,
-          "reserveFactor": 1.5
+        protectLead: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 1.25,
+          loanCoverageFactor: 1.25,
+          reserveFactor: 1.5,
         },
-        "countShares": null,
-        "pileByCount": false,
-        "countReturnFactor": 1,
-        "speculate": {
-          "maxWaitDraws": 8,
-          "minEvRatio": 1
-        }
-      }
-    }
+        countShares: null,
+        pileByCount: false,
+        countReturnFactor: 1,
+        speculate: {
+          maxWaitDraws: 8,
+          minEvRatio: 1,
+        },
+      },
+    },
   },
-  "chaser": {
-    "name": "Chaser Chen",
-    "summary": "Takes more and more risk the further a rival gets ahead.",
-    "winRate": 0.6106666666666667,
-    "interval": {
-      "low": 0.5857379629300887,
-      "high": 0.6350299690116796
+  chaser: {
+    name: 'Chaser Chen',
+    summary: 'Takes more and more risk the further a rival gets ahead.',
+    winRate: 0.6106666666666667,
+    interval: {
+      low: 0.5857379629300887,
+      high: 0.6350299690116796,
     },
-    "tables": 1500,
-    "championV1WinRate": 0.5926666666666667,
-    "spec": {
-      "id": "character-chaser",
-      "label": "Chaser Chen",
-      "description": "properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 18 months of profit, takes more risk when 10+ points behind",
-      "overrides": {
-        "buyProperties": true,
-        "minMonthlyReturn": 0.02,
-        "reserveMinor": 0,
-        "loans": "bridge",
-        "loanCoverage": 1.25,
-        "bigDealFromCashMinor": 1000000,
-        "buyMlm": true,
-        "buyGambles": false,
-        "shares": {
-          "buyBelowMinor": 1000,
-          "sellAboveMinor": 2500,
-          "maxLotShare": 0.4
+    tables: 1500,
+    championV1WinRate: 0.5926666666666667,
+    spec: {
+      id: 'character-chaser',
+      label: 'Chaser Chen',
+      description:
+        'properties paying at least 2.0% a month, no reserve, borrows when covered 1.25x, Big Deals from 10000 cash, Multi-Level-Marketing, buys a flat property when buyers are still in the Market pile, trades stocks, sells at 18 months of profit, takes more risk when 10+ points behind',
+      overrides: {
+        buyProperties: true,
+        minMonthlyReturn: 0.02,
+        reserveMinor: 0,
+        loans: 'bridge',
+        loanCoverage: 1.25,
+        bigDealFromCashMinor: 1000000,
+        buyMlm: true,
+        buyGambles: false,
+        shares: {
+          buyBelowMinor: 1000,
+          sellAboveMinor: 2500,
+          maxLotShare: 0.4,
         },
-        "sellWhenProfitMonths": 18,
-        "repayLoans": true,
-        "charityTwoDice": true,
-        "skipDoodadsAboveMinor": null,
-        "catchUp": {
-          "gap": 0.1,
-          "minMonthlyReturnFactor": 0.7,
-          "loanCoverageFactor": 0.75,
-          "reserveFactor": 0.3
+        sellWhenProfitMonths: 18,
+        repayLoans: true,
+        charityTwoDice: true,
+        skipDoodadsAboveMinor: null,
+        catchUp: {
+          gap: 0.1,
+          minMonthlyReturnFactor: 0.7,
+          loanCoverageFactor: 0.75,
+          reserveFactor: 0.3,
         },
-        "protectLead": null,
-        "countShares": null,
-        "pileByCount": false,
-        "countReturnFactor": 0,
-        "speculate": {
-          "maxWaitDraws": 16,
-          "minEvRatio": 0.5
-        }
-      }
-    }
-  }
+        protectLead: null,
+        countShares: null,
+        pileByCount: false,
+        countReturnFactor: 0,
+        speculate: {
+          maxWaitDraws: 16,
+          minEvRatio: 0.5,
+        },
+      },
+    },
+  },
 };

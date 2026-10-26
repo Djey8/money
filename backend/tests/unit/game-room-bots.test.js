@@ -50,6 +50,21 @@ describe('the bot driver', () => {
     expect(driver.size()).toBe(0);
   });
 
+  it('does not wait between moves once only bots are left in the game', () => {
+    const scheduler = fakeScheduler();
+    const driver = createBotDriver({ run: jest.fn(), scheduler });
+    const playing = { state: {} };
+    const bot = { id: 'bot:2', status: 'active', bot: { policyId: 'x' }, books: playing };
+    driver.touch(
+      'people',
+      table({ players: [{ id: 'a', status: 'active', books: playing }, bot] }),
+    );
+    driver.touch('bots', table({ players: [{ id: 'a', status: 'left', books: playing }, bot] }));
+    const [waits, fast] = scheduler.delays();
+    expect(waits).toBeGreaterThan(1000);
+    expect(fast).toBeLessThan(100);
+  });
+
   it('ignores tables with no bot, a bot that left, or a game not being played', () => {
     const scheduler = fakeScheduler();
     const driver = createBotDriver({ run: jest.fn(), scheduler });

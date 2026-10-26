@@ -2,11 +2,14 @@ import { rankPlayers } from './turns';
 import type { Table } from './types';
 
 /** A player whose books show a salary, some expenses and some passive income (minor units). */
-function player(id: string, passive: number, expenses: number) {
+function player(id: string, passive: number, expenses: number, cash = 0, debt = 0) {
   return {
     id,
     status: 'active',
     books: {
+      allocation: { daily: 100, splurge: 0, smile: 0, fire: 0 },
+      transactions: [{ account: 'Daily', amountMinor: cash }],
+      liabilities: debt ? [{ tag: 'Bank loan', amountMinor: debt }] : [],
       state: { gameSubscriptionTitles: ['Salary', 'Rent', 'EFH Cashflow'] },
       subscriptions: [
         { title: 'Salary', amountMinor: 500_000 },
@@ -42,5 +45,15 @@ describe('placing those still playing', () => {
       table(player('a', 100_000, 200_000), player('b', 200_000, 400_000)),
     );
     expect(ranking.map((r) => r.playerId)).toEqual(['b', 'a']);
+  });
+
+  it('level on every figure of the game: the one with more cash is ahead, then the one with fewer debts, then the first seat', () => {
+    const level = (...ids: [string, number, number][]) =>
+      rankPlayers(
+        table(...ids.map(([id, cash, debt]) => player(id, 100_000, 200_000, cash, debt))),
+      ).map((r) => r.playerId);
+    expect(level(['poor', 100_00, 0], ['rich', 900_00, 0])).toEqual(['rich', 'poor']);
+    expect(level(['loaned', 500_00, 800_000], ['clean', 500_00, 0])).toEqual(['clean', 'loaned']);
+    expect(level(['first', 500_00, 0], ['second', 500_00, 0])).toEqual(['first', 'second']);
   });
 });

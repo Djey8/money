@@ -1820,3 +1820,9 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+/* A project that is only looked at: the tabs, the links and the close button stay, everything that changes it goes. */
+#infoTransaction-Container.preview button:not(.detail-tab):not(#closebtn),
+#infoTransaction-Container.preview .phase-advance {
+  display: none !important;
+}

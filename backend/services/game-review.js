@@ -10,6 +10,8 @@ const {
   describeReview,
   describeProgress,
   progressPoints,
+  reviewDreamfund,
+  describeDreamfundReview,
 } = require('@money/domain');
 const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
 
@@ -96,6 +98,13 @@ function runWorker(data) {
  * @param options `strategy` (a preset id the games continue with), `rollouts`, `timeBudgetMs`, `money` (formatter)
  */
 async function reviewHistory(stack, live, options) {
+  // a Dreamfund game (it has a life) is read as a story - milestones, purchases, loans, missed chances - against what the simulation
+  // of thousands of games found; the classic analyst plays positions on with a strategy, which a game of dice cards and markets
+  // does not allow
+  if (live.cashflowGame && live.cashflowGame.life) {
+    const review = reviewDreamfund(stack, live, { gameSets: CASHFLOW_GAME_SETS });
+    return { reviewable: true, kind: 'dreamfund', review, text: describeDreamfundReview(review) };
+  }
   const strategyId = PRESET_SPECS.some((spec) => spec.id === options.strategy)
     ? options.strategy
     : DEFAULT_STRATEGY;

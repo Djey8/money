@@ -1,5 +1,6 @@
 <div
   id="infoTransaction-Container"
+  [class.preview]="classReference.preview"
   role="dialog"
   aria-modal="true"
   appTrapFocus
@@ -311,7 +312,11 @@
             *ngIf="!isSettled(bucket) && bucket.amount < bucket.target"
             (click)="addToBucket(bucket.id, bucket.title, bucket.target - bucket.amount)"
           >
-            + {{ 'Smile.addToBucket' | translate }}
+            {{
+              inGame
+                ? ('CashflowGame.pay.payShort' | translate)
+                : '+ ' + ('Smile.addToBucket' | translate)
+            }}
           </button>
 
           <!-- Related Transactions for this bucket -->
@@ -880,7 +885,7 @@
     </div>
 
     <button id="addbtn" *ngIf="!areAllBucketsFull()" (click)="add()">
-      {{ 'AddAsset.add' | translate }}
+      {{ (inGame ? 'CashflowGame.pay.payShort' : 'AddAsset.add') | translate }}
     </button>
     <button id="editbtn" class="btn btn--action" (click)="editSmileProject()">
       {{ 'Info.edit' | translate }}
@@ -1507,7 +1512,7 @@
 
     <p id="errorLable" *ngIf="classReference.isError">{{ errorTextLable }}</p>
     <button id="addbtn" (click)="updateSmileProject()">{{ 'Info.update' | translate }}</button>
-    <button id="deletebtn" (click)="deleteSmile(classReference.index)">
+    <button id="deletebtn" *ngIf="!isDream" (click)="deleteSmile(classReference.index)">
       {{ 'Info.delete' | translate }}
     </button>
     <button id="canclebtn" (click)="cancel()">{{ 'Info.cancel' | translate }}</button>
@@ -1520,6 +1525,8 @@
   [projectType]="'smile'"
   [projectTitle]="classReference.title"
   [projectTargetDate]="classReference.targetDate"
+  [gameDate]="gameDate"
+  [maxPayment]="maxPayment"
   [buckets]="classReference.buckets"
   [existingPlan]="
     editingPlanIndex !== null ? classReference.plannedSubscriptions[editingPlanIndex] : undefined

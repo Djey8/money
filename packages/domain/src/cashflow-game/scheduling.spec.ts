@@ -83,13 +83,13 @@ describe('nextSmartDate', () => {
 
 describe('gameSubscriptionDays / usedDaysThisMonth', () => {
   const subscriptions = [
-    { startDate: '2026-03-01', comment: 'x\n#cashflow' },
-    { startDate: '2025-12-17', comment: '#cashflow' }, // an earlier month still pays on the 17th
+    { startDate: '2026-03-01', comment: 'x\n#dreamfund' },
+    { startDate: '2025-12-17', comment: '#dreamfund' }, // an earlier month still pays on the 17th
     { startDate: '2026-10-09', comment: 'not a game subscription' },
-    { startDate: undefined, comment: '#cashflow' },
+    { startDate: undefined, comment: '#dreamfund' },
   ];
 
-  it('collects the days of #cashflow subscriptions only, whatever month they started in', () => {
+  it('collects the days of #dreamfund subscriptions only, whatever month they started in', () => {
     expect([...gameSubscriptionDays(subscriptions)].sort((a, b) => a - b)).toEqual([1, 17]);
   });
 
@@ -121,8 +121,8 @@ describe('dateFromSubscriptionDay', () => {
 });
 
 describe('isGameTransaction / shiftedGameTransactionDates', () => {
-  it('recognizes #cashflow transactions and old untagged Grow trades, and nothing else', () => {
-    expect(isGameTransaction({ comment: 'Salary\n#cashflow' })).toBe(true);
+  it('recognizes #dreamfund transactions and old untagged Grow trades, and nothing else', () => {
+    expect(isGameTransaction({ comment: 'Salary\n#dreamfund' })).toBe(true);
     expect(isGameTransaction({ comment: 'Buy Share OK4U 250 x 10;' })).toBe(true);
     expect(isGameTransaction({ comment: 'Sell Investment EFH 1 x 2;' })).toBe(true);
     expect(isGameTransaction({ comment: 'Dividende Share OK4U 3' })).toBe(true);
@@ -135,7 +135,7 @@ describe('isGameTransaction / shiftedGameTransactionDates', () => {
   it('moves only game transactions, by position, clamping the day to the month', () => {
     const changes = shiftedGameTransactionDates(
       [
-        { date: '2026-10-31', comment: '#cashflow' },
+        { date: '2026-10-31', comment: '#dreamfund' },
         { date: '2026-10-05', comment: 'plain' },
         { date: '2026-03-15', comment: 'Buy Asset GOLD 1 x 5;' },
       ],
@@ -148,8 +148,16 @@ describe('isGameTransaction / shiftedGameTransactionDates', () => {
   });
 
   it('moves forward as well, across a year boundary', () => {
-    expect(shiftedGameTransactionDates([{ date: '2026-12-15', comment: '#cashflow' }], 1)).toEqual([
-      { index: 0, date: '2027-01-15' },
-    ]);
+    expect(shiftedGameTransactionDates([{ date: '2026-12-15', comment: '#dreamfund' }], 1)).toEqual(
+      [{ index: 0, date: '2027-01-15' }],
+    );
+  });
+});
+
+describe('the tag of a game (JFK, 2026-10-25: Dreamfund)', () => {
+  it('is #dreamfund, and the #cashflow of games saved before the rename is still recognised', () => {
+    expect(isGameTransaction({ comment: 'paid\n#dreamfund' })).toBe(true);
+    expect(isGameTransaction({ comment: 'paid\n#cashflow' })).toBe(true);
+    expect(isGameTransaction({ comment: 'paid' })).toBe(false);
   });
 });

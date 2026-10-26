@@ -179,5 +179,6 @@ export function normalizeTableSettings(
     showProgress: input.showProgress ?? true,
     ranked: input.ranked ?? true,
     repayOffTurn: input.repayOffTurn ?? true,
+    leaveFreeRounds: whole(input.leaveFreeRounds ?? 0, 'leaveFreeRounds', 0, 3),
   };
 }

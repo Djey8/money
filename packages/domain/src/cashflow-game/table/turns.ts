@@ -1,3 +1,4 @@
+import { cashOnHandMinor } from '../cash';
 import { summarizeGameFinances } from '../saved-games';
 import { currentTurn } from '../turn';
 import { endTurnClock, startTurnClock, stopClock } from './clock';
@@ -30,6 +31,15 @@ const outOf = (player: TablePlayer) =>
 /** A player still in the game: seated, with books, not escaped, not bankrupt. */
 export const isAlive = (player: TablePlayer) => !outOf(player);
 
+/**
+ * Nobody is left to wait for: every person at a running table has escaped, gone bankrupt or left, and only bots still play. Then
+ * the rest of the game is played as fast as it can be (JFK, 2026-10-24: "I don't want to wait 40 minutes for a bot game").
+ */
+export const humansAreOut = (table: Pick<Table, 'phase' | 'players'>): boolean =>
+  table.phase === 'playing' &&
+  table.players.some((p) => p.bot && isAlive(p)) &&
+  !table.players.some((p) => !p.bot && isAlive(p));
+
 function standingOf(table: Table, player: TablePlayer): TableStanding {
   const finisher = table.finishers.find((f) => f.playerId === player.id);
   const finances = player.books
@@ -40,6 +50,14 @@ function standingOf(table: Table, player: TablePlayer): TableStanding {
     : player.status === 'left'
       ? 'left'
       : 'playing';
+  const books = player.books;
+  const cashMinor = books
+    ? cashOnHandMinor(
+        books.transactions ?? [],
+        books.allocation ?? { daily: 0, splurge: 0, smile: 0, fire: 0 },
+      )
+    : 0;
+  const debtMinor = (books?.liabilities ?? []).reduce((sum, l) => sum + (l.amountMinor ?? 0), 0);
   return {
     playerId: player.id,
     rank: 0,
@@ -47,6 +65,8 @@ function standingOf(table: Table, player: TablePlayer): TableStanding {
     passiveIncomeMinor: finances.passiveIncomeMinor,
     monthlyCashflowMinor: finances.monthlyCashflowMinor,
     expensesMinor: finances.expensesMinor,
+    cashMinor,
+    debtMinor,
   };
 }
 
@@ -88,7 +108,10 @@ export function rankPlayers(table: Table): TableStanding[] {
       (a.outcome === 'bankrupt' ? escapeIndex(b.playerId) - escapeIndex(a.playerId) : 0) ||
       (a.outcome === 'playing' ? closerToEscape(a, b) : 0) ||
       b.passiveIncomeMinor - a.passiveIncomeMinor ||
-      b.monthlyCashflowMinor - a.monthlyCashflowMinor,
+      b.monthlyCashflowMinor - a.monthlyCashflowMinor ||
+      // still level: more cash, then fewer debts, then the seat that sits first at the table (the same for everybody, every time)
+      (b.cashMinor ?? 0) - (a.cashMinor ?? 0) ||
+      (a.debtMinor ?? 0) - (b.debtMinor ?? 0),
   );
   return standings.map((standing, index) => ({ ...standing, rank: index + 1 }));
 }
@@ -127,8 +150,14 @@ function noteFinishers(table: Table, emit: EmitEvent): Table {
   return next;
 }
 
+/** A game of bots only that has not ended by this round ends there, whatever its end condition says: nobody is waiting for it, so it is never left to run on. */
+export const BOTS_ONLY_ROUND_CAP = 150;
+
 /** The end condition, checked after anything that could end the game. Returns the finished table or null. */
 function checkEnd(table: Table, emit: EmitEvent): Table | null {
+  if (humansAreOut(table) && table.tableRound > BOTS_ONLY_ROUND_CAP) {
+    return finish(table, 'round-limit', undefined, emit);
+  }
   const escaped = table.finishers.filter((f) => f.outcome === 'escaped');
   if (table.settings.endCondition === 'first-escape' && escaped.length > 0) {
     return finish(table, 'escaped', escaped[0].playerId, emit);

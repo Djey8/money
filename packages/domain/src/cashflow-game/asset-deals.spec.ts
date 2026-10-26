@@ -74,7 +74,7 @@ function books(deals: CashflowAssetDeal[] = [], extra: Partial<GameBooks> = {}):
       startDate: `2026-09-${index === 0 ? '01' : '03'}`,
       endDate: '',
       category: sub.category ?? '',
-      comment: '#cashflow',
+      comment: '#dreamfund',
       frequency: sub.frequency,
     })),
     transactions: [],
@@ -313,7 +313,7 @@ describe('resolveGamble: a paid dice card', () => {
         date: '2026-10-05',
         time: '',
         category: '@GOLD',
-        comment: 'GOLD paid back\n#cashflow',
+        comment: 'GOLD paid back\n#dreamfund',
       },
     ]);
     expect(effects.assetUpserts).toEqual([]);
@@ -424,8 +424,8 @@ describe('resolveGamble: the Payday roll of kept cards', () => {
     expect(kind).toBe('paydayRoll');
     expect(effects.appendedTransactions.map((t) => [t.category, t.amountMinor, t.comment])).toEqual(
       [
-        ['@M1', 200000, 'M1 payout\n#cashflow'],
-        ['@M2', 200000, 'M2 payout\n#cashflow'],
+        ['@M1', 200000, 'M1 payout\n#dreamfund'],
+        ['@M2', 200000, 'M2 payout\n#dreamfund'],
       ],
     );
     const [first, second] = effects.appendedTransactions;

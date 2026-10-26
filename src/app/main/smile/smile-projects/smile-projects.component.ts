@@ -1,3 +1,4 @@
+import { CashflowGameService } from '../../../shared/services/cashflow-game.service';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { InfoSmileComponent } from 'src/app/panels/info/info-smile/info-smile.component';
@@ -297,7 +298,13 @@ export class SmileProjectsComponent {
   /**
    * Adds a new Smile Project.
    */
+  /** In a strict game the cards bring the projects: none of the player's own (JFK, 2026-10-26). */
+  get ownProjectsAllowed(): boolean {
+    return CashflowGameService.ownProjectsAllowed();
+  }
+
   addSmileProject() {
+    if (!this.ownProjectsAllowed) return;
     //AccountingComponent.allTransactions.push({account:'Daily', amount: 0.5, date:'27th may 23'});
     AddSmileComponent.zIndex = 1;
     AddSmileComponent.isAddSmile = true;

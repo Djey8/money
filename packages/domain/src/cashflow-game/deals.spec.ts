@@ -62,7 +62,7 @@ function books(cashMinor = 0, extra: Partial<GameBooks> = {}): GameBooks {
     startDate: `2026-09-${index === 0 ? '01' : '03'}`,
     endDate: '',
     category: sub.category ?? '',
-    comment: '#cashflow',
+    comment: '#dreamfund',
     frequency: sub.frequency,
   }));
   return {
@@ -605,7 +605,7 @@ describe('sellCardToFriend', () => {
         date: '2026-10-05',
         time: '',
         category: '@OK4U card sale',
-        comment: 'CashflowGame.cardSaleComment{"name":"OK4U"}\n#cashflow',
+        comment: 'CashflowGame.cardSaleComment{"name":"OK4U"}\n#dreamfund',
       },
     ]);
   });

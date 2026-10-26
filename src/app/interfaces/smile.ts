@@ -36,6 +36,10 @@ export interface SmileBucket {
 export interface Smile {
   title: string; // Project name
   sub: string; // Subtitle/description
+  /** The dream of a character of the game (JFK, 2026-10-25): it can be funded, commented and planned, but not deleted. */
+  dream?: boolean;
+  /** The Dream card this project came from (a Dreamfund game): it can be lived once every bucket is full. */
+  dreamCardId?: string;
   phase: SmilePhase; // Overall project phase
   description: string; // Detailed description
   targetDate?: string; // When you want to achieve this goal

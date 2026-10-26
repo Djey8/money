@@ -86,7 +86,8 @@ export function legalActions(
       const pending = currentTurn(state).pending;
       if (!whyDiceFirst(state)) {
         actions.push(
-          ...cardActions(pending?.kind).filter(
+          // a tile of a Dreamfund map has a card to read, nothing to buy or draw: it is ticked off or left
+          ...(pending?.kind === 'story' ? [] : cardActions(pending?.kind)).filter(
             (a) => a.action !== 'draw_card' || !whyCannotDraw(state),
           ),
         );

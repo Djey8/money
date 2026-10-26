@@ -10,7 +10,12 @@ describe('SubscriptionComponent', () => {
   describe('isPeriodPaid()', () => {
     let component: SubscriptionComponent;
     const today = new Date();
-    const todayISO = today.toISOString().split('T')[0];
+    // the local date, like the component's weeks: the UTC date is yesterday's for a few hours after midnight
+    const todayISO = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
 
     beforeEach(() => {
       AppStateService.instance.allSubscriptions = [];

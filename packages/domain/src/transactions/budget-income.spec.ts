@@ -4,8 +4,8 @@ describe('what counts as income in the budget chart', () => {
   const tx = (over: object) => ({ account: 'Income', amountMinor: 100_00, ...over });
 
   it('counts salary, positive subscriptions and one-time payments booked to Income', () => {
-    expect(isActualIncome(tx({ category: '@Salary', comment: '#cashflow' }))).toBe(true);
-    expect(isActualIncome(tx({ category: '@OK4U card sale', comment: 'sold\n#cashflow' }))).toBe(
+    expect(isActualIncome(tx({ category: '@Salary', comment: '#dreamfund' }))).toBe(true);
+    expect(isActualIncome(tx({ category: '@OK4U card sale', comment: 'sold\n#dreamfund' }))).toBe(
       true,
     );
     expect(
@@ -22,9 +22,9 @@ describe('what counts as income in the budget chart', () => {
       isActualIncome({ account: 'Daily', amountMinor: 1_000_00, category: '@Bank loan' }),
     ).toBe(false);
     expect(
-      isActualIncome(tx({ category: '@Savings', comment: 'Teacher savings\n#cashflow' })),
+      isActualIncome(tx({ category: '@Savings', comment: 'Teacher savings\n#dreamfund' })),
     ).toBe(false);
-    expect(isActualIncome(tx({ category: '@Ersparnisse', comment: 'x\n#cashflow' }))).toBe(false);
+    expect(isActualIncome(tx({ category: '@Ersparnisse', comment: 'x\n#dreamfund' }))).toBe(false);
   });
 
   it('a savings category of the player (no game marker) is income like any other', () => {

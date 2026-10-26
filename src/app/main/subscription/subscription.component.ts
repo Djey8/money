@@ -356,11 +356,23 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     );
   }
 
+  /**
+   * "Today" of the subscriptions: in a running game it is the game's own day (the next Payday), so a plan that was paused or finished
+   * shows as ended as soon as its end date is behind the game, not the calendar (JFK, 2026-10-26).
+   */
+  static today(): Date {
+    const game = AppStateService.instance.cashflowGame;
+    if (CashflowGameService.isCashflowGame() && game.professionId && game.virtualDate) {
+      return new Date(game.virtualDate);
+    }
+    return new Date();
+  }
+
   static getCreditAmount() {
     let sum = 0;
     SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
-      const today = new Date();
+      const today = SubscriptionComponent.today();
       if (subscription.account === 'Income' && (!subscription.endDate || endDate >= today)) {
         sum += SubscriptionComponent.monthlyAmount(subscription);
       }
@@ -372,7 +384,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     let sum = 0;
     SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
-      const today = new Date();
+      const today = SubscriptionComponent.today();
       if (subscription.account != 'Income' && (!subscription.endDate || endDate >= today)) {
         sum += SubscriptionComponent.monthlyAmount(subscription);
       }
@@ -384,7 +396,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     let sum = 0;
     SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
-      const today = new Date();
+      const today = SubscriptionComponent.today();
       if (!subscription.endDate || endDate >= today) {
         sum += SubscriptionComponent.monthlyAmount(subscription);
       }
@@ -394,7 +406,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
 
   static isActive(index) {
     const endDate = new Date(SubscriptionComponent.allSubscriptions[index].endDate);
-    const today = new Date();
+    const today = SubscriptionComponent.today();
     return !(!SubscriptionComponent.allSubscriptions[index].endDate || endDate >= today);
   }
 
@@ -402,7 +414,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     let noInactive = true;
     SubscriptionComponent.allSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
-      const today = new Date();
+      const today = SubscriptionComponent.today();
       if (subscription.endDate && endDate < today) {
         noInactive = false;
       }
@@ -414,7 +426,7 @@ export class SubscriptionComponent implements OnDestroy, AfterViewChecked, OnIni
     let noInactive = true;
     SubscriptionComponent.allSearchedSubscriptions.forEach((subscription) => {
       const endDate = new Date(subscription.endDate);
-      const today = new Date();
+      const today = SubscriptionComponent.today();
       if (subscription.endDate && endDate < today && subscription.isFiltered) {
         noInactive = false;
       }

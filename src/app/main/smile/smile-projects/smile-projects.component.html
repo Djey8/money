@@ -32,7 +32,15 @@
     (click)="openAiAssistant()"
     (keydown.enter)="openAiAssistant()"
   />
-  <button id="addbtn" class="add-circle-btn" aria-label="Add" (click)="addSmileProject()">+</button>
+  <button
+    id="addbtn"
+    class="add-circle-btn"
+    aria-label="Add"
+    *ngIf="ownProjectsAllowed"
+    (click)="addSmileProject()"
+  >
+    +
+  </button>
 </div>
 
 <!-- Search -->
@@ -110,7 +118,10 @@
     (click)="clickRow(getOriginalIndex(project))"
     (keydown.enter)="clickRow(getOriginalIndex(project))"
     [class.goal-complete]="project.phase === 'completed'"
+    [class.life-goal]="project.dream"
   >
+    <!-- the dream of the character: a win condition, set apart from the projects that were chosen -->
+    <div class="life-goal-ribbon" *ngIf="project.dream">⭐ {{ 'Smile.lifeDream' | translate }}</div>
     <!-- Card Header -->
     <div class="card-header">
       <span class="phase-badge phase-{{ project.phase }}">

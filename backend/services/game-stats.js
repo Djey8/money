@@ -20,6 +20,7 @@ const {
   LEAVE_LOSS_AFTER_ROUND,
 } = require('@money/domain/dist/cashflow-game/table/rating');
 const store = require('../repositories/game-stats-store');
+const { present } = require('./game-profile-view');
 
 /** The namespace of the bots' deterministic ids: the same bot has the same `playerId` on every environment. */
 const BOT_NAMESPACE = '6f1d3c52-9a0e-4c1b-8d5e-2b7a4f9e0c31';
@@ -342,8 +343,9 @@ function createGameStats({
       const profile = bot
         ? await ensureBotProfile(player.bot.policyId)
         : await ensureHumanProfile(player.id, player.name);
-      const leftEarly =
-        player.status === 'left' && (player.leftRound ?? 0) <= LEAVE_LOSS_AFTER_ROUND;
+      // leaving is a loss from the moment play starts, unless the host gave some free rounds when opening the table
+      const free = table.settings.leaveFreeRounds ?? LEAVE_LOSS_AFTER_ROUND;
+      const leftEarly = player.status === 'left' && (player.leftRound ?? 0) <= free;
       members.push({ player, entry, profile, bot, leftEarly });
     }
     const rated = members.filter((m) => !m.leftEarly);
@@ -355,6 +357,7 @@ function createGameStats({
       humans: humans.length,
       tableRound: table.tableRound,
       escaped: table.result.ranking.some((entry) => entry.outcome === 'escaped'),
+      abandoned: members.some((m) => !m.bot && m.player.status === 'left' && !m.leftEarly),
     });
     const repeats = eligibility.counts
       ? await repeatsOf(
@@ -565,7 +568,59 @@ function createGameStats({
     return out;
   }
 
+  /**
+   * Who sits at a table, for the lobby (JFK, 2026-10-25): each seat with the public profile of the person or the bot - the picture,
+   * the rating and the numbers of their games, so a player knows who they play against and can open the leaderboard panel. A person
+   * who is not listed on the leaderboard shows only their rating, picture and the number of games (they chose not to be a public
+   * profile): `listed: false`, and no panel is opened for them.
+   */
+  async function seatsOf(table) {
+    const out = [];
+    for (const [seat, player] of table.players.entries()) {
+      let profile;
+      if (player.bot) {
+        profile = await ensureBotProfile(player.bot.policyId);
+      } else {
+        profile = await store.findHumanProfile(db, player.id);
+      }
+      const base = {
+        seat,
+        name: player.name,
+        color: player.color,
+        bot: !!player.bot,
+      };
+      if (!profile) {
+        // a person who has no profile yet (no game played): the starting rating
+        out.push({
+          ...base,
+          listed: false,
+          rating: START_RATING,
+          ratedGames: 0,
+          provisional: true,
+        });
+        continue;
+      }
+      const shown = present(profile);
+      const listed = profile.type === 'bot' || profile.visible === true;
+      out.push(
+        listed
+          ? { ...base, listed: true, ...shown, name: player.name }
+          : {
+              ...base,
+              listed: false,
+              playerId: shown.playerId,
+              rating: shown.rating,
+              ratedGames: shown.ratedGames,
+              provisional: shown.provisional,
+              ...(shown.pictureVersion ? { pictureVersion: shown.pictureVersion } : {}),
+            },
+      );
+    }
+    return out;
+  }
+
   return {
+    seatsOf,
     reconcileBases,
     recomputeRatings,
     setPicture,

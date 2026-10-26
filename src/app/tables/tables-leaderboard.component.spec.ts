@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TablesLeaderboardComponent } from './tables-leaderboard.component';
 
@@ -130,6 +131,35 @@ describe('TablesLeaderboardComponent', () => {
     expect(panel.querySelectorAll('.pi-dot')).toHaveLength(2);
     // closed with its x
     (panel.querySelector('.pi-close') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-table-player-info')).toBeNull();
+  });
+
+  it('every game of the list opens at its table, the first five in view and the rest to scroll to', () => {
+    me(player({ type: 'human', visible: true }));
+    board([player({})]);
+    const router = TestBed.inject(Router);
+    const go = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+    (element.querySelector('.lb-row') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const games = Array.from({ length: 12 }, (_, n) => ({
+      tableId: `table-${n}`,
+      table: `Game ${n}`,
+      endedAt: '2026-10-17T10:00:00Z',
+      players: 4,
+      place: 2,
+      outcome: 'playing',
+      ranked: true,
+      ratingChange: 1,
+      ratingAfter: 1700,
+    }));
+    http.expectOne((r) => r.url.endsWith('/v1/game/players/p1')).flush(player({ recent: games }));
+    fixture.detectChanges();
+    const rows = element.querySelectorAll<HTMLElement>('.pi-recent li');
+    expect(rows).toHaveLength(12);
+    rows[3].click();
+    expect(go).toHaveBeenCalledWith(['/tables', 'table-3']);
+    // the panel gave way to the table
     fixture.detectChanges();
     expect(element.querySelector('app-table-player-info')).toBeNull();
   });

@@ -126,6 +126,7 @@ describe('the catalog and the lobby', () => {
         'difficulty',
         'id',
         'name',
+        'playerIds',
         'ratings',
       ]);
     }
@@ -153,6 +154,33 @@ describe('the catalog and the lobby', () => {
     expect(markers.filter((m) => m.roomId === roomId)).toHaveLength(1);
     const room = await store.getRoom(getGameRoomsDb(), roomId);
     expect(room.seatsTaken).toBe(2);
+  });
+
+  it('says who sits at a table before anybody joins: the list carries the seats, and the seats route the profiles', async () => {
+    if (!dbAvailable) return;
+    const roomId = await openTable({ name: 'Seats preview' });
+    await call(host, 'post', `/game/rooms/${roomId}/bots`, {
+      policyId: 'champion-v1',
+      level: 'strong',
+    });
+    const open = (await call(guest, 'get', '/game/rooms?scope=open')).body.items.find(
+      (table) => table.id === roomId,
+    );
+    expect(open.seats).toHaveLength(2);
+    expect(open.seats[0]).toMatchObject({ bot: false, listed: false, rating: 1500 });
+    expect(open.seats[1]).toMatchObject({ bot: true, listed: true, level: 'strong' });
+    expect(open.seats[1].rating).toBeGreaterThan(1000);
+    const seats = (await call(host, 'get', `/game/rooms/${roomId}/seats`)).body.seats;
+    expect(seats.map((seat) => seat.name)).toEqual(['Human', 'Champion Cleo (strong)']);
+    // the bot is a leaderboard player: its panel opens by this id
+    expect(seats[1].playerId).toMatch(/^[0-9a-f-]{36}$/);
+    const panel = await call(host, 'get', `/game/players/${seats[1].playerId}`);
+    expect(panel.status).toBe(200);
+    // the catalog names the player of every level
+    const catalog = (await call(host, 'get', '/game/rooms/bots')).body.items.find(
+      (bot) => bot.id === 'champion-v1',
+    );
+    expect(catalog.playerIds.strong).toBe(seats[1].playerId);
   });
 
   it('a bot can be seated at a skill level, which is part of its strategy id and name', async () => {
@@ -255,5 +283,36 @@ describe('a person and two bots play a whole table', () => {
     const filed = await human.post('/save', {});
     expect(filed.status).toBe(200);
     human.disconnect();
+  });
+
+  describe('leaving a ranked game that has started is a loss, and the bots finish it', () => {
+    it('the last person leaving does not close the table: the bots play it to its end, recorded as a loss for the person', async () => {
+      if (!dbAvailable) return;
+      const roomId = await openTable({ roundLimit: 5 });
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'all-rounder' });
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'mlm-then-properties' });
+      const human = new TableBot({ name: 'human', token: host.token, baseUrl, roomId });
+      await human.connect();
+      await call(host, 'put', `/game/rooms/${roomId}/ready`, { ready: true });
+      await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+      await call(host, 'put', `/game/rooms/${roomId}/profession`, { professionId: 'manager' });
+      await human.waitFor((b) => b.view && b.view.phase === 'playing');
+
+      const left = await call(host, 'post', `/game/rooms/${roomId}/leave`, {});
+      expect(left.status).toBe(200);
+      // the table is not closed: only bots are left in it, and they finish the game
+      const deadline = Date.now() + 90000;
+      let room;
+      do {
+        room = (await call(host, 'get', `/game/rooms/${roomId}`)).body;
+        if ((room.table || room).phase === 'finished') break;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } while (Date.now() < deadline);
+      const table = room.table || room;
+      expect(table.phase).toBe('finished');
+      expect(table.result.ranking.find((entry) => entry.outcome === 'left')).toBeDefined();
+      expect(table.result.ranking[table.result.ranking.length - 1].outcome).toBe('left');
+      human.disconnect();
+    });
   });
 });

@@ -100,7 +100,7 @@ function steps(
         date: '',
         time: '',
         category: `@${tag}`,
-        comment: `${textOrFallback(deps.text, 'CashflowGame.liabilityPaidComment', `Paid off ${tag} in one payment`)}\n#cashflow`,
+        comment: `${textOrFallback(deps.text, 'CashflowGame.liabilityPaidComment', `Paid off ${tag} in one payment`)}\n#dreamfund`,
       },
     ],
     working,

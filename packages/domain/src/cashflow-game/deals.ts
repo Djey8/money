@@ -819,7 +819,7 @@ export function sellCardToFriend(
         date: '',
         time: '',
         category: `@${name} card sale`,
-        comment: `${deps.text('CashflowGame.cardSaleComment', { name })}\n#cashflow`,
+        comment: `${deps.text('CashflowGame.cardSaleComment', { name })}\n#dreamfund`,
       },
     ],
     books,

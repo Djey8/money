@@ -108,7 +108,7 @@ describe('TableSessionService', () => {
     expect(service.events().map((e) => e.seq)).toEqual([0, 1]);
   });
 
-  it('plays one move with a command id and the version it read', async () => {
+  it('plays one move with a command id, and no expected version: the server judges it when its turn comes', async () => {
     FakeEventSource.last.emit('snapshot', {
       room: { id: 'r1' },
       view: view(7, []),
@@ -118,7 +118,7 @@ describe('TableSessionService', () => {
     const req = http.expectOne((r) => r.url.endsWith('/v1/game/rooms/r1/commands'));
     expect(req.request.method).toBe('POST');
     expect(req.request.body.command).toEqual({ type: 'roll' });
-    expect(req.request.body.expectedVersion).toBe(7);
+    expect(req.request.body.expectedVersion).toBeUndefined();
     expect(req.request.body.clientCommandId).toMatch(/^c[a-z0-9]+$/);
     req.flush({});
     expect(await done).toBe(true);

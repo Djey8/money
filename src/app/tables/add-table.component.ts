@@ -3,17 +3,23 @@ import {
   ChangeDetectorRef,
   Component,
   EventEmitter,
+  Input,
   OnInit,
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
+import type { TableView } from '@money/domain';
 import { TablesApiService, type CreateTableInput } from './tables-api.service';
 import { ProfileComponent } from '../panels/profile/profile.component';
 import { tablesTexts, type TablesTexts } from './tables.texts';
+import { addTableTexts, type AddTableTexts } from './add-table.texts';
+import { hallTexts, type HallTexts } from './hall.texts';
+import { WheelPickerComponent } from './wheel-picker.component';
 import {
   APP_LANGUAGES,
+  GAME_LANGUAGES,
   LanguageService,
   type AppLanguage,
 } from '../shared/services/language.service';
@@ -33,148 +39,327 @@ function accountName(): string {
 @Component({
   selector: 'app-add-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, WheelPickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
-    <div class="at-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="t.createTitle">
+    <div
+      class="at-backdrop"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="existing ? h.settingsEdit : a.title"
+    >
       <div class="at-panel" [attr.dir]="rtl ? 'rtl' : 'ltr'">
         <header class="at-head">
-          <h2>{{ t.createTitle }}</h2>
+          <h2>{{ existing ? h.settingsEdit : a.title }}</h2>
           <button type="button" class="at-close" [attr.aria-label]="t.back" (click)="closed.emit()">
             ×
           </button>
         </header>
-        <p class="at-error" *ngIf="error" role="alert">{{ error }}</p>
-        <form (ngSubmit)="create()" class="tl-form">
-          <label class="tl-field">
-            <span>{{ t.tableName }}</span>
-            <input type="text" name="name" maxlength="40" [(ngModel)]="form.name" required />
-          </label>
-          <label class="tl-field">
-            <span>{{ t.initials }}</span>
-            <input
-              type="text"
-              name="initials"
-              maxlength="2"
-              class="at-initials"
-              [(ngModel)]="initials"
-              [placeholder]="defaultLetters"
-            />
-            <small class="tl-meta">{{ t.initialsHint }}</small>
-          </label>
-          <div class="tl-field">
-            <span>{{ t.tableLanguage }}</span>
-            <div class="tl-flags" role="radiogroup" [attr.aria-label]="t.tableLanguage">
-              <button
-                *ngFor="let lang of languages"
-                type="button"
-                role="radio"
-                class="tl-flag"
-                [class.tl-flag--on]="form.language === lang.code"
-                [attr.aria-checked]="form.language === lang.code"
-                [title]="lang.name"
-                (click)="chooseLanguage(lang.code)"
-              >
-                <img [src]="lang.flag" [alt]="lang.name" width="32" />
-              </button>
+        <p class="at-error" *ngIf="error || problem" role="alert">{{ error || problem }}</p>
+        <p class="at-note" *ngIf="existing">{{ h.settingsResetNote }}</p>
+        <form (ngSubmit)="create()" class="at-form">
+          <!-- the table -->
+          <section class="at-group">
+            <h3>{{ a.groupTable }}</h3>
+            <div class="at-row">
+              <div class="at-label">
+                <strong>{{ a.name }}</strong>
+                <small>{{ a.nameHint }}</small>
+              </div>
+              <div class="at-name">
+                <input
+                  type="text"
+                  name="name"
+                  maxlength="40"
+                  [(ngModel)]="form.name"
+                  [placeholder]="suggestion"
+                  [attr.aria-label]="a.name"
+                />
+                <button
+                  type="button"
+                  class="at-dice"
+                  [title]="a.nameAgain"
+                  [attr.aria-label]="a.nameAgain"
+                  (click)="nextSuggestion()"
+                >
+                  🎲
+                </button>
+              </div>
             </div>
-          </div>
-          <label class="tl-field">
-            <span>{{ t.seats }}</span>
-            <input type="number" name="seats" min="2" max="12" [(ngModel)]="form.maxSeats" />
-          </label>
-          <label class="tl-field">
-            <span>{{ t.visibility }}</span>
-            <select name="visibility" [(ngModel)]="form.visibility">
-              <option value="public">{{ t.public }}</option>
-              <option value="private">{{ t.private }}</option>
-            </select>
-          </label>
-          <label class="tl-field">
-            <span>{{ t.clock }}</span>
-            <select name="clock" [(ngModel)]="form.clock">
-              <option value="none">{{ t.clockNone }}</option>
-              <option value="per-move">{{ t.clockMove }}</option>
-              <option value="bank">{{ t.clockBank }}</option>
-            </select>
-          </label>
-          <label class="tl-field" *ngIf="form.clock === 'per-move'">
-            <span>{{ t.clockMove }}</span>
-            <input type="number" name="secs" min="10" max="3600" [(ngModel)]="form.seconds" />
-          </label>
-          <label class="tl-field" *ngIf="form.clock === 'bank'">
-            <span>{{ t.clockBank }}</span>
-            <input type="number" name="bank" min="60" max="14400" [(ngModel)]="form.bankSeconds" />
-          </label>
-          <label class="tl-field">
-            <span>{{ t.endCondition }}</span>
-            <select name="end" [(ngModel)]="form.endCondition">
-              <option value="first-escape">{{ t.endFirst }}</option>
-              <option value="all-done">{{ t.endAll }}</option>
-              <option value="round-limit">{{ t.endRounds }}</option>
-            </select>
-          </label>
-          <label class="tl-field" *ngIf="form.endCondition === 'round-limit'">
-            <span>{{ t.roundLimit }}</span>
-            <input type="number" name="rounds" min="1" max="1000" [(ngModel)]="form.roundLimit" />
-          </label>
-          <label class="tl-field">
-            <span>{{ t.professions }}</span>
-            <select name="professions" [(ngModel)]="form.professions">
-              <option value="duplicates">{{ t.profDup }}</option>
-              <option value="unique">{{ t.profUnique }}</option>
-              <option value="random">{{ t.profRandom }}</option>
-            </select>
-          </label>
-          <label class="tl-check">
-            <input type="checkbox" name="spectators" [(ngModel)]="form.spectators" />
-            <span>{{ t.spectators }}</span>
-          </label>
-          <label class="tl-field">
-            <span>{{ t.pace }}</span>
-            <select name="pace" [(ngModel)]="form.pace">
-              <option value="fast">{{ t.paceFast }}</option>
-              <option value="normal">{{ t.paceNormal }}</option>
-              <option value="slow">{{ t.paceSlow }}</option>
-            </select>
-          </label>
-          <label class="tl-check">
-            <input type="checkbox" name="turnGate" [(ngModel)]="form.turnGate" />
-            <span>{{ t.turnGate }}</span>
-          </label>
-          <label class="tl-field">
-            <span>{{ t.offerRolls }}</span>
-            <select name="offerRolls" [(ngModel)]="form.offerRolls">
-              <option [ngValue]="1">1</option>
-              <option [ngValue]="2">2</option>
-              <option [ngValue]="3">3</option>
-              <option [ngValue]="4">4</option>
-              <option [ngValue]="6">6</option>
-            </select>
-          </label>
-          <label class="tl-check">
-            <input type="checkbox" name="ranked" [(ngModel)]="form.ranked" />
-            <span>{{ t.ranked }}</span>
-          </label>
-          <label class="tl-check">
-            <input type="checkbox" name="showProgress" [(ngModel)]="form.showProgress" />
-            <span>{{ t.showProgress }}</span>
-          </label>
-          <label class="tl-check">
-            <input type="checkbox" name="repayOffTurn" [(ngModel)]="form.repayOffTurn" />
-            <span>{{ t.repayOffTurn }}</span>
-          </label>
-          <label class="tl-check">
-            <input type="checkbox" name="allowUndo" [(ngModel)]="form.allowUndo" />
-            <span>{{ t.allowUndo }}</span>
-          </label>
+            <div class="at-row" *ngIf="!existing">
+              <div class="at-label">
+                <strong>{{ a.language }}</strong>
+                <small>{{ a.languageHint }}</small>
+              </div>
+              <div class="tl-flags" role="radiogroup" [attr.aria-label]="a.language">
+                <button
+                  *ngFor="let lang of languages"
+                  type="button"
+                  role="radio"
+                  class="tl-flag"
+                  [class.tl-flag--on]="form.language === lang.code"
+                  [attr.aria-checked]="form.language === lang.code"
+                  [title]="lang.name"
+                  (click)="chooseLanguage(lang.code)"
+                >
+                  <img [src]="lang.flag" [alt]="lang.name" width="32" />
+                </button>
+              </div>
+            </div>
+            <div class="at-row" *ngIf="!existing">
+              <div class="at-label">
+                <strong>{{ a.initials }}</strong>
+                <small>{{ a.initialsHint }}</small>
+              </div>
+              <input
+                type="text"
+                name="initials"
+                maxlength="2"
+                class="at-initials"
+                [(ngModel)]="initials"
+                [placeholder]="defaultLetters"
+                [attr.aria-label]="a.initials"
+              />
+            </div>
+            <div class="at-row">
+              <div class="at-label">
+                <strong>{{ a.seats }}</strong>
+                <small>{{ a.seatsHint }}</small>
+              </div>
+              <app-wheel-picker
+                [options]="seatOptions"
+                [(value)]="form.maxSeats"
+                [min]="2"
+                [max]="24"
+                [label]="a.seats"
+                [otherLabel]="a.otherNumber"
+                [ownLabel]="a.ownNumber"
+              ></app-wheel-picker>
+            </div>
+            <div class="at-row at-row--stack">
+              <div class="at-label">
+                <strong>{{ a.visibility }}</strong>
+                <small>{{ a.visibilityHint }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.visibility">
+                <button
+                  *ngFor="let option of visibilityOptions(); trackBy: trackValue"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.visibility === option.value"
+                  [attr.aria-checked]="form.visibility === option.value"
+                  (click)="form.visibility = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- the game -->
+          <section class="at-group">
+            <h3>{{ a.groupGame }}</h3>
+            <div class="at-row">
+              <div class="at-label">
+                <strong>{{ a.ranked }}</strong>
+                <small>{{ a.rankedHint }}</small>
+              </div>
+              <label class="at-switch">
+                <input
+                  type="checkbox"
+                  name="ranked"
+                  [(ngModel)]="form.ranked"
+                  [attr.aria-label]="a.ranked"
+                />
+                <span class="at-switch-track"></span>
+              </label>
+            </div>
+            <div class="at-row at-row--stack">
+              <div class="at-label">
+                <strong>{{ a.endCondition }}</strong>
+                <small>{{ endHint() }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.endCondition">
+                <button
+                  *ngFor="let option of endOptions(); trackBy: trackValue"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.endCondition === option.value"
+                  [attr.aria-checked]="form.endCondition === option.value"
+                  (click)="form.endCondition = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+            <div class="at-row" *ngIf="form.endCondition === 'round-limit'">
+              <div class="at-label">
+                <strong>{{ a.rounds }}</strong>
+              </div>
+              <app-wheel-picker
+                [options]="roundOptions"
+                [(value)]="form.roundLimit"
+                [min]="1"
+                [max]="1000"
+                [label]="a.rounds"
+                [otherLabel]="a.otherNumber"
+                [ownLabel]="a.ownNumber"
+              ></app-wheel-picker>
+            </div>
+            <div class="at-row at-row--stack">
+              <div class="at-label">
+                <strong>{{ a.professions }}</strong>
+                <small>{{ professionHint() }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.professions">
+                <button
+                  *ngFor="let option of professionOptions(); trackBy: trackValue"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.professions === option.value"
+                  [attr.aria-checked]="form.professions === option.value"
+                  (click)="form.professions = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- time -->
+          <section class="at-group">
+            <h3>{{ a.groupTime }}</h3>
+            <div class="at-row at-row--stack">
+              <div class="at-label">
+                <strong>{{ a.clock }}</strong>
+                <small>{{ clockHint() }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.clock">
+                <button
+                  *ngFor="let option of clockOptions(); trackBy: trackValue"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.clock === option.value"
+                  [attr.aria-checked]="form.clock === option.value"
+                  (click)="form.clock = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+            <div class="at-row" *ngIf="form.clock === 'per-move'">
+              <div class="at-label">
+                <strong>{{ a.seconds }}</strong>
+              </div>
+              <app-wheel-picker
+                [options]="moveSecondOptions"
+                [(value)]="form.seconds"
+                [min]="10"
+                [max]="3600"
+                [unit]="a.unitSeconds"
+                [label]="a.seconds"
+                [otherLabel]="a.otherNumber"
+                [ownLabel]="a.ownNumber"
+              ></app-wheel-picker>
+            </div>
+            <div class="at-row" *ngIf="form.clock === 'bank'">
+              <div class="at-label">
+                <strong>{{ a.seconds }}</strong>
+              </div>
+              <app-wheel-picker
+                [options]="bankSecondOptions"
+                [(value)]="form.bankSeconds"
+                [min]="60"
+                [max]="14400"
+                [unit]="a.unitSeconds"
+                [label]="a.seconds"
+                [otherLabel]="a.otherNumber"
+                [ownLabel]="a.ownNumber"
+              ></app-wheel-picker>
+            </div>
+            <div class="at-row at-row--stack">
+              <div class="at-label">
+                <strong>{{ a.pace }}</strong>
+                <small>{{ a.paceHint }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.pace">
+                <button
+                  *ngFor="let option of paceOptions(); trackBy: trackValue"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.pace === option.value"
+                  [attr.aria-checked]="form.pace === option.value"
+                  (click)="form.pace = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- the rules of play: only on demand, so the panel stays short -->
           <button
-            class="tx-btn tx-btn--primary"
-            type="submit"
-            [disabled]="busy || !form.name.trim()"
+            type="button"
+            class="at-advanced"
+            [attr.aria-expanded]="showAdvanced"
+            (click)="showAdvanced = !showAdvanced"
           >
-            {{ t.create }}
+            <span>{{ showAdvanced ? '▾' : '▸' }} {{ a.advanced }}</span>
+            <small>{{ a.advancedHint }}</small>
+          </button>
+          <section class="at-group" *ngIf="showAdvanced">
+            <h3>{{ a.groupRules }}</h3>
+            <div class="at-row" *ngFor="let rule of switches(); trackBy: trackRule">
+              <div class="at-label">
+                <strong>{{ rule.title }}</strong>
+                <small>{{ rule.hint }}</small>
+              </div>
+              <label class="at-switch">
+                <input
+                  type="checkbox"
+                  [name]="rule.key"
+                  [checked]="rule.on"
+                  (change)="toggle(rule.key)"
+                  [attr.aria-label]="rule.title"
+                />
+                <span class="at-switch-track"></span>
+              </label>
+            </div>
+            <div class="at-row" *ngIf="form.ranked">
+              <div class="at-label">
+                <strong>{{ a.leaveFree }}</strong>
+                <small>{{ a.leaveFreeHint }}</small>
+              </div>
+              <app-wheel-picker
+                [options]="leaveOptions"
+                [(value)]="form.leaveFreeRounds"
+                [min]="0"
+                [max]="3"
+                [label]="a.leaveFree"
+                [otherLabel]="a.otherNumber"
+                [ownLabel]="a.ownNumber"
+              ></app-wheel-picker>
+            </div>
+            <div class="at-row">
+              <div class="at-label">
+                <strong>{{ a.offerRolls }}</strong>
+                <small>{{ a.offerRollsHint }}</small>
+              </div>
+              <app-wheel-picker
+                [options]="offerOptions"
+                [(value)]="form.offerRolls"
+                [min]="1"
+                [max]="12"
+                [label]="a.offerRolls"
+                [otherLabel]="a.otherNumber"
+                [ownLabel]="a.ownNumber"
+              ></app-wheel-picker>
+            </div>
+          </section>
+
+          <button class="tx-btn tx-btn--primary at-open" type="submit" [disabled]="busy">
+            {{ existing ? h.settingsSave : a.open }}
           </button>
         </form>
       </div>
@@ -190,15 +375,15 @@ function accountName(): string {
         align-items: flex-start;
         justify-content: center;
         overflow-y: auto;
-        padding: 16px 16px calc(var(--page-bottom-spacer, 72px) + 28px);
-        background: rgba(0, 0, 0, 0.45);
+        padding: 16px 12px calc(var(--page-bottom-spacer, 72px) + 28px);
+        background: rgba(0, 0, 0, 0.5);
       }
       .at-panel {
         width: 100%;
-        max-width: 560px;
+        max-width: 580px;
         box-sizing: border-box;
-        padding: 16px;
-        border-radius: 12px;
+        padding: 14px 14px 18px;
+        border-radius: 14px;
         background: var(--color-surface, #fff);
         color: var(--color-text, #222);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -207,7 +392,7 @@ function accountName(): string {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 12px;
+        margin-bottom: 6px;
       }
       .at-head h2 {
         margin: 0;
@@ -221,54 +406,200 @@ function accountName(): string {
         padding: 0 8px;
         cursor: pointer;
       }
-      .at-initials {
-        width: 5rem !important;
-        text-transform: uppercase;
-        text-align: center;
-      }
       .at-error {
         color: var(--color-danger, #c00);
       }
-      .tl-form {
+      .at-note {
+        margin: 0 0 8px;
+        font-size: 0.85rem;
+        opacity: 0.75;
+      }
+      .at-form {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
       }
-      .tl-field {
+      .at-group {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        border: 1px solid var(--color-border, #d9dde3);
+        border-radius: 12px;
+        background: var(--color-background, #f6f7f9);
+        overflow: hidden;
       }
-      .tl-field input,
-      .tl-field select {
-        width: 100%;
-        box-sizing: border-box;
+      .at-group h3 {
+        margin: 0;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.7;
       }
-      .tl-check {
+      /* one setting: what it is and what it does on the left, how to set it on the right */
+      .at-row {
         display: flex;
-        gap: 8px;
         align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--color-border, #e3e6ea);
       }
-      .tl-meta {
-        color: var(--color-text-secondary, #666);
-        font-size: 0.9em;
+      .at-row--stack {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .at-label {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+        flex: 1 1 10rem;
+      }
+      .at-row--stack .at-label {
+        flex: 0 0 auto;
+      }
+      .at-label small {
+        opacity: 0.7;
+        font-size: 0.82rem;
+        line-height: 1.25;
+      }
+      .at-name {
+        display: flex;
+        gap: 6px;
+        flex: 1 1 12rem;
+        max-width: 20rem;
+      }
+      .at-name input {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .at-dice {
+        border: 1px solid var(--color-border, #ccc);
+        background: var(--color-surface, #fff);
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 1.2rem;
+        cursor: pointer;
+      }
+      .at-initials {
+        width: 5rem;
+        text-transform: uppercase;
+        text-align: center;
+      }
+      .at-seg {
+        display: flex;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--color-surface, #fff);
+      }
+      .at-seg button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 9px 6px;
+        border: 0;
+        border-inline-start: 1px solid var(--color-border, #ddd);
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      .at-seg button:first-child {
+        border-inline-start: 0;
+      }
+      .at-seg .at-seg--on {
+        background: var(--color-primary, #2a7de1);
+        color: #fff;
+        font-weight: 600;
+      }
+      /* an on/off switch */
+      .at-switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 26px;
+        flex: none;
+      }
+      .at-switch input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        margin: 0;
+      }
+      .at-switch-track {
+        position: absolute;
+        inset: 0;
+        border-radius: 13px;
+        background: #b8bec7;
+        transition: background 0.15s;
+        pointer-events: none;
+      }
+      .at-switch-track::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        inset-inline-start: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.15s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+      .at-switch input:checked + .at-switch-track {
+        background: var(--color-primary, #2a7de1);
+      }
+      .at-switch input:checked + .at-switch-track::after {
+        transform: translateX(20px);
+      }
+      .at-advanced {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px dashed var(--color-border, #bbb);
+        border-radius: 12px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+      }
+      .at-advanced span {
+        font-weight: 600;
+      }
+      .at-advanced small {
+        opacity: 0.7;
+      }
+      .at-open {
+        padding: 12px;
+        font-size: 1.05rem;
       }
       .tl-flags {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
       }
       .tl-flag {
-        padding: 4px;
+        padding: 3px;
         border: 2px solid transparent;
         border-radius: 8px;
         background: transparent;
         cursor: pointer;
-        opacity: 0.6;
+        opacity: 0.55;
       }
       .tl-flag--on {
         border-color: var(--color-primary, #1976d2);
         opacity: 1;
+      }
+      @media (max-width: 480px) {
+        .at-row {
+          flex-wrap: wrap;
+        }
       }
     `,
   ],
@@ -277,12 +608,31 @@ export class AddTableComponent implements OnInit {
   /** The id of the table that was opened. */
   @Output() created = new EventEmitter<string | undefined>();
   @Output() closed = new EventEmitter<void>();
+  /** The settings of a table that is still in its lobby: the host changes them with this same panel. */
+  @Input() existing: TableView['settings'] | null = null;
+  /** The changed settings (existing tables only); the caller sends them to the table. */
+  @Output() saved = new EventEmitter<Record<string, unknown>>();
+  /** Why the table refused the changed settings (shown in the panel, which stays open). */
+  @Input() problem: string | null = null;
 
   t: TablesTexts = tablesTexts('en');
+  a: AddTableTexts = addTableTexts('en');
+  h: HallTexts = hallTexts('en');
+  /** The rules of play are only shown on demand. */
+  showAdvanced = false;
+  /** The table name that is used when none is typed - a fresh one with the dice. */
+  suggestion = '';
+  private suggestionIndex = 0;
+  readonly seatOptions = [2, 3, 4, 5, 6, 7, 8, 10, 12];
+  readonly roundOptions = [5, 8, 10, 15, 20, 30, 50];
+  readonly moveSecondOptions = [15, 30, 45, 60, 90, 120, 180];
+  readonly bankSecondOptions = [300, 600, 900, 1200, 1800, 3600];
+  readonly leaveOptions = [0, 1, 2, 3];
+  readonly offerOptions = [1, 2, 3, 4, 6];
   rtl = false;
   busy = false;
   error: string | null = null;
-  readonly languages = APP_LANGUAGES;
+  readonly languages = GAME_LANGUAGES;
   readonly nickname = accountName();
   initials = savedInitials();
   form = {
@@ -298,6 +648,7 @@ export class AddTableComponent implements OnInit {
     spectators: false,
     allowUndo: true,
     repayOffTurn: true,
+    leaveFreeRounds: 0,
     turnGate: true,
     showProgress: true,
     ranked: true,
@@ -320,8 +671,122 @@ export class AddTableComponent implements OnInit {
   ngOnInit(): void {
     const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
     this.t = tablesTexts(lang);
+    this.a = addTableTexts(lang);
+    this.h = hallTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
-    this.form.language = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
+    if (this.existing) this.fillFrom(this.existing);
+    const own = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
+    // only the languages the game is offered in; anything else starts as English
+    this.form.language = GAME_LANGUAGES.some((game) => game.code === own) ? own : 'en';
+    this.suggestionIndex = Math.floor(Math.random() * this.a.suggestions.length);
+    this.suggestion = this.a.suggestions[this.suggestionIndex];
+  }
+
+  /** Another name for the table, from a short list. */
+  nextSuggestion(): void {
+    this.suggestionIndex = (this.suggestionIndex + 1) % this.a.suggestions.length;
+    this.suggestion = this.a.suggestions[this.suggestionIndex];
+    this.form.name = '';
+  }
+
+  /** The options are made again on every check: told apart by what they are, or the buttons are drawn again under the press. */
+  trackValue = (_index: number, option: { value: string }): string => option.value;
+  trackRule = (_index: number, rule: { key: string }): string => rule.key;
+
+  visibilityOptions() {
+    return [
+      { value: 'public' as const, label: this.a.public },
+      { value: 'private' as const, label: this.a.private },
+    ];
+  }
+  endOptions() {
+    return [
+      { value: 'first-escape' as const, label: this.a.endFirst },
+      { value: 'all-done' as const, label: this.a.endAll },
+      { value: 'round-limit' as const, label: this.a.endRounds },
+    ];
+  }
+  endHint(): string {
+    return this.form.endCondition === 'first-escape'
+      ? this.a.endFirstHint
+      : this.form.endCondition === 'all-done'
+        ? this.a.endAllHint
+        : this.a.endRoundsHint;
+  }
+  professionOptions() {
+    return [
+      { value: 'duplicates' as const, label: this.a.profFree },
+      { value: 'unique' as const, label: this.a.profUnique },
+      { value: 'random' as const, label: this.a.profRandom },
+    ];
+  }
+  professionHint(): string {
+    return this.form.professions === 'duplicates'
+      ? this.a.profFreeHint
+      : this.form.professions === 'unique'
+        ? this.a.profUniqueHint
+        : this.a.profRandomHint;
+  }
+  clockOptions() {
+    return [
+      { value: 'none' as const, label: this.a.clockNone },
+      { value: 'per-move' as const, label: this.a.clockMove },
+      { value: 'bank' as const, label: this.a.clockBank },
+    ];
+  }
+  clockHint(): string {
+    return this.form.clock === 'none'
+      ? this.a.clockNoneHint
+      : this.form.clock === 'per-move'
+        ? this.a.clockMoveHint
+        : this.a.clockBankHint;
+  }
+  paceOptions() {
+    return [
+      { value: 'fast' as const, label: this.a.paceFast },
+      { value: 'normal' as const, label: this.a.paceNormal },
+      { value: 'slow' as const, label: this.a.paceSlow },
+    ];
+  }
+
+  /** The on/off rules, each with what it does in one line. */
+  switches() {
+    const f = this.form;
+    return [
+      {
+        key: 'turnGate' as const,
+        on: f.turnGate,
+        title: this.a.turnGate,
+        hint: this.a.turnGateHint,
+      },
+      {
+        key: 'spectators' as const,
+        on: f.spectators,
+        title: this.a.spectators,
+        hint: this.a.spectatorsHint,
+      },
+      {
+        key: 'showProgress' as const,
+        on: f.showProgress,
+        title: this.a.showProgress,
+        hint: this.a.showProgressHint,
+      },
+      {
+        key: 'allowUndo' as const,
+        on: f.allowUndo,
+        title: this.a.allowUndo,
+        hint: this.a.allowUndoHint,
+      },
+      {
+        key: 'repayOffTurn' as const,
+        on: f.repayOffTurn,
+        title: this.a.repayOffTurn,
+        hint: this.a.repayOffTurnHint,
+      },
+    ];
+  }
+  toggle(key: 'turnGate' | 'spectators' | 'showProgress' | 'allowUndo' | 'repayOffTurn'): void {
+    this.form[key] = !this.form[key];
   }
 
   /** The table's language is chosen with its flag - and the app speaks it from that moment. */
@@ -329,12 +794,15 @@ export class AddTableComponent implements OnInit {
     this.form.language = code;
     void this.languageService.use(code as AppLanguage['code']).then(() => {
       this.t = tablesTexts(code);
+      this.a = addTableTexts(code);
+      this.suggestion = this.a.suggestions[this.suggestionIndex % this.a.suggestions.length];
       this.rtl = code === 'ar';
       this.cdr.markForCheck();
     });
   }
 
-  create(): void {
+  /** The form as the settings a table takes (opening a table, or changing one in its lobby). */
+  private settings(): CreateTableInput['settings'] {
     const f = this.form;
     const clock: CreateTableInput['settings']['clock'] =
       f.clock === 'per-move'
@@ -342,28 +810,64 @@ export class AddTableComponent implements OnInit {
         : f.clock === 'bank'
           ? { mode: 'bank', bankSeconds: f.bankSeconds, incrementSeconds: 0 }
           : { mode: 'none' };
+    return {
+      name: (f.name.trim() || this.suggestion).slice(0, 40),
+      visibility: f.visibility,
+      maxSeats: f.maxSeats,
+      professions: f.professions,
+      clock,
+      endCondition: f.endCondition,
+      ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
+      spectators: f.spectators,
+      allowRewind: f.allowUndo,
+      repayOffTurn: f.repayOffTurn,
+      leaveFreeRounds: f.leaveFreeRounds,
+      turnGate: f.turnGate,
+      pace: f.pace,
+      showProgress: f.showProgress,
+      ranked: f.ranked,
+      rules: { sellOfferRolls: f.offerRolls },
+    };
+  }
+
+  /** The panel shows the settings the table has now. */
+  private fillFrom(current: TableView['settings']): void {
+    const f = this.form;
+    f.name = current.name;
+    f.maxSeats = current.maxSeats;
+    f.visibility = current.visibility;
+    f.professions = current.professions;
+    f.endCondition = current.endCondition;
+    if (current.roundLimit) f.roundLimit = current.roundLimit;
+    f.spectators = current.spectators;
+    f.allowUndo = current.allowRewind;
+    f.repayOffTurn = current.repayOffTurn;
+    f.leaveFreeRounds = current.leaveFreeRounds;
+    f.turnGate = current.turnGate;
+    f.showProgress = current.showProgress;
+    f.ranked = current.ranked;
+    f.pace = current.pace;
+    f.offerRolls = current.rules.sellOfferRolls;
+    if (current.clock.mode === 'per-move') {
+      f.clock = 'per-move';
+      f.seconds = current.clock.secondsPerMove;
+    } else if (current.clock.mode === 'bank') {
+      f.clock = 'bank';
+      f.bankSeconds = current.clock.bankSeconds;
+    }
+  }
+
+  create(): void {
+    if (this.existing) {
+      this.saved.emit(this.settings() as unknown as Record<string, unknown>);
+      return;
+    }
     const letters = saveInitials(this.initials);
     const input: CreateTableInput = {
       nickname: this.nickname.trim(),
       ...(letters ? { initials: letters } : {}),
       language: this.form.language,
-      settings: {
-        name: f.name.trim(),
-        visibility: f.visibility,
-        maxSeats: f.maxSeats,
-        professions: f.professions,
-        clock,
-        endCondition: f.endCondition,
-        ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
-        spectators: f.spectators,
-        allowRewind: f.allowUndo,
-        repayOffTurn: f.repayOffTurn,
-        turnGate: f.turnGate,
-        pace: f.pace,
-        showProgress: f.showProgress,
-        ranked: f.ranked,
-        rules: { sellOfferRolls: f.offerRolls },
-      },
+      settings: this.settings(),
     };
     this.busy = true;
     this.error = null;

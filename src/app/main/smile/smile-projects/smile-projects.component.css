@@ -372,3 +372,22 @@
 .empty-state p {
   margin: 0;
 }
+
+/* A project the character has to finish to win (JFK, 2026-10-26): the life dream and the emergency reserve stand out from the rest. */
+.life-goal {
+  position: relative;
+  border: 2px solid var(--color-warning, #f0b323) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning, #f0b323) 28%, transparent);
+}
+
+.life-goal-ribbon {
+  margin: -4px -4px 8px;
+  padding: 4px 10px;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(100deg, var(--color-warning, #f0b323), #ffd966);
+  color: #4a3500;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

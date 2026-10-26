@@ -1,3 +1,4 @@
+import { hasGameTag } from './game-tag';
 import { addMonthsToIsoDate } from './engine';
 
 /**
@@ -44,7 +45,7 @@ export function nextSmartDate(usedDays: Set<number>, today: string): string {
 }
 
 /**
- * Every day-of-month a `#cashflow` Subscription recurs on. A Subscription's `startDate` can sit in an earlier month
+ * Every day-of-month a `#dreamfund` Subscription recurs on. A Subscription's `startDate` can sit in an earlier month
  * than today (the game started weeks ago), but it still pays on that day every month - so only its day counts.
  */
 export function gameSubscriptionDays(
@@ -53,7 +54,7 @@ export function gameSubscriptionDays(
   const days = new Set<number>();
   for (const subscription of subscriptions) {
     const day = Number(subscription.startDate?.split('-')[2]);
-    if (subscription.comment?.includes('#cashflow') && day >= 1) days.add(day);
+    if (hasGameTag(subscription.comment) && day >= 1) days.add(day);
   }
   return days;
 }
@@ -93,13 +94,13 @@ const GROW_TRADE_COMMENT =
   /^(Buy|Sell) (Share|Investment|Asset) |^Dividende Share |^Payback Liabilitie /;
 
 /**
- * Every game transaction: those tagged `#cashflow`, plus Grow trades made through the Add dialog before it tagged
+ * Every game transaction: those tagged `#dreamfund`, plus Grow trades made through the Add dialog before it tagged
  * them - so older games age their purchases back at Payday too (JFK, 2026-10-03: a share bought two Paydays ago
  * stayed put).
  */
 export function isGameTransaction(transaction: { comment?: string }): boolean {
   const comment = transaction.comment ?? '';
-  return comment.includes('#cashflow') || GROW_TRADE_COMMENT.test(comment);
+  return hasGameTag(comment) || GROW_TRADE_COMMENT.test(comment);
 }
 
 /**
