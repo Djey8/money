@@ -651,10 +651,35 @@ export class CashflowGameService {
   }
 
   /** `localStorage.setItem` can throw (quota, private-browsing) — the in-memory stack still works for the rest of this session either way. */
+  private undoStoreTimer: ReturnType<typeof setTimeout> | undefined;
+
   private persistUndoStack(): void {
     this.undoStackAt = this.clock.nowIso();
-    this.storeUndoStackLocally();
     this.historyChanged$.next();
+    // writing the whole chain as JSON is the heaviest thing a move does; it waits for a quiet moment (and is written at once when
+    // the page is left), so the totem and the buttons never wait for it
+    if (typeof window === 'undefined' || this.undoStoreTimer !== undefined) {
+      if (typeof window === 'undefined') this.storeUndoStackLocally();
+      return;
+    }
+    this.undoStoreTimer = setTimeout(() => this.flushUndoStack(), 800);
+    if (!this.undoFlushWired) {
+      this.undoFlushWired = true;
+      window.addEventListener('pagehide', () => this.flushUndoStack());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') this.flushUndoStack();
+      });
+    }
+  }
+
+  private undoFlushWired = false;
+
+  /** Writes the history to the browser now (it is otherwise written when the page is quiet). */
+  flushUndoStack(): void {
+    if (this.undoStoreTimer === undefined) return;
+    clearTimeout(this.undoStoreTimer);
+    this.undoStoreTimer = undefined;
+    this.storeUndoStackLocally();
   }
 
   private storeUndoStackLocally(): void {
@@ -1011,6 +1036,8 @@ export class CashflowGameService {
    * dont have a history, just refresh we still have the current game history").
    */
   clearPersistedUndoStack(): void {
+    if (this.undoStoreTimer !== undefined) clearTimeout(this.undoStoreTimer);
+    this.undoStoreTimer = undefined;
     this.undoStack = [];
     this.undoStackAt = null;
     try {

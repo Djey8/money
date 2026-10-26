@@ -1,3 +1,4 @@
+import { merge } from 'rxjs';
 import { gameError } from 'src/app/shared/game-error-text';
 import { dreamToSmile, reserveToFire } from './dream-project';
 import { TileCardComponent } from './tile-card.component';
@@ -149,6 +150,8 @@ const PAYDAY_POPUP_MS = 3500;
 
 /** How long the token rests on each space while it walks, and how long a Payday flashes. */
 const WALK_STEP_MS = 320;
+/** The totem's last step takes this long (the CSS transition of the token); the roll is booked after it, so nothing blocks the move. */
+const TOKEN_SETTLE_MS = 300;
 /** The dice tumble, then rest on their number for a beat, before the token moves. */
 const DICE_TUMBLE_MS = 1900;
 /** The faces flicker fast at first and slow down as the dice come to rest. */
@@ -277,6 +280,12 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     private local: LocalService,
   ) {
     CashflowGameComponent.instance = this;
+    // what the page derives from the books (the effects, the goals) is worked out once per change of the books, not on every pass of
+    // change detection - each step of the totem is one (JFK, 2026-10-26: the totem lagged)
+    merge(
+      AppStateService.instance.transactionsUpdated$,
+      AppStateService.instance.subscriptionsUpdated$,
+    ).subscribe(() => (this.booksVersion += 1));
     this.currencyChoice = this.local.getData(CURRENCY_CHOICE_KEY) || 'game';
     // the game's money is Dream Taler or Traumtaler, whichever language the game speaks
     this.translate.onLangChange.subscribe((event) => this.applyGameCurrency(event.lang));
@@ -899,9 +908,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** Every goal of the character's list is met in a game with a list (a Dreamfund game). */
   get allGoalsDone(): boolean {
     if (!this.hasActiveGame || !this.cashflowGameService.customRules) return false;
-    const checks = Object.values(this.goalChecks);
-    return checks.length > 0 && checks.every(Boolean);
+    return this.memoized('goalsDone', `${this.appState.allSmileProjects.length}`, () => {
+      const checks = Object.values(this.goalChecks);
+      return checks.length > 0 && checks.every(Boolean);
+    });
   }
+
+  private winStored: { key: string; seen: boolean } | null = null;
 
   private get winKey(): string {
     return `dreamfund-won-${this.savedGames.currentGameId ?? this.appState.cashflowGame.professionId}`;
@@ -911,11 +924,17 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   get showWin(): boolean {
     if (!this.allGoalsDone) return false;
     if (this.winSeenId === this.winKey) return false;
-    try {
-      return localStorage.getItem(this.winKey) !== '1';
-    } catch {
-      return true;
+    // the browser's store is asked once per game, not on every pass
+    if (this.winStored?.key !== this.winKey) {
+      let seen: boolean;
+      try {
+        seen = localStorage.getItem(this.winKey) === '1';
+      } catch {
+        seen = false;
+      }
+      this.winStored = { key: this.winKey, seen };
     }
+    return !this.winStored.seen;
   }
 
   dismissWin(): void {
@@ -1169,9 +1188,34 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     );
   }
 
+  private booksVersion = 0;
+  private gameIds = new WeakMap<object, number>();
+  private gameIdCounter = 0;
+  private memo = new Map<string, { key: string; value: unknown }>();
+
+  /** A value derived from the books, kept until the books or the game state change. */
+  private memoized<T>(name: string, extra: string, compute: () => T): T {
+    const game = this.appState.cashflowGame as object;
+    let id = this.gameIds.get(game);
+    if (id === undefined) {
+      id = this.gameIdCounter += 1;
+      this.gameIds.set(game, id);
+    }
+    const key = `${this.booksVersion}|${id}|${extra}`;
+    const hit = this.memo.get(name);
+    if (hit?.key === key) return hit.value as T;
+    const value = compute();
+    this.memo.set(name, { key, value });
+    return value;
+  }
+
   /** What runs on the account now (costs and gains with their Paydays left). */
   get activeEffects(): ActiveEffect[] {
-    return this.cashflowGameService.activeEffects;
+    return this.memoized(
+      'effects',
+      this.translate.currentLang ?? '',
+      () => this.cashflowGameService.activeEffects,
+    );
   }
 
   /** A running effect that is about a Grow project: look at it there. */
@@ -2404,7 +2448,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   private queueFit(): void {
-    if (this.fitQueued || typeof requestAnimationFrame === 'undefined') return;
+    // measuring and resizing the wheel on every step of the walk makes the layout run again and again
+    if (this.walking || this.fitQueued || typeof requestAnimationFrame === 'undefined') return;
     this.fitQueued = true;
     requestAnimationFrame(() => {
       this.fitQueued = false;
@@ -2498,6 +2543,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         paydayTold = true;
       }
     }
+    // the last step of the totem is a CSS transition on the main thread: booking the roll (the snapshot for Undo, the books, the save)
+    // takes a while, so it waits until the totem has arrived - the move is smooth, then the books change
+    if (!this.skipWalking && result.move.entered.length > 0) await this.pause(TOKEN_SETTLE_MS);
     if ((this.skipWalking && result.move.paydays > 0) || (result.openingPayday && !paydayTold)) {
       this.showPayday();
     }

@@ -528,6 +528,7 @@ describe('CashflowGameService', () => {
       it('survives a page reload: the stored history is read back', () => {
         started();
         service.payday(cb());
+        service.flushUndoStack();
         const reloaded = new CashflowGameService(
           persistence as any,
           new IncomeStatementService({ saveData: jest.fn() } as any),
@@ -3286,6 +3287,7 @@ describe('CashflowGameService', () => {
       started();
       service.resolveBaby({ onSuccess: jest.fn(), onError: jest.fn() });
       expect(service.canUndo).toBe(true);
+      service.flushUndoStack();
 
       // A page reload/dev-server restart creates a brand-new service instance from scratch.
       const incomeStatement = new IncomeStatementService({ saveData: jest.fn() } as any);
@@ -3303,6 +3305,7 @@ describe('CashflowGameService', () => {
     it('clearPersistedUndoStack empties the in-memory stack and localStorage — JFK, 2026-09-29+: "when we logout we remove also this part for the localStorage. So logout login we dont have a history"', () => {
       started();
       expect(service.canUndo).toBe(true);
+      service.flushUndoStack();
       expect(localStorage.getItem('cashflowUndoStack')).not.toBeNull();
 
       service.clearPersistedUndoStack();
