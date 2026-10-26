@@ -1,3 +1,79 @@
+## [1.31.0] - 2026-10-26
+
+### Features
+
+- feat(game): Settings in the solo game (notifications and map messages), the independence badge states the cost of living it compares, a Dreamfund game review for the analyst and the MCP, and the guide for agents
+- feat(game): the notes of a project carry the facts and numbers - what a payment cost with the cash before and the loan, what a buyer or a window offers, every step of a hype, a sale with its payout and the cash after, a dream moment before and after
+- feat(game): there is always a way to sell - the market price less a discount from the Sell button of Grow, when no market card offers a window or a buyer
+- feat(game): the Dreamfund game guide in the app (English and German, with the statistics of Jonas), and selling what the cards made from Grow at the open offer of a market card
+- feat(game): a win screen and the independence badge, Sapling businesses balanced down, twelve simulated ways of playing, and the Dreamfund game page with the statistics of Jonas
+- feat(game): richer deals and a clear view of what runs on the account
+- feat(game): Opportunity and Harvest cards share one look and the same words, a planned card opens in Grow and is only buyable for as many turns as the setting says, and the totem stands on the line through its tile
+- feat(game): balance the Medium Dreamfund economy with the simulation - two offers per landing, three side-hustle slots, stronger business, hustle, rent and dividend numbers in a tuning layer, independence ignores salary-linked tax, bots plan with payment plans, dream moments and projects
+- feat(game): an Opportunity card is planned as a Grow project first - the player chooses how many units to buy in Grow with no limit from the card, sees what they have in cash and would have to borrow in the notes, buys with Grow's Buy and sells with Grow's Sell; the Harvest cards make the offers a sale works with
+- feat(game): the difficulty logic of the Dreamfund game (Easy, Medium and Hard, kept out of the setup until the numbers are tuned), the end of a Dreamfund game only by bankruptcy, and a simulation of whole games with six bot strategies, a command to run it and a report of wins, bankruptcies, the turn each goal was reached and what each card was worth
+- feat(game): the Harvest tile with its 87 cards - markets with an index that drifts at every Payday, shares and assets priced by it, windows to sell in, buyers for shares, property, businesses and collectibles, hype ladders, scams revealed, and cash flow events for the businesses and properties from the Opportunity cards
+- feat(game): the Opportunity tile with its 98 cards - a choice of Seed, Sapling or Tree, up to three offers, shares in units, savings applied to the expenses, properties and businesses with their loans, side hustles with a limit and a swap, traps that look like normal offers, and every card becoming a Grow project once it is paid in the Add dialog
+- feat(game): stack tiles open from a small decision panel into one stable card view, card costs are paid in the Add dialog, strict mode lets dreams be declined, every card move is a History step, and the bank loan covers every payment with its interest as a setting
+- feat(game): Custom JFK rules with free, guided and strict modes of its own, the card lying over the whole wheel with a shuffle, the reserve linked to the Mojo, start traits and insurances chosen with the character, new projects opened at once, a less likely first promotion, and the career tile can no longer trap the game
+- feat(game): one card flow for every stack tile (open, find or shuffle, deal with it, seen dice), a career ladder card, dreams side by side, life events that may be refused or not by a game setting, the profile with how to win first, a live reserve of three months of expenses, and the life dream and reserve set apart in the Smile and Fire lists
+- feat(game): the token stands inside the map beside its tile, the Payday lights up in the Latest line above the map instead of covering it, and one Career tile gives way to an Opportunity
+- feat(game): emergencies become Fire projects settled with the app's own tools, and the Life, Career and Dream stacks play on their tiles (36 life cards, the Dual Student's nine career stages, 48 dreams and 8 moments), with a price level per character
+- feat(game): the Emergency tile draws one of 45 cards (English and German) that is paid now or on a plan as a Fire project, with insurance that limits it to a deductible and can be hopped in and out at a Payday
+- feat(game): the maps hold more Career chances and Opportunity as the most common tile, with Dream and Emergency a fifth of the map at most
+- feat(game): maps never turn (an infinity stays an infinity), START is a pad above the map, tokens stand at the corner of their tile, fewer fire and smile tiles and one career tile, insurances paid from Fire and treats from Splurge, expenses shown red with a minus, and the game tag is #dreamfund (old #cashflow still read)
+- feat(game): the emergency reserve of three monthly expenses is a protected Fire project and a condition of winning, the dream is checked off when full, characters are listed by monthly cashflow, and the lobby, setup and tables lists no longer lose clicks
+- feat(game): Dreamfund maps - five shapes in three sizes with seeded layouts, the new tiles (Dream, Emergency, Opportunity, Harvest, Life, Career) with their colours, icons and a filler card each, and the board choice in the setup
+- feat(game): the currency is chosen in the setup after the language (the money of the game by default), and the dream project cannot be deleted
+- feat(game): the dream is a Smile project from the first day, looked at read-only before the game and opened in the Smile page during it, and payment plans in Paydays that are paid at every Payday
+- feat(game): the game is Dreamfund / Traumtopf with Dream Taler / Traumtaler, one character view for the setup and the running game with a winning checklist, the income statement biggest first, the IOTA as 3.705 coins
+- feat(game): the character grid and a chosen character with three financial panels, the advanced rules in the look of the table settings, and the dual student on a 34.000 gross salary with German tax and social lines, finer living costs, 500 a month
+- feat(game): the game is offered in English and German only for now - one list to widen when the other four languages are done
+- feat(game): a new-game setup in the groups of the table panel (language, how to play, edition, rules), then a character page - and the custom edition with its first character, a dual student with a story, a dream and a monthly budget
+- feat(ui): a spinner while a card action or a subscription change is worked out - the card or the update window closes first
+- feat(game): Payday popup steps aside for a Latest line, the dice action shows rolling with skip, the profession panel gets Cashflow, Income Statement and Balance Sheet sections with links to Grow, Smile and Fire
+- feat(tables): a switch for the small pop-up messages while playing a table game
+- feat(ui): redesigned table lobby and waiting room - open tables as cards with the players already seated, filters, settings visible to all and editable by the host, seat cards with picture and rating that open the leaderboard stats, a bot picker with skill levels
+- feat(rooms): who sits at a table - seat previews in the lists, GET /seats, bot player ids and table-mates' pictures for the lobby
+- feat(ui): the period of the shared filter as in the statistics (week, month, quarter, year, all, custom - dates only for custom); the rules of a new table behind Advanced; Lobby is just Lobby
+- feat(cashflow): quick period filter (week, month, quarter, year, all) with arrows through the time series, on the Cashflow and the Income pages
+- feat(game): every card in a message or a line of the history opens, to be read, with a way back; the Joker icon is gone
+- feat(game): the Payday banner comes when the token gets there, and it is redesigned (coin header, income / expenses / cashflow tiles)
+- feat(tokens): the token list is a list of cards on phones, with big buttons for revoke and delete
+- feat(leaderboard): every game of a player opens at its table; finished tables stay readable for three months and for anyone with a game account at a public table
+- feat(tables): a new table in a few taps - optional name with a dice, wheels for the numbers, one line for every setting, short bot ideas and plain skill levels
+- feat(tables): every move at a table waits in one line, in the order it arrived, and is judged against the table as it is then
+- feat(tables): a card on offer opens as a card for every player who may answer it, places and out-of-game marks on the player chips, a setting for free rounds when leaving
+- feat(game): bots finish a game at full speed when only they are left, leaving a ranked game is a loss, a deeper tie-break, offers that cannot bankrupt anybody and bots that trade realistically
+
+### Bug Fixes
+
+- fix: patch brotli-libs CVE-2026-111497 in the frontend image
+- fix(game): the effects badges in one scrollable row, the Payday banner over them instead of a permanent "latest" line, and one badge per card
+- fix(game): the player throws every die of a bought card, tokens point to the middle of the map on a ring, the effects strip says "for good" with the currency, and a missing rules hint
+- fix(game): card titles of several words in Grow trades, dice tables on every dice card, the German of all card texts, savings counted, the totem on its line
+- fix(game): employment keeps its briefcase and the career chip uses the symbol of the Career tile
+- fix(game): the character chips sit in one row (symbols only on a small screen, the insurance chip leads to the hop in and out), the career chip is called Career with its own symbol, and the first roll no longer makes the page scroll sideways
+- fix(game): strict rules only let money into a project or the Mojo, the Bank loan is worked out from what is really paid, the infinity token stands inside its loop, and the History says in words what each card move did and lets every card be read again
+- fix(game): paying into a Smile or Fire project or the Mojo is always allowed, the budget plan drops what earlier games left behind and plans only the subscriptions, more room above the shuffling text, and the way back from a card reads Back
+- fix(game): payment plans count in the cashflow and the income statement, a paused plan shows as an ended subscription on the game's own calendar and a restarted one runs the Paydays it has left, finished plans end by themselves and deleted plans take their subscription along, and the reserve project is called Mojo and follows every payment into it
+- fix(game): a life card never takes the monthly cashflow below a quarter, paying into a project of the game is allowed under strict rules and fills in the amount, a played stack tile only offers Done, fewer and better spread Career tiles, a card search, and no more notes about cards that went back
+- fix(game): a saved Dreamfund game is read back whole (life, career, dreams, insurances, the card on the tile, the budget plan, the marks of the dream and reserve projects), the traits sit under the profession with a small card each, and the game money is on again after a reload
+- fix(game): payment plans may only take what the month has free, so the cashflow never goes into the red
+- fix(game): the character preview shows its numbers in Dream Taler or Traumtaler, as the game will
+- fix(ui): the Latest line keeps its one-row place so the wheel never moves, and the table's short notices hang over the wheel with an x
+- fix(game): the drawer of a stock price card can buy at its price as well as sell, at a table
+- fix(settings): opening Personal Access Tokens closes the settings window
+- fix(tables): the new-table panel keeps its rows short and the wheel's marker sits on the middle number
+- fix(auth): a new account never shows an error for its first data, and a family behind one router can create accounts
+- fix(tables): the offer panel reads the language through a public getter (the self-hosted build failed on a private field)
+- fix(game): a player who left commands nothing, a game of bots has a round cap, only the rules' refusals mean cannot afford, the offer panel can be revised
+- fix(game): the new management system helps only the player who drew the card
+
+### Performance
+
+- perf(game): the totem moves smoothly - the roll is booked after the last step has settled, derived values are worked out once per change of the books, the wheel is not re-fitted while it walks, and Undo's copy in the browser is written when the page is quiet
+
 ## [1.30.0] - 2026-10-19
 
 ### Features
