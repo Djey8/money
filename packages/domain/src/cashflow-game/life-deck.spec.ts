@@ -203,7 +203,10 @@ describe('the Life stack (temp_cards v0.3)', () => {
     const net = netMonthlyMinor(before.state, before.subscriptions);
     let books = play(before, 'L19', { kind: 'fate' });
     expect(books.state.life!.employment).toBe('unemployed');
-    expect(monthly(books)).toBe(monthly(before) - Math.round(net * 0.4));
+    // the cut is 40% of the net income, but a card never takes the cashflow below a quarter of what it was
+    expect(monthly(books)).toBe(
+      Math.max(monthly(before) - Math.round(net * 0.4), Math.round(monthly(before) * 0.25)),
+    );
     expect(books.state.jobSearch).toMatchObject({ rollFrom: 6, paydaysLeft: 6 });
     // six Paydays without a six (a rng that never rolls a six): the next offer pays 15% less
     const never = () => 0;
@@ -224,6 +227,24 @@ describe('the Life stack (temp_cards v0.3)', () => {
     expect(books.state.life!.employment).toBe('employed');
     expect(books.state.jobSearch).toBeUndefined();
     expect(monthly(books)).toBe(monthly(before) - Math.round(net * 0.15));
+  });
+
+  it('a blow is softened: a card never takes the monthly cashflow below a quarter of what it was', () => {
+    const rich = start();
+    // the month is thin: most of the cashflow is spent on a line of the game
+    const title = rich.state.gameSubscriptionTitles[rich.state.gameSubscriptionTitles.length - 1];
+    const thin: LifeBooks = {
+      ...rich,
+      subscriptions: rich.subscriptions.map((sub) =>
+        sub.title === title
+          ? { ...sub, amountMinor: sub.amountMinor - (monthly(rich) - 30000) }
+          : sub,
+      ),
+    };
+    expect(monthly(thin)).toBe(30000);
+    const books = play(thin, 'L19', { kind: 'fate' });
+    expect(monthly(books)).toBeGreaterThanOrEqual(7500);
+    expect(monthly(books)).toBeLessThan(30000);
   });
 
   it('a new job is found on a six: the salary is whole again', () => {

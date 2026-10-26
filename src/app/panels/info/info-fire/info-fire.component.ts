@@ -171,6 +171,13 @@ export class InfoFireComponent extends BaseInfoComponent {
   newActionPriority: 'low' | 'medium' | 'high' = 'medium';
   newActionDueDate = '';
 
+  /** In a game a payment is called a payment: the button that adds money to a project says so (JFK, 2026-10-26). */
+  get inGame(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() && !!AppStateService.instance.cashflowGame.professionId
+    );
+  }
+
   // Payment Plans management
   /** In a game the payment plans run in Paydays: the date of the next one (empty outside a game). */
   get gameDate(): string {
@@ -546,6 +553,10 @@ export class InfoFireComponent extends BaseInfoComponent {
     AddComponent.selectedOption = 'Fire';
     AddComponent.url = '/fireemergencies';
     const remaining = this.getTotalTarget() - this.getTotalAmount();
+    // in a game the amount that finishes the project is already filled in
+    if (this.inGame && remaining > 0) {
+      AddComponent.amountTextField = (Math.round(remaining * 100) / -100).toString();
+    }
     AddComponent.commentTextField = `${InfoFireComponent.title} ${remaining} `;
     InfoFireComponent.isInfo = false;
     AddComponent.isAdd = true;

@@ -131,6 +131,17 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(trade.borrowed).toBeGreaterThan(0);
   });
 
+  it('money paid into a project of the game or the reserve is not a forbidden free amount', () => {
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      rules: { ...state().cashflowGame.rules!, manualTransactions: 'forbidden' },
+    };
+    state().allFireEmergencies = [{ title: 'Phone', buckets: [] } as any];
+    expect(service.addDialogRefusal('Phone', '@Phone', -30000)).toBeNull();
+    expect(service.addDialogRefusal('x', '@Mojo', -30000)).toBeNull();
+    expect(service.addDialogRefusal('x', '@Pizza', -3000)).toMatch(/do not allow/);
+  });
+
   it('the interest of the Bank loan is a setting of the game', () => {
     state().cashflowGame = {
       ...state().cashflowGame,

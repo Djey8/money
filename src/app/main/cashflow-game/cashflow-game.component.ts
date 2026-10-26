@@ -1028,8 +1028,23 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     const story = this.stackTile;
     if (!story) return false;
     const rules = this.cashflowGameService.customRules;
+    if (this.stackPlayed) return false;
     if (rules?.mode === 'free') return true;
-    return story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
+    return !this.stackPlayed && story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
+  }
+
+  /** The card of the stack tile was already dealt with: only Done is left (JFK, 2026-10-26). */
+  get stackPlayed(): boolean {
+    const pending = this.appState.cashflowGame.turn?.pending;
+    if (!pending) return false;
+    return (
+      !!pending.played ||
+      !!pending.emergency?.projectTitle ||
+      !!pending.life?.outcome ||
+      !!pending.dream?.declined ||
+      !!pending.dream?.taken ||
+      !!pending.dream?.applied
+    );
   }
 
   openStackTile(): void {

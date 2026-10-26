@@ -210,6 +210,8 @@ export interface ScheduledLife {
 
 export interface LifeOutcome {
   cardId: string;
+  /** The monthly costs were scaled down so the card does not end the game (see `softenLines`). */
+  softened?: boolean;
   /** What to tell: the card's title for the transaction. */
   title: Localized;
   oneTimeMinor: number;

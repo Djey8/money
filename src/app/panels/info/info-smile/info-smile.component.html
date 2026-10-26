@@ -312,7 +312,11 @@
             *ngIf="!isSettled(bucket) && bucket.amount < bucket.target"
             (click)="addToBucket(bucket.id, bucket.title, bucket.target - bucket.amount)"
           >
-            + {{ 'Smile.addToBucket' | translate }}
+            {{
+              inGame
+                ? ('CashflowGame.pay.payShort' | translate)
+                : '+ ' + ('Smile.addToBucket' | translate)
+            }}
           </button>
 
           <!-- Related Transactions for this bucket -->
@@ -881,7 +885,7 @@
     </div>
 
     <button id="addbtn" *ngIf="!areAllBucketsFull()" (click)="add()">
-      {{ 'AddAsset.add' | translate }}
+      {{ (inGame ? 'CashflowGame.pay.payShort' : 'AddAsset.add') | translate }}
     </button>
     <button id="editbtn" class="btn btn--action" (click)="editSmileProject()">
       {{ 'Info.edit' | translate }}

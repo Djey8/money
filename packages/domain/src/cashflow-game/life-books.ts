@@ -111,6 +111,46 @@ function transaction(
   };
 }
 
+/** A card never takes more than this share of the monthly cashflow that is left (JFK, 2026-10-26: a blow must not end the game on the spot). */
+export const LIFE_CASHFLOW_KEPT_PERCENT = 25;
+
+/**
+ * Softens the blow of a card: the monthly lines it adds may not take the cashflow of the month below a quarter of what it was (and
+ * never below zero). Costs are scaled down together, what comes in is left alone. Returns the lines and whether they were softened.
+ */
+export function softenLines(
+  books: LifeBooks,
+  added: LifeLine[],
+  ended: LifeLine[],
+  lang: EmergencyLang,
+): { lines: LifeLine[]; softened: boolean } {
+  const { state, subscriptions } = books;
+  const dropped = droppedPremiumTitles(state);
+  const titles = state.gameSubscriptionTitles.filter((title) => !dropped.has(title));
+  const cashflow = subscriptions
+    .filter((sub) => titles.includes(sub.title))
+    .reduce((sum, sub) => sum + sub.amountMinor, 0);
+  const endedSum = ended.reduce((sum, line) => sum + line.amountMinor, 0);
+  const costs = added.filter((line) => line.amountMinor < 0);
+  const costSum = costs.reduce((sum, line) => sum - line.amountMinor, 0);
+  const incomeSum = added
+    .filter((line) => line.amountMinor > 0)
+    .reduce((sum, line) => sum + line.amountMinor, 0);
+  // what the month is after the card, with the lines it ends given back
+  const after = cashflow - endedSum + incomeSum - costSum;
+  const floor = Math.max(0, Math.round((cashflow * LIFE_CASHFLOW_KEPT_PERCENT) / 100));
+  if (costSum === 0 || after >= floor || cashflow <= 0) return { lines: added, softened: false };
+  const room = Math.max(0, cashflow - endedSum + incomeSum - floor);
+  const scale = Math.min(1, room / costSum);
+  void lang;
+  return {
+    softened: true,
+    lines: added.map((line) =>
+      line.amountMinor < 0 ? { ...line, amountMinor: Math.round(line.amountMinor * scale) } : line,
+    ),
+  };
+}
+
 /**
  * Puts a resolved outcome into the books: the one-time payment becomes a transaction, each monthly line a subscription of the game
  * (paid at every Payday), the life state, the reward (two dice, the way Charity gives them) and what is scheduled for later.
@@ -136,23 +176,24 @@ export function applyLifeOutcome(
     taken.add(id);
     return { ...line, id };
   });
+  const softened = softenLines(books, added, ended, lang);
   const titles = [...state.gameSubscriptionTitles];
   const endedTitles = ended.map((line) => lineSubscriptionTitle(line, lang));
   for (const title of endedTitles) {
     const at = titles.indexOf(title);
     if (at >= 0) titles.splice(at, 1);
   }
-  for (const line of added) titles.push(lineSubscriptionTitle(line, lang));
+  for (const line of softened.lines) titles.push(lineSubscriptionTitle(line, lang));
 
   // money that comes is booked; a cost becomes a payment the player makes in the Add dialog
   const paying = bookOneTime(state, effects, outcome.title, outcome.oneTimeMinor, date, lang);
-  effects.subscriptionUpserts = added.map((line) => lineSubscription(line, lang, date));
+  effects.subscriptionUpserts = softened.lines.map((line) => lineSubscription(line, lang, date));
   effects.subscriptionRemovals = endedTitles;
   effects.persist = { ...effects.persist, subscriptions: true };
   effects.state = {
     ...paying,
     life: outcome.life,
-    lifeLines: [...kept, ...added],
+    lifeLines: [...kept, ...softened.lines],
     gameSubscriptionTitles: titles,
     lifeScheduled: [...(state.lifeScheduled ?? []), ...outcome.scheduled],
     ...(outcome.jobSearch ? { jobSearch: outcome.jobSearch } : {}),

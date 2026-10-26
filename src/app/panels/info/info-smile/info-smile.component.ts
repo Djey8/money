@@ -544,6 +544,13 @@ export class InfoSmileComponent extends BaseInfoComponent {
     AddSmileComponent.zIndex = 0;
   }
 
+  /** In a game a payment is called a payment: the button that adds money to a project says so (JFK, 2026-10-26). */
+  get inGame(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() && !!AppStateService.instance.cashflowGame.professionId
+    );
+  }
+
   add() {
     // General add without specific bucket - will distribute equally across all buckets
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
@@ -552,6 +559,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     AddComponent.categoryTextField = `@${InfoSmileComponent.title}`;
     AddComponent.selectedOption = 'Smile';
     AddComponent.commentTextField = `${InfoSmileComponent.title} ${totalRemaining}`;
+    if (this.inGame && totalRemaining > 0) {
+      AddComponent.amountTextField = (Math.round(totalRemaining * 100) / -100).toString();
+    }
 
     AddComponent.url = '/smileprojects';
     AddComponent.isAdd = true;

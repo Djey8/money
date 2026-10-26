@@ -76,9 +76,6 @@ const ROLL_MS = 1000;
         <!-- ───────────── EMERGENCY ───────────── -->
         <ng-container *ngSwitchCase="'emergency'">
           <ng-container *ngIf="emergency as e; else emergencyClosed">
-            <p class="tc-lucky" *ngIf="e.skipped.length">
-              {{ 'CashflowGame.emergency.lucky' | translate }}
-            </p>
             <h4 class="tc-title">
               {{ e.card.title[lang] }}
               <small class="tc-tag tc-tag--{{ e.card.tier }}">{{
@@ -178,9 +175,6 @@ const ROLL_MS = 1000;
         <!-- ───────────── LIFE ───────────── -->
         <ng-container *ngSwitchCase="'life'">
           <ng-container *ngIf="life as l; else lifeClosed">
-            <p class="tc-lucky" *ngIf="l.skipped.length">
-              {{ 'CashflowGame.life.skipped' | translate }}
-            </p>
             <h4 class="tc-title">{{ l.card.title[lang] }}</h4>
             <p>{{ l.card.story[lang] }}</p>
             <ng-container *ngIf="!l.outcome && !rolling">
@@ -277,6 +271,9 @@ const ROLL_MS = 1000;
             <ul class="tc-bullets tc-bullets--done" *ngIf="l.outcome && !rolling">
               <li *ngFor="let line of outcomeLines(l.outcome)">{{ line }}</li>
             </ul>
+            <p class="tc-note" *ngIf="l.outcome?.softened && !rolling">
+              {{ 'CashflowGame.life.softened' | translate }}
+            </p>
           </ng-container>
           <ng-template #lifeClosed>
             <ng-container
@@ -640,6 +637,14 @@ const ROLL_MS = 1000;
       <!-- the free rules: any card of the stack, found in a small grid with quick filters - or shuffled -->
       <ng-template #picker>
         <div class="tc-picker">
+          <input
+            type="search"
+            class="tc-search"
+            [value]="query"
+            (input)="query = $any($event.target).value"
+            [placeholder]="'CashflowGame.tile.search' | translate"
+            [attr.aria-label]="'CashflowGame.tile.search' | translate"
+          />
           <div class="tc-chips">
             <button
               type="button"
@@ -1055,6 +1060,17 @@ const ROLL_MS = 1000;
         flex: 1 1 140px;
         font-weight: 600;
       }
+      .tc-search {
+        box-sizing: border-box;
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: var(--radius-md, 8px);
+        font: inherit;
+        background: var(--color-surface, #fff);
+        color: inherit;
+      }
       .tc-shuffle {
         position: relative;
         display: grid;
@@ -1134,6 +1150,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
   opening = false;
   shuffling = false;
   filter: string | null = null;
+  query = '';
   selectedOffer: string | null = null;
   faces: number[] = [];
   rolling = false;
@@ -1247,6 +1264,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
   private async draw(id?: string): Promise<void> {
     this.opening = false;
     this.filter = null;
+    this.query = '';
     this.faces = [];
     // the pile is shuffled for a moment before the card is shown; a card that was picked needs less of it
     this.shuffling = true;
@@ -1274,7 +1292,13 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   get pickerItems(): PickerItem[] {
     const items = this.allPickerItems;
-    return this.filter ? items.filter((item) => item.tag === this.filter) : items;
+    const byTag = this.filter ? items.filter((item) => item.tag === this.filter) : items;
+    const needle = this.query.trim().toLowerCase();
+    return needle
+      ? byTag.filter((item) =>
+          `${item.id} ${item.title} ${this.tagLabel(item.tag)}`.toLowerCase().includes(needle),
+        )
+      : byTag;
   }
 
   private get allPickerItems(): PickerItem[] {

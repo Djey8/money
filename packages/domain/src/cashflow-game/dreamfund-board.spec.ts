@@ -6,6 +6,7 @@ import {
   TILE_MIX,
   buildDreamfundBoard,
   describeBoard,
+  layoutTiles,
   type BoardDifficulty,
   type BoardSetup,
 } from './dreamfund-board';
@@ -131,5 +132,18 @@ describe('the Dreamfund maps', () => {
     const hard = describeBoard(buildDreamfundBoard(setupOf('ring', 'medium', 1, 'hard')).board);
     expect(easy['opportunity']).toBeGreaterThan(hard['opportunity']);
     expect(easy['emergency']).toBeLessThan(hard['emergency']);
+  });
+
+  it('every kind of tile is spread round the track, not clustered', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const tiles = layoutTiles({ shape: 'ring', size: 'medium', seed });
+      const n = tiles.length;
+      for (const kind of ['career', 'dream', 'emergency', 'harvest'] as const) {
+        const at = tiles.flatMap((tile, i) => (tile === kind ? [i] : []));
+        const gaps = at.map((spot, k) => (at[(k + 1) % at.length] - spot + n) % n);
+        // no two of a kind closer than a third of an even spread
+        expect(Math.min(...gaps)).toBeGreaterThanOrEqual(Math.floor(n / at.length / 3));
+      }
+    }
   });
 });

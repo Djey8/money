@@ -302,7 +302,11 @@
             *ngIf="!isReserve && !isSettled(bucket) && bucket.amount < bucket.target"
             (click)="addBucketToTransaction(bucket.id, bucket.title, bucket.target - bucket.amount)"
           >
-            + {{ 'Fire.addToBucket' | translate }}
+            {{
+              inGame
+                ? ('CashflowGame.pay.payShort' | translate)
+                : '+ ' + ('Fire.addToBucket' | translate)
+            }}
           </button>
 
           <!-- Related Transactions for this bucket -->
@@ -845,7 +849,9 @@
       </ng-template>
     </div>
 
-    <button id="addbtn" (click)="add()">{{ 'AddAsset.add' | translate }}</button>
+    <button id="addbtn" (click)="add()">
+      {{ (inGame ? 'CashflowGame.pay.payShort' : 'AddAsset.add') | translate }}
+    </button>
     <button id="editbtn" class="btn btn--action" (click)="editFireEmergencie()">
       {{ 'Info.edit' | translate }}
     </button>

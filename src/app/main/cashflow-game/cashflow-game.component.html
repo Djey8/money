@@ -1329,10 +1329,19 @@
                 >
                   <button
                     class="btn btn--primary"
+                    *ngIf="!stackPlayed"
                     [disabled]="isBusy || appState.isSaving"
                     (click)="openStackTile()"
                   >
                     {{ 'CashflowGame.solo.openCard' | translate }}
+                  </button>
+                  <button
+                    class="btn btn--primary"
+                    *ngIf="stackPlayed"
+                    [disabled]="isBusy"
+                    (click)="finishSoloDecision('done')"
+                  >
+                    {{ 'CashflowGame.solo.done' | translate }}
                   </button>
                   <button
                     class="btn btn--sm cf-btn-outlined"

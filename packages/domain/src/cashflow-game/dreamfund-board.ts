@@ -60,20 +60,21 @@ const mix = (
 export const TILE_MIX: Record<BoardSize, Record<BoardDifficulty, Mix>> = {
   // payday, opportunity, harvest, dream, emergency, life, career - Opportunity is the most common tile; Career is a chance of a
   // promotion (JFK, 2026-10-26): a few a map, one fewer than first planned, the tile went to Opportunity
+  // JFK, 2026-10-26: fewer Career tiles (the promotion comes slowly), more Opportunity and Harvest - the Grow chances
   small: {
     easy: mix(3, 9, 5, 2, 1, 3, 1),
-    medium: mix(3, 8, 4, 2, 2, 3, 2),
-    hard: mix(3, 6, 3, 3, 4, 3, 2),
+    medium: mix(3, 9, 4, 2, 2, 3, 1),
+    hard: mix(3, 7, 3, 3, 4, 3, 1),
   },
   medium: {
-    easy: mix(4, 13, 7, 3, 2, 4, 3),
-    medium: mix(4, 11, 6, 3, 3, 5, 4),
-    hard: mix(4, 9, 5, 4, 5, 5, 4),
+    easy: mix(4, 13, 8, 3, 2, 4, 2),
+    medium: mix(4, 12, 7, 3, 3, 5, 2),
+    hard: mix(4, 10, 5, 4, 5, 5, 3),
   },
   large: {
-    easy: mix(6, 16, 10, 4, 3, 6, 3),
-    medium: mix(6, 14, 8, 4, 4, 7, 5),
-    hard: mix(6, 11, 7, 5, 7, 7, 5),
+    easy: mix(6, 17, 11, 4, 3, 6, 1),
+    medium: mix(6, 15, 9, 4, 4, 7, 3),
+    hard: mix(6, 12, 7, 5, 7, 7, 4),
   },
 };
 
@@ -138,31 +139,37 @@ export function layoutTiles(setup: BoardSetup, fixedPaydays: number[] = []): Dre
     paydays.has(i) ? 'payday' : null,
   );
 
-  for (let i = 0; i < n; i += 1) {
-    if (placed[i] !== null) continue;
-    const before = placed[(i - 1 + n) % n];
-    const after = placed[(i + 1) % n];
-    const allowed = (kind: DreamfundTile) =>
-      left[kind] > 0 &&
-      kind !== before &&
-      kind !== after &&
-      !(kind === 'emergency' && before === 'payday');
-    let options = rest.filter(allowed);
-    // a corner the rules cannot satisfy: the rules give way, the counts do not
-    if (options.length === 0) options = rest.filter((kind) => left[kind] > 0 && kind !== before);
-    if (options.length === 0) options = rest.filter((kind) => left[kind] > 0);
-    const total = options.reduce((sum, kind) => sum + left[kind], 0);
-    let roll = random() * total;
-    let pick = options[options.length - 1];
-    for (const kind of options) {
-      roll -= left[kind];
-      if (roll < 0) {
-        pick = kind;
-        break;
+  // each kind is spread round the track: the rarest first, every tile as far from the others of its kind as the free places allow
+  // (JFK, 2026-10-26: well distributed, not clustered). The most common kind takes what is left.
+  const order = [...rest].sort((x, y) => left[x] - left[y]);
+  const circular = (x: number, y: number) => {
+    const d = Math.abs(x - y);
+    return Math.min(d, n - d);
+  };
+  for (const kind of order) {
+    const isLast = kind === order[order.length - 1];
+    while (left[kind] > 0) {
+      const free = Array.from({ length: n }, (_, i) => i).filter(
+        (i) =>
+          placed[i] === null &&
+          !(kind === 'emergency' && placed[(i - 1 + n) % n] === 'payday') &&
+          !(kind === 'emergency' && placed[(i + 1) % n] === 'payday' && false),
+      );
+      if (free.length === 0) break;
+      if (isLast) {
+        placed[free[0]] = kind;
+        left[kind] -= 1;
+        continue;
       }
+      const same = placed.flatMap((tile, i) => (tile === kind ? [i] : []));
+      const score = (i: number) =>
+        same.length === 0 ? 0 : Math.min(...same.map((other) => circular(i, other)));
+      const best = Math.max(...free.map(score));
+      const ties = free.filter((i) => score(i) === best);
+      const pick = ties[Math.floor(random() * ties.length)];
+      placed[pick] = kind;
+      left[kind] -= 1;
     }
-    placed[i] = pick;
-    left[pick] -= 1;
   }
   const result = placed as DreamfundTile[];
   repair(result, paydays, random);
@@ -183,6 +190,20 @@ function broken(tiles: DreamfundTile[], i: number): number {
   );
 }
 
+/** The smallest distance round the track between two tiles of a kind. */
+function minGap(tiles: DreamfundTile[], kind: DreamfundTile): number {
+  const n = tiles.length;
+  const at = tiles.flatMap((tile, i) => (tile === kind ? [i] : []));
+  if (at.length < 2) return n;
+  return Math.min(...at.map((spot, k) => (at[(k + 1) % at.length] - spot + n) % n));
+}
+
+/** How close two tiles of a kind may stand: a third of an even spread. */
+function spreadFloor(tiles: DreamfundTile[], kind: DreamfundTile): number {
+  const count = tiles.filter((tile) => tile === kind).length;
+  return Math.floor(tiles.length / Math.max(1, count) / 3);
+}
+
 /** The dealing can corner itself at the end of the track: tiles that break a rule trade places with others until none does. */
 function repair(tiles: DreamfundTile[], paydays: Set<number>, random: () => number): void {
   const n = tiles.length;
@@ -195,8 +216,13 @@ function repair(tiles: DreamfundTile[], paydays: Set<number>, random: () => numb
     const j = movable[Math.floor(random() * movable.length)];
     if (i === j) continue;
     const before = total();
+    const kinds = [tiles[i], tiles[j]];
     [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
-    if (total() >= before) [tiles[i], tiles[j]] = [tiles[j], tiles[i]]; // no better: back
+    // a swap that fixes a rule must not clump a kind together again
+    const clumped = kinds.some(
+      (kind) => kind !== 'payday' && minGap(tiles, kind) < spreadFloor(tiles, kind),
+    );
+    if (total() >= before || clumped) [tiles[i], tiles[j]] = [tiles[j], tiles[i]]; // no better: back
   }
 }
 

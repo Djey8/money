@@ -2046,10 +2046,18 @@ export class CashflowGameService {
     }
     const lang = this.emergencyLang;
     const books = this.lifeBooks();
-    const outcome = resolveLifeCard(view.card, decision, lifeContext(books, lang, this.rng), (id) =>
+    let outcome = resolveLifeCard(view.card, decision, lifeContext(books, lang, this.rng), (id) =>
       this.lifeCards.find((candidate) => candidate.id === id),
     );
     const effects = applyLifeOutcome(books, outcome, { date: this.gameDay, lang });
+    // a blow is softened so that it cannot end the game on the spot: the card then shows what was really taken
+    const placed = effects.state.lifeLines ?? [];
+    const softLines = outcome.lines.map(
+      (original) => placed.find((line) => line.id.split('~')[0] === original.id) ?? original,
+    );
+    if (softLines.some((line, index) => line.amountMinor !== outcome.lines[index].amountMinor)) {
+      outcome = { ...outcome, lines: softLines, softened: true };
+    }
     this.pushUndoSnapshot({
       kind: 'lifeDecision',
       detail: decision.kind,
@@ -4024,7 +4032,12 @@ export class CashflowGameService {
       step.kind !== 'cardPayment'
     )
       return CashflowGameService.ruleText(waiting);
-    if (step.kind === 'transaction') return this.freeAmountRefusal(amountMinor);
+    if (step.kind === 'transaction') {
+      // paying into a project of the game (a Fire emergency, a dream) or into the reserve is not a free amount: it is how the card is
+      // paid (JFK, 2026-10-26)
+      if (this.paysGameProject(category)) return null;
+      return this.freeAmountRefusal(amountMinor);
+    }
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
       return this.sellRefusal(step.detail);
     }
@@ -4035,6 +4048,17 @@ export class CashflowGameService {
       );
     }
     return null;
+  }
+
+  /** Whether a category is a Smile or Fire project of the game, or the Mojo (the reserve). */
+  private paysGameProject(category: string): boolean {
+    const wanted = category.replace(/^@/, '').trim().toLowerCase();
+    if (!wanted) return false;
+    if (wanted === 'mojo') return true;
+    const state = AppStateService.instance;
+    return [...state.allFireEmergencies, ...state.allSmileProjects].some(
+      (project) => project.title.toLowerCase() === wanted,
+    );
   }
 
   /** Whether the app may report a roll made with a real die (`reportRolls`). */
