@@ -1,4 +1,5 @@
 import { dreamToSmile, reserveToFire } from './dream-project';
+import { TileCardComponent } from './tile-card.component';
 import { AfterViewChecked, Component, OnDestroy, Type } from '@angular/core';
 import { CommonModule, formatNumber } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -161,6 +162,7 @@ const DICE_DECISION_REST_MS = 900;
     BoardThumbComponent,
     AppDatePipe,
     RatRaceBoardComponent,
+    TileCardComponent,
   ],
   templateUrl: './cashflow-game.component.html',
   styleUrls: ['./cashflow-game.component.css'],
@@ -550,6 +552,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * language (JFK, 2026-09-30: "the Salary is not working its showing 0... the cashflow calculation
    * is not working").
    */
+  /** What the character holds of the reserve against three months of expenses - live, so a payment from the Mojo shows. */
+  get reserveStatus() {
+    return this.cashflowGameService.reserveStatus;
+  }
+
   get liveSalary(): number {
     return fromMinorUnits(this.liveFinances.salaryMinor);
   }
@@ -622,8 +629,29 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     ];
   }
 
+  /**
+   * What else comes in every month besides the salary and the passive income (JFK, 2026-10-26): the child benefit, a saving of a
+   * shared flat - the positive lines life cards left. The numbers of the live view are always per month.
+   */
+  get liveOtherIncomeLines(): { name: string; amount: number }[] {
+    const titles = this.appState.cashflowGame.gameSubscriptionTitles;
+    return this.appState.allSubscriptions
+      .filter(
+        (sub) =>
+          titles.includes(sub.title) &&
+          sub.title !== titles[0] &&
+          sub.amount > 0 &&
+          !sub.title.endsWith(' Cashflow'),
+      )
+      .map((sub) => ({ name: sub.title, amount: Number(sub.amount) }));
+  }
+
   get liveTotalIncome(): number {
-    return this.liveSalary + this.livePassiveIncome;
+    return (
+      this.liveSalary +
+      this.livePassiveIncome +
+      this.liveOtherIncomeLines.reduce((sum, line) => sum + line.amount, 0)
+    );
   }
 
   /** Every current game expense subscription, itemized — mirrors the profession card's own expense lines, live. */
@@ -646,11 +674,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.hasActiveGame && this.liveFinances.escapedRatRace;
   }
 
+  /** What is left of a month: all that comes in every month less all that goes out every month. */
   get liveCashflow(): number {
-    const finances = this.liveFinances;
-    return fromMinorUnits(
-      finances.salaryMinor + finances.passiveIncomeMinor - finances.expensesMinor,
-    );
+    return Math.round((this.liveTotalIncome - this.liveTotalExpenses) * 100) / 100;
   }
 
   /** Every current liability — the whole account is the game (decision 2), no filtering needed. */
@@ -729,6 +755,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
           ? [{ name: this.translate.instant('CashflowGame.passiveIncome'), amount: passive }]
           : []),
         ...this.livePassiveIncomeLines.map((line) => ({ ...line, sub: true })),
+        ...this.liveOtherIncomeLines,
       ],
       revenueTotal: this.liveTotalIncome,
       expenses: this.liveExpenseLines.map((line) => ({ name: line.title, amount: line.amount })),
@@ -767,16 +794,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       project.buckets.every((bucket) => Number(bucket.amount) + 0.005 >= Number(bucket.target));
     const story = this.profileOf(this.selectedProfession);
     const dreamTitle = story?.dream.project?.title;
-    const reserveTitle = story?.reserve?.project.title;
     const value = {
       parentsLoan: !open(
         alias('parentsLoan', 'Eltern-Darlehen', 'Loan from parents', 'Darlehen der Eltern'),
       ),
       carLoan: !open(alias('carLoan', 'Autokredit', 'Car Loan')),
       dream: full(this.appState.allSmileProjects.find((project) => project.title === dreamTitle)),
-      reserve: full(
-        this.appState.allFireEmergencies.find((project) => project.title === reserveTitle),
-      ),
+      reserve: this.reserveStatus?.ok ?? false,
       independence: this.escapedRatRace,
     };
     const key = JSON.stringify(value);
@@ -917,6 +941,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** What the player sets for the dreams of a game: how many are offered at a landing and how many may be open. */
   dreamOffers = 2;
   maxOpenDreams = 3;
+  lifeCanDeclineSetting = true;
+
+  get lifeCanDecline(): boolean {
+    return this.cashflowGameService.lifeCanDecline;
+  }
 
   get lifeDeckReady(): boolean {
     return (
@@ -952,43 +981,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
   }
 
-  /** What the tile asks of the player before the turn goes on: the Done button waits for it. */
-  storyCanFinish(tile: string): boolean {
-    if (!this.tileHasPanel(tile)) return true;
-    switch (tile) {
-      case 'emergency':
-        return !!this.emergency?.projectTitle;
-      case 'life':
-        return !!this.lifeView?.outcome;
-      case 'career': {
-        const view = this.careerView;
-        return !!view && view.done;
-      }
-      case 'dream': {
-        const view = this.dreamView;
-        if (!view) return false;
-        if (view.swapping) return false;
-        return !!view.taken || view.declined || !!view.applied || this.dreamMomentNothing;
-      }
-      default:
-        return true;
-    }
-  }
-
-  get lifeView() {
-    return this.pendingStory?.tile === 'life' ? this.cashflowGameService.lifeView : null;
-  }
-
-  get careerView() {
-    return this.pendingStory?.tile === 'career' ? this.cashflowGameService.careerView : null;
-  }
-
   get careerStatus() {
     return this.cashflowGameService.careerStatus;
-  }
-
-  get dreamView() {
-    return this.pendingStory?.tile === 'dream' ? this.cashflowGameService.dreamView : null;
   }
 
   private tileCallbacks = {
@@ -998,151 +992,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       this.toastService.show(message, 'error');
     },
   };
-
-  // · life
-
-  drawLife(cardId?: string): void {
-    this.cashflowGameService.drawLife(this.tileCallbacks, cardId || undefined);
-  }
-
-  lifeDecide(kind: string, id?: string): void {
-    this.isBusy = true;
-    const decision =
-      kind === 'option'
-        ? { kind: 'option' as const, id: id! }
-        : ({ kind } as Parameters<typeof this.cashflowGameService.decideLife>[0]);
-    this.cashflowGameService.decideLife(decision, this.tileCallbacks);
-  }
-
-  get lifeCardOptions() {
-    return this.cashflowGameService.lifeCards;
-  }
-
-  /** What an effect does, in words: the lines shown before the decision and after it. */
-  effectLines(effect: LifeEffect | null | undefined): string[] {
-    if (!effect) return [];
-    const money = (minor: number) =>
-      `${Math.abs(fromMinorUnits(minor)).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
-    const t = (key: string, params?: Record<string, unknown>) =>
-      this.translate.instant(`CashflowGame.life.${key}`, params);
-    const lines: string[] = [];
-    if (effect.oneTimeMinor)
-      lines.push(
-        t(effect.oneTimeMinor < 0 ? 'oncePay' : 'onceGet', { amount: money(effect.oneTimeMinor) }),
-      );
-    if (effect.oneTimePercentOfNet)
-      lines.push(t('oncePayPercent', { percent: Math.abs(effect.oneTimePercentOfNet) }));
-    const span = effect.durationPaydays ? t('forPaydays', { count: effect.durationPaydays }) : '';
-    if (effect.monthlyMinor)
-      lines.push(
-        t(effect.monthlyMinor > 0 ? 'monthlyCost' : 'monthlySave', {
-          amount: money(effect.monthlyMinor),
-        }) + span,
-      );
-    if (effect.incomeMonthlyMinor)
-      lines.push(t('monthlyIncome', { amount: money(effect.incomeMonthlyMinor) }) + span);
-    if (effect.incomePercentOfNet !== undefined)
-      lines.push(
-        t(effect.incomePercentOfNet < 0 ? 'incomeCut' : 'incomeRise', {
-          percent: Math.abs(effect.incomePercentOfNet),
-        }) + span,
-      );
-    if (effect.expensesPercent)
-      lines.push(
-        t(effect.expensesPercent > 0 ? 'expensesRise' : 'expensesCut', {
-          percent: Math.abs(effect.expensesPercent),
-        }),
-      );
-    if (effect.child) lines.push(t('child'));
-    if (effect.temporary)
-      lines.push(
-        t('leave', {
-          percent: Math.abs(effect.temporary.incomePercentOfNet),
-          count: effect.temporary.durationPaydays,
-        }),
-      );
-    if (effect.rewardTurns) lines.push(t('reward', { count: effect.rewardTurns }));
-    if (effect.ongoingReward) lines.push(t('rewardOngoing'));
-    if (effect.jobSearch)
-      lines.push(
-        t('jobSearch', { count: effect.jobSearch.maxPaydays, from: effect.jobSearch.rollFrom }),
-      );
-    if (effect.setState) {
-      const s = effect.setState;
-      for (const key of ['relationship', 'home', 'pet', 'location', 'employment'] as const) {
-        if (s[key])
-          lines.push(
-            t('state', {
-              what: this.translate.instant(`CashflowGame.life.badge.${key}`),
-              value: this.translate.instant(`CashflowGame.life.value.${s[key]}`),
-            }),
-          );
-      }
-      if (s.car)
-        lines.push(
-          t('state', {
-            what: this.translate.instant('CashflowGame.life.badge.car'),
-            value: this.translate.instant('CashflowGame.life.value.yes'),
-          }),
-        );
-    }
-    if (effect.partnerRisk) lines.push(t('partnerRisk'));
-    if (effect.removeCostMinor) lines.push(t('endable', { amount: money(effect.removeCostMinor) }));
-    if (effect.minPaydays) lines.push(t('minPaydays', { count: effect.minPaydays }));
-    return lines;
-  }
-
-  /** The effect the card's main decision would have: what the player sees before choosing. */
-  lifePreview(card: LifeCard): LifeEffect | undefined {
-    const life = this.appState.cashflowGame.life;
-    return (
-      card.effects ??
-      (life ? card.effectsByState?.[life.relationship] : undefined) ??
-      card.accept ??
-      card.give
-    );
-  }
-
-  /** The lines of what a decision came to. */
-  outcomeLines(outcome: LifeOutcome): string[] {
-    const lang = this.emergencyLang;
-    const money = (minor: number) =>
-      `${Math.abs(fromMinorUnits(minor)).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
-    const t = (key: string, params?: Record<string, unknown>) =>
-      this.translate.instant(`CashflowGame.life.${key}`, params);
-    const lines: string[] = [];
-    if (outcome.rolls.length) lines.push(`🎲 ${outcome.rolls.join(' · ')}`);
-    if (outcome.oneTimeMinor)
-      lines.push(
-        t(outcome.oneTimeMinor < 0 ? 'oncePay' : 'onceGet', {
-          amount: money(outcome.oneTimeMinor),
-        }),
-      );
-    for (const line of outcome.lines) {
-      const span = line.paydaysLeft ? t('forPaydays', { count: line.paydaysLeft }) : '';
-      lines.push(
-        `${line.title[lang]}: ${line.amountMinor > 0 ? '+' : '−'}${money(line.amountMinor)} ${t('perMonth')}${span}`,
-      );
-    }
-    if (outcome.rewardTurns) lines.push(t('reward', { count: outcome.rewardTurns }));
-    for (const item of outcome.scheduled)
-      lines.push(t('scheduled', { title: item.title[lang], count: item.paydaysLeft }));
-    if (outcome.jobSearch)
-      lines.push(
-        t('jobSearch', { count: outcome.jobSearch.paydaysLeft, from: outcome.jobSearch.rollFrom }),
-      );
-    if (outcome.triggered)
-      lines.push(
-        t('triggered', {
-          card:
-            this.cashflowGameService.lifeCards.find((c) => c.id === outcome.triggered)?.title[
-              lang
-            ] ?? outcome.triggered,
-        }),
-      );
-    if (lines.length === 0) lines.push(t('nothing'));
-    return lines;
-  }
 
   /** The badges of the profile: partner, children, pet, car, home, city, job, career - what has happened to the character. */
   get lifeBadges(): { icon: string; text: string; key: string }[] {
@@ -1187,85 +1036,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   endLifeLine(id: string): void {
     this.cashflowGameService.endLifeLine(id, this.tileCallbacks);
-  }
-
-  // · career
-
-  rollCareer(): void {
-    this.isBusy = true;
-    this.cashflowGameService.rollCareerTile(this.tileCallbacks);
-  }
-
-  chooseBranch(stageId: string): void {
-    this.isBusy = true;
-    this.cashflowGameService.reachStage(stageId, this.tileCallbacks);
-  }
-
-  careerMomentKey(moment: string): string {
-    return `CashflowGame.career.moment.${moment}`;
-  }
-
-  // · dreams
-
-  drawDream(options: { forceOffers?: number; cardId?: string } = {}): void {
-    this.cashflowGameService.drawDream(this.tileCallbacks, options);
-  }
-
-  takeDream(cardId: string): void {
-    this.isBusy = true;
-    this.cashflowGameService.takeDream(cardId, this.tileCallbacks);
-  }
-
-  declineDreams(): void {
-    this.cashflowGameService.declineDreams(this.tileCallbacks);
-  }
-
-  /** A moment with nothing to do for this player (no dream it could help): it is told and the turn goes on. */
-  get dreamMomentNothing(): boolean {
-    const view = this.cashflowGameService.dreamView;
-    return (
-      !!view?.moment &&
-      !view.applied &&
-      this.momentTargets.length === 0 &&
-      !['M05', 'M07'].includes(view.moment.id)
-    );
-  }
-
-  /** The open dreams a moment can be about. */
-  get momentTargets() {
-    const view = this.cashflowGameService.dreamView;
-    if (!view?.moment) return [];
-    const open = this.cashflowGameService.openDreams.map((entry) => ({
-      card: entry.card,
-      buckets: entry.project.buckets.map((bucket) => ({
-        target: Number(bucket.target),
-        amount: Number(bucket.amount),
-      })),
-    }));
-    const indices = dreamsForMoment(view.moment.id as DreamMomentId, open);
-    const entries = this.cashflowGameService.openDreams;
-    return indices.map((i) => entries[i]);
-  }
-
-  applyMoment(projectTitle?: string): void {
-    const view = this.cashflowGameService.dreamView;
-    if (!view?.moment) return;
-    this.isBusy = true;
-    const entry = this.cashflowGameService.openDreams.find(
-      (candidate) => candidate.project.title === projectTitle,
-    );
-    // a gift goes to the first bucket that is not full yet
-    const bucketIndex = Math.max(
-      0,
-      entry?.project.buckets.findIndex(
-        (bucket) => Number(bucket.amount) + 0.005 < Number(bucket.target),
-      ) ?? 0,
-    );
-    this.cashflowGameService.applyDreamMoment(
-      view.moment.id,
-      { projectTitle, bucketIndex },
-      this.tileCallbacks,
-    );
   }
 
   /** The Smile project of a dream, open in the Smile page: fund it, plan its payments. */
@@ -1638,7 +1408,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       mode,
       rules,
       this.showBoardChoice ? this.boardSetup : undefined,
-      { offersPerLanding: this.dreamOffers, maxOpenDreams: this.maxOpenDreams },
+      {
+        offersPerLanding: this.dreamOffers,
+        maxOpenDreams: this.maxOpenDreams,
+        lifeCanDecline: this.lifeCanDeclineSetting,
+      },
     );
   }
 

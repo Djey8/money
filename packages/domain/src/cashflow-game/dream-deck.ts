@@ -50,9 +50,15 @@ export interface DreamSettings {
   offersPerLanding: number;
   /** How many dreams can be open at once (planning, saving or ready; lived ones do not count). */
   maxOpenDreams: number;
+  /** Whether a Life card that offers a choice may be declined (and an optional one left): off, the player has to accept what life brings. */
+  lifeCanDecline?: boolean;
 }
 
-export const DEFAULT_DREAM_SETTINGS: DreamSettings = { offersPerLanding: 2, maxOpenDreams: 3 };
+export const DEFAULT_DREAM_SETTINGS: DreamSettings = {
+  offersPerLanding: 2,
+  maxOpenDreams: 3,
+  lifeCanDecline: true,
+};
 
 /** A dream the character has taken: the Smile project it became, and since when. */
 export interface OpenDream {

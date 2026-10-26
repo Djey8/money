@@ -2077,7 +2077,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
       // the custom edition played in the app has a map: the ring, medium, unless another is chosen
       expect.objectContaining({ shape: 'ring', size: 'medium' }),
       // what the player set for the dreams: two offered, three open at once
-      { offersPerLanding: 2, maxOpenDreams: 3 },
+      { offersPerLanding: 2, maxOpenDreams: 3, lifeCanDecline: true },
     );
     const companion = soloComponent();
     companion.component.setPlayMode('companion');
@@ -2400,12 +2400,11 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.trackByIndex(1)).toBe(1);
   });
 
-  it('a tile without a stack of cards of its own is ticked off at once; the ones with a stack wait for what they ask', () => {
+  it('a tile without a stack of cards of its own is only read and ticked off', () => {
     const { component } = soloComponent();
-    // no game running: no stack, so every tile is just read and ticked off
+    // no game running: no stack, so no tile has a card panel
     for (const tile of ['opportunity', 'harvest', 'life', 'career', 'dream', 'emergency']) {
       expect(component.tileHasPanel(tile)).toBe(false);
-      expect(component.storyCanFinish(tile)).toBe(true);
     }
     expect(component.lifeBadges).toEqual([]);
   });

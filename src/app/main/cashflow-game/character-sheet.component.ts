@@ -30,48 +30,52 @@ type SheetId = 'cashflow' | 'income' | 'balance';
     </div>
 
     <ng-container *ngIf="story">
-      <section class="cs-group">
-        <h4>{{ 'CashflowGame.setup.background' | translate }}</h4>
-        <p class="cs-story">{{ story.background }}</p>
-      </section>
-      <section class="cs-group">
-        <h4>{{ 'CashflowGame.setup.values' | translate }}</h4>
-        <ul class="cs-values">
-          <li *ngFor="let value of story.values">{{ value }}</li>
-        </ul>
-      </section>
-      <section class="cs-group cs-group--dream">
-        <h4>{{ 'CashflowGame.setup.dream' | translate }}</h4>
-        <p class="cs-story">
-          <strong>{{ story.dream.title }}</strong
-          ><br />{{ story.dream.summary }}
-        </p>
-        <!-- the dream is a Smile project of the app itself: looked at here, and opened in the Smile page once the game runs -->
-        <button
-          type="button"
-          class="cs-dream-btn"
-          *ngIf="story.dream.project"
-          (click)="dreamOpen.emit()"
-        >
-          {{ 'CashflowGame.setup.openDream' | translate }} ›
-        </button>
-      </section>
-      <!-- the emergency reserve every character has to build: a Fire project, looked at here and opened in the Fire page once the game runs -->
-      <section class="cs-group cs-group--reserve" *ngIf="story.reserve as reserve">
-        <h4>{{ 'CashflowGame.setup.reserve' | translate }}</h4>
-        <p class="cs-story">
-          <strong
-            >{{ reserve.project.title }}: {{ reserveTotal | appNumber: '1.0-0' : false }}
-            {{ currency }}</strong
-          ><br />{{ reserve.summary }}
-        </p>
-        <p class="cs-story cs-source">{{ 'CashflowGame.setup.reserveSource' | translate }}</p>
-        <button type="button" class="cs-dream-btn" (click)="reserveOpen.emit()">
-          {{ 'CashflowGame.setup.openReserve' | translate }} ›
-        </button>
-      </section>
+      <!-- who they are, what matters to them, their dream and their reserve: behind a panel of its own once the game runs -->
+      <details class="cs-about" [open]="checks === null" [style.order]="checks === null ? 1 : 9">
+        <summary>{{ 'CashflowGame.setup.about' | translate: { name: name } }}</summary>
+        <section class="cs-group">
+          <h4>{{ 'CashflowGame.setup.background' | translate }}</h4>
+          <p class="cs-story">{{ story.background }}</p>
+        </section>
+        <section class="cs-group">
+          <h4>{{ 'CashflowGame.setup.values' | translate }}</h4>
+          <ul class="cs-values">
+            <li *ngFor="let value of story.values">{{ value }}</li>
+          </ul>
+        </section>
+        <section class="cs-group cs-group--dream">
+          <h4>{{ 'CashflowGame.setup.dream' | translate }}</h4>
+          <p class="cs-story">
+            <strong>{{ story.dream.title }}</strong
+            ><br />{{ story.dream.summary }}
+          </p>
+          <!-- the dream is a Smile project of the app itself: looked at here, and opened in the Smile page once the game runs -->
+          <button
+            type="button"
+            class="cs-dream-btn"
+            *ngIf="story.dream.project"
+            (click)="dreamOpen.emit()"
+          >
+            {{ 'CashflowGame.setup.openDream' | translate }} ›
+          </button>
+        </section>
+        <!-- the emergency reserve every character has to build: a Fire project, looked at here and opened in the Fire page once the game runs -->
+        <section class="cs-group cs-group--reserve" *ngIf="story.reserve as reserve">
+          <h4>{{ 'CashflowGame.setup.reserve' | translate }}</h4>
+          <p class="cs-story">
+            <strong
+              >{{ reserve.project.title }}: {{ reserveTotal | appNumber: '1.0-0' : false }}
+              {{ currency }}</strong
+            ><br />{{ reserve.summary }}
+          </p>
+          <p class="cs-story cs-source">{{ 'CashflowGame.setup.reserveSource' | translate }}</p>
+          <button type="button" class="cs-dream-btn" (click)="reserveOpen.emit()">
+            {{ 'CashflowGame.setup.openReserve' | translate }} ›
+          </button>
+        </section>
+      </details>
       <!-- what it takes to win: a checklist, ticked in the running game as each one is met -->
-      <section class="cs-group">
+      <section class="cs-group cs-group--goal" [style.order]="checks === null ? 2 : 1">
         <h4>{{ 'CashflowGame.setup.goal' | translate }}</h4>
         <p class="cs-story">{{ story.goal }}</p>
         <ul class="cs-check">
@@ -79,9 +83,15 @@ type SheetId = 'cashflow' | 'income' | 'balance';
             <span class="cs-box" aria-hidden="true">{{ done(item.id) ? '☑' : '☐' }}</span>
             <span
               >{{ item.text }}
-              <ng-container *ngIf="item.id === 'reserve' && reserveTotal"
-                >({{ reserveTotal | appNumber: '1.0-0' : false }} {{ currency }})</ng-container
-              ></span
+              <ng-container *ngIf="item.id === 'reserve' && reserveTotal">
+                <ng-container *ngIf="reserveStatus as status; else reserveAmount"
+                  >({{ status.held | appNumber: '1.0-0' : false }} /
+                  {{ status.target | appNumber: '1.0-0' : false }} {{ currency }})</ng-container
+                >
+                <ng-template #reserveAmount
+                  >({{ reserveTotal | appNumber: '1.0-0' : false }} {{ currency }})</ng-template
+                >
+              </ng-container></span
             >
           </li>
         </ul>
@@ -89,7 +99,7 @@ type SheetId = 'cashflow' | 'income' | 'balance';
     </ng-container>
 
     <!-- the insurances: hop in or hop out, effective with the next Payday (a running game only) -->
-    <section class="cs-group cs-group--insurance" *ngIf="insurances.length">
+    <section class="cs-group cs-group--insurance" [style.order]="2" *ngIf="insurances.length">
       <h4>{{ 'CashflowGame.insurance.title' | translate }}</h4>
       <p class="cs-story">{{ 'CashflowGame.insurance.intro' | translate }}</p>
       <ul class="cs-insurance">
@@ -170,6 +180,26 @@ type SheetId = 'cashflow' | 'income' | 'balance';
   `,
   styles: [
     `
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      .cs-numbers,
+      .cs-detail {
+        order: 3;
+      }
+      .cs-about > summary {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--color-border, #d9dde3);
+        border-radius: var(--radius-md, 10px);
+        background: var(--color-surface, #fff);
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .cs-about[open] > summary {
+        margin-bottom: 10px;
+      }
       :host {
         display: block;
       }
@@ -366,6 +396,8 @@ export class CharacterSheetComponent {
   @Output() reserveOpen = new EventEmitter<void>();
   /** The insurances of a running game, with what waits for the next Payday. */
   @Input() insurances: { kind: string; premium: number; held: boolean; heldNext: boolean }[] = [];
+  /** What the character holds of the reserve against three months of expenses now (a running game). */
+  @Input() reserveStatus: { held: number; target: number; ok: boolean } | null = null;
   @Output() insuranceToggle = new EventEmitter<{ kind: string; on: boolean }>();
   trackKind = (_index: number, row: { kind: string }): string => row.kind;
 

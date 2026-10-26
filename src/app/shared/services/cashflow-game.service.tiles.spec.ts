@@ -209,4 +209,39 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(state().cashflowGame.life!.kids).toBe(1);
     expect(service.consumeLifeNews().some((news) => news.kind === 'arrived')).toBe(true);
   });
+
+  it('the emergency reserve is three months of the expenses of now, and what is paid from the Mojo takes the character away from it', () => {
+    const status = () => service.reserveStatus!;
+    expect(status().target).toBe(6999);
+    expect(status().held).toBe(0);
+    expect(status().ok).toBe(false);
+    // a life line makes the expenses grow: the target follows at the next save
+    landOn('life');
+    service.drawLife(ok(), 'L12');
+    service.decideLife({ kind: 'fate' }, ok());
+    expect(status().target).toBe(Math.round((2333 + 60) * 3 * 100) / 100);
+    const project = state().allFireEmergencies.find((fire) => fire.reserve)!;
+    expect(project.buckets.every((b) => b.target === 2393)).toBe(true);
+    expect(state().mojo.target).toBe(7179);
+    // the Mojo account holds money: it counts; paying from it takes it away again
+    const mojo = (amount: number) =>
+      state().allTransactions.push({
+        account: 'Fire',
+        amount,
+        date: '2026-12-01',
+        time: '',
+        category: '@Mojo',
+        comment: '',
+      });
+    mojo(-7179);
+    service.drawLife(ok(), 'L12');
+    landOn('life', 3);
+    service.drawLife(ok(), 'L08');
+    service.decideLife({ kind: 'fate' }, ok());
+    expect(status().held).toBeGreaterThanOrEqual(7179);
+    // paying something from the Mojo (the Add dialog takes it out of the fund)
+    state().mojo.amount = Number(state().mojo.amount) - 500;
+    expect(status().held).toBeLessThan(status().target);
+    expect(status().ok).toBe(false);
+  });
 });

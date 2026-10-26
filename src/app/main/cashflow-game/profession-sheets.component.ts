@@ -95,13 +95,13 @@ export interface ProfessionSheetNumbers {
               <tr *ngFor="let line of sortedExpenses" class="ps-row">
                 <td>{{ line.name }}</td>
                 <td class="ps-negative">
-                  −{{ line.amount | appNumber: '1.2-2' : false }} {{ currency }}
+                  −{{ abs(line.amount) | appNumber: '1.2-2' : false }} {{ currency }}
                 </td>
               </tr>
               <tr class="ps-row ps-row--total">
                 <td>{{ 'CashflowGame.total' | translate }}</td>
                 <td class="ps-negative">
-                  −{{ expensesTotal | appNumber: '1.2-2' : false }} {{ currency }}
+                  −{{ abs(expensesTotal) | appNumber: '1.2-2' : false }} {{ currency }}
                 </td>
               </tr>
             </tbody>
@@ -329,6 +329,11 @@ export class ProfessionSheetsComponent {
       else groups.push([line]);
     }
     return groups.sort((a, b) => Math.abs(b[0].amount) - Math.abs(a[0].amount)).flat();
+  }
+
+  /** Expenses are shown with a minus of their own, whichever sign they come with. */
+  abs(value: number): number {
+    return Math.abs(value);
   }
 
   get sortedExpenses(): SheetLine[] {

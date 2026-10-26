@@ -54,6 +54,7 @@ import {
   endLifeLine,
   findStage,
   lifeContext,
+  monthlyExpensesMinor,
   livedPoints,
   netMonthlyMinor,
   resolveLifeCard,
@@ -1498,6 +1499,68 @@ export class CashflowGameService {
     return nextSmartDate(usedDays, this.clock.todayIso());
   }
 
+  // ── The emergency reserve, kept up to date (JFK, 2026-10-26) ──
+
+  /** The Fire project of the character's emergency reserve (a win condition), if the game has one. */
+  private get reserveProject(): Fire | undefined {
+    return AppStateService.instance.allFireEmergencies.find((fire) => fire.reserve);
+  }
+
+  /**
+   * The reserve is three months of the expenses the character has NOW: when the expenses grow (a child, a promotion, a flat) the target
+   * grows with them, and the Mojo's own target follows. Returns whether anything changed.
+   */
+  private refreshReserveTarget(): boolean {
+    const state = AppStateService.instance;
+    const project = this.reserveProject;
+    if (!project || !state.cashflowGame.professionId) return false;
+    const monthly = fromMinorUnits(
+      monthlyExpensesMinor(
+        state.cashflowGame,
+        this.gameSubscriptions().map((sub) => ({ title: sub.title, amountMinor: sub.amountMinor })),
+      ),
+    );
+    if (monthly <= 0) return false;
+    const each = Math.round((monthly * 100) / 1) / 100;
+    let changed = false;
+    for (const bucket of project.buckets) {
+      if (Math.abs(Number(bucket.target) - each) > 0.004) {
+        bucket.target = each;
+        changed = true;
+      }
+    }
+    const target = Math.round(monthly * 3 * 100) / 100;
+    if (Math.abs(Number(state.mojo.target) - target) > 0.004) {
+      state.mojo.target = target;
+      changed = true;
+    }
+    if (changed) project.updatedAt = new Date().toISOString();
+    return changed;
+  }
+
+  /**
+   * How much of the reserve the character holds against what three months of expenses are now: what was put into the reserve project
+   * and what the Mojo account holds. Paying something from the Mojo takes the character away from the goal again.
+   */
+  get reserveStatus(): { held: number; target: number; ok: boolean } | null {
+    const state = AppStateService.instance;
+    const project = this.reserveProject;
+    if (!project || !state.cashflowGame.professionId) return null;
+    const monthly = fromMinorUnits(
+      monthlyExpensesMinor(
+        state.cashflowGame,
+        this.gameSubscriptions().map((sub) => ({ title: sub.title, amountMinor: sub.amountMinor })),
+      ),
+    );
+    const target = Math.round(monthly * 3 * 100) / 100;
+    const inProject = project.buckets.reduce(
+      (sum, bucket) => sum + Math.min(Number(bucket.amount), Number(bucket.target)),
+      0,
+    );
+    const held = Math.round((inProject + Math.max(0, Number(state.mojo.amount) || 0)) * 100) / 100;
+    return { held, target, ok: target > 0 && held + 0.005 >= target };
+  }
+
   // ── The Emergency stack (JFK, 2026-10-25): the Fire tile draws a card that has to be paid, now or on a plan ──────────
 
   /** The Emergency cards of the running game's set (none: the tile only shows its filler). */
@@ -1853,12 +1916,23 @@ export class CashflowGameService {
     this.persistAll('cashflow_life_draw', { card: draw.card.id }, callbacks, { quiet: true });
   }
 
+  /** Whether the game lets the player decline what life offers (a game setting). */
+  get lifeCanDecline(): boolean {
+    return AppStateService.instance.cashflowGame.dreamSettings?.lifeCanDecline !== false;
+  }
+
   /** The player's answer to the card: it happens, is accepted, declined, rolled for, given, lent or passed. */
   decideLife(decision: LifeDecision, callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     const view = this.lifeView;
     if (!view || view.outcome) {
       callbacks.onError('This card has been dealt with.');
+      return;
+    }
+    const declining =
+      decision.kind === 'decline' || (decision.kind === 'pass' && view.card.type !== 'giving');
+    if (declining && !this.lifeCanDecline) {
+      callbacks.onError(this.translate.instant('CashflowGame.life.cannotDecline'));
       return;
     }
     const lang = this.emergencyLang;
@@ -1955,6 +2029,35 @@ export class CashflowGameService {
       top: !stage.next,
       branch: stage.branch,
       boost: !!career.boost,
+    };
+  }
+
+  /** The player may search any card of a stack (the free rules); otherwise the card is drawn at random, as at the table. */
+  get cardChoiceFree(): boolean {
+    return (AppStateService.instance.cashflowGame.rules?.cardChoice ?? 'free') === 'free';
+  }
+
+  /** What the next stage asks and offers: the stages it can lead to, the Paydays it needs and the roll. */
+  get careerNext() {
+    const track = this.careerTrack;
+    const career = AppStateService.instance.cashflowGame.career;
+    const stage = track && career ? findStage(track, career.stage) : undefined;
+    if (!track || !career || !stage?.next) return null;
+    const lang = this.emergencyLang;
+    return {
+      stages: stage.next.stages.map((id) => {
+        const next = findStage(track, id)!;
+        return {
+          id,
+          title: next.title[lang],
+          branch: next.branch,
+          grossYear: fromMinorUnits(next.grossYearMinor),
+        };
+      }),
+      minPaydays: stage.next.minPaydays,
+      paydaysIn: career.paydaysInStage,
+      rollFrom: career.boost ? Math.min(stage.next.rollFrom, 5) : stage.next.rollFrom,
+      eligible: career.paydaysInStage >= stage.next.minPaydays,
     };
   }
 
@@ -4171,6 +4274,7 @@ export class CashflowGameService {
     } = {},
   ): void {
     const state = AppStateService.instance;
+    this.refreshReserveTarget();
     this.incomeStatement.recalculate();
     if (!options.quiet) state.isSaving = true;
     if (this.refreshCurrentMonthPlan()) options = { ...options, includeBudget: true };

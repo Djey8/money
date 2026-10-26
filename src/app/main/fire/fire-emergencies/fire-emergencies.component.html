@@ -112,7 +112,12 @@
     (click)="clickRow(getOriginalIndex(emergency))"
     (keydown.enter)="clickRow(getOriginalIndex(emergency))"
     [class.goal-complete]="emergency.phase === 'completed'"
+    [class.life-goal]="emergency.reserve"
   >
+    <!-- the emergency reserve of the character: a win condition, set apart from the emergencies that came -->
+    <div class="life-goal-ribbon" *ngIf="emergency.reserve">
+      🛡️ {{ 'Fire.reserveGoal' | translate }}
+    </div>
     <!-- Card Header -->
     <div class="card-header">
       <span class="phase-badge phase-{{ emergency.phase }}">
