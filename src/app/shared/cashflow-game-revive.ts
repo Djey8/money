@@ -16,6 +16,10 @@ const NUMBER_FIELDS = new Set([
   'offersPerLanding',
   'dreamOffers',
   'maxOpenDreams',
+  'opportunityOffers',
+  'boughtRound',
+  'maxSideHustles',
+  'savingsCardCopies',
   'livingStandard',
   'rollFrom',
   'minPaydays',
@@ -23,6 +27,13 @@ const NUMBER_FIELDS = new Set([
   'sinceBonus',
   'everyPaydays',
   'roll',
+  'units',
+  'steps',
+  'paydays',
+  'percent',
+  'inPaydays',
+  'minor',
+  'afterPaydays',
   'confirmRoll',
   'momentRoll',
   'from',
@@ -45,6 +56,8 @@ const BOOLEAN_FIELDS = new Set([
   'sponsorship',
   'ongoingReward',
   'lifeCanDecline',
+  'ended',
+  'passed',
 ]);
 
 /** Fields whose parts are all numbers, whatever their own names are (the dice rolled on a card). */
@@ -109,6 +122,9 @@ export const REVIVED_GAME_FIELDS = [
   // the budget the game planned: months of rows (a tag and an amount)
   'budgetPlan',
   'customRules',
+  // the Opportunity piles and what the player owns of them
+  'opportunityDeck',
+  'holdings',
   // what cards ask to be paid, in the Add dialog
   'paymentsDue',
 ] as const;
@@ -121,6 +137,7 @@ export const REVIVED_PENDING_FIELDS = [
   'life',
   'career',
   'dream',
+  'opportunity',
 ] as const;
 
 function reviveFields(

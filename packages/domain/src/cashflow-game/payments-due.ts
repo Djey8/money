@@ -18,6 +18,14 @@ export interface PaymentDue {
   account: string;
   /** The spending category, without the `@`. */
   category: string;
+  /** What paying it does: the card of the Opportunity tile it buys (its choice is kept here). */
+  opportunity?: {
+    cardId: string;
+    units?: number;
+    steps?: number;
+    swapOut?: string;
+    indexPercent?: number;
+  };
 }
 
 /** The tag of a payment made for a card. */

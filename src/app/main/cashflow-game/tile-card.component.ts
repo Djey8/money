@@ -11,6 +11,7 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import type { OpportunityCard, OpportunityChoice, OpportunityPile } from '@money/domain';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   dreamsForMoment,
@@ -440,6 +441,140 @@ const ROLL_MS = 1000;
                 }}
               </p>
             </ng-template>
+          </ng-container>
+        </ng-container>
+
+        <!-- ───────────── OPPORTUNITY ───────────── -->
+        <ng-container *ngSwitchCase="'opportunity'">
+          <ng-container *ngIf="opportunity as o">
+            <!-- the three piles -->
+            <ng-container *ngIf="!o.pile">
+              <p>{{ 'CashflowGame.opportunity.choosePile' | translate }}</p>
+              <div class="tc-piles">
+                <button
+                  *ngFor="let pile of piles; trackBy: trackValue"
+                  type="button"
+                  class="tc-pile"
+                  [disabled]="busy"
+                  (click)="choosePile(pile)"
+                >
+                  <span class="tc-pile-icon" aria-hidden="true">{{ pileIcon(pile) }}</span>
+                  <strong>{{ 'CashflowGame.opportunity.pile.' + pile | translate }}</strong>
+                  <small>{{ 'CashflowGame.opportunity.pileHint.' + pile | translate }}</small>
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- the cards offered from the pile -->
+            <ng-container *ngIf="o.pile && !o.taken && !o.passed">
+              <article class="tc-offer" *ngFor="let offer of o.offers; trackBy: trackOffer">
+                <h4 class="tc-title">
+                  {{ pileIcon(offer.card.pile) }} {{ offer.card.title[lang] }}
+                  <small class="tc-tag">{{ offer.card.category }}</small>
+                </h4>
+                <p>{{ offer.card.story[lang] }}</p>
+                <ul class="tc-lines">
+                  <li *ngFor="let fact of facts(offer.card); trackBy: trackValue">
+                    <span>{{ fact }}</span>
+                  </li>
+                </ul>
+                <p class="tc-note" *ngIf="offer.card.estimate">
+                  {{ 'CashflowGame.opportunity.estimate' | translate }}
+                </p>
+                <!-- shares: how many units -->
+                <label class="tc-units" *ngIf="offer.card.share as share">
+                  <span>{{ 'CashflowGame.opportunity.units' | translate }}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    [max]="share.maxUnits - offer.held"
+                    [value]="choiceOf(offer.card).units ?? 1"
+                    (input)="setUnits(offer.card, $any($event.target).value)"
+                  />
+                  <small>{{
+                    'CashflowGame.opportunity.unitsMax'
+                      | translate: { max: share.maxUnits - offer.held }
+                  }}</small>
+                </label>
+                <!-- a savings account: how many steps -->
+                <label class="tc-units" *ngIf="offer.card.stepMinor as step">
+                  <span>{{
+                    'CashflowGame.opportunity.steps' | translate: { step: amount(step) }
+                  }}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="choiceOf(offer.card).steps ?? 1"
+                    (input)="setSteps(offer.card, $any($event.target).value)"
+                  />
+                </label>
+                <!-- the side hustles are full: one has to go -->
+                <ng-container *ngIf="quoteOf(offer.card) as quote">
+                  <div class="tc-swap" *ngIf="quote.needsSwap">
+                    <p class="tc-bad">
+                      {{ 'CashflowGame.opportunity.sideHustleFull' | translate }}
+                    </p>
+                    <button
+                      *ngFor="let hustle of quote.sideHustles; trackBy: trackHolding"
+                      type="button"
+                      class="tc-chip"
+                      [class.tc-chip--on]="choiceOf(offer.card).swapOut === hustle.cardId"
+                      (click)="setSwap(offer.card, hustle.cardId)"
+                    >
+                      {{ hustle.title }}
+                    </button>
+                  </div>
+                  <p class="tc-bad" *ngIf="!quote.ok && !quote.needsSwap">
+                    {{ 'CashflowGame.opportunity.cannot.' + quote.reason | translate }}
+                  </p>
+                  <button
+                    type="button"
+                    class="tc-btn tc-btn--primary tc-btn--wide"
+                    [disabled]="busy || !quote.ok"
+                    (click)="take(offer.card)"
+                  >
+                    {{
+                      (quote.costMinor > 0
+                        ? 'CashflowGame.opportunity.takeFor'
+                        : 'CashflowGame.opportunity.take'
+                      ) | translate: { cost: amount(quote.costMinor), currency: currency }
+                    }}
+                  </button>
+                </ng-container>
+              </article>
+              <button
+                type="button"
+                class="tc-btn tc-btn--wide"
+                [disabled]="busy"
+                (click)="passOpportunity()"
+              >
+                {{ 'CashflowGame.opportunity.pass' | translate }}
+              </button>
+            </ng-container>
+
+            <!-- a card was taken: it is paid, then it is a project -->
+            <ng-container *ngIf="o.taken as taken">
+              <h4 class="tc-title">{{ pileIcon(taken.pile) }} {{ taken.title[lang] }}</h4>
+              <p class="tc-note" *ngIf="o.paymentOpen">
+                {{ 'CashflowGame.opportunity.payFirst' | translate }}
+              </p>
+              <ng-container *ngIf="o.projectTitle as project">
+                <p class="tc-good">
+                  ✓ {{ 'CashflowGame.opportunity.created' | translate: { project: project } }}
+                </p>
+                <ul class="tc-bullets tc-bullets--done" *ngIf="o.told.length">
+                  <li *ngFor="let line of o.told; trackBy: trackValue">{{ line }}</li>
+                </ul>
+                <button
+                  type="button"
+                  class="tc-btn tc-btn--primary tc-btn--wide"
+                  (click)="openGrow.emit(project)"
+                >
+                  {{ 'CashflowGame.opportunity.openProject' | translate }} ›
+                </button>
+              </ng-container>
+            </ng-container>
+            <p *ngIf="o.passed">{{ 'CashflowGame.opportunity.passed' | translate }}</p>
           </ng-container>
         </ng-container>
 
@@ -1071,6 +1206,60 @@ const ROLL_MS = 1000;
         background: var(--color-surface, #fff);
         color: inherit;
       }
+      .tc-piles {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .tc-pile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 12px 6px;
+        border: 2px solid var(--tc, #888);
+        border-radius: var(--radius-md, 8px);
+        background: color-mix(in srgb, var(--tc, #888) 10%, var(--color-surface, #fff));
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      .tc-pile-icon {
+        font-size: 2rem;
+      }
+      .tc-pile small {
+        font-size: 0.72rem;
+        text-align: center;
+        opacity: 0.75;
+      }
+      .tc-offer {
+        margin: 8px 0;
+        padding: 10px 12px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: var(--radius-md, 8px);
+        background: var(--color-surface, #fff);
+      }
+      .tc-units {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      .tc-units input {
+        width: 80px;
+        padding: 6px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: 6px;
+        font: inherit;
+      }
+      .tc-swap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 6px 0;
+      }
       .tc-shuffle {
         position: relative;
         min-height: 175px;
@@ -1148,6 +1337,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
   @Output() openSmile = new EventEmitter<string>();
   /** The player wants to pay a payment due (its id): the Add dialog opens. */
   @Output() pay = new EventEmitter<string>();
+  /** The project an Opportunity card became: open it in Grow. */
+  @Output() openGrow = new EventEmitter<string>();
 
   busy = false;
   opening = false;
@@ -1160,7 +1351,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
   private timer: ReturnType<typeof setInterval> | undefined;
 
   ngOnInit(): void {
-    if (!this.autoOpen) return;
+    // an Opportunity tile starts with the choice of a pile, not with a card
+    if (!this.autoOpen || this.tile === 'opportunity') return;
     const shown =
       this.tile === 'emergency'
         ? this.service.emergencyView
@@ -1345,6 +1537,130 @@ export class TileCardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ── opportunity ──
+
+  readonly piles: OpportunityPile[] = ['seed', 'sapling', 'tree'];
+  private choices: Record<string, OpportunityChoice> = {};
+
+  get opportunity() {
+    return this.service.opportunityView;
+  }
+
+  pileIcon(pile: string): string {
+    return pile === 'seed' ? '🌱' : pile === 'sapling' ? '🌿' : '🌳';
+  }
+
+  trackOffer = (_i: number, offer: { card: { id: string } }): string => offer.card.id;
+  trackHolding = (_i: number, holding: { cardId: string }): string => holding.cardId;
+
+  choiceOf(card: OpportunityCard): OpportunityChoice {
+    return this.choices[card.id] ?? {};
+  }
+
+  quoteOf(card: OpportunityCard) {
+    return this.service.quoteOpportunityChoice(card, this.choiceOf(card));
+  }
+
+  setUnits(card: OpportunityCard, value: string): void {
+    this.choices = {
+      ...this.choices,
+      [card.id]: { ...this.choiceOf(card), units: Math.max(1, Math.floor(Number(value) || 1)) },
+    };
+  }
+
+  setSteps(card: OpportunityCard, value: string): void {
+    this.choices = {
+      ...this.choices,
+      [card.id]: { ...this.choiceOf(card), steps: Math.max(1, Math.floor(Number(value) || 1)) },
+    };
+  }
+
+  setSwap(card: OpportunityCard, cardId: string): void {
+    this.choices = { ...this.choices, [card.id]: { ...this.choiceOf(card), swapOut: cardId } };
+  }
+
+  choosePile(pile: OpportunityPile): void {
+    this.busy = true;
+    this.service.drawOpportunity(pile, this.callbacks);
+  }
+
+  take(card: OpportunityCard): void {
+    this.busy = true;
+    this.service.takeOpportunity(card.id, this.choiceOf(card), this.callbacks);
+  }
+
+  passOpportunity(): void {
+    this.busy = true;
+    this.service.passOpportunity(this.callbacks);
+  }
+
+  /** The numbers of a card, each as one short line: what it costs, what it pays, what it risks. */
+  facts(card: OpportunityCard): string[] {
+    const t = (key: string, params?: Record<string, unknown>) =>
+      this.translate.instant(key, params);
+    const money = (minor: number) => `${this.amount(minor)} ${this.currency}`;
+    const signed = (minor: number) => `${minor < 0 ? '−' : '+'}${money(minor)}`;
+    const out: string[] = [];
+    if (card.share) {
+      out.push(
+        t('CashflowGame.opportunity.fact.unit', {
+          price: money(card.share.unitPriceMinor),
+          max: card.share.maxUnits,
+        }),
+      );
+      if (card.share.dividendMonthPerUnitMinor > 0) {
+        out.push(
+          t('CashflowGame.opportunity.fact.dividend', {
+            month: money(card.share.dividendMonthPerUnitMinor),
+            year: card.share.yieldYearPercent,
+          }),
+        );
+      }
+    } else if (card.property) {
+      out.push(
+        t('CashflowGame.opportunity.fact.property', {
+          price: money(card.property.priceMinor),
+          rent: money(card.property.rentMonthMinor),
+        }),
+      );
+      out.push(
+        t('CashflowGame.opportunity.fact.cashNow', {
+          cash: money(card.property.cashNeededMinor),
+          mortgage: money(card.property.mortgageMinor),
+        }),
+      );
+    } else if (card.costMinor !== undefined) {
+      out.push(t('CashflowGame.opportunity.fact.cost', { cost: money(card.costMinor) }));
+    }
+    if (card.loan && !card.property) {
+      out.push(
+        t('CashflowGame.opportunity.fact.loan', {
+          loan: money(card.loan.loanMinor),
+          payment: money(card.loan.paymentMonthMinor),
+        }),
+      );
+    }
+    if (card.cashflowMinor !== undefined) {
+      out.push(t('CashflowGame.opportunity.fact.cashflow', { amount: signed(card.cashflowMinor) }));
+    } else if (card.dice) {
+      out.push(t('CashflowGame.opportunity.fact.dice'));
+    }
+    if (card.savings && card.savings.monthlySavingsMinor > 0) {
+      out.push(
+        t('CashflowGame.opportunity.fact.saving', {
+          amount: money(card.savings.monthlySavingsMinor),
+        }),
+      );
+    }
+    if (card.rampPaydays)
+      out.push(t('CashflowGame.opportunity.fact.ramp', { paydays: card.rampPaydays }));
+    if (card.lockedPaydays)
+      out.push(t('CashflowGame.opportunity.fact.locked', { paydays: card.lockedPaydays }));
+    if (card.sideHustle) out.push(t('CashflowGame.opportunity.fact.sideHustle'));
+    out.push(t('CashflowGame.opportunity.fact.risk', { score: card.riskScore }));
+    return out;
+  }
+
   // ── what is finished ──
 
   /** What the cards asked to be paid and is still open. */
@@ -1356,6 +1672,12 @@ export class TileCardComponent implements OnInit, OnDestroy {
     // a payment is made before the turn goes on (the free game is for trying things out)
     if (this.service.cannotRollBecause === 'PAYMENT_DUE') return false;
     switch (this.tile) {
+      case 'opportunity': {
+        const o = this.opportunity;
+        if (!o) return false;
+        if (o.passed) return true;
+        return !!o.projectTitle && !o.paymentOpen;
+      }
       case 'emergency':
         return !!this.emergency?.projectTitle;
       case 'life':

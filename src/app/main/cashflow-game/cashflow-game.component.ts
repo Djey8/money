@@ -1091,6 +1091,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (!story) return false;
     const rules = this.cashflowGameService.customRules;
     if (this.stackPlayed) return false;
+    // an opportunity may always be passed: nobody has to take a card
+    if (story.tile === 'opportunity') return true;
     if (rules?.mode === 'free') return true;
     return !this.stackPlayed && story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
   }
@@ -1105,8 +1107,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       !!pending.life?.outcome ||
       !!pending.dream?.declined ||
       !!pending.dream?.taken ||
-      !!pending.dream?.applied
+      !!pending.dream?.applied ||
+      !!pending.opportunity?.taken ||
+      !!pending.opportunity?.passed
     );
+  }
+
+  /** The project an Opportunity card became: it is in Grow from here on. */
+  async openOpportunityProject(title: string): Promise<void> {
+    await this.openPlannedInGrow(title, 'asset');
   }
 
   openStackTile(): void {
@@ -1140,6 +1149,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         return this.careerReady;
       case 'dream':
         return this.dreamDeckReady;
+      case 'opportunity':
+        return !!this.cashflowGameService.opportunityReady;
       default:
         return false;
     }
@@ -1801,6 +1812,12 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       ],
     },
     { key: 'ownProjects', options: this.yesNo() },
+    { key: 'opportunityOffers', options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })) },
+    {
+      key: 'maxSideHustles',
+      options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+    },
+    { key: 'savingsCardCopies', options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })) },
     {
       key: 'bankInterestPercent',
       options: [5, 8, 10, 12, 15].map((n) => ({ value: n, label: `${n} %` })),

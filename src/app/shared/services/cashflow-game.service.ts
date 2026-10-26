@@ -44,7 +44,21 @@ import {
   canTakeDream,
   normalizeCustomRules,
   paymentsDueOf,
+  paymentDueIdOf,
+  withPaymentDue,
   withPaymentSettled,
+  DEFAULT_OPPORTUNITY_SETTINGS,
+  buyOpportunity,
+  drawOpportunityOffers,
+  isOpportunityPile,
+  quoteOpportunity,
+  rollsFor,
+  type OpportunityCard,
+  type OpportunityChoice,
+  type OpportunityContext,
+  type OpportunityPile,
+  type OpportunityQuote,
+  type OpportunitySettings,
   type CustomRules,
   type PaymentDue,
   careerSnapshot,
@@ -839,7 +853,20 @@ export class CashflowGameService {
     if (tradeStep.kind === 'doodad' || tradeStep.kind === 'marketCost') this.markCardPlayed();
     if (tradeStep.kind === 'cardPayment') {
       // the payment a card asked for is made: it comes off the list (the undo step above brings it back)
+      const paid = paymentsDueOf(state.cashflowGame).find(
+        (due) => due.id === paymentDueIdOf(comment),
+      );
       state.cashflowGame = withPaymentSettled(state.cashflowGame, comment, category);
+      // an Opportunity card that was paid becomes its project
+      const bought = paid?.opportunity;
+      const card = bought ? this.opportunityCards.find((c) => c.id === bought.cardId) : undefined;
+      if (bought && card) {
+        this.completeOpportunity(card, {
+          units: bought.units,
+          steps: bought.steps,
+          swapOut: bought.swapOut,
+        });
+      }
     }
     this.settleDoodadByPayment(tradeStep.kind);
     // The loan comes first: it takes `loanDate` (the day the dialog was opened on), and the purchase
@@ -1369,7 +1396,13 @@ export class CashflowGameService {
 
   /** Today's date and the game's text, for the round rules: the injectable clock and the selected language. */
   private get roundDeps(): RoundDeps {
-    return { clock: this.clock, text: (key, params) => this.translate.instant(key, params) };
+    return {
+      clock: this.clock,
+      text: (key, params) => this.translate.instant(key, params),
+      lang: this.emergencyLang,
+      rng: this.rng,
+      opportunityCards: this.opportunityCards,
+    };
   }
 
   /**
@@ -2350,6 +2383,256 @@ export class CashflowGameService {
       includeSubscriptions: true,
       quiet: true,
     });
+  }
+
+  // · Opportunities (JFK, 2026-10-26)
+
+  get opportunityCards(): OpportunityCard[] {
+    return this.currentGameSet()?.decks?.opportunity ?? [];
+  }
+
+  /** The rules of the Opportunity tile in this game: cards per landing, side hustles, copies of the savings cards. */
+  get opportunitySettings(): OpportunitySettings {
+    const rules = this.customRules;
+    return rules
+      ? {
+          offersPerLanding: rules.opportunityOffers,
+          maxSideHustles: rules.maxSideHustles,
+          savingsCardCopies: rules.savingsCardCopies,
+        }
+      : DEFAULT_OPPORTUNITY_SETTINGS;
+  }
+
+  get opportunityReady(): boolean {
+    return (
+      !this.remote_() &&
+      this.opportunityCards.length > 0 &&
+      !!AppStateService.instance.cashflowGame.life
+    );
+  }
+
+  private remote_(): boolean {
+    return !!RemoteGameHook.current;
+  }
+
+  /** What a card asks of the player: their life, the stage of their career, what they owe, what they already own. */
+  private opportunityContext(): OpportunityContext {
+    const state = AppStateService.instance;
+    const debt = state.liabilities
+      .filter((liability) => liability.tag !== 'Bank loan')
+      .reduce(
+        (sum, liability) => sum + Math.max(0, toMinorUnits(Number(liability.amount) || 0)),
+        0,
+      );
+    return {
+      life: state.cashflowGame.life,
+      careerStage: this.careerStatus?.stageNumber ?? 1,
+      holdings: state.cashflowGame.holdings ?? [],
+      debtMinor: debt,
+    };
+  }
+
+  /** The Opportunity tile the token stands on: the piles to choose from, or the cards offered from the pile chosen. */
+  get opportunityView(): {
+    pile?: OpportunityPile;
+    offers: {
+      card: OpportunityCard;
+      quote: OpportunityQuote;
+      /** Units already held of a share card. */
+      held: number;
+    }[];
+    taken?: OpportunityCard;
+    passed: boolean;
+    told: string[];
+    projectTitle?: string;
+    paymentOpen: boolean;
+  } | null {
+    const game = AppStateService.instance.cashflowGame;
+    const pending = game.turn?.pending;
+    if (pending?.kind !== 'story' || pending.tile !== 'opportunity') return null;
+    const entry = pending.opportunity;
+    const cards = this.opportunityCards;
+    const context = this.opportunityContext();
+    const settings = this.opportunitySettings;
+    const offers = (entry?.offers ?? [])
+      .map((id) => cards.find((card) => card.id === id))
+      .filter((card): card is OpportunityCard => !!card)
+      .map((card) => ({
+        card,
+        quote: quoteOpportunity(card, {}, context, settings, cards),
+        held: (game.holdings ?? []).find((h) => h.cardId === card.id && !h.ended)?.units ?? 0,
+      }));
+    return {
+      pile: isOpportunityPile(entry?.pile) ? entry?.pile : undefined,
+      offers,
+      taken: cards.find((card) => card.id === entry?.taken),
+      passed: !!entry?.passed,
+      told: entry?.told ?? [],
+      projectTitle: entry?.projectTitle,
+      paymentOpen: (game.paymentsDue ?? []).some((due) => !!due.opportunity),
+    };
+  }
+
+  /** The quote for a card with the choices made so far (units of a share, steps, the hustle to give up). */
+  quoteOpportunityChoice(card: OpportunityCard, choice: OpportunityChoice): OpportunityQuote {
+    return quoteOpportunity(
+      card,
+      choice,
+      this.opportunityContext(),
+      this.opportunitySettings,
+      this.opportunityCards,
+    );
+  }
+
+  /** The player chose a pile: its cards are drawn (up to the cards per landing), and those not taken go to the bottom. */
+  drawOpportunity(pile: OpportunityPile, callbacks: CashflowGameCallbacks): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    if (pending?.kind !== 'story' || pending.tile !== 'opportunity' || pending.opportunity?.pile) {
+      callbacks.onError('There is no pile to choose now.');
+      return;
+    }
+    const draw = drawOpportunityOffers(
+      this.opportunityCards,
+      game.opportunityDeck,
+      pile,
+      this.opportunitySettings,
+      this.opportunityContext(),
+      this.rng,
+    );
+    if (draw.offers.length === 0) {
+      callbacks.onError('This pile has no card for you now.');
+      return;
+    }
+    this.pushUndoSnapshot({
+      kind: 'tileCard',
+      detail: draw.offers.map((card) => card.title[this.emergencyLang]).join(', '),
+      cardId: draw.offers[0].id,
+      deck: 'opportunity',
+    });
+    state.cashflowGame = {
+      ...game,
+      opportunityDeck: draw.deck,
+      turn: {
+        ...game.turn!,
+        pending: { ...pending, opportunity: { pile, offers: draw.offers.map((card) => card.id) } },
+      },
+    };
+    this.persistAll('cashflow_opportunity_draw', { pile }, callbacks, { quiet: true });
+  }
+
+  /** The player takes one of the offered cards: it is paid in the Add dialog, or applied at once when it costs nothing. */
+  takeOpportunity(
+    cardId: string,
+    choice: OpportunityChoice,
+    callbacks: CashflowGameCallbacks,
+  ): void {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const pending = game.turn?.pending;
+    const card = this.opportunityCards.find((candidate) => candidate.id === cardId);
+    if (
+      !card ||
+      pending?.kind !== 'story' ||
+      pending.opportunity?.taken ||
+      pending.opportunity?.passed
+    ) {
+      callbacks.onError('This card cannot be taken now.');
+      return;
+    }
+    const quote = this.quoteOpportunityChoice(card, choice);
+    if (!quote.ok) {
+      callbacks.onError(this.translate.instant(`CashflowGame.opportunity.cannot.${quote.reason}`));
+      return;
+    }
+    const lang = this.emergencyLang;
+    this.pushUndoSnapshot({
+      kind: 'buyDeal',
+      detail: card.title[lang],
+      cardId: card.id,
+      deck: 'opportunity',
+    });
+    const taken = {
+      ...pending.opportunity!,
+      taken: card.id,
+      units: choice.units,
+      steps: choice.steps,
+      swapOut: choice.swapOut,
+    };
+    state.cashflowGame = {
+      ...game,
+      turn: { ...game.turn!, pending: { ...pending, played: true, opportunity: taken } },
+    };
+    if (quote.costMinor > 0) {
+      // what it costs is paid by the player, in the Add dialog; the card becomes a project when it is paid
+      const title = card.share ? card.share.ticker : card.title[lang];
+      state.cashflowGame = withPaymentDue(state.cashflowGame, {
+        title: card.title[lang],
+        costMinor: quote.costMinor,
+        account: 'Fire',
+        category: title,
+        opportunity: {
+          cardId: card.id,
+          units: choice.units,
+          steps: choice.steps,
+          swapOut: choice.swapOut,
+        },
+      });
+      this.persistAll('cashflow_opportunity_take', { card: card.id }, callbacks, { quiet: true });
+      return;
+    }
+    this.completeOpportunity(card, choice);
+    this.persistAll('cashflow_opportunity_take', { card: card.id }, callbacks, {
+      quiet: true,
+      includeSubscriptions: true,
+      includeBalanceSheet: true,
+      includeGrow: true,
+    });
+  }
+
+  /** The payment of a taken card was booked (or the card was free): the project, the position and the monthly lines are made. */
+  private completeOpportunity(card: OpportunityCard, choice: OpportunityChoice): void {
+    const lang = this.emergencyLang;
+    const books = this.gameBooks();
+    const purchase = buyOpportunity(books, card, choice, rollsFor(card, this.rng), {
+      date: this.gameDay,
+      lang,
+      context: this.opportunityContext(),
+      cards: this.opportunityCards,
+    });
+    this.applyGameEffects(purchase.effects);
+    this.updatePending((pending) => ({
+      ...pending,
+      opportunity: {
+        ...pending.opportunity!,
+        told: purchase.told,
+        projectTitle: purchase.holding.title,
+      },
+    }));
+    AppStateService.instance.transactionsUpdated$.next();
+  }
+
+  /** None of the offered cards is taken: they go to the bottom of their pile. */
+  passOpportunity(callbacks: CashflowGameCallbacks): void {
+    const pending = AppStateService.instance.cashflowGame.turn?.pending;
+    if (pending?.kind !== 'story' || pending.tile !== 'opportunity') {
+      callbacks.onError('There is no opportunity to pass.');
+      return;
+    }
+    this.pushUndoSnapshot({ kind: 'skipCard', detail: pending.opportunity?.pile });
+    this.updatePending((current) => ({
+      ...current,
+      opportunity: { ...current.opportunity, passed: true },
+    }));
+    this.persistAll('cashflow_opportunity_pass', {}, callbacks, { quiet: true });
+  }
+
+  /** What the player owns of the cards, for the profile: the titles with what they bring each month. */
+  get opportunityHoldings() {
+    return (AppStateService.instance.cashflowGame.holdings ?? []).filter(
+      (holding) => !holding.ended,
+    );
   }
 
   // · Dreams
@@ -4473,6 +4756,36 @@ export class CashflowGameService {
     }
     if (update.notes !== undefined) project.notes = update.notes;
     if (update.updatedAt !== undefined) project.updatedAt = update.updatedAt;
+    const details = update.details;
+    if (details) {
+      if (details.type) project.type = details.type as Grow['type'];
+      if (details.category !== undefined) project.category = details.category;
+      if (details.pattern !== undefined) project.pattern = details.pattern;
+      if (details.reasoning !== undefined) project.reasoning = details.reasoning;
+      if (details.risks !== undefined) project.risks = details.risks;
+      if (details.riskScore !== undefined) project.riskScore = details.riskScore;
+      if (details.insights !== undefined) project.insights = details.insights;
+      if (details.alternative !== undefined) project.alternative = details.alternative;
+      if (details.alternativeCostMinor !== undefined) {
+        project.alternativeCost = fromMinorUnits(details.alternativeCostMinor);
+      }
+      if (details.links) project.links = details.links.map((link) => ({ ...link }));
+      if (details.actionItems) {
+        project.actionItems = details.actionItems.map((item) => ({ ...item, done: false }));
+      }
+      if (details.currentCostMinor !== undefined) {
+        project.currentCost = fromMinorUnits(details.currentCostMinor);
+      }
+      if (details.targetCostMinor !== undefined) {
+        project.targetCost = fromMinorUnits(details.targetCostMinor);
+      }
+      if (details.monthlySavingsMinor !== undefined) {
+        project.monthlySavings = fromMinorUnits(details.monthlySavingsMinor);
+      }
+      if (details.annualSavingsMinor !== undefined) {
+        project.annualSavings = fromMinorUnits(details.annualSavingsMinor);
+      }
+    }
   }
 
   private currentGameSet(): CashflowGameSet | undefined {

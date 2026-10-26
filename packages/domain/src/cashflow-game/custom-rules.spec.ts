@@ -29,6 +29,9 @@ describe('the rules of the Custom JFK edition', () => {
       dreamMayDecline: true,
       ownProjects: false,
       bankInterestPercent: 10,
+      opportunityOffers: 1,
+      maxSideHustles: 2,
+      savingsCardCopies: 2,
     });
   });
 

@@ -2,6 +2,8 @@ import type { Rng } from './rng';
 import { applyInsuranceChanges } from './insurance';
 import { tickCareer } from './career';
 import { tickLife } from './life-books';
+import { tickOpportunities } from './opportunity';
+import type { OpportunityCard } from './opportunity-deck';
 import { hasGameTag } from './game-tag';
 import type { Clock } from './clock';
 import {
@@ -63,6 +65,8 @@ export interface RoundDeps {
   /** The language of the texts a life line gets (English where absent). */
   lang?: 'en' | 'de';
   rng?: Rng;
+  /** The Opportunity cards of the game: what the Paydays do to what the player owns of them. */
+  opportunityCards?: readonly OpportunityCard[];
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -223,6 +227,24 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
     ? tickCareer(next, { date: appendedTransactions[0]?.date ?? today, lang: deps.lang ?? 'en' })
     : null;
   if (career) next = career.state;
+  // what the player owns of the Opportunity cards: a business starts, locked money returns, a trap pays and stops
+  const opportunities =
+    deps.opportunityCards && (next.holdings?.length ?? 0) > 0
+      ? tickOpportunities(
+          { state: next, subscriptions: books.subscriptions, growProjects: books.growNotes ?? [] },
+          deps.opportunityCards,
+          { date: appendedTransactions[0]?.date ?? today, lang: deps.lang ?? 'en', rng: deps.rng },
+        )
+      : null;
+  if (opportunities) {
+    next = {
+      ...opportunities.effects.state,
+      lifeNews: [
+        ...(next.lifeNews ?? []),
+        ...opportunities.news.map((title) => ({ kind: 'opportunity', title })),
+      ],
+    };
+  }
 
   const payday = {
     ...emptyEffects(next, {
@@ -244,6 +266,19 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
     payday.subscriptionUpserts = life.effects.subscriptionUpserts;
     payday.subscriptionRemovals = life.effects.subscriptionRemovals;
     payday.persist = { ...payday.persist, subscriptions: life.effects.persist.subscriptions };
+  }
+  if (opportunities) {
+    const own = opportunities.effects;
+    payday.appendedTransactions = [...payday.appendedTransactions, ...own.appendedTransactions];
+    payday.subscriptionUpserts = [...payday.subscriptionUpserts, ...own.subscriptionUpserts];
+    payday.subscriptionRemovals = [...payday.subscriptionRemovals, ...own.subscriptionRemovals];
+    payday.shareRemovals = own.shareRemovals;
+    payday.growUpdates = [...payday.growUpdates, ...own.growUpdates];
+    payday.persist = {
+      subscriptions: payday.persist.subscriptions || own.persist.subscriptions,
+      grow: payday.persist.grow || own.persist.grow,
+      balanceSheet: payday.persist.balanceSheet || own.persist.balanceSheet,
+    };
   }
   return payday;
 }

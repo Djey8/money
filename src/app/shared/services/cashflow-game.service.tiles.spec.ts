@@ -162,6 +162,70 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(service.paidIntoProject('@Pizza', 'x', 50)).toBe(50);
   });
 
+  it('an Opportunity card: a pile is chosen, a free savings card is applied at once, a paid share card becomes a Grow project once it is paid', () => {
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    const offer = (ids: string[]) => {
+      landOn('opportunity');
+      state().cashflowGame = {
+        ...state().cashflowGame,
+        turn: {
+          ...state().cashflowGame.turn!,
+          pending: {
+            ...state().cashflowGame.turn!.pending!,
+            opportunity: { pile: 'seed', offers: ids },
+          },
+        },
+      };
+    };
+    // a pile gives cards of its own
+    landOn('opportunity');
+    service.drawOpportunity('seed', ok());
+    const first = service.opportunityView!;
+    expect(first.pile).toBe('seed');
+    expect(first.offers).toHaveLength(1);
+    expect(first.offers[0].card.pile).toBe('seed');
+
+    // a saving costs nothing: the project and the cut of the expense are there at once
+    offer(['S02']);
+    const utilities = state().allSubscriptions.find(
+      (sub) => sub.title === state().cashflowGame.lineTitles?.['utilities'],
+    )!;
+    const before = utilities.amount;
+    service.takeOpportunity('S02', {}, ok());
+    expect(utilities.amount).toBeCloseTo(before + 7, 2);
+    const saving = state().allGrowProjects.find((project) =>
+      project.title.includes('Electricity'),
+    )!;
+    expect(saving).toMatchObject({ phase: 'execute', type: 'budget-optimization' });
+    expect(saving.monthlySavings).toBe(7);
+    expect(service.opportunityView!.projectTitle).toBe(saving.title);
+
+    // a share costs: it is a payment due first, and a project when it is paid
+    offer(['S10']);
+    service.takeOpportunity('S10', { units: 2 }, ok());
+    expect(state().allGrowProjects.some((project) => project.title === 'WORLD')).toBe(false);
+    const [due] = service.paymentsDue;
+    expect(due).toMatchObject({
+      costMinor: 20000,
+      account: 'Fire',
+      opportunity: { cardId: 'S10', units: 2 },
+    });
+    service.beforeGrowTrade(paymentDueComment(due), 0, undefined, `@${due.category}`, 200);
+    expect(service.paymentsDue).toHaveLength(0);
+    expect(state().allShares.find((share) => share.tag === 'WORLD')).toMatchObject({
+      quantity: 2,
+      price: 100,
+    });
+    expect(state().allGrowProjects.find((project) => project.title === 'WORLD')).toMatchObject({
+      phase: 'execute',
+    });
+    expect(
+      state().allSubscriptions.find((sub) => sub.title === 'WORLD Cashflow')?.amount,
+    ).toBeCloseTo(0.3, 2);
+    expect(service.opportunityView!.projectTitle).toBe('WORLD');
+  });
+
   it('the interest of the Bank loan is a setting of the game', () => {
     state().cashflowGame = {
       ...state().cashflowGame,

@@ -37,6 +37,10 @@ export interface CustomRules {
   emergencySettle: EmergencySettle;
   /** The player may add Smile and Fire projects of their own, besides the ones the cards bring. */
   ownProjects: boolean;
+  /** Opportunity: cards shown per landing (1-3), side hustles that can run at once (1-5), copies of each savings card (1-3). */
+  opportunityOffers: number;
+  maxSideHustles: number;
+  savingsCardCopies: number;
   /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
   bankInterestPercent: number;
 }
@@ -53,6 +57,9 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'never',
     ownProjects: true,
     bankInterestPercent: 10,
+    opportunityOffers: 1,
+    maxSideHustles: 2,
+    savingsCardCopies: 2,
   },
   guided: {
     mode: 'guided',
@@ -65,6 +72,9 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'payNow',
     ownProjects: true,
     bankInterestPercent: 10,
+    opportunityOffers: 1,
+    maxSideHustles: 2,
+    savingsCardCopies: 2,
   },
   strict: {
     mode: 'strict',
@@ -78,6 +88,9 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'all',
     ownProjects: false,
     bankInterestPercent: 10,
+    opportunityOffers: 1,
+    maxSideHustles: 2,
+    savingsCardCopies: 2,
   },
 };
 
@@ -108,6 +121,9 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
         : base.emergencySettle,
     ownProjects: typeof raw?.ownProjects === 'boolean' ? raw.ownProjects : base.ownProjects,
     bankInterestPercent: clamp(raw?.bankInterestPercent, 1, 30, base.bankInterestPercent),
+    opportunityOffers: clamp(raw?.opportunityOffers, 1, 3, base.opportunityOffers),
+    maxSideHustles: clamp(raw?.maxSideHustles, 1, 5, base.maxSideHustles),
+    savingsCardCopies: clamp(raw?.savingsCardCopies, 1, 3, base.savingsCardCopies),
   };
 }
 

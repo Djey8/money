@@ -54,7 +54,8 @@ export interface GameStep {
   /** For `cardPicked`: the exact card (its id in the game set's deck), so a game can be analysed card by card. */
   cardId?: string;
   /** For `cardPicked`: the deck it came from. */
-  deck?: 'dealSmall' | 'dealBig' | 'market' | 'doodad' | 'emergency' | 'life' | 'dream';
+  deck?:
+    'dealSmall' | 'dealBig' | 'market' | 'doodad' | 'emergency' | 'life' | 'dream' | 'opportunity';
 }
 
 /**

@@ -1,4 +1,6 @@
+import type { OpportunityCard } from './opportunity-deck';
 import type { PaymentDue } from './payments-due';
+import type { OpportunityDeckState, OpportunityHolding } from './opportunity';
 import type { EmergencyCard, EmergencyDeckState, InsuranceKind, Localized } from './emergency-deck';
 import type { CustomRules } from './custom-rules';
 import type { DreamCard, DreamLog, DreamSettings } from './dream-deck';
@@ -254,6 +256,8 @@ export interface CashflowDecks {
   life?: LifeCard[];
   /** The Emergency stack of a Dreamfund game (the Fire tile). */
   emergency?: EmergencyCard[];
+  /** The Opportunity stack (Seed, Sapling, Tree): ways to raise the monthly cash flow, each becoming a Grow project. */
+  opportunity?: OpportunityCard[];
   dealSmall?: CashflowDealCard[];
   dealBig?: CashflowDealCard[];
   market?: CashflowMarketCard[];
@@ -367,6 +371,21 @@ export interface CashflowPendingDecision {
     applied?: { en: string; de: string };
     /** A swap of dreams waits for the new dream: the project that goes. */
     swapping?: string;
+  };
+  /** With an Opportunity tile: the pile chosen, the cards offered, and what the player did with them. */
+  opportunity?: {
+    pile?: string;
+    offers?: string[];
+    /** The card taken (its id), and the choice made on it. */
+    taken?: string;
+    units?: number;
+    steps?: number;
+    swapOut?: string;
+    passed?: boolean;
+    /** What the dice said, in words (kept so the card can be read again). */
+    told?: string[];
+    /** The card was bought and its project made. */
+    projectTitle?: string;
   };
   emergency?: {
     cardId: string;
@@ -484,6 +503,10 @@ export interface CashflowGameState {
   lifeScheduled?: ScheduledLife[];
   /** What cards ask to be paid, to be paid in the Add dialog (JFK, 2026-10-26). */
   paymentsDue?: PaymentDue[];
+  /** The Opportunity piles: what each has been through since it was last shuffled. */
+  opportunityDeck?: OpportunityDeckState;
+  /** What the player owns of the Opportunity cards (and what is still running of them). */
+  holdings?: OpportunityHolding[];
   /** The Life stack: what was drawn since the last reshuffle. */
   lifeDeck?: EmergencyDeckState;
   /** A job is being looked for (the Paydays left, the roll that finds one). */

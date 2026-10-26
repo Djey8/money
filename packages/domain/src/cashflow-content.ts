@@ -7,6 +7,7 @@ import { EMERGENCY_CARDS } from './cashflow-emergency-cards';
 import { DREAM_CARDS } from './cashflow-dream-cards';
 import { DUAL_STUDENT_CAREER } from './cashflow-career-dual-student';
 import { LIFE_CARDS } from './cashflow-life-cards';
+import { OPPORTUNITY_CARDS } from './cashflow-opportunity-cards';
 import { CLASSIC_DEAL_BIG } from './cashflow-game/classic-deal-big';
 import { CLASSIC_DEAL_SMALL } from './cashflow-game/classic-deal-small';
 import { CLASSIC_DOODAD } from './cashflow-game/classic-doodad';
@@ -850,6 +851,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
     emergency: EMERGENCY_CARDS,
     life: LIFE_CARDS,
     dream: DREAM_CARDS,
+    opportunity: OPPORTUNITY_CARDS,
   }, // the Emergency stack is its own; the other piles are the classic ones until this set gets its own
   professions: [
     {

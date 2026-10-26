@@ -97,6 +97,17 @@ describe('a Dreamfund game survives a reload', () => {
     land('career');
     service.rng = () => 0.99;
     service.rollCareerTile(ok());
+    // an opportunity: a share card taken and paid, a side hustle running, a saving counting, a card left open on the tile
+    land('opportunity');
+    service.rng = () => 0.3;
+    service.drawOpportunity('seed', ok());
+    service.takeOpportunity('S01', {}, ok());
+    state().tier3BalanceLoaded = true;
+    state().tier3GrowLoaded = true;
+    land('opportunity');
+    service.drawOpportunity('seed', ok());
+    const offered = state().cashflowGame.turn!.pending!.opportunity!.offers![0];
+    service.takeOpportunity(offered, {}, ok());
     // an emergency with its dice and its project, left open on the tile
     land('emergency');
     service.drawEmergency(ok(), 'E21');
