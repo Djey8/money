@@ -473,24 +473,62 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** The Emergency, Life or Dream card of the History that is being read again. */
-  historyTileCard: { deck: string; title: string; story: string } | null = null;
+  historyTileCard: { deck: string; title: string; story: string; facts: string[] } | null = null;
 
   private tileCardOfHistory(cardId: string) {
     const decks = this.currentGameSet?.decks;
     const lang = this.language.current === 'de' ? 'de' : 'en';
-    const lists: [
-      string,
-      { id: string; title: { en: string; de: string }; story: { en: string; de: string } }[],
-    ][] = [
+    interface Card {
+      id: string;
+      title: { en: string; de: string };
+      story: { en: string; de: string };
+      tier?: string;
+      type?: string;
+      category?: string;
+      totalMinor?: number;
+      points?: number;
+    }
+    const lists: [string, Card[]][] = [
       ['emergency', (decks?.emergency ?? []) as never],
       ['life', (decks?.life ?? []) as never],
       ['dream', (decks?.dream ?? []) as never],
     ];
     for (const [deck, cards] of lists) {
       const card = cards.find((candidate) => candidate.id === cardId);
-      if (card) return { deck, title: card.title[lang], story: card.story[lang] };
+      if (!card) continue;
+      // what the card is, in a few words, besides its story
+      const facts = [
+        this.translate.instant(`CashflowGame.history.deck.${deck}`),
+        card.tier
+          ? this.translate.instant(
+              `CashflowGame.${deck === 'dream' ? 'dream' : 'emergency'}.tier.${card.tier}`,
+            )
+          : '',
+        card.type ? this.translate.instant(`CashflowGame.life.type.${card.type}`) : '',
+        card.totalMinor ? `${this.cardAmount(card.totalMinor)} ${this.appState.currency}` : '',
+        card.points ? `${card.points} ${this.translate.instant('CashflowGame.dream.points')}` : '',
+      ].filter(Boolean);
+      return { deck, title: card.title[lang], story: card.story[lang], facts };
     }
     return null;
+  }
+
+  /** What a step of the History says in words, beside its name: the decision taken, the roll, the insurance changed. */
+  stepText(step: { kind: string; detail?: string }): string {
+    const detail = step.detail ?? '';
+    const t = (key: string) => this.translate.instant(key);
+    switch (step.kind) {
+      case 'lifeDecision':
+        return t(`CashflowGame.history.decision.${detail}`);
+      case 'careerRoll':
+        return t(`CashflowGame.history.career.${detail}`);
+      case 'insurance': {
+        const [kind, sign] = detail.split(' ');
+        return `${t(`CashflowGame.insurance.kind.${kind}`)} ${sign === '+' ? '✓' : '✗'}`;
+      }
+      default:
+        return detail;
+    }
   }
 
   /** What a card in the History was (a picked card, or the card a pass left), by its id. */

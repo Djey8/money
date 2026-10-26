@@ -791,7 +791,7 @@ export class CashflowGameService {
     }
     // anything the player pays in a game is covered by a Bank loan first when the account is short: the balance never goes negative
     // (JFK, 2026-10-26)
-    const expenseMinor = toMinorUnits(expenseAmount);
+    const expenseMinor = toMinorUnits(this.paidIntoProject(category, comment, expenseAmount));
     const purchase =
       tradePurchase(comment, expenseMinor) ??
       (this.customRules &&
@@ -2599,7 +2599,19 @@ export class CashflowGameService {
 
   /** None of the offered dreams is taken: nothing happens, the cards go to the discard pile. */
   declineDreams(callbacks: CashflowGameCallbacks): void {
-    this.pushUndoSnapshot({ kind: 'dreamDeclined' });
+    const offered = (AppStateService.instance.cashflowGame.turn?.pending?.dream?.offers ?? [])
+      .map((id) => this.dreamCards.find((card) => card.id === id))
+      .filter((card): card is DreamCard => !!card);
+    this.pushUndoSnapshot({
+      kind: 'dreamDeclined',
+      ...(offered.length
+        ? {
+            detail: offered.map((card) => card.title[this.emergencyLang]).join(', '),
+            cardId: offered[0].id,
+            deck: 'dream' as const,
+          }
+        : {}),
+    });
     this.updatePending((pending) => ({ ...pending, dream: { ...pending.dream, declined: true } }));
     this.persistAll('cashflow_dream_decline', {}, callbacks, { quiet: true });
   }
@@ -4067,7 +4079,12 @@ export class CashflowGameService {
    * (Buy / Sell Share, Property, Asset, a Doodad, a Market cost, a payback) is judged as that trade - a sale needs an
    * offer where the rules ask for one - and a plain transaction is a free amount (forbidden, or capped).
    */
-  addDialogRefusal(comment: string, category: string, amountMinor: number): string | null {
+  addDialogRefusal(
+    comment: string,
+    category: string,
+    amountMinor: number,
+    signedAmount = 0,
+  ): string | null {
     const game = AppStateService.instance.cashflowGame;
     if (!CashflowGameService.isCashflowGame() || !game.professionId) return null;
     const step = gameTradeStep(comment, category);
@@ -4083,7 +4100,13 @@ export class CashflowGameService {
     if (step.kind === 'transaction') {
       // paying into a project of the game (a Fire emergency, a dream) or into the reserve is not a free amount: it is how the card is
       // paid (JFK, 2026-10-26)
-      if (this.paysGameProject(category) || /#bucket:|#settle:/.test(comment)) return null;
+      if (this.paysGameProject(category) || /#bucket:|#settle:/.test(comment)) {
+        // under strict rules money goes into a project or the Mojo, never out of it by hand (JFK, 2026-10-26: +9999 left the Mojo at -101 %)
+        if (signedAmount > 0 && this.customRules?.mode === 'strict') {
+          return this.translate.instant('CashflowGame.pay.onlyPay');
+        }
+        return null;
+      }
       return this.freeAmountRefusal(amountMinor);
     }
     if (['sellShare', 'sellInvestment', 'sellAsset'].includes(step.kind) && step.detail) {
@@ -4096,6 +4119,29 @@ export class CashflowGameService {
       );
     }
     return null;
+  }
+
+  /**
+   * What a payment into the Mojo or a project really takes: no more than is missing there (the rest is never booked, so the Bank loan is
+   * not worked out from what was typed - JFK, 2026-10-26: a loan of 44,000 for a payment of 10,209).
+   */
+  paidIntoProject(category: string, comment: string, amount: number): number {
+    if (!(amount > 0) || /#bucket:|#settle:/.test(comment)) return amount;
+    const wanted = category.replace(/^@/, '').trim().toLowerCase();
+    const state = AppStateService.instance;
+    if (wanted === 'mojo') {
+      const room = Math.max(0, Number(state.mojo.target) - Number(state.mojo.amount));
+      return Math.min(amount, Math.round(room * 100) / 100);
+    }
+    const project = [...state.allFireEmergencies, ...state.allSmileProjects].find(
+      (candidate) => candidate.title.toLowerCase() === wanted,
+    );
+    if (!project) return amount;
+    const room = project.buckets.reduce(
+      (sum, bucket) => sum + Math.max(0, Number(bucket.target) - Number(bucket.amount)),
+      0,
+    );
+    return Math.min(amount, Math.round(room * 100) / 100);
   }
 
   /** Whether a category is a Smile or Fire project of the game, or the Mojo (the reserve). */

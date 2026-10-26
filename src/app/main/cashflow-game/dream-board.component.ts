@@ -400,18 +400,38 @@ export function tokenSpots(tiles: { x: number; y: number }[]): { x: number; y: n
     y: tiles.reduce((sum, t) => sum + t.y, 0) / n,
   };
   const around = Math.max(3, Math.round(n / 5));
+  // an infinity has two loops: the middle of each is found from the tiles that are clearly in it, and every tile near the crossing
+  // belongs to the loop its neighbours on the track are in - so the token stands inside that loop, beside the tile, whichever way the
+  // tile itself lies at the crossing (JFK, 2026-10-26)
+  const clear = SPACING * 1.6;
+  const left = tiles.filter((t) => t.x < centre.x - clear);
+  const right = tiles.filter((t) => t.x > centre.x + clear);
+  const middleOf = (group: { x: number; y: number }[]) => ({
+    x: group.reduce((sum, t) => sum + t.x, 0) / group.length,
+    y: group.reduce((sum, t) => sum + t.y, 0) / group.length,
+  });
+  const loops = left.length >= 3 && right.length >= 3 ? [middleOf(left), middleOf(right)] : null;
   return tiles.map((tile, i) => {
     let target = centre;
     if (Math.hypot(centre.x - tile.x, centre.y - tile.y) < SPACING * 1.6) {
-      // near the middle: the loop this tile belongs to
-      let sx = 0;
-      let sy = 0;
-      for (let k = -around; k <= around; k += 1) {
-        const t = tiles[(i + k + n) % n];
-        sx += t.x;
-        sy += t.y;
+      if (loops) {
+        // the side the tiles around this one are on
+        let side = 0;
+        for (let k = -around; k <= around; k += 1) side += tiles[(i + k + n) % n].x - centre.x;
+        target = side < 0 ? loops[0] : loops[1];
+      } else {
+        // near the middle: the loop this tile belongs to
+        let sx = 0;
+        let sy = 0;
+        for (let k = -around; k <= around; k += 1) {
+          const t = tiles[(i + k + n) % n];
+          sx += t.x;
+          sy += t.y;
+        }
+        target = { x: sx / (2 * around + 1), y: sy / (2 * around + 1) };
       }
-      target = { x: sx / (2 * around + 1), y: sy / (2 * around + 1) };
+    } else if (loops) {
+      target = tile.x < centre.x ? loops[0] : loops[1];
     }
     const dx = target.x - tile.x;
     const dy = target.y - tile.y;

@@ -587,6 +587,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         AddComponent.commentTextField,
         AddComponent.categoryTextField,
         Math.round(Math.abs(parseFloat(String(AddComponent.amountTextField))) * 100) || 0,
+        parseFloat(String(AddComponent.amountTextField)) || 0,
       );
       if (refusal) {
         this.showError(refusal);

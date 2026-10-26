@@ -142,6 +142,26 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(service.addDialogRefusal('x', '@Pizza', -3000)).toMatch(/do not allow/);
   });
 
+  it('under strict rules money only goes into a project or the Mojo, and a loan is worked out from what is really paid', () => {
+    state().cashflowGame = {
+      ...state().cashflowGame,
+      customRules: { ...CUSTOM_RULE_PRESETS.strict },
+    };
+    state().allFireEmergencies = [
+      { title: 'Phone', buckets: [{ id: 'a', title: 'A', target: 300, amount: 100 }] } as any,
+    ];
+    // a positive amount takes money out of the Mojo: refused
+    expect(service.addDialogRefusal('x', '@Mojo', 999999, 9999.99)).toBe(
+      'CashflowGame.pay.onlyPay',
+    );
+    expect(service.addDialogRefusal('x', '@Mojo', 30000, -300)).toBeNull();
+    // 50,000 typed for a project that misses 200: only 200 is taken
+    expect(service.paidIntoProject('@Phone', 'x', 50000)).toBe(200);
+    state().mojo = { ...state().mojo, target: 1000, amount: 400 } as any;
+    expect(service.paidIntoProject('@Mojo', 'x', 50000)).toBe(600);
+    expect(service.paidIntoProject('@Pizza', 'x', 50)).toBe(50);
+  });
+
   it('the interest of the Bank loan is a setting of the game', () => {
     state().cashflowGame = {
       ...state().cashflowGame,

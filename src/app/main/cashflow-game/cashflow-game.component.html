@@ -2014,9 +2014,9 @@
                   *ngIf="
                     step.detail &&
                     step.kind !== 'cardPicked' &&
-                    (!step.cardId || step.kind === 'lifeDecision')
+                    (!step.cardId || step.kind === 'lifeDecision' || step.kind === 'dreamDeclined')
                   "
-                  >{{ step.detail }}</span
+                  >{{ stepText(step) }}</span
                 >
                 <span
                   class="cf-history-detail cf-history-card"
@@ -2079,6 +2079,7 @@
         </button>
         <h3>{{ card.title }}</h3>
         <p class="cf-solo-hint">{{ 'CashflowGame.cardFromHistory' | translate }}</p>
+        <p class="cf-history-facts">{{ card.facts.join(' · ') }}</p>
         <p>{{ card.story }}</p>
       </div>
 
