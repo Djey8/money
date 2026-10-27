@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
+  NgZone,
   OnDestroy,
   OnInit,
   computed,
@@ -22,6 +23,10 @@ import {
 import { TableCardsComponent } from './table-cards.component';
 import { TableInspectorComponent } from './table-inspector.component';
 import { TableWaitingRoomComponent } from './table-waiting-room.component';
+import { HttpClient } from '@angular/common/http';
+import { DreamTableSessionService } from '../dreamfund-tables/dream-table-session.service';
+import { characters as dreamCharacters } from '../dreamfund-tables/dream-texts';
+import { OpenTableGame } from './table-game';
 import { AppComponent } from '../app.component';
 import { ConfirmService } from '../shared/services/confirm.service';
 import {
@@ -71,7 +76,17 @@ const money = (minor: number | null): string =>
     TableInspectorComponent,
     TableWaitingRoomComponent,
   ],
-  providers: [TableSessionService],
+  providers: [
+    {
+      provide: TableSessionService,
+      // the table says which game it is before this page is made (the route asks); a Dreamfund table is followed in the classic shape
+      useFactory: (http: HttpClient, zone: NgZone) =>
+        OpenTableGame.current === 'dreamfund'
+          ? new DreamTableSessionService(http, zone)
+          : new TableSessionService(http, zone),
+      deps: [HttpClient, NgZone],
+    },
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css', '../app.component.css'],
   template: `
@@ -129,6 +144,8 @@ const money = (minor: number | null): string =>
         [inviteCode]="session.room()?.inviteCode ?? null"
         [lang]="lang"
         [presentSeats]="session.presence().seats"
+        [game]="gameKind"
+        [characters]="dreamCharacterList()"
         (leaveRequested)="leave()"
       ></app-table-waiting-room>
 
@@ -524,6 +541,18 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     const view = this.view();
     return !!view && view.youSeat !== null && view.youSeat === view.activeSeat;
   });
+  /** The game of the table: the classic Cashflow, or the Dreamfund. */
+  get gameKind(): 'classic' | 'dreamfund' {
+    return OpenTableGame.current;
+  }
+
+  /** The characters of a Dreamfund table, in the language of the screen. */
+  dreamCharacterList(): { id: string; title: string }[] {
+    return this.gameKind === 'dreamfund'
+      ? dreamCharacters(this.lang).map((c) => ({ id: c.id, title: c.name }))
+      : [];
+  }
+
   readonly professions = computed(() => {
     const view = this.view();
     const set = CASHFLOW_GAME_SETS.find((s) => s.id === view?.settings.gameSetId);

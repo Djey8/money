@@ -19,3 +19,8 @@ export function keepGame(game: TableGame): void {
     // no storage here: the choice lasts as long as the page
   }
 }
+
+/** The game of the table that is being opened: set by the table route once the table has said what it is, read when the session is made. */
+export class OpenTableGame {
+  static current: TableGame = 'classic';
+}

@@ -27,6 +27,8 @@ import {
 } from '../shared/services/remote-game';
 import { historyLines } from './table-history';
 import { TablePresenter } from './table-presenter';
+import { applyDreamExtrasToApp, dreamLifeToApp } from './dream-books-bridge';
+import { lifeOf } from '../dreamfund-tables/dream-table-view';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { TableGameDriver } from './table-game-driver';
 import { TableBannerComponent } from './table-banner.component';
@@ -545,6 +547,14 @@ export class TableModeService {
     if (!books) return;
     this.seat.set(seat);
     applyBooksToApp(AppStateService.instance, books, discardsOf(view), this.bankLocationNames());
+    // a Dreamfund seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen
+    const life = lifeOf(view, seat);
+    if (life) {
+      applyDreamExtrasToApp(
+        AppStateService.instance,
+        dreamLifeToApp(life, this.lang, new Date().toISOString()),
+      );
+    }
     // the income statement, the Cashflow page and the funds are rebuilt from the transactions, exactly as the solo game does after a move
     try {
       this.injector.get(IncomeStatementService).recalculate();

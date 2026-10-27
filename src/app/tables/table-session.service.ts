@@ -90,9 +90,19 @@ export class TableSessionService {
   onEvents: ((lines: TableEventLine[], view: TableView) => void) | null = null;
 
   constructor(
-    private http: HttpClient,
-    private zone: NgZone,
+    protected http: HttpClient,
+    protected zone: NgZone,
   ) {}
+
+  /** A table of another game (the Dreamfund) is brought into the shape the table screens read; the classic table is as it is. */
+  protected adaptView(view: TableView): TableView {
+    return view;
+  }
+
+  /** The same for the moves the server lists. */
+  protected adaptLegal(actions: unknown[] | undefined): TableLegalAction[] {
+    return (actions ?? []) as TableLegalAction[];
+  }
 
   /** The table being followed ('' when none). */
   get tableId(): string {
@@ -123,20 +133,22 @@ export class TableSessionService {
       );
     this.listen(source, 'snapshot', (data) => {
       this.room.set(data.room ?? null);
-      this.view.set(data.view);
-      this.legalActions.set(data.legalActions ?? []);
-      this.watchRating(roomId, data.view);
+      const shown = this.adaptView(data.view);
+      this.view.set(shown);
+      this.legalActions.set(this.adaptLegal(data.legalActions));
+      this.watchRating(roomId, shown);
     });
     this.listen(source, 'update', (data) => {
       // updates at or below the held version are replays after a reconnect
       const held = this.view();
       if (held && data.version <= held.version) return;
       // told first, so a screen that shows the moves can hold the tokens where they were before the books move them
-      this.onEvents?.(data.events ?? [], data.view);
-      this.view.set(mergeTableView(held, data.view));
-      this.legalActions.set(data.legalActions ?? []);
+      const shown = this.adaptView(data.view);
+      this.onEvents?.(data.events ?? [], shown);
+      this.view.set(mergeTableView(held, shown));
+      this.legalActions.set(this.adaptLegal(data.legalActions));
       this.addEvents(data.events ?? []);
-      this.watchRating(roomId, data.view);
+      this.watchRating(roomId, shown);
     });
     this.listen(source, 'log', (data) => this.addEvents([data]));
     this.listen(source, 'ping', () => undefined);
@@ -306,8 +318,8 @@ export class TableSessionService {
       this.offline.set(false);
       const held = this.view();
       if (!held || answer.table.version !== held.version) {
-        this.view.set(answer.table);
-        this.legalActions.set(answer.legalActions ?? []);
+        this.view.set(this.adaptView(answer.table));
+        this.legalActions.set(this.adaptLegal(answer.legalActions));
         void this.loadLog(roomId);
       }
       if (this.source && this.source.readyState !== EventSource.OPEN) this.open(roomId);
