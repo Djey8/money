@@ -135,6 +135,23 @@ export interface DreamResult {
   ranking: DreamStanding[];
 }
 
+/** An Opportunity card a player offers to the others for a fee (the classic trade of a Deal card, for the holdings of a life). */
+export interface DreamTradeOffer {
+  sellerId: string;
+  /** The title of the holding offered, and its card. */
+  holding: string;
+  cardId: string;
+  /** One player, or null for the whole table. */
+  to: string | null;
+  /** What the seller asks, in minor units. */
+  priceMinor: number;
+  /** What buyers proposed instead (at most one each); the seller may accept one. */
+  counters: { playerId: string; priceMinor: number }[];
+  /** Buyers who said no. */
+  declined: string[];
+  at?: number;
+}
+
 export interface DreamTable {
   kind: 'dreamfund';
   id: string;
@@ -153,6 +170,8 @@ export interface DreamTable {
   result: DreamResult | null;
   clock: TableClock;
   /** The Harvest pile: the cards drawn since its last reshuffle (one pile for the whole table). */
+  /** The card on offer to the other players, if any - at most one, made in the turn of its seller. */
+  trade: DreamTradeOffer | null;
   harvestDeck: unknown;
   /** The Harvest markets' indices: one set for the whole table. */
   markets: Record<string, number>;
@@ -200,6 +219,15 @@ export type DreamCommand =
   | { type: 'repay_debt'; tag: string }
   | { type: 'repay_bank_loan'; amountMinor: number }
   | { type: 'set_plan'; kind: 'mojo' | 'life' | 'smile'; id: string; perMinor: number }
+  // Selling and trading what the player owns.
+  /** The way out that is always there: a holding sold at the market price less a discount. */
+  | { type: 'sell_holding'; holding: string }
+  /** Offers a holding to one player (or everybody) for a price; it lasts until the seller's turn is over. */
+  | { type: 'offer_trade'; holding: string; priceMinor: number; to?: string }
+  | { type: 'withdraw_trade' }
+  | { type: 'counter_trade'; priceMinor: number }
+  | { type: 'decline_trade' }
+  | { type: 'accept_trade'; from?: string }
   // The Harvest card's options (any player, until the turn of its drawer is over).
   | { type: 'harvest_sell'; holding: string }
   | { type: 'harvest_accept'; holding: string }
@@ -255,6 +283,13 @@ export type DreamEventType =
   | 'opportunity_taken'
   | 'harvest'
   | 'harvest_sold'
+  | 'trade_offered'
+  | 'trade_countered'
+  | 'trade_declined'
+  | 'trade_withdrawn'
+  | 'trade_made'
+  | 'trade_expired'
+  | 'holding_sold'
   | 'money_moved'
   | 'goal_reached'
   | 'player_won'

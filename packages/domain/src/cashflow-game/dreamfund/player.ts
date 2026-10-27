@@ -44,6 +44,7 @@ import {
   playHarvestCard,
   rideLadder,
   sellHolding,
+  standingSale,
   unitPriceNow,
   valueOf,
   type HarvestLadderOffer,
@@ -1054,6 +1055,50 @@ export class DreamPlayer {
         this.harvestContext(),
       ),
     );
+    return true;
+  }
+
+  // ── selling and trading what the player owns ──
+
+  /** A holding that can be sold (not a saving or a scam): the holding, its card and what a standing sale brings. */
+  sellable(title: string) {
+    const holding = (this.state.holdings ?? []).find((h) => h.title === title && !h.ended);
+    const card = holding ? this.cards.find((c) => c.id === holding.cardId) : undefined;
+    if (!holding || !card) return null;
+    const standing = standingSale(card, holding, this.state);
+    return standing ? { holding, card, standing } : null;
+  }
+
+  /** The way out that is always there: a holding sold at the market price less the standing discount. False when nobody buys it. */
+  sellAtStanding(title: string): boolean {
+    const found = this.sellable(title);
+    if (!found) return false;
+    return this.sellFor(title, found.standing.grossMinor);
+  }
+
+  /** A holding handed to another player at the price agreed: what is owed on it is paid off from the price. False when it cannot be sold. */
+  sellForTrade(title: string, priceMinor: number): boolean {
+    return this.sellFor(title, priceMinor);
+  }
+
+  private sellFor(title: string, grossMinor: number): boolean {
+    const found = this.sellable(title);
+    if (!found) return false;
+    const { standing } = found;
+    this.apply(
+      sellHolding(
+        this.books,
+        title,
+        {
+          grossMinor,
+          costsMinor: 0,
+          owedMinor: standing.owedMinor,
+          ...(standing.units !== undefined ? { units: standing.units } : {}),
+        },
+        this.harvestContext(),
+      ),
+    );
+    this.payDues();
     return true;
   }
 }

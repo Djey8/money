@@ -22,6 +22,7 @@ import {
   type Table,
   type TableErrorCode,
 } from '../../table/types';
+import { canOffer } from '../../opportunity';
 import { DreamPlayer } from '../player';
 import { normalizeDreamSettings } from './settings';
 import { goalsOf, isWon, rankStandings, standingOf } from './scoring';
@@ -172,6 +173,7 @@ export function createDreamTable(
     result: null,
     clock: { turnStartedAt: null, deadlineAt: null, banksMs: {}, pausedAt: null, timeouts: {} },
     harvestDeck: null,
+    trade: null,
     markets: initialMarkets(),
     seed: input.seed >>> 0,
     rngState: input.seed >>> 0,
@@ -209,6 +211,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'repay_bank_loan',
   'set_plan',
   'settle_payday',
+  'sell_holding',
   'harvest_sell',
   'harvest_accept',
   'harvest_ladder',
@@ -236,7 +239,9 @@ export function applyDreamCommand(
       ...(data ? { data } : {}),
     });
   let next: DreamTable;
-  if (PLAY_COMMANDS.has(command.type)) {
+  if (TRADE_COMMANDS.has(command.type)) {
+    next = trade(table, playerId, command, ctx, emit);
+  } else if (PLAY_COMMANDS.has(command.type)) {
     next = play(table, playerId, command, ctx, emit, false);
   } else {
     next = lobbyCommand(table, playerId, command, ctx, emit);
@@ -759,6 +764,13 @@ function doCommand(
     }
     case 'settle_payday':
       return { paydayDue: false };
+    case 'sell_holding': {
+      const found = p.sellable(command.holding);
+      if (!found) return refuse('That cannot be sold: nobody buys it.');
+      p.sellAtStanding(command.holding);
+      emit('holding_sold', id, { holding: command.holding, grossMinor: found.standing.grossMinor });
+      return {};
+    }
     case 'set_plan': {
       const per = Math.max(0, Math.floor(command.perMinor));
       p.plans = p.plans.filter((plan) => !(plan.kind === command.kind && plan.id === command.id));
@@ -935,6 +947,171 @@ function harvestOption(
   return { harvest: { ...left, ladders: [...rest, ridden] } };
 }
 
+// ── Trading ────────────────────────────────────────────────────────────────────────────────────────
+
+const TRADE_COMMANDS = new Set<DreamCommand['type']>([
+  'offer_trade',
+  'withdraw_trade',
+  'counter_trade',
+  'decline_trade',
+  'accept_trade',
+]);
+
+/**
+ * What a price may be (JFK, 2026-10-27): a card is a card of its owner's price level, so a deal across levels could be a gift in
+ * disguise. The seller's price is within this band of what a standing sale would bring, the buyer's within the same band of the
+ * card's cost at the buyer's own level - checked when the offer is made and again when it is taken.
+ */
+export const TRADE_PRICE_BAND = { low: 0.25, high: 3 };
+
+function trade(
+  table: DreamTable,
+  playerId: string,
+  command: DreamCommand,
+  ctx: DreamContext,
+  emit: Emit,
+): DreamTable {
+  if (table.phase !== 'playing') fail('WRONG_PHASE', 'The game is not being played now.');
+  const seat = seatOf(table, playerId);
+  if (!alive(table, seat)) fail('ILLEGAL_MOVE', 'You are out of the game.');
+  const refuse = (message: string): never => fail('ILLEGAL_MOVE', message);
+  const offer = table.trade;
+  const rng = tableRng(table.rngState);
+  switch (command.type) {
+    case 'offer_trade': {
+      if (table.activePlayerId !== playerId)
+        fail('NOT_YOUR_TURN', 'Offer a card in your own turn.');
+      if (offer) refuse('There is an offer open already.');
+      if (!Number.isInteger(command.priceMinor) || command.priceMinor <= 0) {
+        refuse('A price is a positive amount.');
+      }
+      if (command.to !== undefined) {
+        const target = table.players.find((p) => p.id === command.to);
+        if (!target || command.to === playerId || !alive(table, target)) {
+          refuse('That player cannot be offered the card.');
+        }
+      }
+      const p = wake(table, seat, rng.rng);
+      const found = p.sellable(command.holding);
+      if (!found) return refuse('That cannot be traded: nobody buys it.');
+      const gross = found.standing.grossMinor;
+      if (
+        command.priceMinor < gross * TRADE_PRICE_BAND.low ||
+        command.priceMinor > gross * TRADE_PRICE_BAND.high
+      ) {
+        refuse('That price is too far from what the card is worth.');
+      }
+      emit('trade_offered', playerId, {
+        holding: command.holding,
+        cardId: found.holding.cardId,
+        priceMinor: command.priceMinor,
+        ...(command.to ? { to: command.to } : {}),
+      });
+      return {
+        ...table,
+        trade: {
+          sellerId: playerId,
+          holding: command.holding,
+          cardId: found.holding.cardId,
+          to: command.to ?? null,
+          priceMinor: command.priceMinor,
+          counters: [],
+          declined: [],
+          at: nowOf(ctx),
+        },
+      };
+    }
+    case 'withdraw_trade': {
+      if (!offer || offer.sellerId !== playerId) return refuse('You have no offer to withdraw.');
+      emit('trade_withdrawn', playerId, { holding: offer.holding });
+      return { ...table, trade: null };
+    }
+    case 'counter_trade': {
+      if (!offer) return refuse('There is no offer.');
+      if (offer.sellerId === playerId) return refuse('You cannot trade with yourself.');
+      if (offer.to !== null && offer.to !== playerId) return refuse('This offer is not for you.');
+      if (!Number.isInteger(command.priceMinor) || command.priceMinor <= 0) {
+        return refuse('A price is a positive amount.');
+      }
+      emit('trade_countered', playerId, { priceMinor: command.priceMinor });
+      return {
+        ...table,
+        trade: {
+          ...offer,
+          counters: [
+            ...offer.counters.filter((c) => c.playerId !== playerId),
+            { playerId, priceMinor: command.priceMinor },
+          ],
+        },
+      };
+    }
+    case 'decline_trade': {
+      if (!offer) return refuse('There is no offer.');
+      if (offer.sellerId === playerId) return refuse('Withdraw your own offer instead.');
+      emit('trade_declined', playerId);
+      const declined = [...offer.declined, playerId];
+      // an offer for one player ends when that player says no
+      return { ...table, trade: offer.to === playerId ? null : { ...offer, declined } };
+    }
+    case 'accept_trade': {
+      if (!offer) return refuse('There is no offer.');
+      // the buyer takes the card at the asking price, or the seller takes one of the proposals
+      const sellerAccepts = playerId === offer.sellerId;
+      const buyerId = sellerAccepts ? command.from : playerId;
+      if (!buyerId) return refuse('Say whose proposal you accept.');
+      const buyerSeat = table.players.find((s) => s.id === buyerId);
+      if (!buyerSeat || buyerId === offer.sellerId || !alive(table, buyerSeat)) {
+        return refuse('That player cannot buy the card.');
+      }
+      if (offer.to !== null && offer.to !== buyerId) return refuse('This offer is not for them.');
+      if (offer.declined.includes(buyerId)) return refuse('They turned this offer down.');
+      const price = sellerAccepts
+        ? offer.counters.find((c) => c.playerId === buyerId)?.priceMinor
+        : offer.priceMinor;
+      if (price === undefined) return refuse('They made no proposal.');
+      const sellerSeat = seatOf(table, offer.sellerId);
+      const sellerP = wake(table, sellerSeat, rng.rng);
+      const buyerP = wake(table, buyerSeat, rng.rng);
+      const found = sellerP.sellable(offer.holding);
+      if (!found) return refuse('The seller no longer has that card.');
+      const card = buyerP.opportunityCard(offer.cardId);
+      if (!card) return refuse('That card does not exist for the buyer.');
+      if (!canOffer(card, buyerP.opportunityContext(), buyerP.cards)) {
+        return refuse(
+          'The buyer cannot take that card (they own it already, or it asks for more than they have).',
+        );
+      }
+      const choice = found.holding.units ? { units: found.holding.units } : {};
+      const quote = buyerP.quoteOpportunity(card, choice);
+      if (!quote.ok) {
+        return refuse(`The buyer cannot take that card (${quote.reason ?? 'not possible'}).`);
+      }
+      if (
+        price < quote.costMinor * TRADE_PRICE_BAND.low ||
+        price > quote.costMinor * TRADE_PRICE_BAND.high
+      ) {
+        return refuse('That price is too far from what the card costs the buyer.');
+      }
+      sellerP.sellForTrade(offer.holding, price);
+      buyerP.buyOpportunity(card, choice, price);
+      emit('trade_made', offer.sellerId, {
+        buyerId,
+        holding: offer.holding,
+        cardId: offer.cardId,
+        priceMinor: price,
+      });
+      let next: DreamTable = { ...table, trade: null, rngState: rng.state() };
+      next = sleep(next, offer.sellerId, sellerP);
+      next = sleep(next, buyerId, buyerP);
+      next = noteGoals(next, offer.sellerId, emit);
+      next = noteGoals(next, buyerId, emit);
+      return checkEnd(next, emit) ?? next;
+    }
+    default:
+      return fail('UNKNOWN_COMMAND', 'Unknown table command.');
+  }
+}
+
 // ── Goals, the end and the turn order ─────────────────────────────────────────────────────────────
 
 /** Notes the goals a player has newly reached, and a win or a bankruptcy. */
@@ -1025,8 +1202,10 @@ function checkEnd(table: DreamTable, emit: Emit): DreamTable | null {
 /** The turn goes on to the next player who can play; the first of the order starts a new round (the markets drift once). */
 function advance(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
   const now = nowOf(ctx);
+  if (table.trade) emit('trade_expired', table.trade.sellerId, { holding: table.trade.holding });
   let next: DreamTable = {
     ...(table.activePlayerId ? clockOf.end(table, table.activePlayerId, now) : table),
+    trade: null,
     turnRolled: false,
     players: table.players.map((p) => ({ ...p, harvest: null, pending: null, paydayDue: false })),
   };

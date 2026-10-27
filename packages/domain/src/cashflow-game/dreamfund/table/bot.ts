@@ -167,10 +167,91 @@ export function dreamBotCommands(table: DreamTable, botId: string): DreamCommand
   const luck = luckOf(table, botId);
   const harvest = harvestCommands(bot, p, seat);
   if (harvest.length > 0) return harvest;
+  const answer = answerOffer(table, bot, p, botId);
+  if (answer.length > 0) return answer;
   if (table.activePlayerId !== botId) return [];
   if (seat.paydayDue) return moneyCommands(bot, p);
   if (seat.pending) return [pendingCommand(bot, p, seat, luck)];
-  return table.turnRolled ? [{ type: 'end_turn' }] : [{ type: 'roll' }];
+  if (!table.turnRolled) return [{ type: 'roll' }];
+  // the turn is played: a card offered to the others stays until the bots have answered (people have the seconds the pace gives them)
+  if (table.trade?.sellerId === botId) {
+    return awaitedBuyers(table, botId).length > 0 ? [] : [{ type: 'end_turn' }];
+  }
+  const offer = offerCommand(table, bot, p, botId);
+  return offer ? [offer] : [{ type: 'end_turn' }];
+}
+
+/** Bots that have not answered an offer yet. */
+function awaitedBuyers(table: DreamTable, sellerId: string): DreamSeat[] {
+  const offer = table.trade;
+  if (!offer) return [];
+  return table.players.filter(
+    (s) =>
+      s.bot &&
+      s.id !== sellerId &&
+      s.status === 'active' &&
+      s.life &&
+      !table.finishers.some((f) => f.playerId === s.id) &&
+      (offer.to === null || offer.to === s.id) &&
+      !offer.declined.includes(s.id),
+  );
+}
+
+/** A bot that is short of cash offers a card it holds to the table at a fair price (a little over a standing sale). */
+function offerCommand(
+  table: DreamTable,
+  bot: DreamBot,
+  p: DreamPlayer,
+  botId: string,
+): DreamCommand | null {
+  void bot;
+  if (table.trade || p.cash() >= p.monthlyExpenses()) return null;
+  const others = table.players.filter(
+    (s) =>
+      s.id !== botId &&
+      s.status === 'active' &&
+      s.life &&
+      !table.finishers.some((f) => f.playerId === s.id),
+  );
+  if (others.length === 0) return null;
+  for (const holding of p.state.holdings ?? []) {
+    if (holding.ended) continue;
+    const found = p.sellable(holding.title);
+    if (!found || found.standing.grossMinor <= 0) continue;
+    return {
+      type: 'offer_trade',
+      holding: holding.title,
+      priceMinor: Math.max(1, Math.round(found.standing.grossMinor * 1.15)),
+    };
+  }
+  return null;
+}
+
+/** What a bot answers to a card offered at the table: it buys what its strategy would take, at a price that is no more than the card costs. */
+function answerOffer(
+  table: DreamTable,
+  bot: DreamBot,
+  p: DreamPlayer,
+  botId: string,
+): DreamCommand[] {
+  const offer = table.trade;
+  if (!offer || offer.sellerId === botId) return [];
+  if (offer.declined.includes(botId) || (offer.to !== null && offer.to !== botId)) return [];
+  const card = p.opportunityCard(offer.cardId);
+  const holding = (
+    table.players.find((s) => s.id === offer.sellerId)?.life?.books.state.holdings ?? []
+  ).find((h) => h.title === offer.holding && !h.ended);
+  if (!card || !holding) return [{ type: 'decline_trade' }];
+  const choice = holding.units ? { units: holding.units } : {};
+  const quote = p.quoteOpportunity(card, choice);
+  if (!quote.ok) return [{ type: 'decline_trade' }];
+  const held = new Map<string, number>();
+  for (const h of p.state.holdings ?? []) if (!h.ended) held.set(h.cardId, h.units ?? 1);
+  const wanted = bot.policy.take([card], bot.view(p), held) !== null;
+  const affordable = offer.priceMinor <= p.cash() + p.reserveMinor;
+  if (wanted && affordable && offer.priceMinor <= quote.costMinor)
+    return [{ type: 'accept_trade' }];
+  return [{ type: 'decline_trade' }];
 }
 
 /** The next bot that has something to do: the one on the move first, then any bot with a Harvest card's options. */
