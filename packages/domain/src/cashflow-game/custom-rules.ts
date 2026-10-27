@@ -146,7 +146,10 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
 /** Whether the settings are exactly those of their mode (a changed setting makes it a custom mix). */
 export function isPresetMode(rules: CustomRules): boolean {
   const preset = CUSTOM_RULE_PRESETS[rules.mode];
-  return (Object.keys(preset) as (keyof CustomRules)[]).every((key) => preset[key] === rules[key]);
+  // the difficulty is a choice of its own (JFK, 2026-10-27), not a change of the mode's rules
+  return (Object.keys(preset) as (keyof CustomRules)[])
+    .filter((key) => key !== 'difficulty')
+    .every((key) => preset[key] === rules[key]);
 }
 
 /** The classic rules the engine enforces for a mode: strict is the classic strict, and so on. */

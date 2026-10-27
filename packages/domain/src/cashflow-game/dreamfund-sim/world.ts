@@ -1,16 +1,14 @@
 import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
-import { HARVEST_CARDS } from '../../cashflow-harvest-cards';
-import { OPPORTUNITY_CARDS as SKETCH_CARDS } from '../../cashflow-opportunity-cards';
-import { tuneOpportunityCards } from '../../cashflow-opportunity-tuning';
-
-/** The cards as the game plays them: the sketch with the balance of Medium on top. */
-const OPPORTUNITY_CARDS = tuneOpportunityCards(SKETCH_CARDS);
 import { applyEffectsToBooks, type GameBooks } from '../books';
 import { cashOnHandMinor, loanForShortfallMinor } from '../cash';
 import { fixedClock } from '../clock';
 import { findStage, applyCareerMoment, applyCareerStage, rollCareer } from '../career';
 import { normalizeCustomRules, classicRulesOfMode, type CustomRules } from '../custom-rules';
 import { difficultySettings } from '../difficulty';
+import { gameSetFor } from '../card-scale';
+import { professionIdAtDifficulty } from '../game-sets';
+import type { OpportunityCard } from '../opportunity-deck';
+import type { HarvestCard } from '../harvest-deck';
 import {
   EMPTY_DREAM_LOG,
   DREAM_MOMENTS,
@@ -157,6 +155,8 @@ export class DreamSim {
   readonly rng: Rng;
   private readonly rules: CustomRules;
   private readonly gameSet: CashflowGameSet;
+  private readonly cards: OpportunityCard[];
+  private readonly harvestCards: HarvestCard[];
   private readonly profession: CashflowProfession;
   private readonly board: ReturnType<typeof buildDreamfundBoard>['board'];
   private readonly deps;
@@ -183,10 +183,19 @@ export class DreamSim {
     this.rng = seededRng(config.seed);
     this.rules = normalizeCustomRules({ mode: 'free', ...config.rules });
     const gameSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories');
-    const professionId = config.professionId ?? 'dual-student-informatik';
+    // Easy and Hard are characters of their own that share the story of the one asked for
+    const professionId = professionIdAtDifficulty(
+      gameSet,
+      config.professionId ?? 'dual-student-informatik',
+      this.rules.difficulty,
+    );
     const profession = gameSet?.professions.find((candidate) => candidate.id === professionId);
     if (!gameSet || !profession) throw new Error(`Unknown character ${professionId}`);
-    this.gameSet = gameSet;
+    // the cards are as big as the character's price level makes them
+    const scaled = gameSetFor(gameSet, profession.priceFactor, { round: profession.roundNumbers });
+    this.gameSet = scaled;
+    this.cards = scaled.decks?.opportunity ?? [];
+    this.harvestCards = scaled.decks?.harvest ?? [];
     this.profession = profession;
     const setup: BoardSetup = {
       shape: config.shape ?? 'ring',
@@ -223,7 +232,7 @@ export class DreamSim {
         dreams: EMPTY_DREAM_LOG,
       },
       allocation: { daily: 60, splurge: 10, smile: 10, fire: 20 },
-      gameSet,
+      gameSet: scaled,
       subscriptions,
       transactions: pick.startingTransactions,
       liabilities: (kit.liabilities ?? []).map((liability) => ({
@@ -243,7 +252,7 @@ export class DreamSim {
       plainMoney: (minor: number) => `${minor / 100}`,
       lang: 'en' as const,
       rng: this.rng,
-      opportunityCards: OPPORTUNITY_CARDS,
+      opportunityCards: this.cards,
       difficulty: this.rules.difficulty,
       cards: {
         textFor: () => ({}),
@@ -424,7 +433,7 @@ export class DreamSim {
     const holdingsValue = (state.holdings ?? [])
       .filter((holding) => !holding.ended)
       .reduce((sum, holding) => {
-        const card = OPPORTUNITY_CARDS.find((candidate) => candidate.id === holding.cardId);
+        const card = this.cards.find((candidate) => candidate.id === holding.cardId);
         return sum + (card ? valueOf(card, holding, state) : 0);
       }, 0);
     const loans = this.books.liabilities.reduce((sum, liability) => sum + liability.amountMinor, 0);
@@ -994,7 +1003,7 @@ export class DreamSim {
     const context = this.opportunityContext();
     const settings = this.opportunitySettings();
     const draw = drawOpportunityOffers(
-      OPPORTUNITY_CARDS,
+      this.cards,
       this.state.opportunityDeck,
       pile,
       settings,
@@ -1009,7 +1018,7 @@ export class DreamSim {
     const pick = policy.take(draw.offers, view, held);
     if (!pick) return;
     let choice = pick.choice;
-    let quote = quoteOpportunity(pick.card, choice, context, settings, OPPORTUNITY_CARDS);
+    let quote = quoteOpportunity(pick.card, choice, context, settings, this.cards);
     if (quote.needsSwap && quote.sideHustles.length > 0) {
       // give up the weakest hustle, and only for a card that is clearly better
       const weakest = [...quote.sideHustles].sort(
@@ -1018,7 +1027,7 @@ export class DreamSim {
       const weakestMonthly = Math.max(weakest.lineMinor ?? 0, weakest.cashflowMinor);
       if (expectedMonthlyMinor(pick.card) < weakestMonthly * 1.3) return;
       choice = { ...choice, swapOut: weakest.cardId };
-      quote = quoteOpportunity(pick.card, choice, context, settings, OPPORTUNITY_CARDS);
+      quote = quoteOpportunity(pick.card, choice, context, settings, this.cards);
     }
     if (!quote.ok) return;
     this.spend(quote.costMinor, `@${pick.card.title.en}`);
@@ -1031,7 +1040,7 @@ export class DreamSim {
         date: TODAY,
         lang: 'en',
         context,
-        cards: OPPORTUNITY_CARDS,
+        cards: this.cards,
         difficulty: this.rules.difficulty,
       },
     );
@@ -1043,10 +1052,10 @@ export class DreamSim {
 
   private harvest(): void {
     const policy = this.config.policy;
-    const draw = drawHarvestCard(HARVEST_CARDS, this.state.harvestDeck, this.rng);
+    const draw = drawHarvestCard(this.harvestCards, this.state.harvestDeck, this.rng);
     this.setState({ ...this.state, harvestDeck: draw.deck });
     const context = {
-      cards: OPPORTUNITY_CARDS,
+      cards: this.cards,
       lang: 'en' as const,
       date: TODAY,
       rng: this.rng,
@@ -1064,7 +1073,7 @@ export class DreamSim {
         pending.window === 'ALL' ||
         (Array.isArray(pending.window) && pending.window.includes(holding.marketTag));
       if (!open) continue;
-      const card = OPPORTUNITY_CARDS.find((candidate) => candidate.id === holding.cardId);
+      const card = this.cards.find((candidate) => candidate.id === holding.cardId);
       if (!card || (!card.share && holding.assetBaseMinor === undefined)) continue;
       if (
         !policy.sellWindow(

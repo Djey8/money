@@ -58,6 +58,8 @@ export * from './cashflow-game/harvest';
 export * from './cashflow-game/keywords';
 export * from './cashflow-game/active-effects';
 export * from './cashflow-game/difficulty';
+export * from './cashflow-game/card-scale';
+export * from './cashflow-game/german-pay';
 export * from './cashflow-game/dream-deck';
 export * from './cashflow-game/custom-rules';
 export * from './cashflow-game/steps';

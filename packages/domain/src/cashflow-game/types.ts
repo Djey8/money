@@ -90,7 +90,14 @@ export interface CashflowDreamProject {
 }
 
 /** The conditions of winning a character has; each is ticked off once it is met. */
-export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'reserve' | 'independence';
+export type CashflowGoalId =
+  | 'parentsLoan'
+  | 'carLoan'
+  | 'dream'
+  | 'reserve'
+  | 'independence'
+  /** A debt of the character's starter kit, by its key (`debt:studentLoanDebt`): the goal is met when it is repaid. */
+  | `debt:${string}`;
 
 /** What a character is about, in one language (JFK, 2026-10-25): shown when a character is chosen. */
 export interface CashflowProfileTexts {
@@ -122,6 +129,10 @@ export interface CashflowProfession {
    * cards' amounts - emergencies first - higher, so every character has the same chance. Absent: 1.
    */
   priceFactor?: number;
+  /** Easy: the amounts of the character and of the cards are round and nice (JFK, 2026-10-27). */
+  roundNumbers?: boolean;
+  /** The difficulty variants of a character are characters of their own that share the story: this is the id of the one they belong to. */
+  variantOf?: string;
   id: string;
   title: string;
   salaryMinor: number;

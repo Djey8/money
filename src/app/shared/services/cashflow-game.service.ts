@@ -238,6 +238,7 @@ import {
   type DealDeps,
   type DealInput,
   type Clock,
+  gameSetFor,
   type GameBooks,
   type GameEffects,
   type GameStep,
@@ -5573,8 +5574,14 @@ export class CashflowGameService {
 
   private currentGameSet(): CashflowGameSet | undefined {
     const { gameSetId } = AppStateService.instance.cashflowGame;
-    const set = gameSetId
+    const base = gameSetId
       ? this.gameSets.find((candidate) => candidate.id === gameSetId)
+      : undefined;
+    // the cards are as big as the character's price level makes them (a surgeon plays the same cards, scaled up)
+    const { professionId } = AppStateService.instance.cashflowGame;
+    const profession = base?.professions.find((candidate) => candidate.id === professionId);
+    const set = base
+      ? gameSetFor(base, profession?.priceFactor, { round: profession?.roundNumbers })
       : undefined;
     const custom = set ? this.customRules : null;
     if (!set || !custom || set.loanRule.monthlyInterestPercent === custom.bankInterestPercent) {

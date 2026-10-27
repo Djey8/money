@@ -32,6 +32,7 @@ const config: BatchConfig = {
   policies: list('policies'),
   shapes: list('shapes') as BatchConfig['shapes'],
   sizes: list('sizes') as BatchConfig['sizes'],
+  professionId: option('character'),
   maxTurns: option('max-turns') ? Number(option('max-turns')) : undefined,
   firstSeed: option('first-seed') ? Number(option('first-seed')) : undefined,
   rules,
