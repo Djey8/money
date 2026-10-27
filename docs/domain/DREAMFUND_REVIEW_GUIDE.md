@@ -26,8 +26,14 @@ classic analyst does that); it reads the story of the game from the history - th
 - `savingCards`: how many of the six free saving cards were taken (every won game of the simulation took all six).
 - `findings`: the points to make, each good (`good`), bad (`bad`) or a tip (`tip`), with the month when there is one.
 
-The benchmark is the simulation of 2,400 games of Jonas on Medium: the best ways of playing reach the reserve about month 17, the debts
-22, the dream 39 and independence 52. A human game can be faster (luck on the dice cards) or slower.
+The benchmark is the simulation of the game's own character on its own difficulty (`benchmark` in the review: `character`, `level`,
+`bestStrategy`, `winRate`, `bankruptRate`, `strategies` and the month of each goal the best strategy reached in `months`). There are ten
+characters (Jonas, Mehmet, Lena, Sophie, Tobias, Katrin, Frank, Dr. Jan, Heike, Peter) in three difficulties (Easy, Normal, Hard), 200
+games per strategy and character and level - read explain_concept topic `dreamfund_map` for the whole table. Judge a game by its own
+cell: a win of Dr. Jan on Hard (about 4% of simulated games) is a far better game than a win of Peter on Easy (over 80%). Say which
+strategies did best for this character and which one the player's game resembled. Without a `benchmark` (an unknown character) the
+Jonas numbers apply: the reserve about month 17, the debts 22, the dream 39 and independence 52. A human game can be faster (luck on the
+dice cards) or slower.
 
 ## How to give the feedback
 

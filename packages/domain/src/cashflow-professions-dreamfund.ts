@@ -226,7 +226,7 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     gross: 3450,
     pay: { children: true },
     scale: 1.2,
-    ease: 1.0,
+    ease: 1.15,
     savings: 600,
     debts: [
       {
@@ -588,7 +588,7 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     gross: 3900,
     pay: { selfEmployed: true },
     scale: 1.4,
-    ease: 1.0,
+    ease: 1.1,
     savings: 1200,
     debts: [
       {
@@ -935,7 +935,7 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     pay: { splitting: true, children: true },
     creep: 0.4,
     scale: 2.7,
-    ease: 0.8,
+    ease: 0.85,
     savings: 6000,
     debts: [
       {
@@ -1119,7 +1119,7 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     pay: { children: true },
     creep: 0.6,
     scale: 3.9,
-    ease: 0.35,
+    ease: 0.45,
     savings: 5000,
     debts: [
       {
@@ -1293,7 +1293,7 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     pay: { selfEmployed: true },
     creep: 0.4,
     scale: 1.8,
-    ease: 0.9,
+    ease: 0.95,
     savings: 5000,
     debts: [
       {

@@ -184,6 +184,8 @@ async function main() {
   };
   fs.writeFileSync(path.join(outDir, 'matrix.json'), JSON.stringify(result, null, 1));
   fs.writeFileSync(path.join(outDir, 'MATRIX.md'), markdown(result));
+  // the same map for the agents: explain_concept topic dreamfund_map
+  fs.writeFileSync(path.join(root, 'docs/domain/DREAMFUND_MAP.md'), markdown(result));
   for (const [docPath, lang] of [
     [arg('doc'), 'en'],
     [arg('doc-de'), 'de'],
@@ -247,7 +249,7 @@ function markdown({ config, matrix: data, generated }) {
     '# The Dreamfund map',
     '',
     `Generated ${generated}: ${config.games} games per strategy, character and level on the ${config.shape} ${config.size} map, up to ${config.maxTurns} rolls (about ${Math.round(config.maxTurns / 2.5)} months).`,
-    'Win rates are shares of games won (all five goals); the best strategy of a row is in bold. With this many games a cell is only about +/- 10 points exact.',
+    'Win rates are shares of games won (all five goals); the best strategy of a row is in bold. With this many games a cell is exact to about +/- 7 points.',
     '',
     `Strategies: ${config.policies.map((id) => `\`${id}\` ${labelOf[id] ?? id}`).join(', ')}.`,
     '',

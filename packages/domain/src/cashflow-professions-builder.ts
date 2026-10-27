@@ -368,6 +368,16 @@ const GOAL = {
   },
 };
 
+/**
+ * What a difficulty does to what is left of a month. Hard takes a share of it away, but less from a character who has little to begin
+ * with (the tight lives are hard enough: JFK, 2026-10-27, the simulation showed the surgeon unwinnable on Hard).
+ */
+function easeFactor(spec: ProfessionSpec, difficulty: Difficulty): number {
+  const factor = VARIANT_TUNING[difficulty].ease;
+  if (difficulty !== 'hard' || spec.ease >= 1) return factor;
+  return Math.min(1, factor + (1 - spec.ease) * 0.2);
+}
+
 /** One character in one difficulty. */
 export function buildProfession(
   spec: ProfessionSpec,
@@ -377,8 +387,8 @@ export function buildProfession(
   const tuning = VARIANT_TUNING[difficulty];
   const easy = difficulty === 'easy';
   const surplus = easy
-    ? round(BASE_SURPLUS * spec.scale * spec.ease * tuning.ease, 50)
-    : round(BASE_SURPLUS * spec.scale * spec.ease * tuning.ease, 5);
+    ? round(BASE_SURPLUS * spec.scale * spec.ease * easeFactor(spec, difficulty), 50)
+    : round(BASE_SURPLUS * spec.scale * spec.ease * easeFactor(spec, difficulty), 5);
   const month = buildMonth(spec, spec.gross, surplus, easy);
   const debts = debtsOf(spec, tuning, easy);
   const monthlyExpensesMinor = month.expenses.reduce((sum, line) => sum + line.amountMinor, 0);

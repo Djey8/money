@@ -449,7 +449,65 @@ bedeuten etwas._
 docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md` (vorher das Domain-Paket bauen). Die Tabellen oben werden zwischen den
 Markierungen neu geschrieben; der Text drumherum ist von Hand geschrieben. Die rohen Spiele liegen daneben als JSON.
 
-### Weitere Charaktere
+## Die zehn Charaktere und die drei Schwierigkeiten
 
-Die nächsten Charaktere werden gegen die Zahlen von Jonas ausbalanciert (dieselben Stapel und dieselben Karten, anderes Gehalt, andere
-Ausgaben, Schulden und ein anderer Traum) und bekommen hier ihre eigenen Statistiken.
+Zehn Leben von 23 bis 57, vom Azubi-Gehalt bis zum Chirurgen. Alle spielen dasselbe Spiel mit denselben Karten - **die Karten sind so
+groß wie das Leben des Charakters** (sein Preisniveau): eine Aktie, eine Immobilie, ein Traum, eine Schuld und ein Notfall kosten für
+Dr. Jan entsprechend mehr als für Jonas und zahlen entsprechend mehr, sodass der Wert einer Karte _im Verhältnis zum Leben_ für alle
+gleich ist. Was einen Charakter schwerer macht als einen anderen, ist das, was am Monatsende übrig bleibt, die Höhe der Schulden und
+die Entfernung zum Traum.
+
+| Charakter                        | Alter | Leben                            | Brutto (Monat) | Monatsrest | Preisniveau | Traum                           |
+| -------------------------------- | ----- | -------------------------------- | -------------- | ---------- | ----------- | ------------------------------- |
+| Jonas, Dualer Student Informatik | 23    | studiert, Single                 | 2.833          | 500        | 1,0         | Bergführer                      |
+| Mehmet, Elektroniker-Geselle     | 26    | Single, erste eigene Wohnung     | 3.150          | 715        | 1,1         | Meisterbrief + eigene Werkstatt |
+| Lena, Pflegefachfrau             | 29    | alleinerziehend, ein Kind        | 3.450          | 600        | 1,2         | Ein Jahr im Camper mit Emma     |
+| Sophie, Grundschullehrerin       | 33    | Beamtin, Single                  | 4.350          | 860        | 1,5         | Ein Jahr unter Segeln           |
+| Tobias, Grafikdesigner (frei)    | 36    | selbstständig, unregelmäßig      | 3.900          | 700        | 1,4         | Atelier und Galerie im Loft     |
+| Katrin, Marketingleiterin        | 40    | verheiratet, zwei Kinder, Haus   | 6.300          | 990        | 2,2         | Ein Haus an der Ostsee          |
+| Frank, Maschinenbauingenieur     | 44    | verheiratet, Teenager, Haus      | 7.600          | 1.080      | 2,7         | Das energieautarke Haus         |
+| Dr. Jan, Oberarzt Chirurgie      | 48    | zwei Teenager, Villa, Leasing    | 11.200         | 680        | 3,9         | Die eigene Praxis               |
+| Heike, Werkstattinhaberin        | 52    | selbstständig, vier Angestellte  | 5.200          | 810        | 1,8         | Ein kleines Weingut             |
+| Peter, Busfahrer                 | 57    | verheiratet, Kinder aus dem Haus | 2.700          | 665        | 0,95        | Eine Hütte am See               |
+
+Die genauen Zahlen stehen auf dem Charakterblatt im Spiel (die drei Tafeln: Einkommensrechnung, Bilanz, Kasse). Sie werden für alle auf
+dieselbe Weise gebaut (`cashflow-professions-builder.ts`): Steuern und Sozialabgaben werden aus dem Bruttogehalt berechnet, ein
+Gutverdiener zahlt also einen höheren Anteil an den Staat; Lebensstil, Schulden und Traum folgen aus wenigen Zahlen in der
+Beschreibung (`cashflow-professions-dreamfund.ts`).
+
+### Leicht, Normal, Schwer
+
+Jeden Charakter gibt es dreimal; Geschichte und Traum sind gleich, die Zahlen und die Karten nicht.
+
+| Was                        | Leicht - ein guter Einstieg, auch für Kinder                                                                            | Normal - für alle                              | Schwer - eine Herausforderung, die eine Strategie braucht                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Das Budget                 | etwa neun Zeilen mit runden Beträgen (50, 100, 500) und runde Kartenpreise                                              | etwa siebzehn Zeilen, ein realistisches Budget | dieselben Zeilen, knapp                                                                                              |
+| Monatsrest                 | 30 % mehr                                                                                                               | wie entworfen                                  | 15 % weniger                                                                                                         |
+| Schulden, Rücklagen, Traum | Schulden 20 % niedriger, Rücklagen 50 % höher, Traum 10 % billiger                                                      | -                                              | Schulden 10 % höher, Rücklagen 25 % niedriger, Traum 5 % teurer                                                      |
+| Beförderungen              | ein Würfelwert weniger nötig                                                                                            | -                                              | ein Würfelwert mehr nötig                                                                                            |
+| Karten und der Rest        | Glück +1 auf den guten Würfeln, zwei Angebote je Landung, nur vier Fallen, Verkauf an jedem Zahltag, freundlicher Markt | die Karten wie in diesem Dokument              | ein Angebot je Landung, die Fallen doppelt, Verkauf nur an Verkaufsterminen, fallender Markt, keine Hilfe der Eltern |
+
+### Die Karte: Charaktere, Strategien und Schwierigkeiten
+
+Die Simulation hat jeden Charakter, auf jeder Schwierigkeit, mit jeder Spielweise gespielt (je 200 Spiele, dieselben Startwerte): die
+**Karte**. Aus ihr werden die Bots des Mehrspielerspiels gezogen, und mit ihr vergleicht der Analyst ein gespeichertes Spiel.
+`docs/dreamfund-balance/MATRIX.md` hat die ganze Tabelle, `matrix.json` die Zahlen. `npm run matrix:dreamfund` erzeugt sie neu, wenn
+sich eine Karte, ein Charakter oder eine Zahl ändert. Die beste Strategie je Charakter und Schwierigkeit (Anteil gewonnener Spiele in
+bis zu 60 Monaten):
+
+<!-- matrix:start -->
+
+| Charakter | Leicht                           | Normal                           | Schwer                           |
+| --------- | -------------------------------- | -------------------------------- | -------------------------------- |
+| Jonas     | **80%** Sapling business builder | **45%** Sapling business builder | **28%** Sapling business builder |
+| Tobias    | **72%** Sapling business builder | **26%** Informed investor        | **9%** Sapling business builder  |
+| Sophie    | **71%** Sapling business builder | **27%** Sapling business builder | **9%** Sapling business builder  |
+| Mehmet    | **72%** Sapling business builder | **34%** Informed investor        | **16%** Sapling business builder |
+| Katrin    | **65%** Sapling business builder | **27%** Sapling business builder | **10%** Sapling business builder |
+| Lena      | **67%** Sapling business builder | **24%** Sapling business builder | **11%** Informed investor        |
+| Frank     | **67%** Sapling business builder | **23%** Sapling business builder | **11%** Informed investor        |
+| Dr. Jan   | **38%** Sapling business builder | **9%** Sapling business builder  | **3%** Sapling business builder  |
+| Heike     | **63%** Sapling business builder | **21%** Sapling business builder | **4%** Informed investor         |
+| Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
+
+<!-- matrix:end -->

@@ -26,13 +26,13 @@ npm run simulate:dreamfund -- --games 100 --shapes ring,infinity --sizes medium 
 ## The map: every character, difficulty and strategy
 
 ```bash
-npm run matrix:dreamfund -- --games 60 --out docs/dreamfund-balance \
+npm run matrix:dreamfund -- --games 200 --out docs/dreamfund-balance \
   --benchmarks packages/domain/src/cashflow-game/analysis/dreamfund-benchmarks.ts \
   --doc docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md
 ```
 
-`scripts/dreamfund-matrix.js` plays every character (10) on every difficulty (3) with every strategy (12) - 60 games each from the same
-seeds, in parallel (`--jobs`, default: cores minus one; about 25 minutes on 16 cores) - and writes `docs/dreamfund-balance/matrix.json`
+`scripts/dreamfund-matrix.js` plays every character (10) on every difficulty (3) with every strategy (12) - 200 games each from the same
+seeds, in parallel (`--jobs`, default: cores minus one; about two hours on 16 cores) - and writes `docs/dreamfund-balance/matrix.json`
 (the numbers), `MATRIX.md` (the table), the compact map the analyst reads (`dreamfund-benchmarks.ts`, generated, do not edit) and the table
 between the `<!-- matrix:start -->` markers of the two game pages. Use `--dist` with a copy of `packages/domain/dist` so that building
 the package while it runs does not change the games, and `--from <work dir>` to make the pages again from the raw games of an earlier

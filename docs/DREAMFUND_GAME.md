@@ -479,7 +479,7 @@ Every character exists three times; the story and the dream are the same, the nu
 
 ### The map: characters, strategies and difficulties
 
-The simulation has played every character, on every difficulty, with every way of playing (60 games each, same seeds): the **map**. It
+The simulation has played every character, on every difficulty, with every way of playing (200 games each, same seeds): the **map**. It
 is what the bots of the multiplayer game are drawn from and what the analyst compares a saved game with. `docs/dreamfund-balance/MATRIX.md`
 has the whole table, `matrix.json` the numbers. Run `npm run matrix:dreamfund` to make it again whenever a card, a character or a
 number changes. The best strategy of each character and difficulty (share of games won in up to 60 months):
@@ -488,15 +488,15 @@ number changes. The best strategy of each character and difficulty (share of gam
 
 | Character | Easy                             | Normal                           | Hard                             |
 | --------- | -------------------------------- | -------------------------------- | -------------------------------- |
-| Jonas     | **72%** Sapling business builder | **42%** Informed investor        | **27%** Sapling business builder |
-| Mehmet    | **70%** Informed investor        | **43%** Sapling business builder | **15%** Informed investor        |
-| Lena      | **67%** Sapling business builder | **15%** Informed investor        | **7%** Informed investor         |
-| Sophie    | **73%** Sapling business builder | **35%** Informed investor        | **7%** Informed investor         |
-| Tobias    | **75%** Sapling business builder | **23%** Sapling business builder | **7%** Informed investor         |
-| Katrin    | **72%** Informed investor        | **28%** Sapling business builder | **5%** Informed investor         |
-| Frank     | **55%** Sapling business builder | **18%** Sapling business builder | **3%** Informed investor         |
-| Dr. Jan   | **30%** Sapling business builder | **3%** Sapling business builder  | **2%** Sapling business builder  |
-| Heike     | **73%** Informed investor        | **27%** Sapling business builder | **3%** Sapling business builder  |
-| Peter     | **82%** Sapling business builder | **55%** Sapling business builder | **25%** Sapling business builder |
+| Jonas     | **80%** Sapling business builder | **45%** Sapling business builder | **28%** Sapling business builder |
+| Tobias    | **72%** Sapling business builder | **26%** Informed investor        | **9%** Sapling business builder  |
+| Sophie    | **71%** Sapling business builder | **27%** Sapling business builder | **9%** Sapling business builder  |
+| Mehmet    | **72%** Sapling business builder | **34%** Informed investor        | **16%** Sapling business builder |
+| Katrin    | **65%** Sapling business builder | **27%** Sapling business builder | **10%** Sapling business builder |
+| Lena      | **67%** Sapling business builder | **24%** Sapling business builder | **11%** Informed investor        |
+| Frank     | **67%** Sapling business builder | **23%** Sapling business builder | **11%** Informed investor        |
+| Dr. Jan   | **38%** Sapling business builder | **9%** Sapling business builder  | **3%** Sapling business builder  |
+| Heike     | **63%** Sapling business builder | **21%** Sapling business builder | **4%** Informed investor         |
+| Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
 
 <!-- matrix:end -->

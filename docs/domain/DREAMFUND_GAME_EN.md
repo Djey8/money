@@ -440,7 +440,63 @@ Run `npm run simulate:dreamfund -- --games 100 --shapes ring,infinity --max-turn
 docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md` (build the domain package first). The tables above are rewritten between the markers; the text around them is
 written by hand. The raw games are saved beside the report as JSON.
 
-### Other characters
+## The ten characters and the three difficulties
 
-The next characters are balanced against Jonas's numbers (the same piles and the same cards, a different salary, expenses, debts
-and dream) and get their own statistics here.
+Ten lives from 23 to 57, from an apprentice's pay to a surgeon's. Everybody plays the same game with the same cards - **the cards are
+as big as the character's life** (their price level): a share, a property, a dream, a debt and an emergency cost that much more for
+Dr. Jan than for Jonas, and pay that much more, so what a card is worth _in proportion to the life_ is the same for everybody. What
+makes one character harder than another is what is left of a month, how big the debts are and how far away the dream is.
+
+| Character                      | Age | Life                          | Gross (a month) | Left of a month | Price level | Dream                           |
+| ------------------------------ | --- | ----------------------------- | --------------- | --------------- | ----------- | ------------------------------- |
+| Jonas, dual student IT         | 23  | studying, single              | 2,833           | 500             | 1.0         | Mountain guide                  |
+| Mehmet, journeyman electrician | 26  | single, first own flat        | 3,150           | 715             | 1.1         | Master craftsman + own workshop |
+| Lena, nurse                    | 29  | single mother, one child      | 3,450           | 600             | 1.2         | A year in a camper van          |
+| Sophie, primary teacher        | 33  | civil servant, single         | 4,350           | 860             | 1.5         | A year under sail               |
+| Tobias, freelance designer     | 36  | self-employed, irregular      | 3,900           | 700             | 1.4         | Studio and gallery in a loft    |
+| Katrin, head of marketing      | 40  | married, two children, house  | 6,300           | 990             | 2.2         | A house by the Baltic Sea       |
+| Frank, mechanical engineer     | 44  | married, teenager, house      | 7,600           | 1,080           | 2.7         | The energy-independent house    |
+| Dr. Jan, senior surgeon        | 48  | two teenagers, villa, leasing | 11,200          | 680             | 3.9         | His own practice                |
+| Heike, garage owner            | 52  | self-employed, four employees | 5,200           | 810             | 1.8         | A small vineyard                |
+| Peter, bus driver              | 57  | married, grown children       | 2,700           | 665             | 0.95        | A cabin by the lake             |
+
+The exact numbers are in the character's sheet in the game (the three panels: income statement, balance sheet, cash). They are built
+the same way for everyone (`cashflow-professions-builder.ts`): the German tax and social insurance are worked out from the gross
+salary, so a high earner pays a higher share to the state; the lifestyle, the debts and the dream follow from a few numbers in the
+description (`cashflow-professions-dreamfund.ts`).
+
+### Easy, Normal, Hard
+
+Every character exists three times; the story and the dream are the same, the numbers and the cards are not.
+
+| What                  | Easy - a good place to start, also for children                                                          | Normal - for everyone                     | Hard - a challenge that needs a strategy                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| The budget            | about nine lines with round amounts (50, 100, 500) and round card prices                                 | about seventeen lines, a realistic budget | the same lines, tight                                                                                            |
+| Left of a month       | 30 % more                                                                                                | as designed                               | 15 % less                                                                                                        |
+| Debts, savings, dream | debts 20 % lower, savings 50 % higher, dream 10 % cheaper                                                | -                                         | debts 10 % higher, savings 25 % lower, dream 5 % dearer                                                          |
+| Promotions            | a roll one lower                                                                                         | -                                         | a roll one higher                                                                                                |
+| Cards and the rest    | luck +1 on the good dice, two offers a landing, only four traps, selling every Payday, a friendly market | the cards as described in this document   | one offer a landing, the traps twice, selling only on the sell dates, a falling market, no help from the parents |
+
+### The map: characters, strategies and difficulties
+
+The simulation has played every character, on every difficulty, with every way of playing (200 games each, same seeds): the **map**. It
+is what the bots of the multiplayer game are drawn from and what the analyst compares a saved game with. `docs/dreamfund-balance/MATRIX.md`
+has the whole table, `matrix.json` the numbers. Run `npm run matrix:dreamfund` to make it again whenever a card, a character or a
+number changes. The best strategy of each character and difficulty (share of games won in up to 60 months):
+
+<!-- matrix:start -->
+
+| Character | Easy                             | Normal                           | Hard                             |
+| --------- | -------------------------------- | -------------------------------- | -------------------------------- |
+| Jonas     | **80%** Sapling business builder | **45%** Sapling business builder | **28%** Sapling business builder |
+| Tobias    | **72%** Sapling business builder | **26%** Informed investor        | **9%** Sapling business builder  |
+| Sophie    | **71%** Sapling business builder | **27%** Sapling business builder | **9%** Sapling business builder  |
+| Mehmet    | **72%** Sapling business builder | **34%** Informed investor        | **16%** Sapling business builder |
+| Katrin    | **65%** Sapling business builder | **27%** Sapling business builder | **10%** Sapling business builder |
+| Lena      | **67%** Sapling business builder | **24%** Sapling business builder | **11%** Informed investor        |
+| Frank     | **67%** Sapling business builder | **23%** Sapling business builder | **11%** Informed investor        |
+| Dr. Jan   | **38%** Sapling business builder | **9%** Sapling business builder  | **3%** Sapling business builder  |
+| Heike     | **63%** Sapling business builder | **21%** Sapling business builder | **4%** Informed investor         |
+| Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
+
+<!-- matrix:end -->
