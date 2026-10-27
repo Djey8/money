@@ -7145,6 +7145,133 @@ paths:
           $ref: '#/components/responses/NotAGameAccountOrScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /game/dreamfund/leaderboard:
+    get:
+      operationId: getDreamfundLeaderboard
+      summary: The Dreamfund leaderboard at a difficulty
+      description: >-
+        Game accounts only; requires `game:r`. The Dreamfund has a leaderboard of its own - nothing of the classic board is in it. There is one rating per difficulty (`easy`, `medium`, `hard`): a person and a bot have each a rating at each level, and a bot is a strategy at a skill level (master, strong, casual, beginner) that starts where the simulation's map puts it and moves with its games. Pairwise Elo from the placing of each finished, ranked table (the goals reached, the dream points and the win count); what a player is expected to do depends on the character, so a place as a hard character earns more. Players with at least `minGames` rated games (default 1: bots appear as they play); humans are listed only when they switched themselves on (`setMyDreamfundPlayer`). Never an account id - players are known by their `playerId`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+            default: medium
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, human, bot]
+            default: all
+        - name: minGames
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: after
+          in: query
+          description: The position to continue from (the `next` of the page before).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The board
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  difficulty:
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  next:
+                    type: string
+                    nullable: true
+              example:
+                difficulty: medium
+                items:
+                  - {
+                      place: 1,
+                      playerId: 5c1e0b8e-0a3b-5a7d-9d1e-2f6a4f8e7c10,
+                      name: Informed investor,
+                      type: bot,
+                      rating: 1500,
+                      ratedGames: 12,
+                      provisional: false,
+                      games: 12,
+                      wins: 7,
+                      avgPlace: 1.8,
+                    }
+                next: null
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/dreamfund/players/me:
+    get:
+      operationId: getMyDreamfundPlayer
+      summary: Your own Dreamfund profile
+      description: >-
+        Game accounts only; requires `game:r`. Your profile on the Dreamfund board with a rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points) for each difficulty, your last results, and whether you are `visible` on the board. Made on first use.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Your profile
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+    put:
+      operationId: setMyDreamfundPlayer
+      summary: Show yourself on the Dreamfund board, or not
+      description: >-
+        Game accounts only; requires `game:w`. A person is listed on the board only when they switched `visible` on; the rating is kept either way.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [visible]
+              properties:
+                visible:
+                  type: boolean
+      responses:
+        '200':
+          description: Your profile
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
   /game/rooms/{roomId}/review:
     parameters:
       - name: roomId

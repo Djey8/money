@@ -187,6 +187,40 @@ export interface DreamTableSummary {
   createdAt?: string;
 }
 
+export interface DreamBoardRow {
+  place?: number;
+  playerId: string;
+  name: string;
+  type: 'human' | 'bot';
+  difficulty: 'easy' | 'medium' | 'hard';
+  rating: number;
+  peakRating: number;
+  ratedGames: number;
+  provisional: boolean;
+  games: number;
+  wins: number;
+  won: number;
+  bankruptcies: number;
+  avgPlace: number | null;
+  avgGoals: number | null;
+}
+
+export interface DreamMyPlayer {
+  playerId: string;
+  name: string;
+  visible: boolean;
+  ratings: Record<'easy' | 'medium' | 'hard', DreamBoardRow>;
+  recent: {
+    tableId: string;
+    name: string;
+    difficulty: string;
+    endedAt: string;
+    counted: boolean;
+    place?: number;
+    ratingChange?: number;
+  }[];
+}
+
 export interface DreamBotCatalog {
   items: { id: string; name: string }[];
   levels: { id: 'master' | 'strong' | 'casual' | 'beginner'; mistakes: number }[];
@@ -235,6 +269,30 @@ export class DreamApiService {
   remove(roomId: string): Observable<{ removed: boolean }> {
     return this.http.delete<{ removed: boolean }>(
       `${this.base}/${encodeURIComponent(roomId)}?confirm=true&remove=true`,
+    );
+  }
+
+  leaderboard(
+    difficulty: 'easy' | 'medium' | 'hard',
+    type: 'all' | 'human' | 'bot',
+    after?: string,
+  ): Observable<{ items: DreamBoardRow[]; next: string | null }> {
+    const query = `difficulty=${difficulty}&type=${type}&limit=25${after ? `&after=${encodeURIComponent(after)}` : ''}`;
+    return this.http.get<{ items: DreamBoardRow[]; next: string | null }>(
+      `${environment.selfhosted.apiUrl}/v1/game/dreamfund/leaderboard?${query}`,
+    );
+  }
+
+  me(): Observable<DreamMyPlayer> {
+    return this.http.get<DreamMyPlayer>(
+      `${environment.selfhosted.apiUrl}/v1/game/dreamfund/players/me`,
+    );
+  }
+
+  setVisible(visible: boolean): Observable<DreamMyPlayer> {
+    return this.http.put<DreamMyPlayer>(
+      `${environment.selfhosted.apiUrl}/v1/game/dreamfund/players/me`,
+      { visible },
     );
   }
 

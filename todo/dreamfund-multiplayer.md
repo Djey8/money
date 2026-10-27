@@ -46,17 +46,17 @@ Proof of the extraction: the simulation moves onto it and plays the same games s
 
 ## Slices
 
-| #   | Slice                                                                                                                     | Done when                                                                                                           |
-| --- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| 1   | The engine: `DreamPlayer` + the turn as decisions; the simulation runs on it                                              | `npm run simulate:dreamfund` gives the same games as before (same seeds, same records); unit tests of each decision |
-| 2   | Table state and reducer: settings, seats, phases, shared markets and piles, turn order, end conditions, goals and scoring | a scripted 4-player table (strategies as players) plays to each end condition in a test; golden fixture             |
-| 3   | Bots: the 12 strategies as table players (+ pace, away auto-play, the most passive legal move)                            | a table of bots finishes; results match the simulation's win rates within noise                                     |
-| 4   | Trading of Opportunity cards for a fee                                                                                    | offer / accept / decline / expire, holdings and cash move, history, bots may trade                                  |
-| 5   | Server: room kind `dreamfund` (`gamerooms`), lobby API, live channel, commands, clock, away                               | integration test with CouchDB: lobby -> start -> play -> finish; reconnect; timeout                                 |
-| 6   | MCP: every command, the table view and the lobby for agents                                                               | an agent plays a table through the MCP in a test                                                                    |
-| 7   | Frontend: the shared setup (solo + online), lobby, waiting room, the table view with N players                            | usable by hand; the solo game unchanged                                                                             |
-| 8   | Ranking: result records with goals and dream points, handicap from the map, leaderboard per difficulty                    | scoring unit tests; leaderboard page                                                                                |
-| 9   | Tournaments for bots: brackets / round robin per difficulty, Elo per bot per difficulty                                   | a tournament runs headless; the ratings table                                                                       |
+| #    | Slice                                                                                                                     | Done when                                                                                                           |
+| ---- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 1    | The engine: `DreamPlayer` + the turn as decisions; the simulation runs on it                                              | `npm run simulate:dreamfund` gives the same games as before (same seeds, same records); unit tests of each decision |
+| 2    | Table state and reducer: settings, seats, phases, shared markets and piles, turn order, end conditions, goals and scoring | a scripted 4-player table (strategies as players) plays to each end condition in a test; golden fixture             |
+| 3    | Bots: the 12 strategies as table players (+ pace, away auto-play, the most passive legal move)                            | a table of bots finishes; results match the simulation's win rates within noise                                     |
+| 4    | Trading of Opportunity cards for a fee                                                                                    | offer / accept / decline / expire, holdings and cash move, history, bots may trade                                  |
+| 5    | Server: room kind `dreamfund` (`gamerooms`), lobby API, live channel, commands, clock, away                               | integration test with CouchDB: lobby -> start -> play -> finish; reconnect; timeout                                 |
+| 6    | MCP: every command, the table view and the lobby for agents                                                               | an agent plays a table through the MCP in a test                                                                    |
+| 7    | Frontend: the shared setup (solo + online), lobby, waiting room, the table view with N players                            | usable by hand; the solo game unchanged                                                                             |
+| 8 ✅ | Ranking: result records with goals and dream points, handicap from the map, leaderboard per difficulty                    | scoring unit tests; leaderboard page                                                                                |
+| 9    | Tournaments for bots: brackets / round robin per difficulty, Elo per bot per difficulty                                   | a tournament runs headless; the ratings table                                                                       |
 
 Slices 1-4 are pure domain (fast tests, no server); 5-6 the backend; 7 the frontend; 8-9 the competition.
 

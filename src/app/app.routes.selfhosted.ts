@@ -63,6 +63,14 @@ export const routes: Routes = [
       import('./dreamfund-tables/dream-lobby.component').then((m) => m.DreamLobbyComponent),
   },
   {
+    path: 'dreamfund/leaderboard',
+    data: { gameMenu: { icon: '🏆', label: (lang: string) => dreamTexts(lang).leaderboard } },
+    loadComponent: () =>
+      import('./dreamfund-tables/dream-leaderboard.component').then(
+        (m) => m.DreamLeaderboardComponent,
+      ),
+  },
+  {
     path: 'dreamfund/:id',
     loadComponent: () =>
       import('./dreamfund-tables/dream-room.component').then((m) => m.DreamRoomComponent),

@@ -4200,6 +4200,7 @@ async function requireGameAccount(req, res, next) {
 // Multiplayer tables (todo/cashflow-multiplayer.md, docs/adr/0010): their own router, guard and rate-limit bucket.
 router.use('/game/rooms', require('./game-rooms'));
 // The Cashflow leaderboard and player profiles (routes/game-stats.js): its own paths under /game, anything else falls through.
+router.use('/game/dreamfund', require('./game-dreamfund'));
 router.use('/game', require('./game-stats'));
 
 router.get('/game', requireScope('game:r'), requireGameAccount, async (req, res, next) => {

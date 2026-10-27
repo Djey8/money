@@ -22,6 +22,7 @@ const {
 } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
 const { createGameStats } = require('../services/game-stats');
+const { createDreamStats } = require('../services/game-dream-stats');
 const { fileFinishedGame } = require('../repositories/game-saves');
 const { GameActionError } = require('../repositories/game-play');
 const { createGameRoomHub } = require('../services/game-room-hub');
@@ -77,6 +78,18 @@ function stats() {
   }
   return statsService;
 }
+/** The Dreamfund leaderboard (services/game-dream-stats.js): a world of its own next to the classic one. */
+let dreamStatsService = null;
+function dreamStats() {
+  if (!dreamStatsService) {
+    dreamStatsService = createDreamStats({
+      db: getGameStatsDb(),
+      nicknameOf,
+      log: (message, meta) => logger.warn(message, meta),
+    });
+  }
+  return dreamStatsService;
+}
 const hub = createGameRoomHub();
 // One timer per table that is being played with a clock; when it rings the service decides (services/game-room-clocks.js).
 const clocks = createRoomClocks({
@@ -104,6 +117,7 @@ function rooms() {
       // one name per account: the nickname of the account is the name at every table
       nicknameOf,
       stats: stats(),
+      dreamStats: dreamStats(),
       db: getGameRoomsDb(),
       log: (message, meta) => logger.warn(message, meta),
     });
@@ -731,6 +745,7 @@ module.exports.resetServiceForTests = () => {
 };
 module.exports.hub = hub;
 module.exports.stats = stats;
+module.exports.dreamStats = dreamStats;
 module.exports.rooms = rooms;
 module.exports.nicknameOf = nicknameOf;
 /**

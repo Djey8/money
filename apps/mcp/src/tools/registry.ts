@@ -438,7 +438,7 @@ export const TOOLS: ToolDefinition[] = [
       'the game is over; `timedOut: true` means nothing happened yet, so just call it again (never poll faster). ' +
       'Slim leaves the other books out; drop `slim` when you need to study them. `wait: "change"` with `since` (the ' +
       '`version` you saw) waits for any change instead. table_log pages through what happened (`after`). ' +
-      'table_seats shows who sits at a table (rating, record, picture version of each seat). table_bots lists the bots a host can seat (id, name, difficulty, how it plays; `kind: dreamfund` lists the strategies of a Dreamfund table). DREAMFUND TABLES - WATCHING ONE: to follow a table (yours, or a public one) and tell the user how it goes, call table_review with the roomId: a small page with the goals of every player in percent, score and rank, cash, reserve, passive income against the cost of living, net worth, the pace against the simulation of their character and level, and what to watch. Call it ON DEMAND - when the user asks "how are we doing?" - and never in a loop; do not read `table` or `table_log` for that (they are the whole books and history and cost many tokens; every call re-reads everything before it). Read explain_concept topic dreamfund_table_guide first. LEADERBOARD: leaderboard ' +
+      'table_seats shows who sits at a table (rating, record, picture version of each seat). table_bots lists the bots a host can seat (id, name, difficulty, how it plays; `kind: dreamfund` lists the strategies of a Dreamfund table). DREAMFUND TABLES - WATCHING ONE: to follow a table (yours, or a public one) and tell the user how it goes, call table_review with the roomId: a small page with the goals of every player in percent, score and rank, cash, reserve, passive income against the cost of living, net worth, the pace against the simulation of their character and level, and what to watch. Call it ON DEMAND - when the user asks "how are we doing?" - and never in a loop; do not read `table` or `table_log` for that (they are the whole books and history and cost many tokens; every call re-reads everything before it). Read explain_concept topic dreamfund_table_guide first. DREAMFUND LEADERBOARD (a board of its own, one rating per difficulty): dream_leaderboard (difficulty easy|medium|hard, type all|human|bot, minGames, limit, after), dream_my_player (your ratings at the three difficulties and your last results). LEADERBOARD: leaderboard ' +
       '(type all|human|bot, minGames, limit, after) lists players by rating - humans who opted in, and each bot persona at ' +
       'each level as a player of its own; player (playerId) shows one with their last results; my_player is your own ' +
       'profile (rating, counters, whether you are listed). A finished table says in `rating` whether it counted. ' +
@@ -451,6 +451,8 @@ export const TOOLS: ToolDefinition[] = [
       table_seats: action('listGameRoomSeats'),
       table_bots: action('listGameBots'),
       table_review: action('getGameRoomReview'),
+      dream_leaderboard: action('getDreamfundLeaderboard'),
+      dream_my_player: action('getMyDreamfundPlayer'),
       leaderboard: action('getGameLeaderboard'),
       player: action('getGamePlayer'),
       my_player: action('getMyGamePlayer'),

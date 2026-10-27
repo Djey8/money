@@ -61,6 +61,7 @@ const SIZES = ['small', 'medium', 'large'] as const;
     <div class="dl-page">
       <nav class="dl-nav">
         <a routerLink="/tables">{{ t.classicLink }}</a>
+        <a routerLink="/dreamfund/leaderboard">🏆 {{ t.leaderboard }}</a>
         <a routerLink="/docs/dreamfund">ⓘ</a>
       </nav>
       <p class="dl-problem" *ngIf="problem">{{ problem }}</p>
@@ -202,6 +203,10 @@ const SIZES = ['small', 'medium', 'large'] as const;
         <label class="dl-check"
           ><input type="checkbox" [(ngModel)]="form.spectators" /> {{ t.spectators }}</label
         >
+        <label class="dl-check"
+          ><input type="checkbox" [(ngModel)]="form.ranked" /> {{ t.rankedGame }}</label
+        >
+        <small class="tx-muted" *ngIf="form.ranked">{{ t.rankedHint }}</small>
 
         <div class="tx-actions">
           <button
@@ -391,6 +396,7 @@ export class DreamLobbyComponent implements OnInit {
     visibility: 'public' as 'public' | 'private',
     pace: 'normal' as 'fast' | 'normal' | 'slow',
     spectators: true,
+    ranked: false,
   };
 
   get lang(): string {
@@ -460,6 +466,7 @@ export class DreamLobbyComponent implements OnInit {
           ...(f.endCondition === 'round-limit' ? { roundLimit: Number(f.roundLimit) } : {}),
           spectators: f.spectators,
           pace: f.pace,
+          ranked: f.ranked,
         },
       })
       .subscribe({

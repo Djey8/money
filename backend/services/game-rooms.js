@@ -212,6 +212,7 @@ function createGameRoomService({
   log = () => {},
   hub = null,
   stats = null,
+  dreamStats = null,
   nicknameOf = async () => '',
   clocks = null,
   bots = null,
@@ -294,6 +295,19 @@ function createGameRoomService({
         .record(saved)
         .catch((error) =>
           log('game_stats_record_failed', { roomId: doc.roomId, message: error.message }),
+        );
+    }
+    // a Dreamfund game that has just ended goes onto its own board
+    if (
+      dreamStats &&
+      table.kind === 'dreamfund' &&
+      table.phase === 'finished' &&
+      (!previous || previous.phase !== 'finished')
+    ) {
+      dreamStats
+        .record(saved)
+        .catch((error) =>
+          log('game_dream_stats_record_failed', { roomId: doc.roomId, message: error.message }),
         );
     }
     if (clocks) clocks.arm(doc.roomId, kindOf(table).deadline(table));

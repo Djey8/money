@@ -78,6 +78,7 @@ describe('DreamLobbyComponent', () => {
     component.form.roundLimit = 40;
     component.form.clockMode = 'per-move';
     component.form.clockSeconds = 45;
+    component.form.ranked = true;
     component.create();
     const post = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/v1/game/rooms'));
     expect(post.request.body.kind).toBe('dreamfund');
@@ -90,6 +91,7 @@ describe('DreamLobbyComponent', () => {
       maxSeats: 5,
       endCondition: 'round-limit',
       roundLimit: 40,
+      ranked: true,
       clock: { mode: 'per-move', secondsPerMove: 45 },
     });
     const router = TestBed.inject(Router);

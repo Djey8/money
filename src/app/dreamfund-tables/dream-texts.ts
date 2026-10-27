@@ -162,6 +162,25 @@ export interface DreamTexts {
   confirmClose: string;
   levelHint: string;
   classicLink: string;
+  leaderboard: string;
+  rating: string;
+  games: string;
+  tableWins: string;
+  avgPlace: string;
+  showMe: string;
+  provisional: string;
+  rankedGame: string;
+  rankedHint: string;
+  everybody: string;
+  people: string;
+  bots: string;
+  noPlayers: string;
+  myRatings: string;
+  nameCol: string;
+  placeCol: string;
+  recent: string;
+  counted: string;
+  notCounted: string;
 }
 
 const EN: DreamTexts = {
@@ -321,6 +340,26 @@ const EN: DreamTexts = {
   confirmClose: 'Closing the table ends it for everyone. Close it?',
   levelHint: 'The lower the skill, the more often a bot slips.',
   classicLink: 'Classic tables',
+  leaderboard: 'Leaderboard',
+  rating: 'Rating',
+  games: 'Games',
+  tableWins: 'Wins',
+  avgPlace: 'Avg. place',
+  showMe: 'Show me on the board',
+  provisional: 'provisional',
+  rankedGame: 'Ranked game (counts for the leaderboard)',
+  rankedHint:
+    'A ranked game counts when somebody won or at least eight rounds were played, and a person sat at it.',
+  everybody: 'Everybody',
+  people: 'People',
+  bots: 'Bots',
+  noPlayers: 'Nobody has played a ranked game at this difficulty yet.',
+  myRatings: 'My ratings',
+  nameCol: 'Player',
+  placeCol: 'Place',
+  recent: 'Last games',
+  counted: 'counted',
+  notCounted: 'did not count',
 };
 
 const DE: Partial<DreamTexts> = {
@@ -480,6 +519,26 @@ const DE: Partial<DreamTexts> = {
   confirmClose: 'Das Schließen beendet den Tisch für alle. Schließen?',
   levelHint: 'Je niedriger das Können, desto öfter patzt ein Bot.',
   classicLink: 'Klassische Tische',
+  leaderboard: 'Bestenliste',
+  rating: 'Wertung',
+  games: 'Spiele',
+  tableWins: 'Siege',
+  avgPlace: 'Ø Platz',
+  showMe: 'Mich in der Liste zeigen',
+  provisional: 'vorläufig',
+  rankedGame: 'Gewertetes Spiel (zählt für die Bestenliste)',
+  rankedHint:
+    'Ein gewertetes Spiel zählt, wenn jemand gewonnen hat oder mindestens acht Runden gespielt wurden und ein Mensch am Tisch saß.',
+  everybody: 'Alle',
+  people: 'Menschen',
+  bots: 'Bots',
+  noPlayers: 'Auf dieser Schwierigkeit hat noch niemand ein gewertetes Spiel gespielt.',
+  myRatings: 'Meine Wertungen',
+  nameCol: 'Spieler',
+  placeCol: 'Platz',
+  recent: 'Letzte Spiele',
+  counted: 'gezählt',
+  notCounted: 'nicht gezählt',
 };
 
 export function dreamTexts(lang: string): DreamTexts {
