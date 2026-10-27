@@ -1,4 +1,5 @@
 import { DREAMFUND_MAP, type DreamfundLevel } from '../../analysis/dreamfund-benchmarks';
+import { DREAM_BOT_RATINGS } from './bot-ratings.generated';
 import { DREAM_BOT_LEVELS, splitDreamBotId, type DreamBotLevel } from './bot-levels';
 
 /**
@@ -25,7 +26,7 @@ const K_HUMAN = 24;
 const K_BOT = 8;
 const NEW_PLAYER_GAMES = 20;
 
-/** How far the skill levels of a bot sit below its master (Elo points; a first estimate, the tournaments set them - slice 9). */
+/** How far the skill levels of a bot sit below its master (Elo points; the fallback when no tournament has rated a bot: the tournaments found about 0, -10, -80, -230). */
 export const LEVEL_OFFSET: Record<DreamBotLevel, number> = {
   master: 0,
   strong: -50,
@@ -66,6 +67,9 @@ export function characterStrength(character: string | null, level: DreamfundLeve
 export function botStartRating(botId: string, level: DreamfundLevel): number {
   const parts = splitDreamBotId(botId);
   if (!parts) return DREAM_START_RATING;
+  // what the bot tournaments found, when they have been run (scripts/dreamfund-tournament.js)
+  const played = DREAM_BOT_RATINGS[level]?.[botId];
+  if (played !== undefined) return played;
   const rateOf = (id: string) =>
     mean(
       Object.values(DREAMFUND_MAP)

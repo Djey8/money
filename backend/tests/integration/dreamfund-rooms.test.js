@@ -313,6 +313,14 @@ describe('a Dreamfund room', () => {
         'get',
         '/game/leaderboard?type=bot&minGames=0&limit=1',
       );
+      // the bots are permanent profiles: count from where the last run left them
+      const ratedBefore = async () =>
+        (
+          await gameRooms
+            .dreamStats()
+            .board({ difficulty: 'easy', type: 'bot', minGames: 0, limit: 200 })
+        ).find((r) => r.name === 'Informed investor')?.ratedGames ?? 0;
+      const gamesBefore = await ratedBefore();
       const made = await call(host, 'post', '/game/rooms', {
         kind: 'dreamfund',
         nickname: 'Hanna',
@@ -351,7 +359,8 @@ describe('a Dreamfund room', () => {
       let board;
       for (let i = 0; i < 40; i += 1) {
         board = await call(host, 'get', '/game/dreamfund/leaderboard?difficulty=easy&type=bot');
-        if (board.body.items.length >= 2) break;
+        if (board.body.items.find((r) => r.name === 'Informed investor')?.ratedGames > gamesBefore)
+          break;
         await sleep(250);
       }
       expect(board.status).toBe(200);
@@ -363,8 +372,7 @@ describe('a Dreamfund room', () => {
       expect(expert).toMatchObject({
         type: 'bot',
         difficulty: 'easy',
-        ratedGames: 1,
-        provisional: true,
+        ratedGames: gamesBefore + 1,
       });
       // the same bot has nothing on the other difficulties
       const medium = await call(
@@ -412,6 +420,21 @@ describe('a Dreamfund room', () => {
       expect(JSON.stringify(classicAfter.body)).toBe(JSON.stringify(classicBefore.body));
       const bad = await call(host, 'get', '/game/dreamfund/leaderboard?difficulty=insane');
       expect(bad.status).toBe(400);
+    },
+  );
+  maybe(
+    'knows every bot of every skill level before it has played, at its tournament rating',
+    async () => {
+      const stats = gameRooms.dreamStats();
+      await stats.seedBots();
+      expect((await stats.seedBots()).made).toBe(0);
+      const board = await stats.board({ difficulty: 'hard', type: 'bot', minGames: 0, limit: 200 });
+      const names = board.map((row) => row.name);
+      expect(board.length).toBeGreaterThanOrEqual(44);
+      expect(new Set(names).size).toBe(names.length);
+      expect(board.every((row) => row.games === 0 && row.provisional)).toBe(true);
+      // the best of them starts at 1500, lower skill levels below their master
+      expect(board[0].rating).toBeLessThanOrEqual(1500);
     },
   );
 });

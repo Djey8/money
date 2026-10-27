@@ -1,0 +1,342 @@
+{
+ "difficulty": "hard",
+ "tables": 1300,
+ "bots": [
+  {
+   "botId": "tree",
+   "rating": 1690.8000000000009,
+   "games": 98,
+   "tableWins": 49,
+   "places": 174
+  },
+  {
+   "botId": "tree--strong",
+   "rating": 1666.499999999999,
+   "games": 95,
+   "tableWins": 40,
+   "places": 192
+  },
+  {
+   "botId": "sapling--strong",
+   "rating": 1657.9999999999993,
+   "games": 96,
+   "tableWins": 47,
+   "places": 186
+  },
+  {
+   "botId": "gambler",
+   "rating": 1637.0999999999997,
+   "games": 100,
+   "tableWins": 38,
+   "places": 196
+  },
+  {
+   "botId": "expert",
+   "rating": 1630.0999999999995,
+   "games": 95,
+   "tableWins": 35,
+   "places": 189
+  },
+  {
+   "botId": "gambler--strong",
+   "rating": 1621.3999999999994,
+   "games": 98,
+   "tableWins": 34,
+   "places": 202
+  },
+  {
+   "botId": "expert--strong",
+   "rating": 1614.5,
+   "games": 97,
+   "tableWins": 42,
+   "places": 203
+  },
+  {
+   "botId": "sapling",
+   "rating": 1612.500000000001,
+   "games": 100,
+   "tableWins": 39,
+   "places": 210
+  },
+  {
+   "botId": "passive",
+   "rating": 1601.500000000001,
+   "games": 96,
+   "tableWins": 20,
+   "places": 216
+  },
+  {
+   "botId": "dividend",
+   "rating": 1600.7999999999993,
+   "games": 101,
+   "tableWins": 30,
+   "places": 218
+  },
+  {
+   "botId": "dreamer--strong",
+   "rating": 1591.6000000000001,
+   "games": 91,
+   "tableWins": 22,
+   "places": 202
+  },
+  {
+   "botId": "hustler",
+   "rating": 1589.9999999999993,
+   "games": 95,
+   "tableWins": 29,
+   "places": 204
+  },
+  {
+   "botId": "etf",
+   "rating": 1582.8999999999992,
+   "games": 99,
+   "tableWins": 32,
+   "places": 222
+  },
+  {
+   "botId": "saver",
+   "rating": 1581.4,
+   "games": 99,
+   "tableWins": 27,
+   "places": 221
+  },
+  {
+   "botId": "property--strong",
+   "rating": 1576.0000000000005,
+   "games": 95,
+   "tableWins": 28,
+   "places": 213
+  },
+  {
+   "botId": "sapling--casual",
+   "rating": 1568.4000000000003,
+   "games": 91,
+   "tableWins": 31,
+   "places": 205
+  },
+  {
+   "botId": "passive--strong",
+   "rating": 1562.8999999999999,
+   "games": 98,
+   "tableWins": 26,
+   "places": 226
+  },
+  {
+   "botId": "dreamer",
+   "rating": 1562.2999999999997,
+   "games": 99,
+   "tableWins": 23,
+   "places": 231
+  },
+  {
+   "botId": "etf--strong",
+   "rating": 1550.1000000000001,
+   "games": 98,
+   "tableWins": 24,
+   "places": 223
+  },
+  {
+   "botId": "dividend--strong",
+   "rating": 1548.8000000000006,
+   "games": 96,
+   "tableWins": 29,
+   "places": 214
+  },
+  {
+   "botId": "expert--casual",
+   "rating": 1547.1,
+   "games": 89,
+   "tableWins": 30,
+   "places": 221
+  },
+  {
+   "botId": "saver--strong",
+   "rating": 1546.6999999999994,
+   "games": 93,
+   "tableWins": 26,
+   "places": 209
+  },
+  {
+   "botId": "passive--casual",
+   "rating": 1534,
+   "games": 92,
+   "tableWins": 25,
+   "places": 223
+  },
+  {
+   "botId": "hustler--strong",
+   "rating": 1528.7000000000007,
+   "games": 95,
+   "tableWins": 23,
+   "places": 223
+  },
+  {
+   "botId": "tree--casual",
+   "rating": 1519.8999999999996,
+   "games": 91,
+   "tableWins": 21,
+   "places": 234
+  },
+  {
+   "botId": "hustler--casual",
+   "rating": 1519.2000000000005,
+   "games": 98,
+   "tableWins": 26,
+   "places": 243
+  },
+  {
+   "botId": "dreamer--casual",
+   "rating": 1492.8999999999999,
+   "games": 90,
+   "tableWins": 19,
+   "places": 215
+  },
+  {
+   "botId": "property",
+   "rating": 1475.2,
+   "games": 97,
+   "tableWins": 28,
+   "places": 229
+  },
+  {
+   "botId": "property--casual",
+   "rating": 1468.7999999999995,
+   "games": 95,
+   "tableWins": 18,
+   "places": 254
+  },
+  {
+   "botId": "etf--casual",
+   "rating": 1462.6999999999998,
+   "games": 86,
+   "tableWins": 17,
+   "places": 229
+  },
+  {
+   "botId": "dividend--casual",
+   "rating": 1458.500000000001,
+   "games": 95,
+   "tableWins": 22,
+   "places": 249
+  },
+  {
+   "botId": "steady",
+   "rating": 1448.4999999999995,
+   "games": 93,
+   "tableWins": 8,
+   "places": 260
+  },
+  {
+   "botId": "saver--casual",
+   "rating": 1438.8000000000002,
+   "games": 96,
+   "tableWins": 25,
+   "places": 235
+  },
+  {
+   "botId": "gambler--casual",
+   "rating": 1430.9,
+   "games": 86,
+   "tableWins": 25,
+   "places": 234
+  },
+  {
+   "botId": "sapling--beginner",
+   "rating": 1429.3,
+   "games": 85,
+   "tableWins": 15,
+   "places": 243
+  },
+  {
+   "botId": "steady--strong",
+   "rating": 1421.6000000000004,
+   "games": 91,
+   "tableWins": 11,
+   "places": 253
+  },
+  {
+   "botId": "steady--casual",
+   "rating": 1397.3999999999999,
+   "games": 99,
+   "tableWins": 13,
+   "places": 274
+  },
+  {
+   "botId": "dividend--beginner",
+   "rating": 1385.1999999999998,
+   "games": 88,
+   "tableWins": 14,
+   "places": 271
+  },
+  {
+   "botId": "passive--beginner",
+   "rating": 1370.3999999999994,
+   "games": 97,
+   "tableWins": 19,
+   "places": 287
+  },
+  {
+   "botId": "hustler--beginner",
+   "rating": 1359.999999999999,
+   "games": 94,
+   "tableWins": 12,
+   "places": 281
+  },
+  {
+   "botId": "tree--beginner",
+   "rating": 1358.8999999999994,
+   "games": 96,
+   "tableWins": 17,
+   "places": 294
+  },
+  {
+   "botId": "dreamer--beginner",
+   "rating": 1354.7000000000005,
+   "games": 96,
+   "tableWins": 12,
+   "places": 300
+  },
+  {
+   "botId": "etf--beginner",
+   "rating": 1352.2000000000007,
+   "games": 89,
+   "tableWins": 7,
+   "places": 276
+  },
+  {
+   "botId": "steady--beginner",
+   "rating": 1347.2000000000012,
+   "games": 92,
+   "tableWins": 9,
+   "places": 289
+  },
+  {
+   "botId": "saver--beginner",
+   "rating": 1345.0999999999995,
+   "games": 95,
+   "tableWins": 11,
+   "places": 288
+  },
+  {
+   "botId": "expert--beginner",
+   "rating": 1344.6000000000001,
+   "games": 92,
+   "tableWins": 13,
+   "places": 287
+  },
+  {
+   "botId": "property--beginner",
+   "rating": 1341.1000000000013,
+   "games": 83,
+   "tableWins": 7,
+   "places": 261
+  },
+  {
+   "botId": "gambler--beginner",
+   "rating": 1272.1,
+   "games": 94,
+   "tableWins": 13,
+   "places": 301
+  }
+ ]
+}

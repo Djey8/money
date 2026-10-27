@@ -56,7 +56,7 @@ Proof of the extraction: the simulation moves onto it and plays the same games s
 | 6    | MCP: every command, the table view and the lobby for agents                                                               | an agent plays a table through the MCP in a test                                                                    |
 | 7    | Frontend: the shared setup (solo + online), lobby, waiting room, the table view with N players                            | usable by hand; the solo game unchanged                                                                             |
 | 8 ✅ | Ranking: result records with goals and dream points, handicap from the map, leaderboard per difficulty                    | scoring unit tests; leaderboard page                                                                                |
-| 9    | Tournaments for bots: brackets / round robin per difficulty, Elo per bot per difficulty                                   | a tournament runs headless; the ratings table                                                                       |
+| 9 ✅ | Tournaments for bots: brackets / round robin per difficulty, Elo per bot per difficulty                                   | a tournament runs headless; the ratings table                                                                       |
 
 Slices 1-4 are pure domain (fast tests, no server); 5-6 the backend; 7 the frontend; 8-9 the competition.
 
@@ -86,6 +86,11 @@ Slices 1-4 are pure domain (fast tests, no server); 5-6 the backend; 7 the front
   the handicap of the character and level (the expected result of a player comes from the map).
 - **Tournaments for the bots (slice 9):** headless round robins / brackets per difficulty over the strategies and characters, run on the
   server or by script, that give every bot persona its starting rating per level; the same machinery later runs seasons.
+- **Tournament result (2026-10-27, slice 9):** `scripts/dreamfund-tournament.js` played 1300 four-seat tables of bots per difficulty (about
+  95 games per bot, random characters, 40 rounds), rated with the board's Elo; `--write` turns `docs/dreamfund-balance/bot-ratings-*.json` into
+  `bot-ratings.generated.ts`, which `botStartRating` reads (best master = 1500). Skill levels came out at about master 0, strong -10, casual
+  -80, beginner -230 (noise about +-30 per bot); `tree`, `expert`, `sapling` and `gambler` lead, `saver`/`passive` trail. Re-run after any
+  change to the bots or the cards.
 - **Open question:** whether a bot persona is `strategy x character` (many more rows) or a strategy that plays a random character at
   each table (fewer rows, the character's difficulty averaged out). Recommended: persona = strategy; the board can be filtered by
   character, and the rating is kept per strategy and level (with a per-character breakdown).

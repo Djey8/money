@@ -153,7 +153,13 @@ if (require.main === module) {
             repaired: repaired.repaired,
           });
         })
-        .catch((err) => logger.logError(err, { context: 'game_stats_startup' })),
+        .catch((err) => logger.logError(err, { context: 'game_stats_startup' }))
+        // The Dreamfund board of its own: its bots are known before they have played (idempotent).
+        .then(async () => {
+          const seeded = await require('./routes/game-rooms').dreamStats().seedBots();
+          logger.info('Dreamfund leaderboard ready', { botsMade: seeded.made });
+        })
+        .catch((err) => logger.logError(err, { context: 'game_dream_stats_startup' })),
     )
     .catch((err) => {
       logger.logError(err, { context: 'database_initialization' });
