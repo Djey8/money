@@ -3,6 +3,12 @@ import type { GameSnapshot } from '../history';
 import { summarizeGameFinances } from '../saved-games';
 import type { CashflowGameSet } from '../types';
 import { booksFromSnapshot } from './books-from-snapshot';
+import {
+  DREAMFUND_MAP,
+  DREAMFUND_MAP_META,
+  type DreamfundCellBenchmark,
+  type DreamfundLevel,
+} from './dreamfund-benchmarks';
 import type { ReviewEntry } from './review';
 
 /**
@@ -14,7 +20,10 @@ import type { ReviewEntry } from './review';
  * games found (docs/DREAMFUND_GAME.md). Pure: snapshots in, a report out.
  */
 
-/** When the best strategies of the simulation reached each goal, in months (Jonas, Medium: the informed investor and the Sapling builder). */
+/**
+ * When the best strategies of the simulation reached each goal, in months (Jonas, Medium: the informed investor and the Sapling builder).
+ * It is the benchmark of a game whose character the map (`dreamfund-benchmarks.ts`) does not know.
+ */
 export const DREAMFUND_BENCHMARK = {
   reserveMonth: 17,
   debtsMonth: 22,
@@ -23,6 +32,61 @@ export const DREAMFUND_BENCHMARK = {
   freeSavingCards: 6,
   firstIncomeMonth: 4,
 };
+
+export type DreamfundBenchmark = typeof DREAMFUND_BENCHMARK;
+
+/** What a game is set beside: the map's cell of its character and difficulty, as months per goal and as the strategies' fortunes. */
+export interface DreamfundBenchmarkInfo {
+  character: string;
+  level: DreamfundLevel;
+  bestStrategy: string;
+  winRate: number;
+  bankruptRate: number;
+  gamesPerCell: number;
+  /** Per strategy: [win rate, bankruptcy rate, typical month of a win or null], the best first. */
+  strategies: { id: string; winRate: number; bankruptRate: number; winMonth: number | null }[];
+}
+
+/** The character and difficulty a game is played as: `jonas~hard` is Jonas on Hard, a plain id is Medium. */
+export function characterAndLevel(professionId: string | undefined): {
+  character: string;
+  level: DreamfundLevel;
+} {
+  const [character, suffix] = (professionId ?? '').split('~');
+  return { character, level: suffix === 'easy' || suffix === 'hard' ? suffix : 'medium' };
+}
+
+/** The months of each goal the analysis compares a game with, and what the map says of the strategies (null: the map has no such cell). */
+export function benchmarkOf(professionId: string | undefined): {
+  bench: DreamfundBenchmark;
+  info: DreamfundBenchmarkInfo | null;
+} {
+  const { character, level } = characterAndLevel(professionId);
+  const cell: DreamfundCellBenchmark | undefined = DREAMFUND_MAP[character]?.[level];
+  if (!cell) return { bench: DREAMFUND_BENCHMARK, info: null };
+  // a goal the best strategy did not reach in the simulated time is compared with the end of it
+  const horizon = Math.round(DREAMFUND_MAP_META.maxRolls / 2.5);
+  return {
+    bench: {
+      ...DREAMFUND_BENCHMARK,
+      reserveMonth: cell.months.reserve ?? horizon,
+      debtsMonth: cell.months.debts ?? horizon,
+      dreamMonth: cell.months.dream ?? horizon,
+      independenceMonth: cell.months.independence ?? horizon,
+    },
+    info: {
+      character,
+      level,
+      bestStrategy: cell.best.label,
+      winRate: cell.winRate,
+      bankruptRate: cell.bankruptRate,
+      gamesPerCell: DREAMFUND_MAP_META.gamesPerCell,
+      strategies: Object.entries(cell.strategies)
+        .map(([id, [winRate, bankruptRate, winMonth]]) => ({ id, winRate, bankruptRate, winMonth }))
+        .sort((a, b) => b.winRate - a.winRate),
+    },
+  };
+}
 
 export type FindingTone = 'good' | 'bad' | 'tip';
 
@@ -88,6 +152,8 @@ export interface DreamfundReview {
     bankLoanMinor: number;
   };
   findings: DreamfundFinding[];
+  /** The character and difficulty the game was played as, and what the simulated games of that cell achieved. */
+  benchmark: (DreamfundBenchmarkInfo & { months: DreamfundBenchmark }) | null;
 }
 
 type Loose = Record<string, unknown>;
@@ -127,11 +193,14 @@ function dreamShareOf(snapshot: Omit<GameSnapshot, 'step'>): number {
   return target > 0 ? Math.min(1, saved / target) : 0;
 }
 
-const DEBT_TAGS = /eltern|parents|autokredit|car loan/i;
+/** The debts of the characters (the Dual Student's two and the others': student loans, a car, a business, a house), in both languages. */
+const DEBT_TAGS =
+  /eltern|parents|autokredit|car loan|bafög|bafoeg|studienkredit|student loan|kreditkarte|credit card|kreditrahmen|credit line|betriebskredit|modernisierung|home-improvement|dachkredit|roof loan|hypothek|mortgage|leasing/i;
 
 function positionOf(
   snapshot: Omit<GameSnapshot, 'step'>,
   gameSet: CashflowGameSet | undefined,
+  debtTags: ReadonlySet<string>,
 ): Position {
   const books = booksFromSnapshot(snapshot, { gameSet });
   const finances = summarizeGameFinances(books.state, books.subscriptions);
@@ -152,7 +221,9 @@ function positionOf(
     holdings: list((snapshot.cashflowGame as unknown as Loose)['holdings']).filter(
       (holding) => !holding['ended'],
     ),
-    debtsOpen: books.liabilities.some((l) => DEBT_TAGS.test(l.tag) && l.amountMinor > 0),
+    debtsOpen: books.liabilities.some(
+      (l) => (debtTags.has(l.tag.toLowerCase()) || DEBT_TAGS.test(l.tag)) && l.amountMinor > 0,
+    ),
     dreamLived: (dreams?.lived?.length ?? 0) > 0,
     independent: finances.escapedRatRace,
     bankrupt: finances.bankrupt,
@@ -166,9 +237,15 @@ export function reviewDreamfund(
   options: { gameSets: CashflowGameSet[] },
 ): DreamfundReview {
   const gameSet = options.gameSets.find((set) => set.id === live.cashflowGame.gameSetId);
+  const profession = gameSet?.professions.find(
+    (candidate) => candidate.id === live.cashflowGame.professionId,
+  );
+  const debtTags = new Set(
+    (profession?.starterKit.liabilities ?? []).map((liability) => liability.tag.toLowerCase()),
+  );
   const positions = [
-    ...stack.map((entry) => positionOf(entry, gameSet)),
-    positionOf(live, gameSet),
+    ...stack.map((entry) => positionOf(entry, gameSet, debtTags)),
+    positionOf(live, gameSet, debtTags),
   ];
   const last = positions[positions.length - 1];
 
@@ -294,8 +371,11 @@ export function reviewDreamfund(
       bankLoanMinor: last.bankLoanMinor,
     },
     findings: [],
+    benchmark: null,
   };
-  review.findings = findingsOf(review, positions, idleRounds);
+  const { bench, info } = benchmarkOf(live.cashflowGame.professionId ?? undefined);
+  review.benchmark = info ? { ...info, months: bench } : null;
+  review.findings = findingsOf(review, positions, idleRounds, bench);
   return review;
 }
 
@@ -311,8 +391,8 @@ function findingsOf(
   review: DreamfundReview,
   positions: Position[],
   idleRounds: number,
+  bench: DreamfundBenchmark,
 ): DreamfundFinding[] {
-  const bench = DREAMFUND_BENCHMARK;
   const out: DreamfundFinding[] = [];
   const m = review.milestones;
   const add = (id: string, tone: FindingTone, text: string, month?: number) =>
@@ -388,7 +468,7 @@ function findingsOf(
     }
   };
   goal('reserve', 'The emergency reserve', m.reserveFull, bench.reserveMonth);
-  goal('debts', 'Paying back the parents and the car loan', m.debtsRepaid, bench.debtsMonth);
+  goal('debts', 'Paying back the debts', m.debtsRepaid, bench.debtsMonth);
   goal('dream', 'The life dream', m.dreamLived, bench.dreamMonth);
   goal('independence', 'Financial independence', m.independence, bench.independenceMonth);
   // the dream before income
@@ -471,6 +551,8 @@ const amount = (minor: number) => (minor / 100).toLocaleString('en', { maximumFr
 export function describeDreamfundReview(review: DreamfundReview): string {
   const lines: string[] = [];
   const money = (minor: number) => amount(minor);
+  const bench = review.benchmark?.months ?? DREAMFUND_BENCHMARK;
+  const info = review.benchmark;
   lines.push(
     `# Dreamfund game review`,
     '',
@@ -485,11 +567,24 @@ export function describeDreamfundReview(review: DreamfundReview): string {
     '## Milestones (month of the game)',
     '',
     `- First monthly income: ${review.milestones.firstIncome ?? 'not yet'}`,
-    `- Reserve full: ${review.milestones.reserveFull ?? 'not yet'} (best simulated games: ~${DREAMFUND_BENCHMARK.reserveMonth})`,
-    `- Debts repaid: ${review.milestones.debtsRepaid ?? 'not yet'} (~${DREAMFUND_BENCHMARK.debtsMonth})`,
-    `- Life dream lived: ${review.milestones.dreamLived ?? 'not yet'} (~${DREAMFUND_BENCHMARK.dreamMonth})`,
-    `- Financial independence: ${review.milestones.independence ?? 'not yet'} (~${DREAMFUND_BENCHMARK.independenceMonth})`,
+    `- Reserve full: ${review.milestones.reserveFull ?? 'not yet'} (best simulated games: ~${bench.reserveMonth})`,
+    `- Debts repaid: ${review.milestones.debtsRepaid ?? 'not yet'} (~${bench.debtsMonth})`,
+    `- Life dream lived: ${review.milestones.dreamLived ?? 'not yet'} (~${bench.dreamMonth})`,
+    `- Financial independence: ${review.milestones.independence ?? 'not yet'} (~${bench.independenceMonth})`,
     '',
+    ...(info
+      ? [
+          '## What the simulation says of this character',
+          '',
+          `${info.character} on ${info.level}: the best strategy (${info.bestStrategy}) won ${Math.round(info.winRate * 100)}% of ${info.gamesPerCell} simulated games and went bankrupt in ${Math.round(info.bankruptRate * 100)}%. All strategies, best first (win rate / bankrupt / typical month of a win):`,
+          '',
+          ...info.strategies.map(
+            (strategy) =>
+              `- ${strategy.id}: ${Math.round(strategy.winRate * 100)}% / ${Math.round(strategy.bankruptRate * 100)}% / ${strategy.winMonth ?? '-'}`,
+          ),
+          '',
+        ]
+      : []),
     '## What was bought',
     '',
     ...(review.purchases.length
@@ -506,7 +601,7 @@ export function describeDreamfundReview(review: DreamfundReview): string {
         `- ${finding.tone === 'good' ? '✔' : finding.tone === 'bad' ? '✘' : '→'} ${finding.text}`,
     ),
     '',
-    'Compare with docs: explain_concept dreamfund_game_en (the benchmark is the simulation of 2,400 games of Jonas, Medium).',
+    'Compare with docs: explain_concept dreamfund_game_en (the benchmark is the simulation of the character on this difficulty; docs/dreamfund-balance/MATRIX.md has the whole map).',
   );
   return lines.join('\n');
 }

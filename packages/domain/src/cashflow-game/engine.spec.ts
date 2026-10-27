@@ -95,9 +95,11 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
     (profession) => profession.id === 'dual-student-informatik',
   )!;
 
-  it('is the only character of the edition, with a story in English and German and a checklist to win', () => {
+  it('is the first character of the edition, with a story in English and German and a checklist to win', () => {
     expect(set.edition).toBe('custom');
-    expect(set.professions.map((profession) => profession.id)).toEqual(['dual-student-informatik']);
+    // ten characters (the Dual Student first), each in three difficulties: the other two are variants of the first
+    expect(set.professions[0].id).toBe('dual-student-informatik');
+    expect(set.professions.filter((profession) => !profession.variantOf)).toHaveLength(10);
     expect(student.profile?.texts['en'].dream.title).toBeTruthy();
     expect(student.profile?.texts['de'].goal).toBeTruthy();
     for (const lang of ['en', 'de']) {

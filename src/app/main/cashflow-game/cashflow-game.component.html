@@ -290,6 +290,25 @@
 
       <!-- the rules of the Custom JFK edition: what the player may decide and what the cards decide (JFK, 2026-10-26) -->
       <section class="cf-group" *ngIf="showBoardChoice">
+        <h4>{{ 'CashflowGame.difficulty.title' | translate }}</h4>
+        <div class="cf-seg" role="radiogroup">
+          <button
+            *ngFor="let level of difficultyLevels; trackBy: trackByValue"
+            type="button"
+            role="radio"
+            [class.cf-seg--on]="customDraft.difficulty === level"
+            [attr.aria-checked]="customDraft.difficulty === level"
+            (click)="setDifficulty(level)"
+          >
+            {{ 'CashflowGame.difficulty.' + level | translate }}
+          </button>
+        </div>
+        <p class="cf-hint">
+          {{ 'CashflowGame.difficulty.hint.' + customDraft.difficulty | translate }}
+        </p>
+      </section>
+
+      <section class="cf-group" *ngIf="showBoardChoice">
         <h4>{{ 'CashflowGame.custom.title' | translate }}</h4>
         <div class="cf-seg" role="radiogroup">
           <button

@@ -6,6 +6,12 @@
 import { EMERGENCY_CARDS } from './cashflow-emergency-cards';
 import { DREAM_CARDS } from './cashflow-dream-cards';
 import { DUAL_STUDENT_CAREER } from './cashflow-career-dual-student';
+import {
+  buildProfessions,
+  buildVariantOf,
+  type ProfessionSpec,
+} from './cashflow-professions-builder';
+import { DREAMFUND_SPECS } from './cashflow-professions-dreamfund';
 import { LIFE_CARDS } from './cashflow-life-cards';
 import { HARVEST_CARDS } from './cashflow-harvest-cards';
 import { OPPORTUNITY_CARDS } from './cashflow-opportunity-cards';
@@ -959,6 +965,51 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
     },
   ],
 };
+
+/** The Dual Student's numbers for the builder: his Easy and Hard are built from them, the story and the ladder stay his own. */
+const JONAS_SPEC: ProfessionSpec = {
+  id: 'dual-student-informatik',
+  title: 'Dualer Student Informatik',
+  name: { en: 'Jonas', de: 'Jonas' },
+  tagline: { en: '', de: '' },
+  background: { en: '', de: '' },
+  values: [
+    { en: '', de: '' },
+    { en: '', de: '' },
+    { en: '', de: '' },
+  ],
+  gross: 2833,
+  scale: 1,
+  ease: 1,
+  savings: 500,
+  debts: [
+    {
+      key: 'parentsLoan',
+      tag: 'Eltern-Darlehen',
+      label: { en: 'loan from your parents', de: 'das Darlehen deiner Eltern' },
+      amount: 1500,
+    },
+    {
+      key: 'carLoan',
+      tag: 'Autokredit',
+      label: { en: 'car loan', de: 'den Autokredit' },
+      amount: 1500,
+    },
+  ],
+  homeAmount: 800,
+  extras: [],
+  dream: { title: { en: '', de: '' }, sub: { en: '', de: '' }, buckets: [] },
+  ladder: [],
+};
+
+const DREAMFUND_BUILD = { reserveProject };
+const JONAS = JFK_STORIES_GAME_SET.professions[0];
+JFK_STORIES_GAME_SET.professions.push(
+  ...(['easy', 'hard'] as const).map((difficulty) =>
+    buildVariantOf(JONAS, JONAS_SPEC, difficulty, DREAMFUND_BUILD),
+  ),
+  ...buildProfessions(DREAMFUND_SPECS, DREAMFUND_BUILD),
+);
 
 export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [
   CASHFLOW_GAME_SET,

@@ -23,6 +23,7 @@ import {
   type BoardSetup,
   type DreamfundTile,
   computeCashflowProfessionMonthlyCashflowMinor,
+  professionIdAtDifficulty,
   fromMinorUnits,
   maxRepayableMinor,
   buyerCardTypes,
@@ -423,10 +424,16 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.gameSets.find((set) => set.id === this.selectedGameSetId);
   }
 
+  /** The chosen character as played at the chosen difficulty: Easy and Hard have their own numbers (JFK, 2026-10-27). */
   get selectedProfession(): CashflowProfession | undefined {
-    return this.selectedGameSet?.professions.find(
-      (profession) => profession.id === this.selectedProfessionId,
+    const set = this.selectedGameSet;
+    if (!set || !this.selectedProfessionId) return undefined;
+    const id = professionIdAtDifficulty(
+      set,
+      this.selectedProfessionId,
+      set.edition === 'custom' ? this.customDraft.difficulty : undefined,
     );
+    return set.professions.find((profession) => profession.id === id);
   }
 
   /**
@@ -1005,6 +1012,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       reserve: this.reserveStatus?.ok ?? false,
       independence: this.escapedRatRace,
     };
+    // the other debts of a character: a goal of its own each, met when that debt is repaid
+    const profession = this.selectedProfession;
+    for (const liability of profession?.starterKit.liabilities ?? []) {
+      if (!liability.key) continue;
+      (value as Record<string, boolean>)[`debt:${liability.key}`] = !open(
+        alias(liability.key, liability.tag),
+      );
+    }
     const key = JSON.stringify(value);
     if (this.goalChecksCache?.key !== key) this.goalChecksCache = { key, value };
     return this.goalChecksCache.value;
@@ -1732,21 +1747,30 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       : this.gameSets.filter((set) => set.id === this.selectedGameSetId);
     return sets
       .flatMap((set) =>
-        set.professions.map((profession) => {
-          const story = this.profileOf(profession);
-          const cashflow = this.toDisplayAmount(
-            computeCashflowProfessionMonthlyCashflowMinor(profession),
-          );
-          const cashflowText = `${cashflow.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
-          return {
-            setId: set.id,
-            profession,
-            name: story?.name ?? this.professionTitle(profession),
-            tagline: story?.tagline ?? '',
-            cashflow,
-            cashflowText,
-          };
-        }),
+        set.professions
+          .filter((profession) => !profession.variantOf)
+          .map((profession) => {
+            const story = this.profileOf(profession);
+            // what is left of a month at the chosen difficulty
+            const played =
+              set.professions.find(
+                (candidate) =>
+                  candidate.id ===
+                  professionIdAtDifficulty(set, profession.id, this.customDraft.difficulty),
+              ) ?? profession;
+            const cashflow = this.toDisplayAmount(
+              computeCashflowProfessionMonthlyCashflowMinor(played),
+            );
+            const cashflowText = `${cashflow.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
+            return {
+              setId: set.id,
+              profession,
+              name: story?.name ?? this.professionTitle(profession),
+              tagline: story?.tagline ?? '',
+              cashflow,
+              cashflowText,
+            };
+          }),
       )
       .sort((a, b) => a.cashflow - b.cashflow);
   }
@@ -1848,7 +1872,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
     this.cashflowGameService.pickProfession(
       this.selectedGameSetId,
-      this.selectedProfessionId,
+      this.selectedProfession?.id ?? this.selectedProfessionId,
       {
         onSuccess: () => {
           this.isBusy = false;
@@ -1898,7 +1922,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   customDraft: CustomRules = { ...CUSTOM_RULE_PRESETS.free };
 
   chooseCustomMode(mode: CustomMode): void {
-    this.customDraft = { ...CUSTOM_RULE_PRESETS[mode] };
+    this.customDraft = { ...CUSTOM_RULE_PRESETS[mode], difficulty: this.customDraft.difficulty };
+  }
+
+  /** Easy, Normal and Hard (JFK, 2026-10-27): the character's numbers and the cards change with it. */
+  readonly difficultyLevels = ['easy', 'medium', 'hard'] as const;
+
+  setDifficulty(level: 'easy' | 'medium' | 'hard'): void {
+    this.customDraft = { ...this.customDraft, difficulty: level };
   }
 
   get customIsPreset(): boolean {

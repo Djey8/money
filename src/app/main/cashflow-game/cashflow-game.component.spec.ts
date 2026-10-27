@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import { RULE_PRESETS } from '@money/domain';
+import { RULE_PRESETS, computeCashflowProfessionMonthlyCashflowMinor } from '@money/domain';
 import { CLASSIC_RAT_RACE_BOARD } from '@money/domain';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
@@ -2473,6 +2473,31 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.traitInfo).toBeNull();
   });
 
+  it('plays the chosen character at the chosen difficulty: Easy and Hard have numbers of their own', () => {
+    const { component } = soloComponent();
+    component.toCharacter();
+    component.pickCharacter(component.characterOptions.find((option) => option.name === 'Mehmet')!);
+    expect(component.selectedProfession?.id).toBe('mehmet-elektroniker');
+    const monthly = (id: string | undefined) =>
+      computeCashflowProfessionMonthlyCashflowMinor(
+        component.selectedGameSet!.professions.find((profession) => profession.id === id)!,
+      );
+    const normal = monthly(component.selectedProfession?.id);
+
+    component.setDifficulty('easy');
+    expect(component.selectedProfession?.id).toBe('mehmet-elektroniker~easy');
+    expect(monthly(component.selectedProfession?.id)).toBeGreaterThan(normal);
+
+    component.setDifficulty('hard');
+    expect(component.selectedProfession?.id).toBe('mehmet-elektroniker~hard');
+    expect(monthly(component.selectedProfession?.id)).toBeLessThan(normal);
+
+    // a game mode chosen afterwards keeps the difficulty, and the difficulty is no change of the mode's rules
+    component.chooseCustomMode('strict');
+    expect(component.customDraft.difficulty).toBe('hard');
+    expect(component.customIsPreset).toBe(true);
+  });
+
   it('the character step: a grid with the edition characters, then the chosen one with its numbers', () => {
     const { component } = soloComponent();
     component.appState.currency = '€';
@@ -2483,8 +2508,10 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     // lowest monthly cashflow first
     const flows = component.characterOptions.map((option) => option.cashflow);
     expect(flows).toEqual([...flows].sort((a, b) => a - b));
-    // the old test characters are not offered
-    expect(names).toEqual(['Jonas']);
+    // the ten characters of the edition, each once (not the Easy and Hard versions), and not the old test characters
+    expect(names).toHaveLength(10);
+    expect(names).toEqual(expect.arrayContaining(['Mehmet', 'Lena', 'Sophie', 'Dr. Jan', 'Peter']));
+    expect(names).not.toContain('Softwareentwickler/in');
 
     component.pickCharacter(component.characterOptions[0]);
     expect(component.characterChosen).toBe(true);
