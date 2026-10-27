@@ -96,6 +96,8 @@ export interface DreamSeat {
   pending: DreamPending | null;
   /** The Harvest card's open options for this player. */
   harvest: DreamHarvestOpen | null;
+  /** A Payday was passed in this turn and the player has not yet said what to do with the month's money (`settle_payday`). */
+  paydayDue?: boolean;
   /** The round of the table in which each goal was first reached. */
   reached: {
     reserve?: number;
@@ -179,7 +181,10 @@ export type DreamCommand =
   | { type: 'roll' }
   /** An Emergency card: the choice it asks for (if any), and how it is paid - now, or on a plan of 3, 6 or 12 Paydays. */
   | { type: 'pay_emergency'; choiceId?: string; pay: 'now' | 3 | 6 | 12 }
-  | { type: 'answer_life'; decision: 'accept' | 'decline' | 'roll' | 'pass' | { option: string } }
+  | {
+      type: 'answer_life';
+      decision: 'accept' | 'decline' | 'roll' | 'pass' | 'give' | 'lend' | { option: string };
+    }
   | { type: 'choose_career_branch'; index: number }
   | { type: 'take_dream'; cardId: string }
   | { type: 'choose_pile'; pile: OpportunityPile }
@@ -188,6 +193,8 @@ export type DreamCommand =
   | { type: 'skip' }
   | { type: 'end_turn' }
   // The player's own money, on their own turn.
+  /** Says the month's money is dealt with (plans set, lump sums paid): a bot sends it after its money moves. */
+  | { type: 'settle_payday' }
   | { type: 'fund_reserve'; amountMinor: number }
   | { type: 'fund_dream'; amountMinor: number }
   | { type: 'repay_debt'; tag: string }

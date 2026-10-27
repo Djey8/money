@@ -2,10 +2,10 @@ import { salaryLinkedMinor } from '../saved-games';
 import type { CustomRules } from '../custom-rules';
 import type { BoardSetup } from '../dreamfund-board';
 import { EMPTY_DREAM_LOG } from '../dream-deck';
-import type { LifeDecision } from '../life-deck';
 import { indexOf, ladderPayout, rideLadder, sellHolding, unitPriceNow, valueOf } from '../harvest';
-import { DreamPlayer, type DreamPlan } from '../dreamfund/player';
-import { expectedMonthlyMinor, type DreamPolicy, type DreamView } from './policies';
+import { DreamBot } from '../dreamfund/bot';
+import { DreamPlayer } from '../dreamfund/player';
+import type { DreamPolicy, DreamView } from './policies';
 
 /**
  * One whole Dreamfund game played in memory (JFK, 2026-10-26): the same rules the app runs - `playTurn`, the stacks of cards, the
@@ -82,6 +82,7 @@ export interface DreamGameRecord {
 export class DreamSim {
   /** The player's life: the rules are the engine's (`dreamfund/player.ts`), the decisions this class's policy's. */
   readonly player: DreamPlayer;
+  private readonly bot: DreamBot;
   private readonly record: DreamGameRecord;
 
   constructor(private readonly config: DreamSimConfig) {
@@ -92,6 +93,7 @@ export class DreamSim {
       size: config.size,
       rules: config.rules,
     });
+    this.bot = new DreamBot(config.policy);
     this.player.onEvent = (event) => this.log(event);
     this.record = {
       seed: config.seed,
@@ -143,25 +145,7 @@ export class DreamSim {
   }
 
   private view(): DreamView {
-    const p = this.p;
-    const finances = p.finances();
-    const expenses = p.monthlyExpenses();
-    const cash = p.cash();
-    return {
-      cashMinor: cash,
-      monthlyExpensesMinor: expenses,
-      passiveMinor: finances.passiveIncomeMinor,
-      reserveMinor: p.reserveMinor,
-      reserveTargetMinor: expenses * 3,
-      round: p.state.round,
-      debtsMinor: p.debtsMinor(),
-      dreamFundedMinor: p.dreamSavedMinor,
-      dreamTargetMinor: p.dreamTargetMinor,
-      spendableMinor: Math.max(0, cash - this.config.policy.bufferMonths * expenses),
-      markets: p.state.markets ?? {},
-      holdingsCount: (p.state.holdings ?? []).filter((holding) => !holding.ended).length,
-      difficulty: p.rules.difficulty,
-    };
+    return this.bot.view(this.p);
   }
 
   // ── the run ──
@@ -266,72 +250,13 @@ export class DreamSim {
     this.track();
   }
 
-  /**
-   * The plans of the reserve and of the dreams are set to what the month can carry: a share of what is left of the monthly cashflow
-   * after the plans already running (an emergency plan is paid first), in the order of the strategy.
-   */
+  /** The plans and the lump sums of a Payday: the bot's judgement (`dreamfund/bot.ts`), done on this life. */
   private replan(): void {
-    const p = this.p;
-    const policy = this.config.policy;
-    const finances = p.finances();
-    const committed = p.plans
-      .filter((plan) => plan.kind === 'emergency')
-      .reduce((sum, plan) => sum + plan.perMinor, 0);
-    let room = Math.max(
-      0,
-      Math.floor((finances.monthlyCashflowMinor - committed) * policy.planShare),
-    );
-    const months = Math.max(3, policy.planMonths);
-    const set = (kind: DreamPlan['kind'], id: string, left: number) => {
-      p.plans = p.plans.filter((plan) => !(plan.kind === kind && plan.id === id));
-      if (left <= 0 || room <= 0) return;
-      const per = Math.min(room, Math.ceil(left / months));
-      p.plans.push({ kind, id, perMinor: per, leftMinor: left });
-      room -= per;
-    };
-    for (const priority of policy.priorities) {
-      if (priority === 'reserve') {
-        set('mojo', 'mojo', Math.max(0, p.monthlyExpenses() * 3 - p.reserveMinor));
-      } else if (priority === 'dream') {
-        const wait = policy.dreamAfterPassiveShare;
-        const living = finances.expensesMinor - salaryLinkedMinor(p.state, p.books.subscriptions);
-        if (wait !== undefined && finances.passiveIncomeMinor < living * wait) continue;
-        if (!p.dreamLived && p.dreamTargetMinor > 0) {
-          set('life', 'life', p.dreamTargetMinor - p.dreamSavedMinor);
-        }
-        for (const dream of p.smile)
-          set('smile', dream.cardId, dream.totalMinor - dream.savedMinor);
-      }
-    }
+    this.p.plans = this.bot.replan(this.p);
   }
 
-  /** What is left over a buffer after the plans: lump sums into the reserve, the debts and the dreams, as the strategy ranks them. */
   private extraPayments(): void {
-    const p = this.p;
-    const policy = this.config.policy;
-    const expenses = p.monthlyExpenses();
-    const buffer = policy.bufferMonths * expenses;
-    const free = () => Math.max(0, p.cash() - buffer);
-    for (const priority of policy.priorities) {
-      if (priority === 'reserve') {
-        p.fundReserve(Math.min(free(), Math.max(0, expenses * 3 - p.reserveMinor)));
-      } else if (priority === 'debt') {
-        for (const liability of [...p.books.liabilities]) {
-          if (liability.amountMinor <= 0) continue;
-          const isBank = liability.tag === 'Bank loan';
-          if (!isBank && !p.debtTags.includes(liability.tag)) continue;
-          if (isBank) {
-            const step = p.books.gameSet?.loanRule.incrementMinor ?? 100000;
-            p.repayBankLoan(Math.min(liability.amountMinor, Math.floor(free() / step) * step));
-          } else if (free() >= liability.amountMinor) {
-            p.repayDebt(liability.tag);
-          }
-        }
-      } else if (priority === 'dream') {
-        p.fundDreams(free() * policy.dreamShare);
-      }
-    }
-    p.checkDreams();
+    this.bot.extraPayments(this.p, this.p);
   }
 
   // ── the tiles ──
@@ -367,97 +292,44 @@ export class DreamSim {
   /** An emergency is paid from cash, from the reserve, or - where the card allows - on a plan of 3, 6 or 12 Paydays with its surcharge. */
   private payEmergency(id: string, mustPayNow: boolean, payMinor: number): void {
     const p = this.p;
-    const buffer = this.config.policy.bufferMonths * p.monthlyExpenses();
-    if (mustPayNow || p.cash() - payMinor >= buffer || p.reserveMinor >= payMinor) {
-      p.payEmergencyNow(payMinor);
-      return;
-    }
-    const room = p.planRoomMinor();
-    const choices = p.emergencyPlanOptions(payMinor);
-    const fits = choices.find((choice) => choice.per <= room) ?? choices[2];
-    p.planEmergency(id, fits);
+    const how = this.bot.emergencyPay(p, mustPayNow, payMinor);
+    if (how.pay === 'now') p.payEmergencyNow(payMinor);
+    else p.planEmergency(id, how);
   }
 
   private life(): void {
     const p = this.p;
     const card = p.drawLife();
     if (!card) return;
-    let decision: LifeDecision;
-    if (card.type === 'fate') decision = { kind: 'fate' };
-    else if (card.type === 'dice') {
-      // a wish for a baby, a risk worth taking only with a full reserve and a month that can carry it
-      const finances = p.finances();
-      const safe =
-        p.reserveMinor >= p.monthlyExpenses() * 3 &&
-        finances.monthlyCashflowMinor >= finances.expensesMinor * 0.3;
-      decision = card.optional && !safe ? { kind: 'pass' } : { kind: 'roll' };
-    } else if (card.type === 'giving') decision = { kind: 'pass' };
-    else if (card.options?.length) decision = { kind: 'option', id: card.options[0].id };
-    else decision = this.lifeChoice(card);
-    p.resolveLife(card, decision);
-  }
-
-  /**
-   * A choice of life: a sensible player takes what they can afford - a new monthly cost that leaves a good part of the month, and a
-   * payment that cash and reserve can carry - and the strategy's appetite decides the rest.
-   */
-  private lifeChoice(card: NonNullable<ReturnType<DreamPlayer['drawLife']>>): LifeDecision {
-    const p = this.p;
-    const probe = p.probeLife(card);
-    const cashflow = p.finances().monthlyCashflowMinor;
-    const affordable = probe.payNow <= p.cash() + p.reserveMinor;
-    const keeps = probe.impact >= 0 || cashflow + probe.impact >= cashflow * 0.4;
-    if (!affordable || !keeps) return { kind: 'decline' };
-    return probe.impact >= 0 || p.rng() < this.config.policy.lifeAcceptChance
-      ? { kind: 'accept' }
-      : { kind: 'decline' };
+    p.resolveLife(card, this.bot.lifeDecision(p, card, p.rng));
   }
 
   private dream(): void {
     const p = this.p;
-    const policy = this.config.policy;
     const drawn = p.drawDream();
     if (!drawn) return;
     const { landing, cards } = drawn;
     if (landing.kind === 'moment') {
       p.moment(landing.moment.id, cards, (offers, openCount) =>
-        policy.dream(offers, this.view(), openCount),
+        this.bot.dream(p, offers, openCount),
       );
       return;
     }
     const log = p.state.dreams ?? EMPTY_DREAM_LOG;
-    const pick = policy.dream(landing.offers, this.view(), log.open.length);
+    const pick = this.bot.dream(p, landing.offers, log.open.length);
     if (!pick || !p.canTakeDream()) return;
     p.takeDream(pick);
   }
 
   private opportunity(): void {
     const p = this.p;
-    const policy = this.config.policy;
     const view = this.view();
-    const pile = policy.pile(view, p.rng);
+    const pile = this.bot.pile(p, p.rng);
     if (!pile) return;
     const offers = p.drawOpportunity(pile);
-    const held = new Map<string, number>();
-    for (const holding of p.state.holdings ?? []) {
-      if (!holding.ended) held.set(holding.cardId, holding.units ?? 1);
-    }
-    const pick = policy.take(offers, view, held);
+    const pick = this.bot.opportunity(p, offers, view);
     if (!pick) return;
-    let choice = pick.choice;
-    let quote = p.quoteOpportunity(pick.card, choice);
-    if (quote.needsSwap && quote.sideHustles.length > 0) {
-      // give up the weakest hustle, and only for a card that is clearly better
-      const weakest = [...quote.sideHustles].sort(
-        (x, y) => (x.lineMinor ?? x.cashflowMinor) - (y.lineMinor ?? y.cashflowMinor),
-      )[0];
-      const weakestMonthly = Math.max(weakest.lineMinor ?? 0, weakest.cashflowMinor);
-      if (expectedMonthlyMinor(pick.card) < weakestMonthly * 1.3) return;
-      choice = { ...choice, swapOut: weakest.cardId };
-      quote = p.quoteOpportunity(pick.card, choice);
-    }
-    if (!quote.ok) return;
-    p.buyOpportunity(pick.card, choice, quote.costMinor);
+    p.buyOpportunity(pick.card, pick.choice, pick.costMinor);
     this.record.taken[pick.card.id] = (this.record.taken[pick.card.id] ?? 0) + 1;
   }
 

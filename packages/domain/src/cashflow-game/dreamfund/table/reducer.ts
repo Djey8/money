@@ -208,6 +208,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'repay_debt',
   'repay_bank_loan',
   'set_plan',
+  'settle_payday',
   'harvest_sell',
   'harvest_accept',
   'harvest_ladder',
@@ -644,9 +645,9 @@ function doCommand(
         emit('payday', id, { round: p.state.round });
       }
       const tile = p.pendingTile();
-      if (!tile) return { pending: null };
+      if (!tile) return { pending: null, paydayDue: rolled.paydays > 0 };
       emit(TILE_EVENT[tile] ?? 'rolled', id, { tile });
-      return enterTile(tile, p, rng, emit, id);
+      return { ...enterTile(tile, p, rng, emit, id), paydayDue: rolled.paydays > 0 };
     }
     case 'pay_emergency': {
       if (pending?.kind !== 'emergency') return refuse('There is no emergency to pay.');
@@ -756,6 +757,8 @@ function doCommand(
       emit('money_moved', id, { what: 'bank_loan', amountMinor: command.amountMinor });
       return {};
     }
+    case 'settle_payday':
+      return { paydayDue: false };
     case 'set_plan': {
       const per = Math.max(0, Math.floor(command.perMinor));
       p.plans = p.plans.filter((plan) => !(plan.kind === command.kind && plan.id === command.id));
@@ -1025,7 +1028,7 @@ function advance(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
   let next: DreamTable = {
     ...(table.activePlayerId ? clockOf.end(table, table.activePlayerId, now) : table),
     turnRolled: false,
-    players: table.players.map((p) => ({ ...p, harvest: null, pending: null })),
+    players: table.players.map((p) => ({ ...p, harvest: null, pending: null, paydayDue: false })),
   };
   const order = next.order;
   let index = Math.max(0, order.indexOf(table.activePlayerId ?? ''));
