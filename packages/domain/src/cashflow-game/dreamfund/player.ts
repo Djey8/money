@@ -413,8 +413,17 @@ export class DreamPlayer {
    * The roll: the token moves, the landing's first effects are applied. Returns the tile that was landed on, the Paydays that were
    * passed on the way (each is to be settled with `payday`) and the story tile that waits for the player's decisions, if any.
    */
-  roll(): { landed: string; paydays: number } {
+  roll(): {
+    landed: string;
+    paydays: number;
+    dice: number[];
+    total: number;
+    from: number | null;
+    to: number;
+    openingPayday: boolean;
+  } {
     const before = this.state.round;
+    const from = this.state.boardPosition;
     const result = playTurn(this.books, {
       ...this.deps,
       board: this.board,
@@ -424,7 +433,15 @@ export class DreamPlayer {
     for (const effects of result.effects) books = applyEffectsToBooks(books, effects);
     this.books = books;
     this.turns += 1;
-    return { landed: result.move.landed.kind, paydays: this.state.round - before };
+    return {
+      landed: result.move.landed.kind,
+      paydays: this.state.round - before,
+      dice: result.roll.dice,
+      total: result.roll.total,
+      from,
+      to: result.move.to,
+      openingPayday: result.openingPayday,
+    };
   }
 
   /** The tile the player has to deal with after a roll (an emergency, a life card, an opportunity...), or null. */

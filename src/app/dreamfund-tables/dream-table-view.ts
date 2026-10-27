@@ -1,6 +1,6 @@
 import type { TableView } from '@money/domain';
 import type { DreamPlayerData } from '@money/domain/dist/cashflow-game/dreamfund/player';
-import type { DreamTableView } from './dream-session.service';
+import type { DreamPending, DreamTableView } from './dream-session.service';
 
 /** A Dreamfund table seen as the table screens read a table: its seats carry the life's books, and the life itself beside them. */
 export interface DreamShownTable extends TableView {
@@ -61,6 +61,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         books: life ? life.books : null,
         // the Dreamfund's extras, for the bridge to the app
         dreamLife: life,
+        dreamPending: (player as unknown as { pending?: unknown }).pending ?? null,
       };
     }),
     order: view.order,
@@ -99,4 +100,11 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
     createdAt: '',
   };
   return shown as unknown as TableView;
+}
+
+/** What the seat has to decide at a Dreamfund table, as the table sent it (the viewer's own in full). */
+export function pendingOf(view: TableView, seat: number): DreamPending | { kind: string } | null {
+  const player = view.players[seat] as unknown as
+    { dreamPending?: DreamPending | { kind: string } | null } | undefined;
+  return player?.dreamPending ?? null;
 }

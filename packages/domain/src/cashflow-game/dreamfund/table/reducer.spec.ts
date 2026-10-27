@@ -129,6 +129,19 @@ describe('the Dreamfund table: play', () => {
     expect(t.players.every((p) => p.life!.turns >= 1)).toBe(true);
   });
 
+  it('tells a roll with its dice and the way the token walked, for the screen that shows it', () => {
+    const t = started();
+    const who = t.activePlayerId!;
+    const result = applyDreamCommand(t, who, { type: 'roll' }, ctx);
+    const rolled = result.events.find((event) => event.type === 'rolled');
+    const data = rolled!.data as { dice: number[]; total: number; from: number | null; to: number };
+    expect(data.dice.length).toBeGreaterThan(0);
+    expect(data.total).toBe(data.dice.reduce((sum, die) => sum + die, 0));
+    expect(typeof data.to).toBe('number');
+    const seat = result.table.players.find((p) => p.id === who)!;
+    expect(seat.life!.books.state.boardPosition).toBe(data.to);
+  });
+
   it('plays a whole game to its round limit and ranks everybody by the goals and the dream points', () => {
     let t = started({ endCondition: 'round-limit', roundLimit: 8 });
     t = playRounds(t, 20);

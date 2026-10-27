@@ -647,7 +647,16 @@ function doCommand(
       if (table.turnRolled) refuse('You have rolled already.');
       if (pending) refuse('Decide about the card first.');
       const rolled = p.roll();
-      emit('rolled', id, { landed: rolled.landed });
+      // what the solo screen needs to show the roll: the dice, and the way the token walked
+      emit('rolled', id, {
+        landed: rolled.landed,
+        dice: rolled.dice,
+        total: rolled.total,
+        from: rolled.from,
+        to: rolled.to,
+        paydays: rolled.paydays,
+        openingPayday: rolled.openingPayday,
+      });
       for (let i = 0; i < rolled.paydays; i += 1) {
         p.trim();
         p.payInstallments();

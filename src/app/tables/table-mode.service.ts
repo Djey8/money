@@ -28,9 +28,11 @@ import {
 import { historyLines } from './table-history';
 import { TablePresenter } from './table-presenter';
 import { applyDreamExtrasToApp, dreamLifeToApp } from './dream-books-bridge';
-import { lifeOf } from '../dreamfund-tables/dream-table-view';
+import { lifeOf, pendingOf } from '../dreamfund-tables/dream-table-view';
+import { withDreamPending } from '../dreamfund-tables/dream-pending';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { TableGameDriver } from './table-game-driver';
+import { DreamTableGameDriver } from '../dreamfund-tables/dream-table-game-driver';
 import { TableBannerComponent } from './table-banner.component';
 import { TableLayerComponent } from './table-layer.component';
 import { tableLayerTexts } from './table-layer.texts';
@@ -178,7 +180,11 @@ export class TableModeService {
     }
     DatabaseService.readOnly = true;
     LocalService.shadow = shownData();
-    RemoteGameHook.current = new TableGameDriver(
+    const Driver =
+      (session.view() as { kind?: string } | null)?.kind === 'dreamfund'
+        ? DreamTableGameDriver
+        : TableGameDriver;
+    RemoteGameHook.current = new Driver(
       session,
       () => this.refusal(),
       () => this.history(),
@@ -546,7 +552,9 @@ export class TableModeService {
     const books = player?.books as unknown as GameBooks | null | undefined;
     if (!books) return;
     this.seat.set(seat);
-    applyBooksToApp(AppStateService.instance, books, discardsOf(view), this.bankLocationNames());
+    // a Dreamfund seat's open decision is written into the turn as the solo screen keeps it (the card the server drew)
+    const shown = lifeOf(view, seat) ? withDreamPending(books, pendingOf(view, seat)) : books;
+    applyBooksToApp(AppStateService.instance, shown, discardsOf(view), this.bankLocationNames());
     // a Dreamfund seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen
     const life = lifeOf(view, seat);
     if (life) {

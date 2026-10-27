@@ -1165,7 +1165,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   get lifeDeckReady(): boolean {
     return (
-      !this.remote &&
+      !this.classicRemote &&
       this.cashflowGameService.lifeCards.length > 0 &&
       !!this.appState.cashflowGame.life
     );
@@ -1173,12 +1173,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   get careerReady(): boolean {
     return (
-      !this.remote && !!this.cashflowGameService.careerTrack && !!this.appState.cashflowGame.career
+      !this.classicRemote &&
+      !!this.cashflowGameService.careerTrack &&
+      !!this.appState.cashflowGame.career
     );
   }
 
   get dreamDeckReady(): boolean {
-    return !this.remote && this.cashflowGameService.dreamCards.length > 0;
+    return !this.classicRemote && this.cashflowGameService.dreamCards.length > 0;
   }
 
   /** The tile under the token has a stack of cards that is opened in a view of its own (not the career ladder). */
@@ -1567,7 +1569,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The game has an Emergency stack (the custom edition): its tile draws a card instead of showing the filler. */
   get emergencyDeckReady(): boolean {
-    return !this.remote && this.cashflowGameService.emergencyCards.length > 0;
+    return !this.classicRemote && this.cashflowGameService.emergencyCards.length > 0;
   }
 
   get emergency() {
@@ -2254,6 +2256,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** The game being played somewhere else (a shared table), or null for a normal solo game: its moves are sent, not worked out here. */
+  /** A classic table is being played (not the solo game, not a Dreamfund table): the stack tiles are not part of it. */
+  get classicRemote(): boolean {
+    return !!this.remote && !this.remote.dreamfund;
+  }
+
   get remote(): RemoteGame | null {
     return RemoteGameHook.current;
   }
