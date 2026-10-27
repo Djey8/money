@@ -45,6 +45,17 @@ export interface BatchWriteConfig {
  * each handling local storage saves, database writes, and frontend logging.
  */
 export class PersistenceService {
+  /** The text of what was last written to the browser, by key. */
+  private readonly lastLocal = new Map<string, string>();
+
+  private isStored(key: string): boolean {
+    try {
+      return window.localStorage.getItem(key) !== null;
+    } catch {
+      return false;
+    }
+  }
+
   constructor(
     private database: DatabaseService,
     private localStorage: LocalService,
@@ -96,7 +107,11 @@ export class PersistenceService {
       for (const save of config.localStorageSaves) {
         // Stringify data before saving (saveData expects string for encryption)
         const dataToSave = typeof save.data === 'string' ? save.data : JSON.stringify(save.data);
+        // what did not change is not encrypted and written again (a long game's books are hundreds of kilobytes, and most moves change
+        // only one of them); the copy must still be there, or it is written
+        if (this.lastLocal.get(save.key) === dataToSave && this.isStored(save.key)) continue;
         this.localStorage.saveData(save.key, dataToSave);
+        this.lastLocal.set(save.key, dataToSave);
       }
 
       const handleSuccess = () => {

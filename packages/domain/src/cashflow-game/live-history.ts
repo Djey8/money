@@ -51,12 +51,13 @@ export function buildLiveHistory<S extends GameSnapshot>(
   live: LiveGameView,
   deps: HistoryDeps,
   now: string,
+  cache?: WeakMap<object, { newer: object | undefined; encoded: never }>,
 ): LiveHistory {
   return {
     schema: LIVE_HISTORY_SCHEMA,
     updatedAt: now,
     ...(live.cashflowGame.gameId ? { gameId: live.cashflowGame.gameId } : {}),
-    undo: encodeUndoChain(stack),
+    undo: encodeUndoChain(stack, cache as never),
     steps: historySteps(stack, live, deps)
       .reverse()
       .map(({ number, kind, detail, at, cardId, deck }) => ({

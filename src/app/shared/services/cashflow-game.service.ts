@@ -650,8 +650,15 @@ export class CashflowGameService {
         money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
       },
       this.undoStackAt ?? this.clock.nowIso(),
+      this.encodeCache,
     );
   }
+
+  /** What was worked out of the history's steps: a chain that grows by one step is encoded by working out one step (JFK, 2026-10-27). */
+  private readonly encodeCache = new WeakMap<
+    object,
+    { newer: object | undefined; encoded: never }
+  >();
 
   /**
    * Takes over the account's history when it is newer than the browser's (another device played, or the Pro API did).
@@ -713,12 +720,18 @@ export class CashflowGameService {
     try {
       // The browser's copy is a convenience with a budget of its own (the books must always fit beside it): when a very long
       // game outgrows it, the oldest steps stay out of it - the account and saved games keep the whole chain.
-      let kept = this.undoStack;
-      let json = JSON.stringify(encodeUndoChain(kept));
-      while (json.length > LOCAL_UNDO_BUDGET && kept.length > 1) {
-        kept = kept.slice(Math.ceil(kept.length / 4));
-        json = JSON.stringify(encodeUndoChain(kept));
+      // every step is encoded and written once; the oldest are left out until the rest fits (dropping the oldest changes nothing in the
+      // others: each step is stored relative to the newer one)
+      const parts = encodeUndoChain(this.undoStack, this.encodeCache as never).snapshots.map(
+        (snapshot) => JSON.stringify(snapshot),
+      );
+      let start = 0;
+      let size = parts.reduce((sum, part) => sum + part.length + 1, 0);
+      while (size > LOCAL_UNDO_BUDGET && start < parts.length - 1) {
+        size -= parts[start].length + 1;
+        start += 1;
       }
+      const json = `{"format":2,"snapshots":[${parts.slice(start).join(',')}]}`;
       localStorage.setItem(UNDO_STACK_STORAGE_KEY, json);
       if (this.undoStackAt) localStorage.setItem(UNDO_STACK_AT_KEY, this.undoStackAt);
     } catch {
@@ -861,6 +874,8 @@ export class CashflowGameService {
   private applySnapshot(snapshot: CashflowGameSnapshot): void {
     const state = AppStateService.instance;
     const planBefore = state.cashflowGame.budgetPlan ?? [];
+    // the steps of a chain read from a save share their items: what goes back into the game is its own copy
+    snapshot = JSON.parse(JSON.stringify(snapshot)) as CashflowGameSnapshot;
     state.allTransactions = snapshot.allTransactions;
     state.allSubscriptions = snapshot.allSubscriptions;
     state.allGrowProjects = snapshot.allGrowProjects;

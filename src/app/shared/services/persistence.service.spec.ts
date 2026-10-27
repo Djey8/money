@@ -203,4 +203,29 @@ describe('PersistenceService', () => {
       expect(onSuccess).toHaveBeenCalled();
     });
   });
+
+  describe('the browser copy of what did not change', () => {
+    it('is not encrypted and written again, but is written when it is gone or changed', () => {
+      const { service, localStorage: local, database } = createService();
+      local.saveData.mockImplementation((key: string, value: string) =>
+        window.localStorage.setItem(key, value),
+      );
+      database.batchWrite.mockReturnValue(of({ success: true }));
+      window.localStorage.clear();
+      const save = (data: unknown) =>
+        service.batchWriteAndSync({
+          writes: [],
+          localStorageSaves: [{ key: 'transactions', data }],
+          onSuccess: jest.fn(),
+        });
+      save([{ a: 1 }]);
+      save([{ a: 1 }]);
+      expect(local.saveData).toHaveBeenCalledTimes(1);
+      save([{ a: 2 }]);
+      expect(local.saveData).toHaveBeenCalledTimes(2);
+      window.localStorage.clear();
+      save([{ a: 2 }]);
+      expect(local.saveData).toHaveBeenCalledTimes(3);
+    });
+  });
 });

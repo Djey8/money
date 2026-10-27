@@ -92,7 +92,9 @@ describe('undo chain codec', () => {
   it('recognises only its own format', () => {
     expect(isEncodedUndoChain([])).toBe(false);
     expect(isEncodedUndoChain(null)).toBe(false);
-    expect(isEncodedUndoChain({ format: 2, snapshots: [] })).toBe(false);
+    expect(isEncodedUndoChain({ format: 3, snapshots: [] })).toBe(false);
+    expect(isEncodedUndoChain({ format: 1, snapshots: [] })).toBe(true);
+    expect(isEncodedUndoChain({ format: 2, snapshots: [] })).toBe(true);
   });
 
   it('is quick enough to run after every move', () => {
@@ -107,4 +109,60 @@ describe('undo chain codec', () => {
     decodeUndoChain(encodeUndoChain(stack));
     expect(Date.now() - started).toBeLessThan(1500);
   });
+
+  it('stores a Payday - every date of the books moved back a month - without repeating the books', () => {
+    // each step is a Payday that adds a transaction and moves every date back by a month
+    const stack: any[] = [];
+    let transactions: any[] = [];
+    let plan: any[] = [];
+    for (let step = 0; step < 40; step++) {
+      stack.push({
+        step: { kind: 'payday', at: `t${step}` },
+        ...empty(),
+        allTransactions: JSON.parse(JSON.stringify(transactions)),
+        cashflowGame: { round: step, budgetPlan: JSON.parse(JSON.stringify(plan)) },
+      });
+      transactions = transactions.map((t) => ({ ...t, date: move(t.date) }));
+      transactions.push({
+        title: `tx ${step}`,
+        amount: step,
+        date: '2026-10-27',
+        account: 'Daily',
+        comment: 'c'.repeat(80),
+      });
+      plan = plan.map((m) => ({ ...m, month: move(m.month + '-27').slice(0, 7) }));
+      plan.push({ month: '2026-10', cells: { rent: 800, food: 300 } });
+    }
+    const encoded = encodeUndoChain(stack);
+    expect(decodeUndoChain(JSON.parse(JSON.stringify(encoded)))).toEqual(stack);
+    // without the move the whole list repeats in every Payday step: ~40 x 20 items; with it only what is new
+    expect(JSON.stringify(encoded).length).toBeLessThan(JSON.stringify(stack).length / 6);
+  });
+
+  it('works out a chain that grew by one step without working out the others again', () => {
+    const stack = playedGame(30);
+    const cache = new WeakMap();
+    const first = encodeUndoChain(stack, cache);
+    stack.push(JSON.parse(JSON.stringify(stack[stack.length - 1])));
+    const second = encodeUndoChain(stack, cache);
+    // the steps that did not change are the very same encoded objects
+    expect(second.snapshots[3]).toBe(first.snapshots[3]);
+    expect(decodeUndoChain(second)).toEqual(stack);
+  });
+
+  it('still reads a chain written in the first format', () => {
+    const stack = playedGame(6);
+    const encoded = { ...encodeUndoChain(stack), format: 1 as const };
+    expect(decodeUndoChain(encoded)).toEqual(stack);
+  });
 });
+
+/** One month back, the way the game moves its dates. */
+function move(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const zero = m - 1 - 1;
+  const year = y + Math.floor(zero / 12);
+  const month = ((zero % 12) + 12) % 12;
+  const day = Math.min(d, new Date(year, month + 1, 0).getDate());
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}

@@ -625,8 +625,8 @@ describe('a whole game played through the API', () => {
       name: 'compact',
       compact: true,
     });
-    // a compact save keeps the plain step log but not the undo chain: about a tenth of the size
-    expect(compact.body.game.sizeBytes).toBeLessThan(full.body.game.sizeBytes / 5);
+    // a compact save keeps the plain step log but not the undo chain: a fraction of the size (the chain itself is now small: dates moved by a Payday are stored once)
+    expect(compact.body.game.sizeBytes).toBeLessThan(full.body.game.sizeBytes / 1.5);
     expect(compact.body.game.sizeBytes).toBeGreaterThan(1000);
     // the analyst can judge a finished (escaped) game, running or saved
     const reviewed = await session(
