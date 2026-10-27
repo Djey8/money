@@ -791,8 +791,11 @@ function createGameRoomService({
   }
 
   /** The public tables with a free seat, or the tables `userId` sits at. */
-  async function listRooms(userId, { scope = 'open', limit = 50 } = {}) {
+  async function listRooms(userId, { scope = 'open', limit = 50, kind = 'classic' } = {}) {
     await maybeSweep();
+    // the two games are worlds of their own: a list shows one (the classic by default) or, asked for, both
+    const ofKind = (doc) =>
+      kind === 'all' || (doc.table.kind === 'dreamfund') === (kind === 'dreamfund');
     if (scope === 'mine' || scope === 'recent') {
       const wantClosed = scope === 'recent';
       const markers = (await store.seatMarkers(db, userId)).filter(
@@ -804,6 +807,7 @@ function createGameRoomService({
       );
       const picked = docs
         .filter((doc) => OPEN_PHASES.includes(doc.phase) !== wantClosed)
+        .filter(ofKind)
         .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
         .slice(0, limit);
       return withSeats(
@@ -811,9 +815,9 @@ function createGameRoomService({
         picked,
       );
     }
-    const docs = (await store.listPublicRooms(db, 'lobby', limit)).filter(
-      (doc) => doc.seatsTaken < doc.maxSeats,
-    );
+    const docs = (await store.listPublicRooms(db, 'lobby', limit))
+      .filter((doc) => doc.seatsTaken < doc.maxSeats)
+      .filter(ofKind);
     return withSeats(
       docs.map((doc) => roomSummary(doc, userId)),
       docs,

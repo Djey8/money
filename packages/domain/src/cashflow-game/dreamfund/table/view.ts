@@ -1,3 +1,7 @@
+import { quoteEmergency } from '../../emergency-deck';
+import { expectedMonthlyMinor } from '../../dreamfund-sim/policies';
+import { DreamPlayer, type DreamPlayerData } from '../player';
+import { goalsOf } from './scoring';
 import type { DreamCommand, DreamHarvestOpen, DreamPending, DreamTable } from './types';
 
 /**
@@ -6,6 +10,145 @@ import type { DreamCommand, DreamHarvestOpen, DreamPending, DreamTable } from '.
  * pile's order, a character picked in secret before the reveal and what a player has still to decide (others see only that they do).
  * The API speaks in seats, never account ids. Pure.
  */
+
+/** A life in numbers, worked out on the server (a screen keeps no rules): what the player has, owes, earns and is saving for. Minor units. */
+export interface LifeSummary {
+  months: number;
+  cashMinor: number;
+  reserveMinor: number;
+  reserveTargetMinor: number;
+  passiveMinor: number;
+  expensesMinor: number;
+  livingMinor: number;
+  cashflowMinor: number;
+  netWorthMinor: number;
+  bankLoanMinor: number;
+  dreamTargetMinor: number;
+  dreamSavedMinor: number;
+  dreamPoints: number;
+  goals: { reserve: number; debts: number; dream: number; independence: number };
+  debts: { tag: string; amountMinor: number }[];
+  holdings: {
+    title: string;
+    cardId: string;
+    units?: number;
+    monthlyMinor: number;
+    paidMinor: number;
+  }[];
+  plans: { kind: string; id: string; perMinor: number; leftMinor: number }[];
+  smile: { cardId: string; totalMinor: number; savedMinor: number; points: number }[];
+  career: string | null;
+}
+
+/** What the player in front of a decision is shown of it, at their own price level (the screen keeps no rules and no prices). */
+export interface PendingInfo {
+  /** An emergency: what it costs (null while a choice or a die is still open), whether it must be paid at once, and what it asks you to choose. */
+  emergency?: {
+    payMinor: number | null;
+    mustPayNow: boolean;
+    choices: { id: string }[];
+    plans: { months: number; perMinor: number; totalMinor: number }[];
+  };
+  /** Opportunity cards on offer: the cost, what it pays a month, whether it can be taken now and why not. */
+  offers?: { id: string; costMinor: number; monthlyMinor: number; ok: boolean; reason?: string }[];
+  /** Dreams on offer: the price and the points. */
+  dreams?: { id: string; totalMinor: number; points: number }[];
+}
+
+export function pendingInfoOf(life: DreamPlayerData, pending: DreamPending): PendingInfo | null {
+  const p = DreamPlayer.restore(life, () => 0.5, { sharedMarkets: true });
+  if (pending.kind === 'emergency') {
+    const card = p.emergencyCard(pending.cardId);
+    if (!card) return null;
+    const quote = quoteEmergency(card, { rolls: {} }, p.emergencyContext());
+    const payMinor = quote.needsChoice || quote.needsRolls.length > 0 ? null : quote.payMinor;
+    return {
+      emergency: {
+        payMinor,
+        mustPayNow: card.payment === 'pay_now',
+        choices: (card.choices ?? []).map((choice) => ({ id: choice.id })),
+        plans:
+          payMinor === null
+            ? []
+            : p
+                .emergencyPlanOptions(payMinor)
+                .map((o) => ({ months: o.months, perMinor: o.per, totalMinor: o.total })),
+      },
+    };
+  }
+  if (pending.kind === 'opportunity') {
+    return {
+      offers: pending.offers.flatMap((id) => {
+        const card = p.opportunityCard(id);
+        if (!card) return [];
+        const quote = p.quoteOpportunity(card, {});
+        return [
+          {
+            id,
+            costMinor: quote.costMinor,
+            monthlyMinor: Math.round(expectedMonthlyMinor(card)),
+            ok: quote.ok,
+            ...(quote.reason ? { reason: quote.reason } : {}),
+          },
+        ];
+      }),
+    };
+  }
+  if (pending.kind === 'dream') {
+    return {
+      dreams: pending.offers.flatMap((id) => {
+        const card = p.dreamCard(id);
+        return card ? [{ id, totalMinor: card.totalMinor, points: card.points }] : [];
+      }),
+    };
+  }
+  return null;
+}
+
+const summaries = new WeakMap<object, LifeSummary>();
+
+/** The summary of a life (worked out once per life that is held: the same data object gives the same summary). */
+export function summarizeLife(life: DreamPlayerData): LifeSummary {
+  const cached = summaries.get(life);
+  if (cached) return cached;
+  const p = DreamPlayer.restore(life, () => 0.5, { sharedMarkets: true });
+  const finances = p.finances();
+  const goals = goalsOf(p);
+  const living = finances.expensesMinor - (finances.salaryLinkedMinor ?? 0);
+  const summary: LifeSummary = {
+    months: p.state.round,
+    cashMinor: p.cash(),
+    reserveMinor: p.reserveMinor,
+    reserveTargetMinor: p.monthlyExpenses() * 3,
+    passiveMinor: finances.passiveIncomeMinor,
+    expensesMinor: finances.expensesMinor,
+    livingMinor: living,
+    cashflowMinor: finances.monthlyCashflowMinor,
+    netWorthMinor: p.netWorth(),
+    bankLoanMinor: p.books.liabilities.find((l) => l.tag === 'Bank loan')?.amountMinor ?? 0,
+    dreamTargetMinor: p.dreamTargetMinor,
+    dreamSavedMinor: p.dreamSavedMinor,
+    dreamPoints: p.dreamPoints + p.bonusPoints,
+    goals,
+    debts: p.books.liabilities
+      .filter((l) => p.debtTags.includes(l.tag) && l.amountMinor > 0)
+      .map((l) => ({ tag: l.tag, amountMinor: l.amountMinor })),
+    holdings: (p.state.holdings ?? [])
+      .filter((h) => !h.ended)
+      .map((h) => ({
+        title: h.title,
+        cardId: h.cardId,
+        ...(h.units ? { units: h.units } : {}),
+        monthlyMinor: h.lineMinor ?? h.cashflowMinor,
+        paidMinor: h.paidMinor ?? 0,
+      })),
+    plans: p.plans.map((plan) => ({ ...plan })),
+    smile: p.smile.map((d) => ({ ...d })),
+    career: p.state.career?.stage ?? null,
+  };
+  summaries.set(life, summary);
+  return summary;
+}
 
 export interface DreamPlayerView {
   seat: number;
@@ -19,10 +162,14 @@ export interface DreamPlayerView {
   status: 'active' | 'left';
   away: boolean;
   bot: { policyId: string } | null;
-  /** The life as data (the books, the reserve, the dreams, the plans); null before play starts. */
+  /** The life as data (the books, the reserve, the dreams, the plans); null before play starts. A live screen reads `summary`. */
   life: unknown;
+  /** The life in numbers, null before play starts. */
+  summary: LifeSummary | null;
   /** What the player has to decide: the viewer sees their own in full, the others only its kind. */
   pending: DreamPending | { kind: DreamPending['kind'] } | null;
+  /** The prices and options of the viewer's own decision. */
+  pendingInfo: PendingInfo | null;
   harvest: DreamHarvestOpen | null;
   paydayDue: boolean;
   reached: DreamTable['players'][number]['reached'];
@@ -137,7 +284,9 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
         away: p.away,
         bot: p.bot ? { policyId: p.bot.policyId } : null,
         life: p.life,
+        summary: p.life ? summarizeLife(p.life) : null,
         pending: p.pending ? (mine ? p.pending : { kind: p.pending.kind }) : null,
+        pendingInfo: mine && p.pending && p.life ? pendingInfoOf(p.life, p.pending) : null,
         harvest: mine ? p.harvest : null,
         paydayDue: p.paydayDue === true,
         reached: p.reached,

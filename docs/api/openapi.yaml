@@ -6617,6 +6617,13 @@ paths:
             type: string
             enum: [open, mine, recent]
             default: open
+        - name: kind
+          in: query
+          description: The two games are worlds of their own, so a list shows one - `classic` (the default) or `dreamfund` - or, with `all`, both. Every item says its `kind`.
+          schema:
+            type: string
+            enum: [classic, dreamfund, all]
+            default: classic
         - name: limit
           in: query
           schema:

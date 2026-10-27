@@ -160,7 +160,11 @@ router.get(
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
       return invalid(res, 'limit must be a whole number from 1 to 200.');
     }
-    return res.json({ items: await rooms().listRooms(req.userId, { scope, limit }) });
+    const kind = req.query.kind === undefined ? 'classic' : req.query.kind;
+    if (!['classic', 'dreamfund', 'all'].includes(kind)) {
+      return invalid(res, "kind must be 'classic', 'dreamfund' or 'all'.");
+    }
+    return res.json({ items: await rooms().listRooms(req.userId, { scope, limit, kind }) });
   }),
 );
 

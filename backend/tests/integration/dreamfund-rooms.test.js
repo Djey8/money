@@ -157,7 +157,9 @@ describe('a Dreamfund room', () => {
       });
       expect(refused.status).toBe(400);
 
-      const listed = await call(host, 'get', '/game/rooms?scope=mine');
+      const listed = await call(host, 'get', '/game/rooms?scope=mine&kind=dreamfund');
+      const classicList = await call(host, 'get', '/game/rooms?scope=mine');
+      expect(classicList.body.items.some((r) => r.id === made.body.id)).toBe(false);
       expect(listed.body.items.find((r) => r.id === made.body.id)).toMatchObject({
         kind: 'dreamfund',
         difficulty: 'hard',
