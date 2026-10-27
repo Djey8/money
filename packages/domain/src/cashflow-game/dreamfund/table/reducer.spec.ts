@@ -1,3 +1,5 @@
+import { quoteEmergency } from '../../emergency-deck';
+import { DreamPlayer } from '../player';
 import { TableCommandError } from '../../table/types';
 import {
   applyDreamCommand,
@@ -245,5 +247,69 @@ describe('the Dreamfund table: play', () => {
     expect(after.phase).toBe('finished');
     expect(after.result).toMatchObject({ reason: 'won', winnerId: who });
     expect(after.result!.ranking[0]).toMatchObject({ playerId: who, outcome: 'won' });
+  });
+});
+
+describe('the Emergency card at a Dreamfund table', () => {
+  function withEmergency(pick: (cards: import('../../emergency-deck').EmergencyCard[]) => string) {
+    let t = started();
+    const who = t.activePlayerId!;
+    const seat = t.players.find((p) => p.id === who)!;
+    const cards = DreamPlayer.restore(seat.life!, () => 0.5, { sharedMarkets: true }).gameSet.decks!
+      .emergency!;
+    t = {
+      ...t,
+      players: t.players.map((p) =>
+        p.id === who ? { ...p, pending: { kind: 'emergency', cardId: pick(cards) } } : p,
+      ),
+    };
+    return { t, who };
+  }
+  const seatOf = (t: DreamTable, who: string) => t.players.find((p) => p.id === who)!;
+
+  it('keeps the option picked, refuses one the card does not have, and rolls only the dice it asks for', () => {
+    const { t, who } = withEmergency((cards) => cards.find((c) => c.type === 'choice')!.id);
+    const card = DreamPlayer.restore(seatOf(t, who).life!, () => 0.5, {
+      sharedMarkets: true,
+    }).emergencyCard((seatOf(t, who).pending as { cardId: string }).cardId)!;
+    expect(() => run(t, who, { type: 'emergency_choose', choiceId: 'nope' })).toThrow(/options/i);
+    const chosen = run(t, who, { type: 'emergency_choose', choiceId: card.choices![0].id });
+    expect((seatOf(chosen, who).pending as { choiceId?: string }).choiceId).toBe(
+      card.choices![0].id,
+    );
+    expect(() => run(chosen, who, { type: 'emergency_roll', key: 'bucket:none' })).toThrow(
+      /not to be rolled/i,
+    );
+  });
+
+  it('rolls the dice itself, pays what the picked and rolled card costs, and shows the result', () => {
+    const { t, who } = withEmergency(
+      (cards) => cards.find((c) => c.type !== 'choice' && c.payment !== 'pay_now')!.id,
+    );
+    let current = t;
+    const card = DreamPlayer.restore(seatOf(t, who).life!, () => 0.5, {
+      sharedMarkets: true,
+    }).emergencyCard((seatOf(t, who).pending as { cardId: string }).cardId)!;
+    void card;
+    // roll every die the card asks for, one by one
+    for (let i = 0; i < 6; i += 1) {
+      const p = seatOf(current, who).pending as { cardId: string; rolls?: Record<string, number> };
+      const player = DreamPlayer.restore(seatOf(current, who).life!, () => 0.5, {
+        sharedMarkets: true,
+      });
+      const quote = quoteEmergency(
+        player.emergencyCard(p.cardId)!,
+        { rolls: p.rolls },
+        player.emergencyContext(),
+      );
+      if (!quote.needsRolls.length) break;
+      current = run(current, who, { type: 'emergency_roll', key: quote.needsRolls[0] });
+      const rolled = (seatOf(current, who).pending as { rolls: Record<string, number> }).rolls;
+      expect(Object.values(rolled).every((die) => die >= 1 && die <= 6)).toBe(true);
+    }
+    const paid = run(current, who, { type: 'pay_emergency', pay: 'now' });
+    const seat = seatOf(paid, who);
+    expect(seat.pending).toBeNull();
+    expect(seat.resolved).toMatchObject({ kind: 'emergency', how: 'now' });
   });
 });

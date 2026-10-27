@@ -58,7 +58,14 @@ export interface DreamTableSettings {
 
 /** What the table wants from a player next: a landing's decisions, in order. */
 export type DreamPending =
-  | { kind: 'emergency'; cardId: string }
+  /** An Emergency card: the choice picked and the dice rolled on it so far (the table rolls them; they stay as they fell). */
+  | {
+      kind: 'emergency';
+      cardId: string;
+      choiceId?: string;
+      rolls?: Record<string, number>;
+      rerolled?: boolean;
+    }
   | { kind: 'life'; cardId: string }
   | { kind: 'career_branch'; options: string[] }
   | { kind: 'dream'; offers: string[] }
@@ -66,6 +73,18 @@ export type DreamPending =
   | { kind: 'opportunity'; pile: OpportunityPile; offers: string[] };
 
 /** What a Harvest card left open to a player: they may still sell into it until the turn of the player who drew it is over. */
+/** A card that was dealt with in the turn, for the screen to show what happened. */
+export type DreamResolved =
+  | {
+      kind: 'emergency';
+      cardId: string;
+      choiceId?: string;
+      rolls?: Record<string, number>;
+      payMinor: number;
+      how: 'now' | 3 | 6 | 12;
+    }
+  | { kind: 'life'; cardId: string; decision: string; outcome?: unknown };
+
 export interface DreamHarvestOpen {
   /** The titles of the holdings that may be sold now, at today's price. */
   sellable: string[];
@@ -96,6 +115,8 @@ export interface DreamSeat {
   pending: DreamPending | null;
   /** The Harvest card's open options for this player. */
   harvest: DreamHarvestOpen | null;
+  /** The card dealt with this turn and what came of it, shown on the player's screen until their next roll. */
+  resolved?: DreamResolved | null;
   /** A Payday was passed in this turn and the player has not yet said what to do with the month's money (`settle_payday`). */
   paydayDue?: boolean;
   /** The round of the table in which each goal was first reached. */
@@ -200,6 +221,12 @@ export type DreamCommand =
   | { type: 'roll' }
   /** An Emergency card: the choice it asks for (if any), and how it is paid - now, or on a plan of 3, 6 or 12 Paydays. */
   | { type: 'pay_emergency'; choiceId?: string; pay: 'now' | 3 | 6 | 12 }
+  /** The choice of an Emergency card that has options. */
+  | { type: 'emergency_choose'; choiceId: string }
+  /** Rolls one of the card's dice (`main`, `bucket:<id>`, `extra`, `reroll`): the table rolls it. */
+  | { type: 'emergency_roll'; key: string }
+  /** Takes the offer to roll again. */
+  | { type: 'emergency_reroll' }
   | {
       type: 'answer_life';
       decision: 'accept' | 'decline' | 'roll' | 'pass' | 'give' | 'lend' | { option: string };

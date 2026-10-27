@@ -1,3 +1,5 @@
+import { rollDie } from '../../rng';
+import { quoteEmergency } from '../../emergency-deck';
 import { CASHFLOW_GAME_SETS } from '../../../cashflow-content';
 import { driftMarkets, drawHarvestCard, initialMarkets } from '../../harvest';
 import { normalizeCustomRules } from '../../custom-rules';
@@ -199,6 +201,9 @@ export function createDreamTable(
 const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'roll',
   'pay_emergency',
+  'emergency_choose',
+  'emergency_roll',
+  'emergency_reroll',
   'answer_life',
   'choose_career_branch',
   'take_dream',
@@ -663,16 +668,28 @@ function doCommand(
         emit('payday', id, { round: p.state.round });
       }
       const tile = p.pendingTile();
-      if (!tile) return { pending: null, paydayDue: rolled.paydays > 0 };
+      if (!tile) return { pending: null, resolved: null, paydayDue: rolled.paydays > 0 };
       emit(TILE_EVENT[tile] ?? 'rolled', id, { tile });
-      return { ...enterTile(tile, p, rng, emit, id), paydayDue: rolled.paydays > 0 };
+      return {
+        resolved: null,
+        ...enterTile(tile, p, rng, emit, id),
+        paydayDue: rolled.paydays > 0,
+      };
     }
     case 'pay_emergency': {
       if (pending?.kind !== 'emergency') return refuse('There is no emergency to pay.');
       const card = p.emergencyCard(pending.cardId);
       if (!card) return refuse('That emergency card is gone.');
       const context = p.emergencyContext();
-      const pay = p.autoEmergencySelection(card, context, command.choiceId);
+      // what the player picked and rolled is the card's; a player who was not asked (a bot, a timeout) gets the cheapest way
+      const picked = quoteEmergency(
+        card,
+        { choiceId: pending.choiceId, rolls: pending.rolls, rerolled: pending.rerolled },
+        context,
+      );
+      const pay = picked.ready
+        ? picked.payMinor
+        : p.autoEmergencySelection(card, context, command.choiceId);
       if (pay === null) return refuse('The emergency could not be worked out.');
       if (command.pay === 'now') p.payEmergencyNow(pay);
       else {
@@ -682,15 +699,72 @@ function doCommand(
         p.planEmergency(card.id, option);
       }
       emit('money_moved', id, { what: 'emergency', payMinor: pay, how: command.pay });
-      return { pending: null };
+      return {
+        pending: null,
+        resolved: {
+          kind: 'emergency',
+          cardId: card.id,
+          ...(pending.choiceId ? { choiceId: pending.choiceId } : {}),
+          ...(pending.rolls ? { rolls: pending.rolls } : {}),
+          payMinor: pay,
+          how: command.pay,
+        },
+      };
+    }
+    case 'emergency_choose': {
+      if (pending?.kind !== 'emergency') return refuse('There is no emergency to choose for.');
+      const card = p.emergencyCard(pending.cardId);
+      if (!card || !(card.choices ?? []).some((choice) => choice.id === command.choiceId)) {
+        return refuse("That is not one of the card's options.");
+      }
+      return { pending: { ...pending, choiceId: command.choiceId, rolls: undefined } };
+    }
+    case 'emergency_roll': {
+      if (pending?.kind !== 'emergency') return refuse('There is no emergency to roll for.');
+      const card = p.emergencyCard(pending.cardId);
+      if (!card) return refuse('That emergency card is gone.');
+      const quote = quoteEmergency(
+        card,
+        { choiceId: pending.choiceId, rolls: pending.rolls, rerolled: pending.rerolled },
+        p.emergencyContext(),
+      );
+      if (!quote.needsRolls.includes(command.key))
+        return refuse('That die is not to be rolled now.');
+      return {
+        pending: { ...pending, rolls: { ...(pending.rolls ?? {}), [command.key]: rollDie(rng) } },
+      };
+    }
+    case 'emergency_reroll': {
+      if (pending?.kind !== 'emergency') return refuse('There is no emergency to roll again for.');
+      const card = p.emergencyCard(pending.cardId);
+      const quote =
+        card &&
+        quoteEmergency(
+          card,
+          { choiceId: pending.choiceId, rolls: pending.rolls, rerolled: pending.rerolled },
+          p.emergencyContext(),
+        );
+      if (!card?.reroll || !quote?.canReroll) return refuse('There is no offer to roll again.');
+      return { pending: { ...pending, rerolled: true } };
     }
     case 'answer_life': {
       if (pending?.kind !== 'life') return refuse('There is no life card to answer.');
       const card = p.lifeCard(pending.cardId);
       if (!card) return refuse('That life card is gone.');
       const d = command.decision;
-      p.resolveLife(card, typeof d === 'string' ? { kind: d } : { kind: 'option', id: d.option });
-      return { pending: null };
+      const outcome = p.resolveLife(
+        card,
+        typeof d === 'string' ? { kind: d } : { kind: 'option', id: d.option },
+      );
+      return {
+        pending: null,
+        resolved: {
+          kind: 'life',
+          cardId: card.id,
+          decision: typeof d === 'string' ? d : d.option,
+          outcome,
+        },
+      };
     }
     case 'choose_career_branch': {
       if (pending?.kind !== 'career_branch') return refuse('There is no career branch to choose.');
@@ -829,8 +903,11 @@ function enterTile(
       const card = p.drawLife();
       if (!card) return { pending: null };
       if (card.type === 'fate') {
-        p.resolveLife(card, { kind: 'fate' });
-        return { pending: null };
+        const outcome = p.resolveLife(card, { kind: 'fate' });
+        return {
+          pending: null,
+          resolved: { kind: 'life', cardId: card.id, decision: 'fate', outcome },
+        };
       }
       return { pending: { kind: 'life', cardId: card.id } };
     }

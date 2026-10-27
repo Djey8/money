@@ -39,8 +39,27 @@ export interface DreamLifeSummary {
   career: string | null;
 }
 
+/** The card a player dealt with this turn and what came of it (their own, in full; the others' only its kind). */
+export type DreamResolvedView =
+  | {
+      kind: 'emergency';
+      cardId: string;
+      choiceId?: string;
+      rolls?: Record<string, number>;
+      payMinor: number;
+      how: 'now' | 3 | 6 | 12;
+    }
+  | { kind: 'life'; cardId: string; decision: string; outcome?: unknown }
+  | { kind: string };
+
 export type DreamPending =
-  | { kind: 'emergency'; cardId: string }
+  | {
+      kind: 'emergency';
+      cardId: string;
+      choiceId?: string;
+      rolls?: Record<string, number>;
+      rerolled?: boolean;
+    }
   | { kind: 'life'; cardId: string }
   | { kind: 'career_branch'; options: string[] }
   | { kind: 'dream'; offers: string[] }

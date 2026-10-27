@@ -710,7 +710,7 @@ export class DreamPlayer {
   }
 
   /** The outcome of a decision on a Life card, applied. */
-  resolveLife(card: LifeCard, decision: LifeDecision): void {
+  resolveLife(card: LifeCard, decision: LifeDecision) {
     const cards = this.gameSet.decks?.life ?? [];
     const books = { state: this.state, subscriptions: this.books.subscriptions };
     const outcome = resolveLifeCard(card, decision, lifeContext(books, 'en', this.rng), (id) =>
@@ -718,6 +718,7 @@ export class DreamPlayer {
     );
     this.apply(applyLifeOutcome(books, outcome, { date: TODAY, lang: 'en' }));
     this.payDues();
+    return outcome;
   }
 
   /** The Life card of an id. */

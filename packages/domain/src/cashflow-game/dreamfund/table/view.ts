@@ -2,7 +2,7 @@ import { quoteEmergency } from '../../emergency-deck';
 import { expectedMonthlyMinor } from '../../dreamfund-sim/policies';
 import { DreamPlayer, type DreamPlayerData } from '../player';
 import { goalsOf } from './scoring';
-import type { DreamCommand, DreamHarvestOpen, DreamPending, DreamTable } from './types';
+import type { DreamCommand, DreamHarvestOpen, DreamPending, DreamSeat, DreamTable } from './types';
 
 /**
  * What a viewer of a Dreamfund table is shown (todo/dreamfund-multiplayer.md, slice 5). Everything about a life is open at the table,
@@ -60,7 +60,11 @@ export function pendingInfoOf(life: DreamPlayerData, pending: DreamPending): Pen
   if (pending.kind === 'emergency') {
     const card = p.emergencyCard(pending.cardId);
     if (!card) return null;
-    const quote = quoteEmergency(card, { rolls: {} }, p.emergencyContext());
+    const quote = quoteEmergency(
+      card,
+      { choiceId: pending.choiceId, rolls: pending.rolls ?? {}, rerolled: pending.rerolled },
+      p.emergencyContext(),
+    );
     const payMinor = quote.needsChoice || quote.needsRolls.length > 0 ? null : quote.payMinor;
     return {
       emergency: {
@@ -171,6 +175,8 @@ export interface DreamPlayerView {
   /** The prices and options of the viewer's own decision. */
   pendingInfo: PendingInfo | null;
   harvest: DreamHarvestOpen | null;
+  /** The card dealt with this turn and what came of it (the viewer's own; the others only its kind). */
+  resolved: DreamSeat['resolved'] | { kind: string } | null;
   paydayDue: boolean;
   reached: DreamTable['players'][number]['reached'];
   you: boolean;
@@ -288,6 +294,7 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
         pending: p.pending ? (mine ? p.pending : { kind: p.pending.kind }) : null,
         pendingInfo: mine && p.pending && p.life ? pendingInfoOf(p.life, p.pending) : null,
         harvest: mine ? p.harvest : null,
+        resolved: p.resolved ? (mine ? p.resolved : { kind: p.resolved.kind }) : null,
         paydayDue: p.paydayDue === true,
         reached: p.reached,
         you: mine,
@@ -367,6 +374,9 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
     switch (p.kind) {
       case 'emergency':
         add('pay_emergency', { cardId: p.cardId });
+        add('emergency_choose', { cardId: p.cardId });
+        add('emergency_roll', { cardId: p.cardId });
+        add('emergency_reroll', { cardId: p.cardId });
         break;
       case 'life':
         add('answer_life', { cardId: p.cardId });

@@ -1,6 +1,11 @@
 import type { TableView } from '@money/domain';
 import type { DreamPlayerData } from '@money/domain/dist/cashflow-game/dreamfund/player';
-import type { DreamPending, DreamTableView } from './dream-session.service';
+import type {
+  DreamPending,
+  DreamPendingInfo,
+  DreamResolvedView,
+  DreamTableView,
+} from './dream-session.service';
 
 /** A Dreamfund table seen as the table screens read a table: its seats carry the life's books, and the life itself beside them. */
 export interface DreamShownTable extends TableView {
@@ -62,6 +67,8 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         // the Dreamfund's extras, for the bridge to the app
         dreamLife: life,
         dreamPending: (player as unknown as { pending?: unknown }).pending ?? null,
+        dreamInfo: (player as unknown as { pendingInfo?: unknown }).pendingInfo ?? null,
+        dreamResolved: (player as unknown as { resolved?: unknown }).resolved ?? null,
       };
     }),
     order: view.order,
@@ -107,4 +114,14 @@ export function pendingOf(view: TableView, seat: number): DreamPending | { kind:
   const player = view.players[seat] as unknown as
     { dreamPending?: DreamPending | { kind: string } | null } | undefined;
   return player?.dreamPending ?? null;
+}
+
+/** What the seat's last card came to (its own, in full), and the prices of its open decision. */
+export function extrasOf(
+  view: TableView,
+  seat: number,
+): { info: DreamPendingInfo | null; resolved: DreamResolvedView | null } {
+  const player = view.players[seat] as unknown as
+    { dreamInfo?: DreamPendingInfo | null; dreamResolved?: DreamResolvedView | null } | undefined;
+  return { info: player?.dreamInfo ?? null, resolved: player?.dreamResolved ?? null };
 }

@@ -48,6 +48,17 @@ const DREAMFUND_COMMANDS = {
       ...(c.choiceId !== undefined ? { choiceId: c.choiceId } : {}),
     }),
   },
+  emergency_choose: {
+    fields: ['choiceId'],
+    check: (c) => text(c.choiceId, 'choiceId'),
+    build: (c) => ({ type: 'emergency_choose', choiceId: c.choiceId }),
+  },
+  emergency_roll: {
+    fields: ['key'],
+    check: (c) => text(c.key, 'key'),
+    build: (c) => ({ type: 'emergency_roll', key: c.key }),
+  },
+  emergency_reroll: { ...none, build: () => ({ type: 'emergency_reroll' }) },
   answer_life: {
     fields: ['decision', 'option'],
     check: (c) =>

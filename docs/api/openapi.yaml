@@ -11408,7 +11408,7 @@ components:
       type: object
       required: [type]
       description: >-
-        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMFUND table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`; `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
+        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMFUND table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}` (it pays what the card came to with the option picked and the dice rolled so far, or the cheapest way when none were), `emergency_choose {choiceId}`, `emergency_roll {key}` (the table rolls the die), `emergency_reroll`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`; `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
       properties:
         type:
           type: string
@@ -11436,6 +11436,9 @@ components:
             - propose_undo
             - vote_undo
             - pay_emergency
+            - emergency_choose
+            - emergency_roll
+            - emergency_reroll
             - answer_life
             - choose_career_branch
             - take_dream

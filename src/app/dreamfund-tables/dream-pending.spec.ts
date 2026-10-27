@@ -18,7 +18,7 @@ describe('withDreamPending', () => {
   it('writes the drawn Emergency and Life cards where the solo screen reads them', () => {
     expect(
       pendingOf(withDreamPending(books({}), { kind: 'emergency', cardId: 'E12' }))['emergency'],
-    ).toEqual({
+    ).toMatchObject({
       cardId: 'E12',
       skipped: [],
     });
@@ -51,5 +51,42 @@ describe('withDreamPending', () => {
     const plain = books({});
     expect(withDreamPending(plain, null)).toBe(plain);
     expect(withDreamPending(plain, { kind: 'emergency' })).toBe(plain);
+  });
+
+  it('carries the choice and the dice of an emergency, with the plans the table worked out', () => {
+    const shown = withDreamPending(
+      books({}),
+      { kind: 'emergency', cardId: 'E1', choiceId: 'a', rolls: { main: 4 } },
+      {
+        info: {
+          emergency: {
+            payMinor: 90000,
+            mustPayNow: false,
+            choices: [],
+            plans: [{ months: 3, perMinor: 31000, totalMinor: 93000 }],
+          },
+        },
+      },
+    );
+    expect(pendingOf(shown)['emergency']).toMatchObject({
+      choiceId: 'a',
+      rolls: { main: 4 },
+      dreamPayMinor: 90000,
+      dreamPlans: [{ months: 3, perMinor: 31000, totalMinor: 93000 }],
+    });
+  });
+
+  it('keeps a card that was dealt with on screen, with what came of it, until the next roll', () => {
+    const paid = withDreamPending(books({}), null, {
+      resolved: { kind: 'emergency', cardId: 'E1', payMinor: 90000, how: 3 },
+    });
+    expect(pendingOf(paid)['emergency']).toMatchObject({
+      cardId: 'E1',
+      dreamPaid: { payMinor: 90000, how: 3 },
+    });
+    const life = withDreamPending(books({ tile: 'life' }), null, {
+      resolved: { kind: 'life', cardId: 'L3', decision: 'accept', outcome: { lines: [] } },
+    });
+    expect(pendingOf(life)['life']).toMatchObject({ cardId: 'L3', decision: 'accept' });
   });
 });

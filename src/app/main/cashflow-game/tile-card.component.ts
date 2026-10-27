@@ -37,6 +37,7 @@ import {
 } from '@money/domain';
 import { AppNumberPipe } from '../../shared/pipes/app-number.pipe';
 import { AppStateService } from '../../shared/services/app-state.service';
+import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
 import { ToastService } from '../../shared/services/toast.service';
 
@@ -174,7 +175,39 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 {{ 'CashflowGame.emergency.notInsured' | translate }}
               </p>
               <p class="tc-note" *ngIf="e.card.insuranceNote">{{ e.card.insuranceNote[lang] }}</p>
-              <ng-container *ngIf="!e.projectTitle">
+              <ng-container *ngIf="!e.projectTitle && dreamTable">
+                <ng-container *ngIf="dreamPaid as paid; else dreamToPay">
+                  <p class="tc-good">
+                    ✓ {{ amount(paid.payMinor) }} {{ currency
+                    }}{{ paid.how === 'now' ? '' : ' · ' + paid.how + ' ×' }}
+                  </p>
+                </ng-container>
+                <ng-template #dreamToPay>
+                  <button
+                    type="button"
+                    class="tc-btn tc-btn--primary tc-btn--wide"
+                    [disabled]="busy"
+                    (click)="payEmergency('now')"
+                  >
+                    {{ 'CashflowGame.emergency.payNow' | translate }} {{ amount(e.quote.payMinor) }}
+                    {{ currency }}
+                  </button>
+                  <ng-container *ngIf="!dreamMustPayNow">
+                    <button
+                      *ngFor="let plan of dreamPlans; trackBy: trackIndex"
+                      type="button"
+                      class="tc-btn tc-btn--wide"
+                      [disabled]="busy"
+                      (click)="payEmergency(plan.months)"
+                    >
+                      {{ plan.months }} × {{ amount(plan.perMinor) }} {{ currency }} ({{
+                        amount(plan.totalMinor)
+                      }})
+                    </button>
+                  </ng-container>
+                </ng-template>
+              </ng-container>
+              <ng-container *ngIf="!e.projectTitle && !dreamTable">
                 <p class="tc-bad">{{ 'CashflowGame.emergency.cannotDecline' | translate }}</p>
                 <button
                   type="button"
@@ -1896,7 +1929,52 @@ export class TileCardComponent implements OnInit, OnDestroy {
   rolling = false;
   private timer: ReturnType<typeof setInterval> | undefined;
 
+  /** At a Dreamfund table the server draws the cards and settles the decisions: this screen only shows them and sends the answers. */
+  get dreamTable(): RemoteGame | null {
+    const remote = RemoteGameHook.current;
+    return remote?.dreamfund ? remote : null;
+  }
+
+  /** A decision of this tile, sent to the table; false when it was refused (the toast says why). */
+  private async dreamMove(command: Record<string, unknown>): Promise<boolean> {
+    const remote = this.dreamTable;
+    if (!remote?.dreamMove) return false;
+    this.busy = true;
+    this.cdr.markForCheck();
+    const outcome = await remote.dreamMove(command);
+    this.busy = false;
+    if (!outcome.ok) this.toast.show(outcome.message ?? 'The move did not go through.', 'error');
+    // the table's books reach the screen a moment after the answer: let them
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    this.cdr.markForCheck();
+    return outcome.ok;
+  }
+
+  /** What the table worked out for the open emergency: the plans it may be paid over, and whether it has to be paid at once. */
+  private get dreamEmergency(): Record<string, unknown> | undefined {
+    return AppStateService.instance.cashflowGame.turn?.pending?.emergency as
+      Record<string, unknown> | undefined;
+  }
+
+  get dreamPlans(): { months: number; perMinor: number; totalMinor: number }[] {
+    return (this.dreamEmergency?.['dreamPlans'] as never) ?? [];
+  }
+
+  get dreamMustPayNow(): boolean {
+    return this.dreamEmergency?.['dreamMustPayNow'] === true;
+  }
+
+  get dreamPaid(): { payMinor: number; how: 'now' | number } | null {
+    return (this.dreamEmergency?.['dreamPaid'] as never) ?? null;
+  }
+
+  payEmergency(how: 'now' | number): void {
+    void this.dreamMove({ type: 'pay_emergency', pay: how });
+  }
+
   ngOnInit(): void {
+    // the table has drawn the card already: nothing is opened from here
+    if (this.dreamTable) return;
     // an Opportunity tile starts with the choice of a pile, not with a card
     if (!this.autoOpen || this.tile === 'opportunity') return;
     const shown =
@@ -1960,7 +2038,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
    * A roll that is seen: the die tumbles for a moment, the rule is run (what it decides is already in the game), then the faces are
    * shown still and the result is told. `run` returns the dice that were rolled.
    */
-  private async roll(run: () => number[]): Promise<void> {
+  private async roll(run: () => number[] | Promise<number[]>): Promise<void> {
     this.busy = true;
     this.rolling = true;
     const random = () => 1 + Math.floor(Math.random() * 6);
@@ -1972,7 +2050,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
     }, 90);
     let rolled: number[] = [];
     try {
-      rolled = run();
+      rolled = await run();
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : String(error), 'error');
     }
@@ -2666,10 +2744,23 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   chooseEmergency(id: string): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'emergency_choose', choiceId: id });
+      return;
+    }
     this.service.chooseEmergencyOption(id, this.callbacks);
   }
 
   rollEmergency(key: string): void {
+    if (this.dreamTable) {
+      // the table rolls the die; it is seen tumbling and coming to rest on what it rolled
+      void this.roll(async () => {
+        await this.dreamMove({ type: 'emergency_roll', key });
+        const rolled = this.dreamEmergency?.['rolls'] as Record<string, number> | undefined;
+        return rolled?.[key] ? [rolled[key]] : [];
+      });
+      return;
+    }
     void this.roll(() => {
       this.service.rollEmergencyDie(key, this.callbacks);
       return Object.values(this.service.emergencyView?.selection.rolls ?? {});
@@ -2677,6 +2768,10 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   rerollEmergency(): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'emergency_reroll' });
+      return;
+    }
     this.service.rerollEmergency(this.callbacks);
   }
 
@@ -2713,6 +2808,17 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   decideLife(decision: LifeDecision): void {
+    if (this.dreamTable) {
+      const asked =
+        decision.kind === 'option'
+          ? { decision: 'option', option: (decision as { id: string }).id }
+          : { decision: decision.kind };
+      void this.roll(async () => {
+        await this.dreamMove({ type: 'answer_life', ...asked });
+        return this.service.lifeView?.outcome?.rolls?.slice(0, 3) ?? [];
+      });
+      return;
+    }
     if (decision.kind === 'roll') {
       void this.roll(() => {
         this.service.decideLife(decision, this.callbacks);

@@ -66,6 +66,8 @@ export interface RemoteGate {
 export interface RemoteGame {
   /** A Dreamfund table: the stack tiles (Emergency, Life, Career, Dream, Opportunity, Harvest) of the solo screen are played at it. */
   dreamfund?: boolean;
+  /** A Dreamfund table: a decision of a stack tile, sent as the table's own command (answer a card, roll its die, pay). */
+  dreamMove?(command: Record<string, unknown>): Promise<RemoteOutcome>;
   /** Another player's books are on screen: read only, nothing of the game can be done from here. */
   viewOnly(): boolean;
   /** Whose turn it is when it is not the player's own (a name and a colour), else null. */

@@ -13,6 +13,11 @@ export class DreamTableGameDriver extends TableGameDriver {
   private notHere = (..._args: unknown[]): Promise<RemoteOutcome> =>
     Promise.resolve({ ok: false, message: DreamTableGameDriver.NOT_HERE, events: [] });
 
+  /** A decision of a tile card: the table's command as it is. */
+  dreamMove(command: Record<string, unknown>): Promise<RemoteOutcome> {
+    return this.move(command);
+  }
+
   override roll(): Promise<RemoteOutcome> {
     return this.move({ type: 'roll' });
   }
