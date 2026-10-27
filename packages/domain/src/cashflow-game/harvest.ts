@@ -1245,10 +1245,13 @@ export function ladderPayout(offer: HarvestLadderOffer): number {
 export function tickMarkets(
   state: CashflowGameState,
   difficulty: Difficulty = 'medium',
+  drift = true,
 ): CashflowGameState {
   const markets = { ...initialMarkets(), ...(state.markets ?? {}) };
-  for (const tag of Object.keys(MARKET_DRIFT_PERCENT)) {
-    markets[tag] = round4(markets[tag] * (1 + MARKET_DRIFT_PERCENT[tag][difficulty] / 100));
+  if (drift) {
+    for (const tag of Object.keys(MARKET_DRIFT_PERCENT)) {
+      markets[tag] = round4(markets[tag] * (1 + MARKET_DRIFT_PERCENT[tag][difficulty] / 100));
+    }
   }
   for (const [tag, factor] of Object.entries(state.nextPaydayIndex ?? {})) {
     if (markets[tag] !== undefined) markets[tag] = round4(markets[tag] * factor);
@@ -1272,9 +1275,16 @@ export function tickWorld(
     growProjects: readonly { title: string; notes: { text: string; createdAt: string }[] }[];
   },
   cards: readonly OpportunityCard[],
-  options: { date: string; lang: EmergencyLang; rng?: Rng; difficulty?: Difficulty },
+  options: {
+    date: string;
+    lang: EmergencyLang;
+    rng?: Rng;
+    difficulty?: Difficulty;
+    /** False at a table: the markets are the table's and drift there. */
+    drift?: boolean;
+  },
 ): { effects: GameEffects; news: string[] } {
-  const drifted = tickMarkets(books.state, options.difficulty);
+  const drifted = tickMarkets(books.state, options.difficulty, options.drift ?? true);
   const tick = tickOpportunities({ ...books, state: drifted }, cards, options);
   const effects = tick?.effects ?? emptyEffects(drifted, null);
   let state = effects.state;
@@ -1308,3 +1318,18 @@ export function tickWorld(
 }
 
 export type { HarvestLadder };
+
+/** The table's markets after some rounds: the drift of a Payday, spread over the 2.5 rounds a player takes to reach one (JFK, 2026-10-27). */
+export function driftMarkets(
+  markets: Record<string, number>,
+  difficulty: Difficulty = 'medium',
+  rounds = 1,
+): Record<string, number> {
+  const next = { ...initialMarkets(), ...markets };
+  for (const tag of Object.keys(MARKET_DRIFT_PERCENT)) {
+    next[tag] = round4(
+      next[tag] * Math.pow(1 + MARKET_DRIFT_PERCENT[tag][difficulty] / 100, rounds / 2.5),
+    );
+  }
+  return next;
+}

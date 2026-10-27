@@ -70,6 +70,8 @@ export interface RoundDeps {
   opportunityCards?: readonly OpportunityCard[];
   /** The level of the game: the markets drift by it. */
   difficulty?: Difficulty;
+  /** At a table the markets are everybody's: they drift once a table round, not at every player's Payday. */
+  sharedMarkets?: boolean;
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -241,6 +243,7 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
             lang: deps.lang ?? 'en',
             rng: deps.rng,
             difficulty: deps.difficulty,
+            drift: !deps.sharedMarkets,
           },
         )
       : null;

@@ -37,7 +37,17 @@ import {
 import { pickCashflowProfession } from '../engine';
 import { endIfOver } from '../game-end';
 import { identityText } from '../game-text';
-import { drawHarvestCard, initialMarkets, playHarvestCard, valueOf } from '../harvest';
+import {
+  drawHarvestCard,
+  initialMarkets,
+  ladderPayout,
+  playHarvestCard,
+  rideLadder,
+  sellHolding,
+  unitPriceNow,
+  valueOf,
+  type HarvestLadderOffer,
+} from '../harvest';
 import { activeInsurances } from '../insurance';
 import {
   drawLifeCard,
@@ -106,6 +116,28 @@ export interface DreamPlayerConfig {
   shape?: BoardSetup['shape'];
   size?: BoardSetup['size'];
   rules?: Partial<CustomRules>;
+  /** At a table the Harvest markets are everybody's: this player's own Paydays do not drift them. */
+  sharedMarkets?: boolean;
+}
+
+/** A player's life as plain data (no rules, no cards): what a table stores and sends. */
+export interface DreamPlayerData {
+  seed: number;
+  /** The character as chosen (the variant of its difficulty is found from the rules). */
+  professionId: string;
+  rules: CustomRules;
+  shape: BoardSetup['shape'];
+  size: BoardSetup['size'];
+  /** The books without the game set (the set is the same for everybody and is found again). */
+  books: Omit<GameBooks, 'gameSet'>;
+  reserveMinor: number;
+  dreamSavedMinor: number;
+  dreamLived: boolean;
+  smile: DreamProject[];
+  dreamPoints: number;
+  bonusPoints: number;
+  plans: DreamPlan[];
+  turns: number;
 }
 
 type Pending = ReturnType<typeof playHarvestCard>['pending'];
@@ -122,6 +154,8 @@ export class DreamPlayer {
   readonly setup: BoardSetup;
   readonly deps;
   readonly debtTags: string[];
+  /** The character as asked for, before its difficulty picked the variant. */
+  readonly baseProfessionId: string;
   readonly dreamTargetMinor: number;
   reserveMinor = 0;
   dreamSavedMinor = 0;
@@ -138,6 +172,7 @@ export class DreamPlayer {
 
   constructor(config: DreamPlayerConfig) {
     this.rng = config.rng;
+    this.baseProfessionId = (config.professionId ?? 'dual-student-informatik').split('~')[0];
     this.rules = normalizeCustomRules({ mode: 'free', ...config.rules });
     const gameSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories');
     // Easy and Hard are characters of their own that share the story of the one asked for
@@ -211,6 +246,7 @@ export class DreamPlayer {
       rng: this.rng,
       opportunityCards: this.cards,
       difficulty: this.rules.difficulty,
+      sharedMarkets: config.sharedMarkets ?? false,
       cards: {
         textFor: () => ({}),
         symbolFor: (symbol: string | undefined) => symbol,
@@ -226,6 +262,60 @@ export class DreamPlayer {
   /** A player from a seed: the simulation's way in. */
   static fromSeed(config: Omit<DreamPlayerConfig, 'rng'>): DreamPlayer {
     return new DreamPlayer({ ...config, rng: seededRng(config.seed) });
+  }
+
+  /** The life as plain data: a copy that shares nothing with the player. */
+  snapshot(): DreamPlayerData {
+    const { gameSet: _gameSet, ...books } = this.books;
+    void _gameSet;
+    return JSON.parse(
+      JSON.stringify({
+        seed: this.setup.seed,
+        professionId: this.baseProfessionId,
+        rules: this.rules,
+        shape: this.setup.shape,
+        size: this.setup.size,
+        books,
+        reserveMinor: this.reserveMinor,
+        dreamSavedMinor: this.dreamSavedMinor,
+        dreamLived: this.dreamLived,
+        smile: this.smile,
+        dreamPoints: this.dreamPoints,
+        bonusPoints: this.bonusPoints,
+        plans: this.plans,
+        turns: this.turns,
+      }),
+    ) as DreamPlayerData;
+  }
+
+  /** A life from its data, playing with the given dice. */
+  static restore(
+    data: DreamPlayerData,
+    rng: Rng,
+    options: { sharedMarkets?: boolean } = {},
+  ): DreamPlayer {
+    const player = new DreamPlayer({
+      rng,
+      sharedMarkets: options.sharedMarkets,
+      seed: data.seed,
+      professionId: data.professionId,
+      shape: data.shape,
+      size: data.size,
+      rules: data.rules,
+    });
+    player.books = {
+      ...(JSON.parse(JSON.stringify(data.books)) as Omit<GameBooks, 'gameSet'>),
+      gameSet: player.gameSet,
+    };
+    player.reserveMinor = data.reserveMinor;
+    player.dreamSavedMinor = data.dreamSavedMinor;
+    player.dreamLived = data.dreamLived;
+    player.smile = JSON.parse(JSON.stringify(data.smile));
+    player.dreamPoints = data.dreamPoints;
+    player.bonusPoints = data.bonusPoints;
+    player.plans = JSON.parse(JSON.stringify(data.plans));
+    player.turns = data.turns;
+    return player;
   }
 
   // ── the books ──
@@ -480,6 +570,23 @@ export class DreamPlayer {
 
   // ── Emergency ──
 
+  /** What an Emergency card's price is worked out in. */
+  emergencyContext(): EmergencyContext {
+    const level = difficultySettings(this.rules.difficulty);
+    return {
+      insurances: activeInsurances(this.state),
+      traits: this.state.traits ?? [],
+      openEmergencies: 0,
+      priceFactor: (this.profession.priceFactor ?? 1) * level.emergencyCostMultiplier,
+      deductibleCapMinor: level.insuranceDeductibleCapMinor,
+    };
+  }
+
+  /** The card of an id (an Emergency card a table remembers). */
+  emergencyCard(id: string): EmergencyCard | undefined {
+    return (this.gameSet.decks?.emergency ?? []).find((card) => card.id === id);
+  }
+
   /** Draws the next Emergency card: what it is and the context its price is worked out in; null when the set has none. */
   drawEmergency(): { card: EmergencyCard; context: EmergencyContext } | null {
     const cards = this.gameSet.decks?.emergency ?? [];
@@ -491,14 +598,7 @@ export class DreamPlayer {
       this.rng,
     );
     this.setState({ ...this.state, emergencyDeck: draw.deck });
-    const level = difficultySettings(this.rules.difficulty);
-    const context: EmergencyContext = {
-      insurances: activeInsurances(this.state),
-      traits: this.state.traits ?? [],
-      openEmergencies: 0,
-      priceFactor: (this.profession.priceFactor ?? 1) * level.emergencyCostMultiplier,
-      deductibleCapMinor: level.insuranceDeductibleCapMinor,
-    };
+    const context = this.emergencyContext();
     this.log(`E ${draw.card.id}`);
     return { card: draw.card, context };
   }
@@ -507,10 +607,18 @@ export class DreamPlayer {
    * The choices and the dice of a card settled the cheapest way (a player who is not asked: a bot, a player who ran out of time):
    * the choice that costs least, the dice rolled. Returns what is to be paid.
    */
-  autoEmergencySelection(card: EmergencyCard, context: EmergencyContext): number | null {
+  autoEmergencySelection(
+    card: EmergencyCard,
+    context: EmergencyContext,
+    choiceId?: string,
+  ): number | null {
     let selection: EmergencySelection = { rolls: {} };
     for (let guard = 0; guard < 10; guard += 1) {
       const quote = quoteEmergency(card, selection, context);
+      if (quote.needsChoice && choiceId) {
+        selection = { ...selection, choiceId };
+        continue;
+      }
       if (quote.needsChoice) {
         // the cheapest way out
         let best: { id: string; pay: number } | null = null;
@@ -594,6 +702,21 @@ export class DreamPlayer {
     this.payDues();
   }
 
+  /** The Life card of an id. */
+  lifeCard(id: string): LifeCard | undefined {
+    return (this.gameSet.decks?.life ?? []).find((card) => card.id === id);
+  }
+
+  /** The Dream card of an id. */
+  dreamCard(id: string): DreamCard | undefined {
+    return (this.gameSet.decks?.dream ?? []).find((card) => card.id === id);
+  }
+
+  /** The Opportunity card of an id (at this player's price level). */
+  opportunityCard(id: string): OpportunityCard | undefined {
+    return this.cards.find((card) => card.id === id);
+  }
+
   /** What accepting a Life card would do: the monthly impact, what is to be paid now. */
   probeLife(card: LifeCard): { impact: number; payNow: number } {
     const cards = this.gameSet.decks?.life ?? [];
@@ -612,13 +735,20 @@ export class DreamPlayer {
 
   // ── Career ──
 
-  /** The Career tile: the die is rolled and what follows is applied (a branch takes its first path); the result is told. */
-  career(branch = 0): CareerResult | null {
+  /** The Career tile: the die is rolled; nothing is applied yet (a branch asks which way). */
+  careerRoll(): CareerResult | null {
     const track = this.profession.career;
     const career = this.state.career;
     if (!track || !career) return null;
     const result = rollCareer(career, track, this.rng);
     this.log(`C ${result.kind}`);
+    return result;
+  }
+
+  /** What a Career result brings, applied (a branch takes the path asked for). */
+  careerApply(result: CareerResult, branch = 0): void {
+    const track = this.profession.career;
+    if (!track) return;
     const books = { state: this.state, subscriptions: this.books.subscriptions };
     if (result.kind === 'promoted' || result.kind === 'branch') {
       const stage = findStage(
@@ -634,6 +764,12 @@ export class DreamPlayer {
     } else if (result.kind === 'failed' && result.retakeMinor) {
       this.spend(result.retakeMinor, '@Exam');
     }
+  }
+
+  /** The Career tile at once: the die is rolled and what follows is applied (a branch takes its first path). */
+  career(branch = 0): CareerResult | null {
+    const result = this.careerRoll();
+    if (result) this.careerApply(result, branch);
     return result;
   }
 
@@ -840,10 +976,84 @@ export class DreamPlayer {
   playHarvest(): { card: HarvestCard; pending: Pending } {
     const draw = drawHarvestCard(this.harvestCards, this.state.harvestDeck, this.rng);
     this.setState({ ...this.state, harvestDeck: draw.deck });
-    this.log(`H ${draw.card.id}`);
-    const played = playHarvestCard(this.books, draw.card, this.harvestContext());
+    return { card: draw.card, pending: this.applyHarvest(draw.card) };
+  }
+
+  /** A Harvest card that was drawn (by this player, or by another at a table) played on this player's books. */
+  applyHarvest(card: HarvestCard): Pending {
+    this.log(`H ${card.id}`);
+    const played = playHarvestCard(this.books, card, this.harvestContext());
     this.apply(played.effects);
     this.payDues();
-    return { card: draw.card, pending: played.pending };
+    return played.pending;
+  }
+
+  /** The holdings that may be sold now into a Harvest card's window (the titles). */
+  harvestSellable(pending: Pending): string[] {
+    const titles: string[] = [];
+    for (const holding of this.state.holdings ?? []) {
+      if (holding.ended || !holding.marketTag) continue;
+      const open =
+        pending.window === 'ALL' ||
+        (Array.isArray(pending.window) && pending.window.includes(holding.marketTag));
+      if (!open) continue;
+      const card = this.cards.find((candidate) => candidate.id === holding.cardId);
+      if (!card || (!card.share && holding.assetBaseMinor === undefined)) continue;
+      titles.push(holding.title);
+    }
+    return titles;
+  }
+
+  /** A holding sold at today's price of its market. */
+  sellAtMarket(title: string): boolean {
+    const holding = (this.state.holdings ?? []).find((h) => h.title === title && !h.ended);
+    const card = holding ? this.cards.find((c) => c.id === holding.cardId) : undefined;
+    if (!holding || !card) return false;
+    const gross = card.share
+      ? unitPriceNow(card, holding, this.state) * (holding.units ?? 0)
+      : valueOf(card, holding, this.state);
+    this.apply(
+      sellHolding(
+        this.books,
+        title,
+        { grossMinor: gross, costsMinor: 0, owedMinor: 0 },
+        this.harvestContext(),
+      ),
+    );
+    return true;
+  }
+
+  /** A buyer's offer accepted. */
+  acceptSale(sale: {
+    holding: string;
+    grossMinor: number;
+    costsMinor: number;
+    owedMinor: number;
+  }): boolean {
+    const live = (this.state.holdings ?? []).some((h) => h.title === sale.holding && !h.ended);
+    if (!live) return false;
+    this.apply(sellHolding(this.books, sale.holding, sale, this.harvestContext()));
+    this.payDues();
+    return true;
+  }
+
+  /** One more step up the hype ladder (the offer after the roll). */
+  rideLadderOffer(offer: HarvestLadderOffer): HarvestLadderOffer {
+    return rideLadder(offer, this.rng).offer;
+  }
+
+  /** The hype cashed out at what the ladder is worth now. */
+  cashLadderOffer(offer: HarvestLadderOffer): boolean {
+    const live = (this.state.holdings ?? []).some((h) => h.title === offer.holding && !h.ended);
+    if (!live) return false;
+    this.apply(
+      sellHolding(
+        this.books,
+        offer.holding,
+        { grossMinor: ladderPayout(offer), costsMinor: 0, owedMinor: 0 },
+        this.harvestContext(),
+      ),
+    );
+    return true;
   }
 }
