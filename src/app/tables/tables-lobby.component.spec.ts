@@ -58,6 +58,41 @@ describe('TablesLobbyComponent', () => {
     fixture.detectChanges();
   };
 
+  it('shows the Dreamfund tables when the game is switched, with their difficulty and map', () => {
+    answer([], []);
+    fixture.componentInstance.setGame('dreamfund');
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=open&kind=dreamfund'))
+      .flush({
+        items: [
+          row({
+            id: 'd1',
+            name: 'Dream one',
+            kind: 'dreamfund',
+            difficulty: 'hard',
+            shape: 'ring',
+            endCondition: 'first-win',
+          }),
+        ],
+      });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/rooms?scope=mine&kind=dreamfund'))
+      .flush({ items: [] });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/me'))
+      .flush({
+        playerId: 'me',
+        name: 'Me',
+        visible: false,
+        ratings: { easy: {}, medium: { rating: 1511, provisional: true }, hard: {} },
+        recent: [],
+      });
+    fixture.detectChanges();
+    expect(element.textContent).toContain('Dream one');
+    expect(element.textContent).toContain('Hard · ring');
+    expect(localStorage.getItem('mm.tables.game')).toBe('dreamfund');
+  });
+
   it('lists open tables as cards, and the ones you are in apart from them', () => {
     answer(
       [row({ id: 'a', name: 'Open one' }), row({ id: 'b', name: 'Mine', joined: true })],

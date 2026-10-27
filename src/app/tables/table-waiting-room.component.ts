@@ -11,6 +11,7 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { map } from 'rxjs';
 import type { PlayerView, TableView } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { TableSessionService } from './table-session.service';
@@ -29,6 +30,18 @@ import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
 import { tablesTexts, type TablesTexts } from './tables.texts';
 import { addTableTexts, type AddTableTexts } from './add-table.texts';
 import { hallTexts, type HallTexts } from './hall.texts';
+import { DreamApiService } from '../dreamfund-tables/dream-session.service';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
+
+/** What the waiting room needs of a table's session: the classic table's and the Dreamfund table's have the same lobby calls. */
+export interface WaitingSession {
+  busy(): boolean;
+  problem(): string | null;
+  lobby(
+    path: 'leave' | 'ready' | 'kick' | 'settings' | 'start' | 'profession' | 'bots',
+    body?: Record<string, unknown>,
+  ): Promise<boolean>;
+}
 
 const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
 
@@ -66,6 +79,11 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             table.settings.visibility === 'public' ? a.public : '🔒 ' + a.private
           }}</span>
           <span class="wr-chip">{{ table.settings.maxSeats }} {{ h.seatsChip }}</span>
+          <span class="wr-chip" *ngIf="dream">{{ d[dreamSettings().difficulty] }}</span>
+          <span class="wr-chip" *ngIf="dream"
+            >{{ dreamSettings().shape }} · {{ dreamSettings().size }} ·
+            {{ dreamSettings().mode }}</span
+          >
           <span class="wr-chip">{{ professionLabel() }}</span>
           <span class="wr-chip">{{ endLabel() }}</span>
           <span class="wr-chip">{{ clockLabel() }}</span>
@@ -224,6 +242,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
     <app-add-table
       *ngIf="editing"
       [existing]="table.settings"
+      [game]="game"
       [problem]="session.problem()"
       (saved)="saveSettings($event)"
       (closed)="editing = false"
@@ -278,10 +297,10 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
               <small
                 >{{ difficultyText(bot)
                 }}<ng-container *ngIf="bot.ratings?.[botLevel] as rating">
-                  · {{ rating }}</ng-container
+                  {{ dream ? '' : '· ' }}{{ rating }}</ng-container
                 ></small
               >
-              <small class="wr-bot-desc">{{ bot.description }}</small>
+              <small class="wr-bot-desc" *ngIf="bot.description">{{ bot.description }}</small>
             </div>
             <div class="wr-bot-actions">
               <button
@@ -655,10 +674,17 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
   ],
 })
 export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
-  readonly session = inject(TableSessionService);
+  private readonly classicSession = inject(TableSessionService, { optional: true });
+  private readonly dreamApi = inject(DreamApiService);
   private readonly api = inject(TablesApiService);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  /** The session of the table: the classic room provides its own; a Dreamfund room passes its session in. */
+  @Input() sessionOverride: WaitingSession | null = null;
+  /** The game of the table: the same waiting room serves both. */
+  @Input() game: 'classic' | 'dreamfund' = 'classic';
+  /** The characters to pick from at a Dreamfund table (the classic table's come from its game set). */
+  @Input() characters: { id: string; title: string }[] = [];
   @Input({ required: true }) table!: TableView;
   @Input({ required: true }) roomId!: string;
   @Input() inviteCode: string | null = null;
@@ -667,6 +693,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   @Input() presentSeats: number[] = [];
   @Output() leaveRequested = new EventEmitter<void>();
 
+  d: DreamTexts = dreamTexts('en');
   t: TableRoomTexts = tableRoomTexts('en');
   tt: TablesTexts = tablesTexts('en');
   a: AddTableTexts = addTableTexts('en');
@@ -690,6 +717,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['lang']) {
       this.t = tableRoomTexts(this.lang);
+      this.d = dreamTexts(this.lang);
       this.tt = tablesTexts(this.lang);
       this.a = addTableTexts(this.lang);
       this.h = hallTexts(this.lang);
@@ -725,6 +753,29 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     });
   }
 
+  get session(): WaitingSession {
+    return (this.sessionOverride ?? this.classicSession) as WaitingSession;
+  }
+
+  get dream(): boolean {
+    return this.game === 'dreamfund';
+  }
+
+  /** The Dreamfund's own settings of the table (a Dreamfund room passes its view in the shape of the classic one). */
+  dreamSettings(): {
+    difficulty: 'easy' | 'medium' | 'hard';
+    shape: string;
+    size: string;
+    mode: string;
+  } {
+    return this.table.settings as unknown as {
+      difficulty: 'easy' | 'medium' | 'hard';
+      shape: string;
+      size: string;
+      mode: string;
+    };
+  }
+
   get me(): PlayerView | null {
     return this.table.youSeat !== null ? (this.table.players[this.table.youSeat] ?? null) : null;
   }
@@ -738,6 +789,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   }
 
   professions(): { id: string; title: string }[] {
+    if (this.dream) return this.characters;
     const set = CASHFLOW_GAME_SETS.find((s) => s.id === this.table.settings.gameSetId);
     return (set?.professions ?? []).map((p) => ({ id: p.id, title: p.title }));
   }
@@ -756,7 +808,9 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   endLabel(): string {
     const s = this.table.settings;
     if (s.endCondition === 'round-limit') return `${this.a.endRounds}: ${s.roundLimit ?? ''}`;
-    return s.endCondition === 'first-escape' ? this.a.endFirst : this.a.endAll;
+    return s.endCondition === 'first-escape' || (s.endCondition as string) === 'first-win'
+      ? this.a.endFirst
+      : this.a.endAll;
   }
 
   clockLabel(): string {
@@ -780,6 +834,14 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     const flag = (on: boolean) => (on ? yes : no);
     const pace =
       s.pace === 'fast' ? this.a.paceFast : s.pace === 'slow' ? this.a.paceSlow : this.a.paceNormal;
+    if (this.dream) {
+      return [
+        { title: this.a.pace, value: pace },
+        { title: this.a.turnGate, value: flag(s.turnGate) },
+        { title: this.a.spectators, value: flag(s.spectators) },
+        { title: this.a.showProgress, value: flag(s.showProgress) },
+      ];
+    }
     return [
       { title: this.a.pace, value: pace },
       { title: this.a.turnGate, value: flag(s.turnGate) },
@@ -827,7 +889,8 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
         isHost: player.seat === t.hostSeat,
         online: this.presentSeats.length === 0 || this.presentSeats.includes(player.seat),
         picture: seat ? this.api.pictureUrl(seat, this.roomId) : null,
-        stats: seat ? seatToPlayer(seat) : null,
+        // the stats panel is the classic board's: a Dreamfund table shows the picture and the rating only
+        stats: seat && !this.dream ? seatToPlayer(seat) : null,
         done,
         stateText:
           t.phase === 'picking'
@@ -877,7 +940,20 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     this.botsOpen = true;
     if (this.botsRequested) return;
     this.botsRequested = true;
-    this.api.bots().subscribe({
+    const catalog = this.dream
+      ? this.dreamApi.bots(this.dreamSettings().difficulty).pipe(
+          map((r) => ({
+            items: r.items.map((bot): BotInfo => ({
+              id: bot.id,
+              name: bot.name,
+              difficulty: 'champion',
+              description: '',
+              ...(bot.ratings ? { ratings: bot.ratings } : {}),
+            })),
+          })),
+        )
+      : this.api.bots();
+    catalog.subscribe({
       next: (r) => {
         this.botCatalog = r.items;
         this.cdr.markForCheck();
@@ -934,10 +1010,15 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   }
 
   addBot(bot: BotInfo): void {
-    void this.session.lobby('bots', { policyId: bot.id, level: this.botLevel });
+    // a Dreamfund bot is a strategy of the simulation, told apart from the classic ones by its prefix
+    void this.session.lobby('bots', {
+      policyId: this.dream ? `dream:${bot.id}` : bot.id,
+      level: this.botLevel,
+    });
   }
 
   difficultyText(bot: BotInfo): string {
+    if (this.dream) return '';
     switch (bot.difficulty) {
       case 'easy':
         return this.t.levelEasy;

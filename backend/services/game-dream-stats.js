@@ -36,7 +36,12 @@ function emptyLevel(start) {
   return { rating: start, peak: start, base: start, rated: 0, counters: emptyCounters() };
 }
 
-function createDreamStats({ db, nicknameOf = async () => '', now = () => new Date() }) {
+function createDreamStats({
+  db,
+  nicknameOf = async () => '',
+  pictureOf = async () => null,
+  now = () => new Date(),
+}) {
   let queue = Promise.resolve();
   /** One recording at a time: the profiles it touches are read, changed and written back. */
   const serial = (fn) => {
@@ -271,8 +276,32 @@ function createDreamStats({ db, nicknameOf = async () => '', now = () => new Dat
           String(a.playerId).localeCompare(String(b.playerId)),
       )
       .slice(skip, skip + limit)
-      .map((p, index) => ({ place: skip + index + 1, ...present(p, level) }));
-    return rows;
+      .map((p, index) => ({ place: skip + index + 1, p }));
+    // a person's picture is the account's, kept with the classic profile: the row says where to fetch it
+    return Promise.all(
+      rows.map(async ({ place, p }) => ({
+        place,
+        ...present(p, level),
+        ...(await pictureRef(p)),
+      })),
+    );
+  }
+
+  async function pictureRef(profile) {
+    if (profile.type !== 'human' || !profile.accountId) return {};
+    const ref = await pictureOf(profile.accountId);
+    return ref ? { pictureId: ref.playerId, pictureVersion: ref.pictureVersion } : {};
+  }
+
+  async function pictureRefOfAccount(accountId) {
+    const ref = await pictureOf(accountId);
+    return ref ? { playerId: ref.playerId, pictureVersion: ref.pictureVersion } : {};
+  }
+
+  /** Whether a person is on the Dreamfund board (the picture of such a person may be seen by everybody). */
+  async function isListed(accountId) {
+    const profile = await store.findHumanProfile(db, accountId);
+    return !!profile && profile.visible === true;
   }
 
   /** A player with every difficulty and the last results. */
@@ -317,6 +346,7 @@ function createDreamStats({ db, nicknameOf = async () => '', now = () => new Dat
     const profile = await ensureHumanProfile(accountId, fallbackName);
     return {
       ...(await playerOf(profile)),
+      ...(await pictureRef(profile)),
       visible: profile.visible === true,
     };
   }
@@ -348,22 +378,99 @@ function createDreamStats({ db, nicknameOf = async () => '', now = () => new Dat
     return me(accountId);
   }
 
+  /**
+   * A bot's rating is its base (where the tournaments put it) plus what its games made of it. When the tournaments say a new base,
+   * the bot moves with it and keeps what it earned since: returns how many levels moved.
+   */
+  async function reconcileBase(botId) {
+    const profile = await store.getProfile(db, botPlayerId(botId));
+    if (!profile) return 0;
+    const wanted = Object.fromEntries(
+      LEVELS.map((level) => [level, rating.botStartRating(botId, level)]),
+    );
+    if (LEVELS.every((level) => Math.round(profile.ratings[level].base) === wanted[level]))
+      return 0;
+    let moved = 0;
+    await mutate(profile.playerId, (p) => {
+      for (const level of LEVELS) {
+        const l = p.ratings[level];
+        const shift = wanted[level] - l.base;
+        if (Math.abs(shift) < 0.5) continue;
+        l.rating += shift;
+        l.peak += shift;
+        l.base = wanted[level];
+        moved += 1;
+      }
+    });
+    return moved;
+  }
+
   /** Makes the profile of every bot (each strategy at each skill level) that is missing: the board knows them before they have played. */
   async function seedBots() {
     let made = 0;
+    let moved = 0;
     for (const policy of DREAM_POLICIES) {
       for (const level of ['master', 'strong', 'casual', 'beginner']) {
         const botId = level === 'master' ? policy.id : `${policy.id}--${level}`;
         if (!(await store.getProfile(db, botPlayerId(botId)))) {
           await ensureBotProfile(botId);
           made += 1;
+        } else {
+          moved += await reconcileBase(botId);
         }
       }
     }
-    return { made };
+    return { made, moved };
+  }
+
+  /**
+   * Who sits at a Dreamfund table, for the lobby (the same shape as the classic board's `seatsOf`): the rating of each seat at the
+   * table's difficulty. A person who has not played yet shows the starting rating; no pictures, no stats panel for now.
+   */
+  async function seatsOf(table) {
+    const difficulty = table.settings && table.settings.difficulty;
+    const level = LEVELS.includes(difficulty) ? difficulty : 'medium';
+    const out = [];
+    for (const [seat, player] of table.players.entries()) {
+      const profile = player.bot
+        ? await ensureBotProfile(player.bot.policyId)
+        : await store.findHumanProfile(db, player.id);
+      const own = profile && profile.ratings[level];
+      const rated = own ? own.rated : 0;
+      const picture = player.bot ? {} : await pictureRefOfAccount(player.id);
+      const parts = player.bot && splitDreamBotId(player.bot.policyId);
+      out.push({
+        seat,
+        name: player.name,
+        color: player.color,
+        bot: !!player.bot,
+        listed: !!profile && (profile.type === 'bot' || profile.visible === true),
+        rating: own ? Math.round(own.rating) : rating.DREAM_START_RATING,
+        ratedGames: rated,
+        provisional: rated < rating.PROVISIONAL_GAMES,
+        ...picture,
+        ...(parts && parts.level !== 'master' ? { level: parts.level } : {}),
+      });
+    }
+    return out;
+  }
+
+  /** What each bot (an id with its skill level) is rated now at a difficulty: its profile's rating, or its starting rating. */
+  async function botRatings(botIds, level) {
+    const out = {};
+    for (const botId of botIds) {
+      const profile = await store.getProfile(db, botPlayerId(botId));
+      out[botId] = profile
+        ? Math.round(profile.ratings[level].rating)
+        : rating.botStartRating(botId, level);
+    }
+    return out;
   }
 
   return {
+    isListed,
+    botRatings,
+    seatsOf,
     record,
     board,
     player,

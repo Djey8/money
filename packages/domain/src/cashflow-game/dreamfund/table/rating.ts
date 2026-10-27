@@ -34,6 +34,9 @@ export const LEVEL_OFFSET: Record<DreamBotLevel, number> = {
   beginner: -260,
 };
 
+/** How far above the starting rating the best bot sits (the tournaments' result; used when no tournament has rated a bot). */
+const BEST_BOT_ABOVE_START = 180;
+
 const clampRate = (rate: number) => Math.min(0.98, Math.max(0.01, rate));
 const odds = (rate: number) => clampRate(rate) / (1 - clampRate(rate));
 const elo = (ratio: number) => 400 * Math.log10(ratio);
@@ -61,7 +64,8 @@ export function characterStrength(character: string | null, level: DreamfundLeve
 }
 
 /**
- * Where a bot starts at a level (JFK: "the bots have their own starting Elo"): the master of the best strategy of the map is 1500; the
+ * Where a bot starts at a level (JFK: "the bots have their own starting Elo"): the master of the best strategy of the map is about 1680 (the bots
+ * average 1500, where a person starts, so a person plays their way up to the best); the
  * others are below it by what their win rate says (the average over the characters), and a lower skill level by its offset.
  */
 export function botStartRating(botId: string, level: DreamfundLevel): number {
@@ -84,7 +88,7 @@ export function botStartRating(botId: string, level: DreamfundLevel): number {
   const strategy = own > 0 ? elo(odds(own) / odds(best)) : -400;
   return Math.max(
     DREAM_RATING_FLOOR,
-    Math.round(DREAM_START_RATING + strategy + LEVEL_OFFSET[parts.level]),
+    Math.round(DREAM_START_RATING + BEST_BOT_ABOVE_START + strategy + LEVEL_OFFSET[parts.level]),
   );
 }
 

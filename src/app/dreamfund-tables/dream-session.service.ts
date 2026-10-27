@@ -190,8 +190,12 @@ export interface DreamTableSummary {
 export interface DreamBoardRow {
   place?: number;
   playerId: string;
+  /** Where the picture of a person is kept (the account's picture), when they have one. */
+  pictureId?: string;
+  pictureVersion?: number;
   name: string;
   type: 'human' | 'bot';
+  level?: 'master' | 'strong' | 'casual' | 'beginner';
   difficulty: 'easy' | 'medium' | 'hard';
   rating: number;
   peakRating: number;
@@ -207,6 +211,8 @@ export interface DreamBoardRow {
 
 export interface DreamMyPlayer {
   playerId: string;
+  pictureId?: string;
+  pictureVersion?: number;
   name: string;
   visible: boolean;
   ratings: Record<'easy' | 'medium' | 'hard', DreamBoardRow>;
@@ -222,7 +228,12 @@ export interface DreamMyPlayer {
 }
 
 export interface DreamBotCatalog {
-  items: { id: string; name: string }[];
+  items: {
+    id: string;
+    name: string;
+    /** What the bot is rated at the table's difficulty, at each skill level. */
+    ratings?: Partial<Record<'master' | 'strong' | 'casual' | 'beginner', number>>;
+  }[];
   levels: { id: 'master' | 'strong' | 'casual' | 'beginner'; mistakes: number }[];
 }
 
@@ -248,8 +259,10 @@ export class DreamApiService {
     );
   }
 
-  bots(): Observable<DreamBotCatalog> {
-    return this.http.get<DreamBotCatalog>(`${this.base}/bots?kind=dreamfund`);
+  bots(difficulty: 'easy' | 'medium' | 'hard' = 'medium'): Observable<DreamBotCatalog> {
+    return this.http.get<DreamBotCatalog>(
+      `${this.base}/bots?kind=dreamfund&difficulty=${difficulty}`,
+    );
   }
 
   create(input: DreamCreateInput): Observable<{ id: string; inviteCode?: string }> {

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import type { TableView } from '@money/domain';
 import { TablesApiService, type CreateTableInput } from './tables-api.service';
 import { ProfileComponent } from '../panels/profile/profile.component';
@@ -17,6 +17,8 @@ import { tablesTexts, type TablesTexts } from './tables.texts';
 import { addTableTexts, type AddTableTexts } from './add-table.texts';
 import { hallTexts, type HallTexts } from './hall.texts';
 import { WheelPickerComponent } from './wheel-picker.component';
+import { BoardThumbComponent } from '../main/cashflow-game/board-thumb.component';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 import {
   APP_LANGUAGES,
   GAME_LANGUAGES,
@@ -39,7 +41,7 @@ function accountName(): string {
 @Component({
   selector: 'app-add-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, WheelPickerComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, WheelPickerComponent, BoardThumbComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
@@ -62,6 +64,32 @@ function accountName(): string {
           <!-- the table -->
           <section class="at-group">
             <h3>{{ a.groupTable }}</h3>
+            <div class="at-row at-row--stack" *ngIf="!existing">
+              <div class="at-label">
+                <strong>{{ d.gameChoice }}</strong>
+                <small>{{ dream ? d.gameDreamHint : d.gameClassicHint }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="d.gameChoice">
+                <button
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="!dream"
+                  [attr.aria-checked]="!dream"
+                  (click)="game = 'classic'"
+                >
+                  {{ d.gameClassic }}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="dream"
+                  [attr.aria-checked]="dream"
+                  (click)="game = 'dreamfund'"
+                >
+                  {{ d.gameDream }}
+                </button>
+              </div>
+            </div>
             <div class="at-row">
               <div class="at-label">
                 <strong>{{ a.name }}</strong>
@@ -160,6 +188,84 @@ function accountName(): string {
           <!-- the game -->
           <section class="at-group">
             <h3>{{ a.groupGame }}</h3>
+            <ng-container *ngIf="dream">
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.difficulty }}</strong>
+                  <small>{{ difficultyHint() }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.difficulty">
+                  <button
+                    *ngFor="let level of levels"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.difficulty === level"
+                    [attr.aria-checked]="form.difficulty === level"
+                    (click)="form.difficulty = level"
+                  >
+                    {{ d[level] }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.map }}</strong>
+                </div>
+                <div class="at-maps">
+                  <button
+                    *ngFor="let shape of shapes"
+                    type="button"
+                    class="at-map"
+                    [class.at-map--on]="form.shape === shape"
+                    (click)="form.shape = shape"
+                  >
+                    <app-board-thumb
+                      [shape]="shape"
+                      [size]="form.size"
+                      [seed]="7"
+                    ></app-board-thumb>
+                    <span>{{ 'CashflowGame.board.shape.' + shape | translate }}</span>
+                  </button>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.map">
+                  <button
+                    *ngFor="let size of sizes"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.size === size"
+                    [attr.aria-checked]="form.size === size"
+                    (click)="form.size = size"
+                  >
+                    {{ 'CashflowGame.board.size.' + size | translate }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.mode }}</strong>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.mode">
+                  <button
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.mode === 'guided'"
+                    [attr.aria-checked]="form.mode === 'guided'"
+                    (click)="form.mode = 'guided'"
+                  >
+                    {{ d.guided }}
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.mode === 'strict'"
+                    [attr.aria-checked]="form.mode === 'strict'"
+                    (click)="form.mode = 'strict'"
+                  >
+                    {{ d.strict }}
+                  </button>
+                </div>
+              </div>
+            </ng-container>
             <div class="at-row">
               <div class="at-label">
                 <strong>{{ a.ranked }}</strong>
@@ -326,7 +432,7 @@ function accountName(): string {
                 <span class="at-switch-track"></span>
               </label>
             </div>
-            <div class="at-row" *ngIf="form.ranked">
+            <div class="at-row" *ngIf="form.ranked && !dream">
               <div class="at-label">
                 <strong>{{ a.leaveFree }}</strong>
                 <small>{{ a.leaveFreeHint }}</small>
@@ -341,7 +447,7 @@ function accountName(): string {
                 [ownLabel]="a.ownNumber"
               ></app-wheel-picker>
             </div>
-            <div class="at-row">
+            <div class="at-row" *ngIf="!dream">
               <div class="at-label">
                 <strong>{{ a.offerRolls }}</strong>
                 <small>{{ a.offerRollsHint }}</small>
@@ -413,6 +519,36 @@ function accountName(): string {
         margin: 0 0 8px;
         font-size: 0.85rem;
         opacity: 0.75;
+      }
+      /* the maps, as in the solo setup: a grid of small boards, the chosen one framed */
+      .at-maps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .at-map {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 8px 6px;
+        border: 2px solid var(--color-border, #d9dde3);
+        border-radius: var(--radius-md, 10px);
+        background: var(--color-surface, #fff);
+        color: inherit;
+        font: inherit;
+        font-size: 0.82rem;
+        cursor: pointer;
+      }
+      .at-map app-board-thumb {
+        width: 100%;
+        max-width: 5.5rem;
+      }
+      .at-map--on {
+        border-color: var(--color-primary, #2a7de1);
+        font-weight: 700;
       }
       .at-form {
         display: flex;
@@ -615,6 +751,22 @@ export class AddTableComponent implements OnInit {
   /** Why the table refused the changed settings (shown in the panel, which stays open). */
   @Input() problem: string | null = null;
 
+  /** The game the table is for: the classic Cashflow, or the Dreamfund of this app (the same panel, a few settings more). */
+  @Input() game: 'classic' | 'dreamfund' = 'classic';
+  readonly levels = ['easy', 'medium', 'hard'] as const;
+  readonly shapes = ['ring', 'infinity', 'rectangle', 'square', 'mountain'] as const;
+  readonly sizes = ['small', 'medium', 'large'] as const;
+  d: DreamTexts = dreamTexts('en');
+  get dream(): boolean {
+    return this.game === 'dreamfund';
+  }
+  difficultyHint(): string {
+    return this.d[`${this.form.difficulty}Hint` as 'easyHint'];
+  }
+  sizeText(size: string): string {
+    return size === 'small' ? this.d.small : size === 'large' ? this.d.large : this.d.mediumSize;
+  }
+
   t: TablesTexts = tablesTexts('en');
   a: AddTableTexts = addTableTexts('en');
   h: HallTexts = hallTexts('en');
@@ -655,6 +807,10 @@ export class AddTableComponent implements OnInit {
     language: 'en',
     offerRolls: 3,
     pace: 'normal' as 'fast' | 'normal' | 'slow',
+    difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+    shape: 'ring' as 'ring' | 'infinity' | 'rectangle' | 'square' | 'mountain',
+    size: 'medium' as 'small' | 'medium' | 'large',
+    mode: 'guided' as 'guided' | 'strict',
   };
 
   constructor(
@@ -673,6 +829,7 @@ export class AddTableComponent implements OnInit {
     this.t = tablesTexts(lang);
     this.a = addTableTexts(lang);
     this.h = hallTexts(lang);
+    this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
     if (this.existing) this.fillFrom(this.existing);
     const own = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
@@ -749,10 +906,10 @@ export class AddTableComponent implements OnInit {
     ];
   }
 
-  /** The on/off rules, each with what it does in one line. */
+  /** The on/off rules, each with what it does in one line (a Dreamfund table has no undo vote or off-turn repaying yet). */
   switches() {
     const f = this.form;
-    return [
+    const all = [
       {
         key: 'turnGate' as const,
         on: f.turnGate,
@@ -784,6 +941,9 @@ export class AddTableComponent implements OnInit {
         hint: this.a.repayOffTurnHint,
       },
     ];
+    return this.dream
+      ? all.filter((rule) => rule.key !== 'allowUndo' && rule.key !== 'repayOffTurn')
+      : all;
   }
   toggle(key: 'turnGate' | 'spectators' | 'showProgress' | 'allowUndo' | 'repayOffTurn'): void {
     this.form[key] = !this.form[key];
@@ -795,6 +955,7 @@ export class AddTableComponent implements OnInit {
     void this.languageService.use(code as AppLanguage['code']).then(() => {
       this.t = tablesTexts(code);
       this.a = addTableTexts(code);
+      this.d = dreamTexts(code);
       this.suggestion = this.a.suggestions[this.suggestionIndex % this.a.suggestions.length];
       this.rtl = code === 'ar';
       this.cdr.markForCheck();
@@ -810,6 +971,26 @@ export class AddTableComponent implements OnInit {
         : f.clock === 'bank'
           ? { mode: 'bank', bankSeconds: f.bankSeconds, incrementSeconds: 0 }
           : { mode: 'none' };
+    if (this.dream) {
+      return {
+        name: (f.name.trim() || this.suggestion).slice(0, 40),
+        visibility: f.visibility,
+        maxSeats: f.maxSeats,
+        professions: f.professions,
+        clock,
+        endCondition: f.endCondition === 'first-escape' ? 'first-win' : f.endCondition,
+        ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
+        spectators: f.spectators,
+        turnGate: f.turnGate,
+        pace: f.pace,
+        showProgress: f.showProgress,
+        ranked: f.ranked,
+        difficulty: f.difficulty,
+        shape: f.shape,
+        size: f.size,
+        mode: f.mode,
+      };
+    }
     return {
       name: (f.name.trim() || this.suggestion).slice(0, 40),
       visibility: f.visibility,
@@ -837,7 +1018,8 @@ export class AddTableComponent implements OnInit {
     f.maxSeats = current.maxSeats;
     f.visibility = current.visibility;
     f.professions = current.professions;
-    f.endCondition = current.endCondition;
+    f.endCondition =
+      (current.endCondition as string) === 'first-win' ? 'first-escape' : current.endCondition;
     if (current.roundLimit) f.roundLimit = current.roundLimit;
     f.spectators = current.spectators;
     f.allowUndo = current.allowRewind;
@@ -847,6 +1029,11 @@ export class AddTableComponent implements OnInit {
     f.showProgress = current.showProgress;
     f.ranked = current.ranked;
     f.pace = current.pace;
+    const dreamSettings = current as unknown as Partial<typeof this.form>;
+    if (dreamSettings.difficulty) f.difficulty = dreamSettings.difficulty;
+    if (dreamSettings.shape) f.shape = dreamSettings.shape;
+    if (dreamSettings.size) f.size = dreamSettings.size;
+    if (dreamSettings.mode) f.mode = dreamSettings.mode;
     f.offerRolls = current.rules.sellOfferRolls;
     if (current.clock.mode === 'per-move') {
       f.clock = 'per-move';
@@ -864,6 +1051,7 @@ export class AddTableComponent implements OnInit {
     }
     const letters = saveInitials(this.initials);
     const input: CreateTableInput = {
+      ...(this.dream ? { kind: 'dreamfund' as const } : {}),
       nickname: this.nickname.trim(),
       ...(letters ? { initials: letters } : {}),
       language: this.form.language,

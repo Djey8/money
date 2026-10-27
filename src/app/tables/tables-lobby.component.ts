@@ -35,6 +35,9 @@ import {
 import { ConfirmService } from '../shared/services/confirm.service';
 import { problemText } from './problem.texts';
 import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
+import { DreamApiService } from '../dreamfund-tables/dream-session.service';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
+import { keepGame, savedGame, type TableGame } from './table-game';
 
 /** The account's own name: the one name at every table (the server uses the account's nickname whatever is sent). */
 function accountName(): string {
@@ -123,15 +126,44 @@ function savedFilters(): TableFilters {
         +
       </button>
     </div>
-    <app-add-table *ngIf="showAdd" (created)="onCreated($event)" (closed)="showAdd = false" />
+    <app-add-table
+      *ngIf="showAdd"
+      [game]="game"
+      (created)="onCreated($event)"
+      (closed)="showAdd = false"
+    />
     <div class="tl-page" [attr.dir]="rtl ? 'rtl' : 'ltr'">
       <!-- where else to go: the same three places, always in the same row -->
+      <div class="tl-games" role="radiogroup" [attr.aria-label]="d.gameChoice">
+        <button
+          type="button"
+          role="radio"
+          [class.tl-games--on]="game === 'classic'"
+          [attr.aria-checked]="game === 'classic'"
+          (click)="setGame('classic')"
+        >
+          {{ d.gameClassic }}
+        </button>
+        <button
+          type="button"
+          role="radio"
+          [class.tl-games--on]="game === 'dreamfund'"
+          [attr.aria-checked]="game === 'dreamfund'"
+          (click)="setGame('dreamfund')"
+        >
+          {{ d.gameDream }}
+        </button>
+      </div>
       <nav class="tl-nav" aria-label="Multiplayer">
         <a class="tl-nav-item" routerLink="/leaderboard">🏆 {{ lb.title }}</a>
         <button class="tl-nav-item" type="button" (click)="openMyGames()">
           📒 {{ 'CashflowGame.myGames' | translate }}
         </button>
-        <a class="tl-nav-item" routerLink="/docs/cashflow">ⓘ {{ t.howItWorks }}</a>
+        <a
+          class="tl-nav-item"
+          [routerLink]="game === 'dreamfund' ? '/docs/dreamfund' : '/docs/cashflow'"
+          >ⓘ {{ t.howItWorks }}</a
+        >
       </nav>
 
       <!-- who you are at a table -->
@@ -327,6 +359,9 @@ function savedFilters(): TableFilters {
           }}</span>
           <span class="tl-chip" *ngIf="table.visibility === 'private'">🔒 {{ t.privateTag }}</span>
           <span class="tl-chip">{{ clockText(table) }}</span>
+          <span class="tl-chip" *ngIf="table.kind === 'dreamfund' && table.difficulty"
+            >{{ d[table.difficulty] }} · {{ table.shape }}</span
+          >
           <span class="tl-chip">{{ professionText(table) }}</span>
           <span class="tl-chip">{{ endText(table) }}</span>
         </div>
@@ -338,9 +373,9 @@ function savedFilters(): TableFilters {
             <button
               type="button"
               class="tl-seat"
-              [disabled]="!statsOf(seat)"
+              [disabled]="!statsOf(seat, table)"
               [title]="seat.name + ' · ' + seat.rating"
-              (click)="selected = statsOf(seat)"
+              (click)="selected = statsOf(seat, table)"
             >
               <app-seat-avatar
                 [name]="seat.name"
@@ -408,6 +443,29 @@ function savedFilters(): TableFilters {
         gap: 14px;
       }
       /* the places to go: three equal buttons in one row */
+      .tl-games {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid var(--color-border, #d9dde3);
+        border-radius: 12px;
+        background: var(--color-surface, #fff);
+      }
+      .tl-games button {
+        min-height: 2.4rem;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .tl-games--on {
+        background: var(--color-primary, #2a7de1) !important;
+        color: #fff !important;
+      }
       .tl-nav {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -744,6 +802,9 @@ export class TablesLobbyComponent implements OnInit {
   a: AddTableTexts = addTableTexts('en');
   h: HallTexts = hallTexts('en');
   lb: LeaderboardTexts = leaderboardTexts('en');
+  d: DreamTexts = dreamTexts('en');
+  /** The game the lobby shows: the classic tables, or the Dreamfund ones (kept on this device). */
+  game: TableGame = savedGame();
   rtl = false;
   loading = true;
   busy = false;
@@ -765,6 +826,7 @@ export class TablesLobbyComponent implements OnInit {
   /** The letters on my token: kept on this device, sent with every join; empty is the default (the name's first two letters). */
   initials = savedInitials();
   private route = inject(ActivatedRoute, { optional: true });
+  private dreamApi = inject(DreamApiService);
 
   constructor(
     private api: TablesApiService,
@@ -818,6 +880,7 @@ export class TablesLobbyComponent implements OnInit {
     this.a = addTableTexts(lang);
     this.h = hallTexts(lang);
     this.lb = leaderboardTexts(lang);
+    this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
   }
 
@@ -837,7 +900,8 @@ export class TablesLobbyComponent implements OnInit {
         (f.game === 'any' || (f.game === 'ranked') === !!table.ranked) &&
         (f.clock === 'any' || (f.clock === 'timed') === (table.clock.mode !== 'none')) &&
         (f.professions === 'any' || table.professions === f.professions) &&
-        (f.end === 'any' || table.endCondition === f.end),
+        (f.end === 'any' ||
+          (table.endCondition === 'first-win' ? 'first-escape' : table.endCondition) === f.end),
     );
   }
 
@@ -947,7 +1011,7 @@ export class TablesLobbyComponent implements OnInit {
   }
 
   endText(table: TableSummary): string {
-    return table.endCondition === 'first-escape'
+    return table.endCondition === 'first-escape' || table.endCondition === 'first-win'
       ? this.a.endFirst
       : table.endCondition === 'all-done'
         ? this.a.endAll
@@ -977,8 +1041,9 @@ export class TablesLobbyComponent implements OnInit {
     return Array.from({ length: Math.min(12, Math.max(0, table.maxSeats - taken)) }, (_, i) => i);
   }
 
-  statsOf(seat: TableSeat): GamePlayer | null {
-    return seatToPlayer(seat);
+  statsOf(seat: TableSeat, table: TableSummary): GamePlayer | null {
+    // the stats panel is the classic board's: a Dreamfund table shows the picture and the rating only
+    return table.kind === 'dreamfund' ? null : seatToPlayer(seat);
   }
 
   pictureOf(seat: TableSeat, table: TableSummary): string | null {
@@ -1019,6 +1084,17 @@ export class TablesLobbyComponent implements OnInit {
     CashflowGameComponent.openGamesList();
   }
 
+  /** The other game: its tables, its rating. */
+  setGame(game: TableGame): void {
+    if (game === this.game) return;
+    this.game = game;
+    keepGame(game);
+    this.open = [];
+    this.mine = [];
+    this.me = null;
+    this.reload();
+  }
+
   reload(): void {
     this.loading = true;
     this.error = null;
@@ -1030,7 +1106,7 @@ export class TablesLobbyComponent implements OnInit {
         this.cdr.markForCheck();
       }
     };
-    this.api.list('open').subscribe({
+    this.api.list('open', this.game).subscribe({
       next: (r) => {
         // the newest table first
         this.open = r.items
@@ -1043,7 +1119,7 @@ export class TablesLobbyComponent implements OnInit {
         done();
       },
     });
-    this.api.list('mine').subscribe({
+    this.api.list('mine', this.game).subscribe({
       next: (r) => {
         this.mine = r.items;
         done();
@@ -1054,6 +1130,23 @@ export class TablesLobbyComponent implements OnInit {
       },
     });
     // my rating and picture: nice to show, never in the way
+    if (this.game === 'dreamfund') {
+      // the Dreamfund has a rating for each difficulty: the lobby shows the middle one
+      this.dreamApi.me().subscribe({
+        next: (me) => {
+          this.me = {
+            playerId: me.pictureId ?? me.playerId,
+            ...(me.pictureVersion ? { pictureVersion: me.pictureVersion } : {}),
+            name: me.name,
+            rating: me.ratings.medium.rating,
+            provisional: me.ratings.medium.provisional,
+          } as GamePlayer;
+          this.cdr.markForCheck();
+        },
+        error: () => undefined,
+      });
+      return;
+    }
     this.api.me().subscribe({
       next: (me) => {
         this.me = me;

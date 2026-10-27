@@ -33,6 +33,7 @@ describe('TablesLeaderboardComponent', () => {
   let element: HTMLElement;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TablesLeaderboardComponent, TranslateModule.forRoot()],
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -53,6 +54,62 @@ describe('TablesLeaderboardComponent', () => {
       .flush(profile);
     fixture.detectChanges();
   };
+
+  it('shows the Dreamfund board, one rating per difficulty, in the same list', () => {
+    board([]);
+    me(player({ playerId: 'me', type: 'human' }));
+    fixture.componentInstance.setGame('dreamfund');
+    http
+      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?difficulty=medium&type=all'))
+      .flush({
+        items: [
+          {
+            place: 1,
+            playerId: 'b1',
+            name: 'Informed investor',
+            type: 'bot',
+            difficulty: 'medium',
+            rating: 1500,
+            peakRating: 1510,
+            ratedGames: 9,
+            provisional: false,
+            games: 9,
+            wins: 5,
+            won: 3,
+            bankruptcies: 0,
+            avgPlace: 1.7,
+            avgGoals: 2,
+          },
+        ],
+        next: null,
+      });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/me'))
+      .flush({
+        playerId: 'me',
+        name: 'Me',
+        visible: false,
+        ratings: { easy: {}, medium: { rating: 1490, provisional: true }, hard: {} },
+        recent: [],
+      });
+    fixture.detectChanges();
+    expect(element.textContent).toContain('Informed investor');
+    expect(element.textContent).toContain('1490');
+    fixture.componentInstance.chooseDifficulty('hard');
+    http
+      .expectOne((r) => r.url.includes('difficulty=hard&type=all'))
+      .flush({ items: [], next: null });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/me'))
+      .flush({
+        playerId: 'me',
+        name: 'Me',
+        visible: false,
+        ratings: { easy: {}, medium: {}, hard: { rating: 1400, provisional: true } },
+        recent: [],
+      });
+    expect(localStorage.getItem('mm.tables.game')).toBe('dreamfund');
+  });
 
   it('lists the players by rating, in columns, with the bots marked and the level named', () => {
     me(player({ playerId: 'me', name: 'Anna', type: 'human', visible: false, rating: 1512 }));

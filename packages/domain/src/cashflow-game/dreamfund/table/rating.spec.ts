@@ -27,10 +27,11 @@ describe('the rating of the Dreamfund board', () => {
     expect(characterStrength('nobody', 'medium')).toBe(0);
   });
 
-  it('starts a bot where the map says: the best master at 1500, a lower strategy or level below', () => {
+  it('starts a bot where the tournaments put it: the bots average where a person starts, the best sit well above', () => {
     const best = botStartRating('sapling', 'medium');
     const expert = botStartRating('expert', 'medium');
-    expect(Math.max(best, expert)).toBeLessThanOrEqual(1500);
+    expect(Math.max(best, expert)).toBeGreaterThan(1600);
+    expect(Math.max(best, expert)).toBeLessThan(1800);
     expect(Math.max(best, expert)).toBeGreaterThan(1400);
     expect(botStartRating('saver', 'medium')).toBeLessThan(best - 100);
     expect(botStartRating('expert--beginner', 'medium')).toBeLessThan(expert - 200);

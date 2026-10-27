@@ -1,9 +1,17 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { map } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TablesApiService, type GamePlayer } from './tables-api.service';
 import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
 import { TablePlayerInfoComponent } from './table-player-info.component';
+import {
+  DreamApiService,
+  type DreamBoardRow,
+  type DreamMyPlayer,
+} from '../dreamfund-tables/dream-session.service';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
+import { keepGame, savedGame, type TableGame } from './table-game';
 
 type Filter = 'all' | 'human' | 'bot';
 
@@ -20,8 +28,44 @@ type Filter = 'all' | 'human' | 'bot';
   styleUrls: ['./tables.css'],
   template: `
     <section class="lb" [attr.dir]="rtl ? 'rtl' : 'ltr'">
+      <div class="lb-tabs" role="radiogroup" [attr.aria-label]="d.gameChoice">
+        <button
+          type="button"
+          role="radio"
+          class="lb-tab"
+          [class.lb-tab--on]="game === 'classic'"
+          [attr.aria-checked]="game === 'classic'"
+          (click)="setGame('classic')"
+        >
+          {{ d.gameClassic }}
+        </button>
+        <button
+          type="button"
+          role="radio"
+          class="lb-tab"
+          [class.lb-tab--on]="game === 'dreamfund'"
+          [attr.aria-checked]="game === 'dreamfund'"
+          (click)="setGame('dreamfund')"
+        >
+          {{ d.gameDream }}
+        </button>
+      </div>
+      <!-- the Dreamfund has one rating for each difficulty -->
+      <div class="lb-tabs" role="tablist" *ngIf="game === 'dreamfund'">
+        <button
+          *ngFor="let level of levels"
+          type="button"
+          role="tab"
+          class="lb-tab"
+          [class.lb-tab--on]="difficulty === level"
+          [attr.aria-selected]="difficulty === level"
+          (click)="chooseDifficulty(level)"
+        >
+          {{ d[level] }}
+        </button>
+      </div>
       <div class="lb-me" *ngIf="me as mine">
-        <button type="button" class="lb-me-card" (click)="selected = mine">
+        <button type="button" class="lb-me-card" (click)="open(mine)">
           <span class="lb-me-rating">{{ mine.rating }}</span>
           <span class="lb-me-text">
             <strong>{{ t.myRating }}</strong>
@@ -58,7 +102,7 @@ type Filter = 'all' | 'human' | 'bot';
       </div>
       <ol class="lb-list" *ngIf="items.length">
         <li *ngFor="let p of items" class="lb-item">
-          <button type="button" class="lb-row" (click)="selected = p">
+          <button type="button" class="lb-row" (click)="open(p)">
             <span class="lb-place" [attr.data-place]="p.place">{{ medal(p.place) }}</span>
             <span class="lb-player">
               <span class="lb-avatar" [class.lb-avatar--bot]="p.type === 'bot'" aria-hidden="true"
@@ -282,7 +326,12 @@ type Filter = 'all' | 'human' | 'bot';
 })
 export class TablesLeaderboardComponent implements OnInit {
   t: LeaderboardTexts;
+  d: DreamTexts;
   rtl: boolean;
+  /** The game of the board: the classic Cashflow's, or the Dreamfund's (shared with the lobby, kept on this device). */
+  game: TableGame = savedGame();
+  readonly levels = ['easy', 'medium', 'hard'] as const;
+  difficulty: 'easy' | 'medium' | 'hard' = 'medium';
   filter: Filter = 'all';
   items: GamePlayer[] = [];
   next: string | null = null;
@@ -292,11 +341,13 @@ export class TablesLeaderboardComponent implements OnInit {
 
   constructor(
     private api: TablesApiService,
+    private dreamApi: DreamApiService,
     private translate: TranslateService,
     private cdr: ChangeDetectorRef,
   ) {
     const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
     this.t = leaderboardTexts(lang);
+    this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
   }
 
@@ -309,14 +360,81 @@ export class TablesLeaderboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.api.me().subscribe({
-      next: (me) => {
-        this.me = me;
-        this.cdr.markForCheck();
-      },
-      error: () => undefined,
-    });
+    this.loadMe();
     this.load();
+  }
+
+  setGame(game: TableGame): void {
+    if (game === this.game) return;
+    this.game = game;
+    keepGame(game);
+    this.items = [];
+    this.next = null;
+    this.me = null;
+    this.loadMe();
+    this.load();
+  }
+
+  chooseDifficulty(level: 'easy' | 'medium' | 'hard'): void {
+    this.difficulty = level;
+    this.load();
+    this.loadMe();
+  }
+
+  /** A player of the classic board opens their panel (the Dreamfund board has none yet). */
+  open(player: GamePlayer): void {
+    if (this.game === 'classic') this.selected = player;
+  }
+
+  /** One row of the Dreamfund board in the shape of the classic one, so the same list shows both. */
+  private fromDream(row: DreamBoardRow): GamePlayer {
+    return {
+      place: row.place,
+      // the picture is fetched by the id it is kept under
+      playerId: row.pictureId ?? row.playerId,
+      ...(row.pictureVersion ? { pictureVersion: row.pictureVersion } : {}),
+      name: row.name,
+      type: row.type,
+      rating: row.rating,
+      peakRating: row.peakRating,
+      ratedGames: row.ratedGames,
+      provisional: row.provisional,
+      games: row.games,
+      wins: row.wins,
+      losses: 0,
+      gaveUp: 0,
+      bankruptcies: row.bankruptcies,
+      escaped: row.won,
+      winRate: row.games ? row.wins / row.games : 0,
+      avgPlace: row.avgPlace,
+      bestPlace: null,
+      ...(row.level ? { level: row.level } : {}),
+    } as GamePlayer;
+  }
+
+  private fromDreamMe(me: DreamMyPlayer): GamePlayer {
+    return {
+      ...this.fromDream({
+        ...me.ratings[this.difficulty],
+        pictureId: me.pictureId,
+        pictureVersion: me.pictureVersion,
+      }),
+      visible: me.visible,
+    };
+  }
+
+  private loadMe(): void {
+    const done = (me: GamePlayer) => {
+      this.me = me;
+      this.cdr.markForCheck();
+    };
+    if (this.game === 'dreamfund') {
+      this.dreamApi
+        .me()
+        .subscribe({ next: (me) => done(this.fromDreamMe(me)), error: () => undefined });
+    } else {
+      this.api.me().subscribe({ next: done, error: () => undefined });
+    }
   }
 
   choose(filter: Filter): void {
@@ -346,7 +464,13 @@ export class TablesLeaderboardComponent implements OnInit {
 
   private load(): void {
     this.loading = true;
-    this.api.leaderboard(this.filter).subscribe({
+    const source =
+      this.game === 'dreamfund'
+        ? this.dreamApi
+            .leaderboard(this.difficulty, this.filter)
+            .pipe(map((page) => ({ ...page, items: page.items.map((row) => this.fromDream(row)) })))
+        : this.api.leaderboard(this.filter);
+    source.subscribe({
       next: (page) => {
         this.items = page.items;
         this.next = page.next;
@@ -362,7 +486,13 @@ export class TablesLeaderboardComponent implements OnInit {
 
   more(): void {
     if (!this.next) return;
-    this.api.leaderboard(this.filter, this.next).subscribe({
+    const source =
+      this.game === 'dreamfund'
+        ? this.dreamApi
+            .leaderboard(this.difficulty, this.filter, this.next)
+            .pipe(map((page) => ({ ...page, items: page.items.map((row) => this.fromDream(row)) })))
+        : this.api.leaderboard(this.filter, this.next);
+    source.subscribe({
       next: (page) => {
         this.items = [...this.items, ...page.items];
         this.next = page.next;
@@ -374,6 +504,16 @@ export class TablesLeaderboardComponent implements OnInit {
 
   toggleVisible(event: Event): void {
     const visible = (event.target as HTMLInputElement).checked;
+    if (this.game === 'dreamfund') {
+      this.dreamApi.setVisible(visible).subscribe({
+        next: (me) => {
+          this.me = this.fromDreamMe(me);
+          this.load();
+        },
+        error: () => undefined,
+      });
+      return;
+    }
     this.api.setVisible(visible).subscribe({
       next: (me) => {
         this.me = me;

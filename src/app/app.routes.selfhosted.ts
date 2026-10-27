@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { baseRoutes } from './app.routes.base';
 import { tablesTexts } from './tables/tables.texts';
 import { leaderboardTexts } from './tables/leaderboard.texts';
-import { dreamTexts } from './dreamfund-tables/dream-texts';
 
 // Selfhosted-edition route table: the shared base routes plus Pro-only
 // routes. Swapped in for app.routes.ts via angular.json's fileReplacements
@@ -56,27 +55,8 @@ export const routes: Routes = [
       ),
   },
   {
-    // The Dreamfund tables (todo/dreamfund-multiplayer.md): a world of its own next to the classic tables above.
-    path: 'dreamfund',
-    data: { gameMenu: { icon: '🌟', label: (lang: string) => dreamTexts(lang).title } },
-    loadComponent: () =>
-      import('./dreamfund-tables/dream-lobby.component').then((m) => m.DreamLobbyComponent),
-  },
-  {
-    path: 'dreamfund/leaderboard',
-    data: { gameMenu: { icon: '🏆', label: (lang: string) => dreamTexts(lang).leaderboard } },
-    loadComponent: () =>
-      import('./dreamfund-tables/dream-leaderboard.component').then(
-        (m) => m.DreamLeaderboardComponent,
-      ),
-  },
-  {
-    path: 'dreamfund/:id',
-    loadComponent: () =>
-      import('./dreamfund-tables/dream-room.component').then((m) => m.DreamRoomComponent),
-  },
-  {
     path: 'tables/:id',
-    loadComponent: () => import('./tables/table-room.component').then((m) => m.TableRoomComponent),
+    loadComponent: () =>
+      import('./tables/table-room-switch.component').then((m) => m.TableRoomSwitchComponent),
   },
 ];

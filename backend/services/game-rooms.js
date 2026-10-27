@@ -758,11 +758,14 @@ function createGameRoomService({
     return joined.view;
   }
 
+  /** The leaderboard service of a table's game: each game has a board of its own. */
+  const boardOf = (table) => (table.kind === 'dreamfund' ? dreamStats : stats);
+
   /** Who sits at a table, for the lobby: the public profile of every seat (picture, rating, numbers) - for those who may see the table. */
   async function seatsOfRoom(userId, roomId) {
     const doc = await loadFor(userId, roomId);
-    if (!stats) return [];
-    return stats.seatsOf(doc.table);
+    const board = boardOf(doc.table);
+    return board ? board.seatsOf(doc.table) : [];
   }
 
   /** Whether both accounts sit at this table (a table-mate may see the other's picture, listed or not). */
@@ -775,14 +778,15 @@ function createGameRoomService({
 
   /** The lobby lists carry who sits at each table (a short preview: name, picture, rating), so a player sees who is there before joining. */
   async function withSeats(summaries, docs) {
-    if (!stats) return summaries;
+    if (!stats && !dreamStats) return summaries;
     const byId = new Map(docs.map((doc) => [doc.roomId, doc]));
     const out = [];
     for (const summary of summaries) {
       const doc = byId.get(summary.id);
       let seats = [];
       try {
-        seats = doc ? await stats.seatsOf(doc.table) : [];
+        const board = doc && boardOf(doc.table);
+        seats = board ? await board.seatsOf(doc.table) : [];
       } catch (error) {
         log('game_room_seats_failed', { roomId: summary.id, message: error.message });
       }

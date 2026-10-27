@@ -162,6 +162,11 @@ export interface DreamTexts {
   confirmClose: string;
   levelHint: string;
   classicLink: string;
+  gameChoice: string;
+  gameClassic: string;
+  gameDream: string;
+  gameClassicHint: string;
+  gameDreamHint: string;
   leaderboard: string;
   rating: string;
   games: string;
@@ -340,6 +345,12 @@ const EN: DreamTexts = {
   confirmClose: 'Closing the table ends it for everyone. Close it?',
   levelHint: 'The lower the skill, the more often a bot slips.',
   classicLink: 'Classic tables',
+  gameChoice: 'Game',
+  gameClassic: 'Classic',
+  gameDream: 'Dreamfund',
+  gameClassicHint: 'The Cashflow game on the classic board.',
+  gameDreamHint:
+    'The Dreamfund: your dream, the card stacks and the maps of the solo game, played together.',
   leaderboard: 'Leaderboard',
   rating: 'Rating',
   games: 'Games',
@@ -519,6 +530,12 @@ const DE: Partial<DreamTexts> = {
   confirmClose: 'Das Schließen beendet den Tisch für alle. Schließen?',
   levelHint: 'Je niedriger das Können, desto öfter patzt ein Bot.',
   classicLink: 'Klassische Tische',
+  gameChoice: 'Spiel',
+  gameClassic: 'Klassisch',
+  gameDream: 'Traumtopf',
+  gameClassicHint: 'Das Cashflow-Spiel auf dem klassischen Brett.',
+  gameDreamHint:
+    'Der Traumtopf: dein Traum, die Kartenstapel und die Karten des Solospiels, zusammen gespielt.',
   leaderboard: 'Bestenliste',
   rating: 'Wertung',
   games: 'Spiele',

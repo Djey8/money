@@ -50,6 +50,41 @@ describe('AddTableComponent', () => {
     expect(localStorage.getItem('mm.tables.initials')).toBe('AB');
   });
 
+  it('opens a Dreamfund table with the same panel: the game is a choice, the solo settings come with it', () => {
+    const component = fixture.componentInstance;
+    component.game = 'dreamfund';
+    component.form.name = 'Dreams';
+    component.form.difficulty = 'hard';
+    component.form.shape = 'mountain';
+    component.form.size = 'large';
+    component.form.mode = 'strict';
+    component.form.ranked = true;
+    component.create();
+    const req = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/v1/game/rooms'));
+    expect(req.request.body.kind).toBe('dreamfund');
+    expect(req.request.body.settings).toMatchObject({
+      name: 'Dreams',
+      difficulty: 'hard',
+      shape: 'mountain',
+      size: 'large',
+      mode: 'strict',
+      ranked: true,
+      endCondition: 'first-win',
+    });
+    // nothing of the classic table's own rules
+    expect(req.request.body.settings.allowRewind).toBeUndefined();
+    expect(req.request.body.settings.rules).toBeUndefined();
+  });
+
+  it('leaves out the rules only the classic game has when the game is the Dreamfund', () => {
+    const component = fixture.componentInstance;
+    const keys = () => component.switches().map((rule) => rule.key);
+    expect(keys()).toContain('allowUndo');
+    component.game = 'dreamfund';
+    expect(keys()).not.toContain('allowUndo');
+    expect(keys()).toContain('spectators');
+  });
+
   it('sends no initials when none were chosen (the default is the first two letters of the name)', () => {
     const component = fixture.componentInstance;
     component.form.name = 'Friday';

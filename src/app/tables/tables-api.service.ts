@@ -16,9 +16,15 @@ export interface TableSummary {
   professions: 'duplicates' | 'unique' | 'random';
   turnOrder: 'random' | 'seat';
   clock: { mode: 'none' | 'per-move' | 'bank' | 'daily'; [key: string]: unknown };
-  endCondition: 'first-escape' | 'all-done' | 'round-limit';
+  endCondition: 'first-escape' | 'first-win' | 'all-done' | 'round-limit';
   language: string;
   joined: boolean;
+  /** The game of the table (the classic Cashflow when absent). */
+  kind?: 'dreamfund';
+  /** A Dreamfund table: the difficulty and the map. */
+  difficulty?: 'easy' | 'medium' | 'hard';
+  shape?: string;
+  size?: string;
   /** The game may count for the leaderboard rating. */
   ranked?: boolean;
   /** People (not bots) still playing at the table. */
@@ -117,6 +123,8 @@ export interface BotInfo {
 }
 
 export interface CreateTableInput {
+  /** The game of the table (the classic Cashflow when absent). */
+  kind?: 'dreamfund';
   nickname: string;
   /** The letters on the player's token (up to two); absent: the first two letters of the name. */
   initials?: string;
@@ -133,13 +141,18 @@ export interface CreateTableInput {
           bankSeconds: number;
           incrementSeconds: number;
         };
-    endCondition: 'first-escape' | 'all-done' | 'round-limit';
+    endCondition: 'first-escape' | 'first-win' | 'all-done' | 'round-limit';
     roundLimit?: number;
     spectators: boolean;
     /** Whether the table may vote to undo the last turn (more than half must agree). */
     allowRewind?: boolean;
     /** Whether the table waits for everybody to say Continue after each turn. */
     turnGate?: boolean;
+    /** A Dreamfund table: the difficulty, the map and the rules mode of the solo game. */
+    difficulty?: 'easy' | 'medium' | 'hard';
+    shape?: string;
+    size?: string;
+    mode?: 'guided' | 'strict';
     /** How fast the bots play and how long each move is told. */
     pace?: 'fast' | 'normal' | 'slow';
     /** Whether everybody's progress towards escaping (a percentage) is shown. */
@@ -178,8 +191,13 @@ export class TablesApiService {
       : null;
   }
 
-  list(scope: 'open' | 'mine' | 'recent' = 'open'): Observable<{ items: TableSummary[] }> {
-    return this.http.get<{ items: TableSummary[] }>(`${this.base}?scope=${scope}`);
+  list(
+    scope: 'open' | 'mine' | 'recent' = 'open',
+    game: 'classic' | 'dreamfund' = 'classic',
+  ): Observable<{ items: TableSummary[] }> {
+    return this.http.get<{ items: TableSummary[] }>(
+      `${this.base}?scope=${scope}${game === 'dreamfund' ? '&kind=dreamfund' : ''}`,
+    );
   }
 
   bots(): Observable<{ items: BotInfo[]; levels?: { id: BotLevel; mistakes: number }[] }> {

@@ -29,6 +29,7 @@ const { createGameRoomHub } = require('../services/game-room-hub');
 const { createRoomClocks } = require('../services/game-room-clocks');
 const { createBotDriver } = require('../services/game-room-bots');
 const { dreamfund } = require('../services/game-room-kinds');
+const profilePicture = require('../repositories/profile-picture');
 const { parseCommand, parseGuards } = require('../services/game-room-commands');
 
 /**
@@ -73,7 +74,13 @@ function stats() {
     statsService = createGameStats({
       db: getGameStatsDb(),
       nicknameOf,
-      log: (message, meta) => logger.warn(message, meta),
+      // a person's picture is the account's: fetched under the id of the account's game profile (made when it is missing)
+      pictureOf: async (accountId) => {
+        const picture = await profilePicture.getPicture(getUsersDb(), accountId);
+        if (!picture) return null;
+        const profile = await stats().ensureHumanProfile(accountId);
+        return profile ? { playerId: profile.playerId, pictureVersion: picture.updatedAt } : null;
+      },
     });
   }
   return statsService;
@@ -235,8 +242,32 @@ router.get(
   handle(async (req, res) => {
     // the bots of a Dreamfund table are the twelve strategies of the simulation (docs/DREAMFUND_SIMULATION.md): `?kind=dreamfund`
     if (req.query.kind === 'dreamfund') {
+      const level = ['easy', 'hard'].includes(req.query.difficulty)
+        ? req.query.difficulty
+        : 'medium';
+      const skills = dreamfund.levels.map((l) => l.id);
+      const idOf = (id, skill) => (skill === 'master' ? id : `${id}--${skill}`);
+      // what each bot is rated at the table's difficulty, at each skill level (the lobby sorts and shows it)
+      let rated = {};
+      try {
+        rated = await dreamStats().botRatings(
+          dreamfund.policies.flatMap((p) => skills.map((skill) => idOf(p.id, skill))),
+          level,
+        );
+      } catch (error) {
+        logger.warn('Dreamfund bot ratings could not be read', { error: error.message });
+      }
       return res.json({
-        items: dreamfund.policies.map((policy) => ({ ...policy, policyId: policy.id })),
+        items: dreamfund.policies.map((policy) => ({
+          id: policy.id,
+          name: policy.name,
+          policyId: policy.id,
+          ratings: Object.fromEntries(
+            skills
+              .filter((skill) => rated[idOf(policy.id, skill)] !== undefined)
+              .map((skill) => [skill, rated[idOf(policy.id, skill)]]),
+          ),
+        })),
         levels: dreamfund.levels,
       });
     }

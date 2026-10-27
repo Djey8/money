@@ -11,6 +11,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AppComponent } from '../app.component';
+import type { TableView } from '@money/domain';
+import { TableWaitingRoomComponent } from '../tables/table-waiting-room.component';
 import { LanguageService } from '../shared/services/language.service';
 import {
   DreamApiService,
@@ -38,12 +40,23 @@ import {
 @Component({
   selector: 'app-dream-room',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TableWaitingRoomComponent],
   providers: [DreamSessionService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['../tables/tables.css', '../app.component.css'],
   template: `
     <div class="toolbar" role="banner">
+      <img
+        id="profile-pic"
+        width="40"
+        alt="Profile Logo"
+        src="../assets/profile-blank.jpg"
+        role="button"
+        tabindex="0"
+        aria-label="Open profile"
+        (keydown.enter)="app.clickProfile()"
+        (click)="app.clickProfile()"
+      />
       <div
         id="heading"
         role="button"
@@ -54,7 +67,7 @@ import {
         {{ v()?.settings?.name ?? t().title }}
       </div>
       <div class="spacer"></div>
-      <a class="tx-btn tx-btn--small" routerLink="/dreamfund">{{ t().back }}</a>
+      <a class="tx-btn tx-btn--small" routerLink="/tables">{{ t().back }}</a>
     </div>
 
     <div class="dr-page" *ngIf="v() as view">
@@ -62,7 +75,7 @@ import {
       <p class="tx-muted" *ngIf="session.connection() === 'reconnecting'">{{ t().reconnecting }}</p>
 
       <!-- header -->
-      <section class="tx-card dr-head">
+      <section class="tx-card dr-head" *ngIf="view.phase !== 'lobby' && view.phase !== 'picking'">
         <div>
           <strong>{{ view.settings.name }}</strong>
           <small>
@@ -78,89 +91,18 @@ import {
         >
       </section>
 
-      <!-- the waiting room -->
-      <ng-container *ngIf="view.phase === 'lobby' || view.phase === 'picking'">
-        <section class="tx-card">
-          <h3>{{ t().seats }} {{ view.players.length }}/{{ view.settings.maxSeats }}</h3>
-          <div class="dr-seat" *ngFor="let p of view.players">
-            <span class="dr-dot" [style.background]="p.color"></span>
-            <strong>{{ p.name }}</strong>
-            <small *ngIf="p.bot">{{ t().bot }} · {{ p.bot.policyId }}</small>
-            <small *ngIf="p.seat === view.hostSeat">{{ t().host }}</small>
-            <small>{{ p.ready ? t().ready : t().notReady }}</small>
-            <small *ngIf="p.pick && view.phase === 'picking'">{{ pickName(p.pick) }}</small>
-            <button
-              class="tx-btn tx-btn--small"
-              *ngIf="session.can('kick') && p.seat !== view.hostSeat"
-              (click)="kick(p.seat)"
-            >
-              {{ t().kick }}
-            </button>
-          </div>
-          <div class="tx-actions">
-            <button
-              class="tx-btn"
-              *ngIf="session.can('set_ready') && me() as mine"
-              (click)="setReady(!mine.ready)"
-            >
-              {{ me()?.ready ? t().notReady : t().ready }}
-            </button>
-            <button class="tx-btn tx-btn--primary" *ngIf="session.can('start')" (click)="start()">
-              {{ t().start }}
-            </button>
-            <button class="tx-btn" *ngIf="session.can('leave')" (click)="leave()">
-              {{ t().leave }}
-            </button>
-            <button class="tx-btn" *ngIf="session.can('close')" (click)="close()">
-              {{ t().closeTable }}
-            </button>
-          </div>
-        </section>
-
-        <section class="tx-card" *ngIf="session.can('add_bot')">
-          <h3>{{ t().addBot }}</h3>
-          <div class="dr-row">
-            <select [(ngModel)]="botStrategy">
-              <option *ngFor="let b of bots()?.items ?? []" [value]="b.id">{{ b.name }}</option>
-            </select>
-            <select [(ngModel)]="botLevel">
-              <option *ngFor="let l of bots()?.levels ?? []" [value]="l.id">
-                {{ levelText(l.id) }}
-              </option>
-            </select>
-            <select [(ngModel)]="botCharacter">
-              <option value="">{{ t().random }}</option>
-              <option *ngFor="let c of chars()" [value]="c.id">{{ c.name }}</option>
-            </select>
-            <button class="tx-btn tx-btn--primary" (click)="addBot()">{{ t().addBot }}</button>
-          </div>
-          <small class="tx-muted">{{ t().levelHint }}</small>
-        </section>
-
-        <section class="tx-card" *ngIf="view.phase === 'picking' && session.can('pick_profession')">
-          <h3>{{ t().pickCharacter }}</h3>
-          <div class="dr-chars">
-            <button
-              type="button"
-              class="dr-char"
-              *ngFor="let c of chars()"
-              [class.on]="me()?.pick === c.id"
-              (click)="pick(c.id)"
-            >
-              <strong>{{ c.name }}</strong>
-              <small>{{ c.tagline }}</small>
-            </button>
-            <button
-              type="button"
-              class="dr-char"
-              [class.on]="me()?.pick === 'random'"
-              (click)="pick('random')"
-            >
-              <strong>{{ t().random }}</strong>
-            </button>
-          </div>
-        </section>
-      </ng-container>
+      <!-- the waiting room: the classic table's own, with the Dreamfund's settings -->
+      <app-table-waiting-room
+        *ngIf="(view.phase === 'lobby' || view.phase === 'picking') && lobbyTable() as table"
+        [table]="table"
+        [roomId]="session.tableId"
+        [inviteCode]="session.room()?.inviteCode ?? null"
+        [lang]="lang"
+        game="dreamfund"
+        [sessionOverride]="session"
+        [characters]="characterList()"
+        (leaveRequested)="leave()"
+      ></app-table-waiting-room>
 
       <!-- the game -->
       <ng-container *ngIf="view.phase === 'playing' || view.phase === 'finished'">
@@ -758,7 +700,6 @@ export class DreamRoomComponent implements OnInit, OnDestroy {
   readonly me = computed<DreamPlayerView | null>(
     () => this.v()?.players.find((player) => player.you) ?? null,
   );
-  readonly bots = signal<DreamBotCatalog | null>(null);
   readonly names = computed(() => (this.v()?.players ?? []).map((p) => p.name));
   readonly ranked = computed(() => {
     const view = this.v();
@@ -777,9 +718,6 @@ export class DreamRoomComponent implements OnInit, OnDestroy {
       .reverse(),
   );
 
-  botStrategy = 'expert';
-  botLevel = 'master';
-  botCharacter = '';
   emergencyChoice = '';
   amount: number | null = null;
   tradePrice: number | null = null;
@@ -793,9 +731,6 @@ export class DreamRoomComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.session.open(id);
-    this.api
-      .bots()
-      .subscribe({ next: (catalog) => this.bots.set(catalog), error: () => undefined });
   }
 
   ngOnDestroy(): void {
@@ -803,6 +738,28 @@ export class DreamRoomComponent implements OnInit, OnDestroy {
   }
 
   chars = () => characters(this.lang);
+  characterList = () => this.chars().map((c) => ({ id: c.id, title: c.name }));
+
+  /** The lobby of this table in the shape of the classic table's, which the waiting room is made for. */
+  lobbyTable(): TableView | null {
+    const view = this.v();
+    if (!view) return null;
+    return {
+      ...view,
+      youSeat: view.you,
+      players: view.players.map((p) => ({ ...p, hasPicked: p.pick !== null })),
+      settings: {
+        ...view.settings,
+        gameSetId: 'jfk-stories',
+        turnGate: view.settings['turnGate'] === true,
+        showProgress: view.settings['showProgress'] !== false,
+        allowRewind: false,
+        repayOffTurn: false,
+        leaveFreeRounds: 0,
+        rules: { sellOfferRolls: 0 },
+      },
+    } as unknown as TableView;
+  }
   trackSeat = (_: number, p: DreamPlayerView) => p.seat;
 
   phaseKey(phase: string): 'lobby' | 'picking' | 'playing' | 'finished' | 'closed' {
@@ -873,33 +830,7 @@ export class DreamRoomComponent implements OnInit, OnDestroy {
     return this.play({ type: 'answer_life', decision });
   }
 
-  setReady(ready: boolean): void {
-    void this.session.lobby('ready', { ready });
-  }
-  start(): void {
-    void this.session.lobby('start');
-  }
-  kick(seat: number): void {
-    void this.session.lobby('kick', { seat });
-  }
   leave(): void {
-    void this.session.lobby('leave').then(() => this.router.navigate(['/dreamfund']));
-  }
-  pick(professionId: string): void {
-    void this.session.lobby('profession', { professionId });
-  }
-  addBot(): void {
-    void this.session.lobby('bots', {
-      policyId: `dream:${this.botStrategy}`,
-      level: this.botLevel,
-      ...(this.botCharacter ? { professionId: this.botCharacter } : {}),
-    });
-  }
-  close(): void {
-    if (!window.confirm(this.t().confirmClose)) return;
-    this.api.remove(this.session.tableId).subscribe({
-      next: () => void this.router.navigate(['/dreamfund']),
-      error: () => undefined,
-    });
+    void this.session.lobby('leave').then(() => this.router.navigate(['/tables']));
   }
 }

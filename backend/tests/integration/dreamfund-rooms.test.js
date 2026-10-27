@@ -433,8 +433,47 @@ describe('a Dreamfund room', () => {
       expect(board.length).toBeGreaterThanOrEqual(44);
       expect(new Set(names).size).toBe(names.length);
       expect(board.every((row) => row.games === 0 && row.provisional)).toBe(true);
-      // the best of them starts at 1500, lower skill levels below their master
-      expect(board[0].rating).toBeLessThanOrEqual(1500);
+      // the bots average where a person starts (1500) and the best sit well above: a person plays their way up to them
+      expect(board[0].rating).toBeGreaterThan(1600);
+      const mean = board.reduce((sum, row) => sum + row.rating, 0) / board.length;
+      expect(Math.abs(mean - 1500)).toBeLessThan(40);
+      // a bot whose base changed moves with it (the second call finds nothing to move)
+      expect((await stats.seedBots()).moved).toBe(0);
     },
   );
+  maybe(
+    'lists who sits at a Dreamfund table, with their rating on the Dreamfund board',
+    async () => {
+      const made = await call(host, 'post', '/game/rooms', {
+        kind: 'dreamfund',
+        nickname: 'Hanna',
+        settings: { name: 'Seats', difficulty: 'hard', ranked: true },
+      });
+      const roomId = made.body.id;
+      roomIds.push(roomId);
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, {
+        policyId: 'dream:expert',
+        level: 'casual',
+      });
+      const mine = await call(host, 'get', '/game/rooms?scope=mine&kind=dreamfund');
+      const row = mine.body.items.find((r) => r.id === roomId);
+      expect(row.seats).toHaveLength(2);
+      const bot = row.seats.find((seat) => seat.bot);
+      expect(bot.level).toBe('casual');
+      expect(typeof bot.rating).toBe('number');
+      const person = row.seats.find((seat) => !seat.bot);
+      expect(typeof person.rating).toBe('number');
+      const seats = await call(host, 'get', `/game/rooms/${roomId}/seats`);
+      expect(seats.body.seats).toHaveLength(2);
+      await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
+    },
+  );
+  maybe('offers the strategies with their rating at the table difficulty', async () => {
+    const bots = await call(host, 'get', '/game/rooms/bots?kind=dreamfund&difficulty=hard');
+    expect(bots.status).toBe(200);
+    const expert = bots.body.items.find((bot) => bot.id === 'expert');
+    expect(expert.name).toBeTruthy();
+    expect(typeof expert.ratings.master).toBe('number');
+    expect(expert.ratings.beginner).toBeLessThan(expert.ratings.master);
+  });
 });

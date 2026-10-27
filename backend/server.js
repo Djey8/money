@@ -157,7 +157,10 @@ if (require.main === module) {
         // The Dreamfund board of its own: its bots are known before they have played (idempotent).
         .then(async () => {
           const seeded = await require('./routes/game-rooms').dreamStats().seedBots();
-          logger.info('Dreamfund leaderboard ready', { botsMade: seeded.made });
+          logger.info('Dreamfund leaderboard ready', {
+            botsMade: seeded.made,
+            levelsMoved: seeded.moved,
+          });
         })
         .catch((err) => logger.logError(err, { context: 'game_dream_stats_startup' })),
     )

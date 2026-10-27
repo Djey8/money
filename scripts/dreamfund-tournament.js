@@ -26,10 +26,10 @@ if (process.argv.includes('--write')) {
     const file = path.join(outDir, `bot-ratings-${level}.json`);
     if (!fs.existsSync(file)) continue;
     const { bots } = JSON.parse(fs.readFileSync(file, 'utf8'));
-    // the best master is 1500, as everywhere on the board
-    const best = Math.max(...bots.filter((b) => !b.botId.includes('--')).map((b) => b.rating));
+    // a tournament only moves points between the bots: their mean stays 1500, the same as a person starts at - so the
+    // best bots sit well above it (about 1700) and a person has to play their way up to them
     ratings[level] = Object.fromEntries(
-      bots.map((b) => [b.botId, Math.max(100, Math.round(1500 + b.rating - best))]),
+      bots.map((b) => [b.botId, Math.max(100, Math.round(b.rating))]),
     );
   }
   const target = path.join(

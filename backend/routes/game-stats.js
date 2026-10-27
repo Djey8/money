@@ -8,7 +8,7 @@ const profilePicture = require('../repositories/profile-picture');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const store = require('../repositories/game-stats-store');
-const { stats, nicknameOf, rooms } = require('./game-rooms');
+const { stats, nicknameOf, rooms, dreamStats } = require('./game-rooms');
 const { baseAt, present } = require('../services/game-profile-view');
 const { RATING_FLOOR } = require('@money/domain/dist/cashflow-game/table/rating');
 
@@ -161,11 +161,19 @@ router.get('/players/:playerId/picture', ...guard('r'), async (req, res, next) =
       !mine &&
       typeof req.query.table === 'string' &&
       (await rooms().sitTogether(req.query.table, req.userId, profile.accountId));
+    // a person on the Dreamfund board shows their picture there as well
+    const dreamListed =
+      profile &&
+      profile.accountId &&
+      !profile.visible &&
+      !mine &&
+      !tableMate &&
+      (await dreamStats().isListed(profile.accountId));
     if (
       !profile ||
       profile.type !== 'human' ||
       !profile.accountId ||
-      (!profile.visible && !mine && !tableMate)
+      (!profile.visible && !mine && !tableMate && !dreamListed)
     ) {
       return problem(
         res,

@@ -63,6 +63,11 @@ const playing = (over: Record<string, unknown> = {}): DreamTableView =>
       size: 'medium',
       mode: 'guided',
       maxSeats: 4,
+      clock: { mode: 'none' },
+      visibility: 'public',
+      professions: 'duplicates',
+      endCondition: 'first-win',
+      pace: 'normal',
     },
     hostSeat: 0,
     you: 0,
@@ -214,9 +219,31 @@ describe('DreamRoomComponent', () => {
   it('shows the waiting room with the host controls the server allows', async () => {
     const view = playing({ phase: 'lobby', activeSeat: null, tableRound: 0 });
     await render(view, ['start', 'add_bot', 'leave', 'set_ready']);
-    expect(element.textContent).toContain('Seat a bot');
+    // the waiting room is the classic table's own
+    expect(element.textContent).toContain('Add a bot');
     click('Start the game');
     expect(session.lobby).toHaveBeenCalledWith('start');
+  });
+
+  it('seats a Dreamfund bot from the classic waiting room: its strategies, with their rating at the difficulty', async () => {
+    const view = playing({ phase: 'lobby', activeSeat: null, tableRound: 0 });
+    await render(view, ['start', 'add_bot', 'leave', 'set_ready']);
+    click('Add a bot');
+    const http = TestBed.inject(HttpTestingController);
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/rooms/bots?kind=dreamfund&difficulty=medium'))
+      .flush({
+        items: [{ id: 'saver', name: 'Cautious saver', ratings: { master: 1500, casual: 1420 } }],
+      });
+    fixture.detectChanges();
+    expect(element.textContent).toContain('Cautious saver');
+    expect(element.textContent).toContain('1500');
+    const add = Array.from(element.querySelectorAll<HTMLElement>('.wr-bot button')).pop()!;
+    add.click();
+    expect(session.lobby).toHaveBeenCalledWith('bots', {
+      policyId: 'dream:saver',
+      level: 'master',
+    });
   });
 
   it('shows the result of a finished game in order', async () => {
