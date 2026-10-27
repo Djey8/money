@@ -1,0 +1,247 @@
+'use strict';
+
+// The Dreamfund as a room (todo/dreamfund-multiplayer.md slice 5): a table of the new kind is created, filled with strategy bots,
+// started and played to its end through the public HTTP API, over a real CouchDB - the same lobby, clock, log and live channel as the
+// classic table, with the Dreamfund's own rules.
+const crypto = require('crypto');
+const request = require('supertest');
+const { app, checkDb } = require('./setup');
+const { getGameRoomsDb } = require('../../config/db');
+const store = require('../../repositories/game-room-store');
+const gameRooms = require('../../routes/game-rooms');
+
+jest.setTimeout(240000);
+
+const GAME_PASSWORD = 'integration-test-only';
+const originalHash = process.env.CASHFLOW_GAME_PASSWORD_SHA256;
+const originalDelay = process.env.GAME_BOT_DELAY_MS;
+let dbAvailable = false;
+let host;
+let guest;
+const roomIds = [];
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function gameUser(label, username) {
+  const email = `jest_${Date.now()}_${label}_cashflow@test.local`;
+  const res = await request(app)
+    .post('/api/auth/register')
+    .send({ email, password: 'TestPassword123!', gamePassword: GAME_PASSWORD, username });
+  expect(res.status).toBe(201);
+  const cookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('access_token='));
+  return { token: cookie.split(';')[0].split('=')[1], userId: res.body.userId };
+}
+
+const call = (user, method, path, body) => {
+  const req = request(app)[method](`/api/v1${path}`).set('Authorization', `Bearer ${user.token}`);
+  return body === undefined ? req : req.send(body);
+};
+
+/** What a person who only rolls does next: the most passive legal move. */
+function passive(legal) {
+  const has = (type) => legal.find((a) => a.type === type);
+  if (has('roll')) return { type: 'roll' };
+  if (has('pay_emergency')) return { type: 'pay_emergency', pay: 'now' };
+  if (has('answer_life')) return { type: 'answer_life', decision: 'decline' };
+  if (has('choose_career_branch')) return { type: 'choose_career_branch', index: 0 };
+  if (has('skip')) return { type: 'skip' };
+  if (has('end_turn')) return { type: 'end_turn' };
+  return null;
+}
+
+beforeAll(async () => {
+  dbAvailable = await checkDb();
+  process.env.CASHFLOW_GAME_PASSWORD_SHA256 = crypto
+    .createHash('sha256')
+    .update(GAME_PASSWORD)
+    .digest('hex');
+  process.env.GAME_BOT_DELAY_MS = '0';
+  if (!dbAvailable) return;
+  process.env.GAME_ROOMS_MAX_HOSTED = '50';
+  process.env.GAME_ROOMS_MAX_SEATED = '50';
+  host = await gameUser('dreamhost', 'Hanna');
+  guest = await gameUser('dreamguest', 'Gus');
+});
+
+afterAll(async () => {
+  if (originalHash === undefined) delete process.env.CASHFLOW_GAME_PASSWORD_SHA256;
+  else process.env.CASHFLOW_GAME_PASSWORD_SHA256 = originalHash;
+  if (originalDelay === undefined) delete process.env.GAME_BOT_DELAY_MS;
+  else process.env.GAME_BOT_DELAY_MS = originalDelay;
+  delete process.env.GAME_ROOMS_MAX_HOSTED;
+  delete process.env.GAME_ROOMS_MAX_SEATED;
+  if (!dbAvailable) return;
+  gameRooms.clocks.clearAll();
+  for (const id of roomIds) await store.deleteRoom(getGameRoomsDb(), id);
+  for (const user of [host, guest]) {
+    if (user) {
+      await request(app)
+        .delete('/api/v1/account')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send({ confirm: true });
+    }
+  }
+});
+
+const maybe = (name, fn) =>
+  it(name, async () => {
+    if (!dbAvailable) return;
+    await fn();
+  });
+
+describe('a Dreamfund room', () => {
+  maybe(
+    'is created with the Dreamfund settings, takes a person and bots, and is listed as a Dreamfund table',
+    async () => {
+      const made = await call(host, 'post', '/game/rooms', {
+        kind: 'dreamfund',
+        nickname: 'Hanna',
+        settings: {
+          name: 'Dream table',
+          difficulty: 'easy',
+          shape: 'infinity',
+          size: 'small',
+          mode: 'guided',
+          professions: 'random',
+          turnOrder: 'seat',
+          endCondition: 'round-limit',
+          roundLimit: 12,
+        },
+      });
+      expect(made.status).toBe(201);
+      roomIds.push(made.body.id);
+      expect(made.body.table).toMatchObject({
+        kind: 'dreamfund',
+        phase: 'lobby',
+        settings: { difficulty: 'easy', shape: 'infinity', endCondition: 'round-limit' },
+      });
+      expect(made.body.legalActions.map((a) => a.type)).toEqual(
+        expect.arrayContaining(['add_bot', 'start', 'update_settings']),
+      );
+
+      // the strategies a bot may play
+      const catalog = await call(host, 'get', '/game/rooms/bots?kind=dreamfund');
+      expect(catalog.status).toBe(200);
+      expect(catalog.body.items.map((i) => i.id)).toEqual(
+        expect.arrayContaining(['expert', 'saver']),
+      );
+      const bot = await call(host, 'post', `/game/rooms/${made.body.id}/bots`, {
+        policyId: 'dream:expert',
+      });
+      expect(bot.status).toBe(200);
+      expect(bot.body.table.players[1]).toMatchObject({ bot: { policyId: 'expert' } });
+      const wrong = await call(host, 'post', `/game/rooms/${made.body.id}/bots`, {
+        policyId: 'dream:nobody',
+      });
+      expect(wrong.status).toBe(400);
+
+      // a guest joins and the settings can still be changed in the lobby
+      const joined = await call(guest, 'post', '/game/rooms/join', {
+        roomId: made.body.id,
+        nickname: 'Gus',
+      });
+      expect(joined.status).toBe(200);
+      const changed = await call(host, 'put', `/game/rooms/${made.body.id}/settings`, {
+        settings: { difficulty: 'hard' },
+      });
+      expect(changed.status).toBe(200);
+      expect(changed.body.table.settings.difficulty).toBe('hard');
+      const refused = await call(host, 'put', `/game/rooms/${made.body.id}/settings`, {
+        settings: { mode: 'free' },
+      });
+      expect(refused.status).toBe(400);
+
+      const listed = await call(host, 'get', '/game/rooms?scope=mine');
+      expect(listed.body.items.find((r) => r.id === made.body.id)).toMatchObject({
+        kind: 'dreamfund',
+        difficulty: 'hard',
+      });
+      await call(guest, 'post', `/game/rooms/${made.body.id}/leave`, {});
+      await call(host, 'delete', `/game/rooms/${made.body.id}?confirm=true`);
+    },
+  );
+
+  maybe('is played to its end: a person and two bots, the bots moving by themselves', async () => {
+    const made = await call(host, 'post', '/game/rooms', {
+      kind: 'dreamfund',
+      nickname: 'Hanna',
+      settings: {
+        name: 'Played',
+        professions: 'random',
+        turnOrder: 'seat',
+        endCondition: 'round-limit',
+        roundLimit: 10,
+        turnGate: false,
+      },
+    });
+    const roomId = made.body.id;
+    roomIds.push(roomId);
+    for (const policyId of ['dream:expert', 'dream:saver']) {
+      const added = await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId });
+      expect(added.status).toBe(200);
+    }
+    const started = await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+    expect(started.status).toBe(200);
+    expect(started.body.table.phase).toBe('playing');
+    expect(started.body.table.players.every((p) => p.professionId && p.life)).toBe(true);
+
+    let view = started.body;
+    const deadline = Date.now() + 200000;
+    let moves = 0;
+    while (view.table.phase === 'playing' && Date.now() < deadline) {
+      const move = view.table.activeSeat === view.table.you ? passive(view.legalActions) : null;
+      if (move) {
+        const sent = await call(host, 'post', `/game/rooms/${roomId}/commands`, { command: move });
+        expect(sent.status).toBe(200);
+        view = sent.body;
+        moves += 1;
+      } else {
+        await sleep(60);
+        view = (await call(host, 'get', `/game/rooms/${roomId}`)).body;
+      }
+    }
+    expect(view.table.phase).toBe('finished');
+    expect(moves).toBeGreaterThan(5);
+    const { result } = view.table;
+    expect(result.reason).toBe('round-limit');
+    expect(result.ranking.map((r) => r.rank)).toEqual([1, 2, 3]);
+    expect(new Set(result.ranking.map((r) => r.seat)).size).toBe(3);
+    // the bots played with their strategies: the investing one is ahead of the person who only rolled
+    const expert = view.table.players.find((p) => p.bot && p.bot.policyId === 'expert');
+    const person = view.table.players.find((p) => p.you);
+    const score = (seat) => result.ranking.find((r) => r.seat === seat).score;
+    expect(score(expert.seat)).toBeGreaterThan(score(person.seat));
+
+    // the log has the story of the game, by seat
+    const log = await call(host, 'get', `/game/rooms/${roomId}/log?limit=200`);
+    expect(log.status).toBe(200);
+    const types = log.body.items
+      ? log.body.items.map((e) => e.type)
+      : log.body.events.map((e) => e.type);
+    expect(types).toEqual(expect.arrayContaining(['play_started', 'rolled', 'game_finished']));
+  });
+
+  maybe('refuses a malformed move and a move out of turn, and changes nothing', async () => {
+    const made = await call(host, 'post', '/game/rooms', {
+      kind: 'dreamfund',
+      nickname: 'Hanna',
+      settings: { name: 'Refusals', professions: 'random', turnOrder: 'seat' },
+    });
+    const roomId = made.body.id;
+    roomIds.push(roomId);
+    await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'dream:etf' });
+    await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+    const bad = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+      command: { type: 'pay_emergency', pay: 7 },
+    });
+    expect(bad.status).toBe(400);
+    const unknown = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+      command: { type: 'fund_reserve', amountMinor: 100, extra: true },
+    });
+    expect(unknown.status).toBe(400);
+    const early = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+      command: { type: 'end_turn' },
+    });
+    expect(early.status).toBeGreaterThanOrEqual(400);
+    await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
+  });
+});

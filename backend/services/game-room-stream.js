@@ -1,6 +1,6 @@
 'use strict';
 
-const { projectFor, tableLegalActions } = require('@money/domain');
+const { kindOf } = require('./game-room-kinds');
 
 /**
  * What a viewer of a table is sent over the live channel (todo/cashflow-multiplayer.md slice S2). Pure: the same functions
@@ -54,9 +54,37 @@ function changedSeats(previous, table) {
  * The `update` a viewer is sent for one change: `previous` is the table before it (null for the first), `events` the domain
  * events with their sequence numbers (`{ seq, event }`).
  */
+function projectDreamUpdate(previous, table, events, userId) {
+  const kind = kindOf(table);
+  const view = kind.project(table, userId);
+  // a life is the bulk of a Dreamfund table: it is sent only for the seats whose life changed
+  const changed = table.players
+    .map((player, seat) => {
+      const before = previous && previous.players.find((p) => p.id === player.id);
+      return before && sameBooks(before.life, player.life) ? -1 : seat;
+    })
+    .filter((seat) => seat >= 0);
+  const kept = new Set(changed);
+  const players = view.players.map((player) => {
+    if (kept.has(player.seat) || player.life === null) return player;
+    const { life: _unchanged, ...rest } = player;
+    return rest;
+  });
+  return {
+    version: table.version,
+    events: events.map(({ seq, event }) =>
+      publicEvent(seq, eventSeat(previous, table, event), event),
+    ),
+    booksChanged: changed,
+    view: { ...view, players },
+    legalActions: kind.legal(table, userId),
+  };
+}
+
 function projectUpdate(previous, table, events, userId) {
+  if (table.kind === 'dreamfund') return projectDreamUpdate(previous, table, events, userId);
   const changed = new Set(changedSeats(previous, table));
-  const view = projectFor(table, userId);
+  const view = kindOf(table).project(table, userId);
   const players = view.players.map((player) => {
     if (changed.has(player.seat) || player.books === null) return player;
     const { books: _unchanged, ...rest } = player;
@@ -71,7 +99,7 @@ function projectUpdate(previous, table, events, userId) {
       (seat) => view.players[seat] && view.players[seat].books !== null,
     ),
     view: { ...view, players },
-    legalActions: tableLegalActions(table, userId),
+    legalActions: kindOf(table).legal(table, userId),
   };
 }
 

@@ -3,18 +3,12 @@
 const crypto = require('crypto');
 const {
   applyCommand,
-  applyTimeout,
   botFallbackCommand,
-  createTable,
   nextBotCommand,
-  humansAreOut,
   canAnswerTrade,
   seededRng,
-  nextDeadline,
   rewindTable,
-  projectFor,
   systemClock,
-  tableLegalActions,
   TableCommandError,
 } = require('@money/domain');
 // the catalog of bots is data kept out of the domain package's barrel (the browser bundle must not carry it)
@@ -25,6 +19,7 @@ const { RoomError } = require('./game-room-errors');
 const { createRoomQueue } = require('./room-queue');
 const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
 const { createGameText } = require('./game-text');
+const { kindOf, kindNamed } = require('./game-room-kinds');
 const { createCardTextSource } = require('./game-card-text');
 
 /**
@@ -150,8 +145,8 @@ function roomView(doc, userId) {
     language: doc.language,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
-    table: projectFor(doc.table, userId),
-    legalActions: tableLegalActions(doc.table, userId),
+    table: kindOf(doc.table).project(doc.table, userId),
+    legalActions: kindOf(doc.table).legal(doc.table, userId),
   };
 }
 
@@ -165,6 +160,15 @@ function roomSummary(doc, userId) {
     visibility: doc.visibility,
     seatsTaken: doc.seatsTaken,
     maxSeats: doc.maxSeats,
+    kind: doc.table.kind === 'dreamfund' ? 'dreamfund' : 'classic',
+    ...(doc.table.kind === 'dreamfund'
+      ? {
+          difficulty: settings.difficulty,
+          shape: settings.shape,
+          size: settings.size,
+          mode: settings.mode,
+        }
+      : {}),
     gameSetId: settings.gameSetId,
     rulesBase: settings.rulesBase,
     ranked: settings.ranked,
@@ -280,14 +284,19 @@ function createGameRoomService({
       });
     }
     // a game that has just ended goes onto the leaderboard (never in the way of the game itself)
-    if (stats && table.phase === 'finished' && (!previous || previous.phase !== 'finished')) {
+    if (
+      stats &&
+      table.kind !== 'dreamfund' &&
+      table.phase === 'finished' &&
+      (!previous || previous.phase !== 'finished')
+    ) {
       stats
         .record(saved)
         .catch((error) =>
           log('game_stats_record_failed', { roomId: doc.roomId, message: error.message }),
         );
     }
-    if (clocks) clocks.arm(doc.roomId, nextDeadline(table));
+    if (clocks) clocks.arm(doc.roomId, kindOf(table).deadline(table));
     if (bots) bots.touch(doc.roomId, table);
     return saved;
   }
@@ -334,7 +343,8 @@ function createGameRoomService({
       throw new RoomError('room_limit', 429, 'The server has no room for another table right now.');
     }
     const roomId = crypto.randomUUID();
-    const { table, events } = createTable(
+    const kind = kindNamed(input.kind);
+    const { table, events } = kind.create(
       {
         id: roomId,
         hostId: userId,
@@ -344,7 +354,10 @@ function createGameRoomService({
         hostInitials: input.initials,
         // a table people create waits for everybody to say Continue after each turn, unless the host switched that off
         // the strict rules are the table's: nothing is added, changed or bought without a card (the solo game's strict mode)
-        settings: { turnGate: true, rulesBase: 'strict', ...input.settings },
+        settings:
+          kind.id === 'dreamfund'
+            ? { turnGate: true, ...input.settings }
+            : { turnGate: true, rulesBase: 'strict', ...input.settings },
         seed: crypto.randomInt(0, 2 ** 32),
       },
       contextFor(language),
@@ -465,7 +478,7 @@ function createGameRoomService({
             throw new TableCommandError('ILLEGAL_MOVE', 'There is no earlier turn to go back to.');
           }
         }
-        const result = applyCommand(doc.table, userId, next, ctx);
+        const result = kindOf(doc.table).apply(doc.table, userId, next, ctx);
         if (!result.events.some((event) => event.type === 'undo_approved')) return { result };
         // the table has voted to undo: go back to the start of the previous turn, in the same save
         const turnSeq = doc.turnSeq || 0;
@@ -510,10 +523,10 @@ function createGameRoomService({
       }
       let result;
       try {
-        result = applyTimeout(doc.table, contextFor(doc.language));
+        result = kindOf(doc.table).timeout(doc.table, contextFor(doc.language));
       } catch (error) {
         if (!(error instanceof TableCommandError)) throw error;
-        if (clocks) clocks.arm(roomId, nextDeadline(doc.table));
+        if (clocks) clocks.arm(roomId, kindOf(doc.table).deadline(doc.table));
         return { fired: false };
       }
       try {
@@ -534,6 +547,7 @@ function createGameRoomService({
    */
   /** The next move of the first bot that has one (the player on the move first), played through the rules; null when none has. */
   function botStep(table, ctx, now, roomId) {
+    if (table.kind === 'dreamfund') return kindOf(table).botStep(table, ctx);
     const order = [
       ...table.players.filter((p) => p.id === table.activePlayerId),
       ...table.players.filter((p) => p.id !== table.activePlayerId),
@@ -601,8 +615,20 @@ function createGameRoomService({
       if (!doc || doc.table.phase !== 'playing') return { moved: false };
       const table = doc.table;
       if (!table.players.some((p) => p.bot)) return { moved: false };
-      if (humansAreOut(table)) return runBotsFast(doc, roomId);
+      if (kindOf(table).humansOut(table)) return runBotsFast(doc, roomId);
       const ctx = contextFor(doc.language);
+      if (table.kind === 'dreamfund') {
+        // one step of the first bot that has one (a step may be several commands of one decision), saved like any other change
+        const stepped = kindOf(table).botStep(table, ctx);
+        if (!stepped || stepped.table.version === table.version) return { moved: false };
+        try {
+          await persist(doc, stepped.table, stepped.events, table);
+          return { moved: true };
+        } catch (error) {
+          if (!(error instanceof store.RoomConflictError)) throw error;
+          continue;
+        }
+      }
       // the player on the move first, then the others (selling off turn, answering a trade offer)
       const order = [
         ...table.players.filter((p) => p.id === table.activePlayerId),
@@ -660,7 +686,7 @@ function createGameRoomService({
     if (!clocks && !bots) return 0;
     const docs = await store.listPlayingRooms(db);
     for (const doc of docs) {
-      if (clocks) clocks.arm(doc.roomId, nextDeadline(doc.table));
+      if (clocks) clocks.arm(doc.roomId, kindOf(doc.table).deadline(doc.table));
       if (bots) bots.touch(doc.roomId, doc.table);
     }
     return docs.length;

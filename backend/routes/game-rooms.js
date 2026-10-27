@@ -27,6 +27,7 @@ const { GameActionError } = require('../repositories/game-play');
 const { createGameRoomHub } = require('../services/game-room-hub');
 const { createRoomClocks } = require('../services/game-room-clocks');
 const { createBotDriver } = require('../services/game-room-bots');
+const { dreamfund } = require('../services/game-room-kinds');
 const { parseCommand, parseGuards } = require('../services/game-room-commands');
 
 /**
@@ -214,6 +215,12 @@ router.get(
   '/bots',
   ...guard('r'),
   handle(async (req, res) => {
+    // the bots of a Dreamfund table are the twelve strategies of the simulation (docs/DREAMFUND_SIMULATION.md): `?kind=dreamfund`
+    if (req.query.kind === 'dreamfund') {
+      return res.json({
+        items: dreamfund.policies.map((policy) => ({ ...policy, policyId: policy.id })),
+      });
+    }
     const profiles = botProfiles();
     const levels = Object.keys(BOT_LEVELS);
     const botIdOf = (id, level) => (level === 'master' ? id : `${id}--${level}`);
@@ -484,6 +491,24 @@ lobbyRoute('post', '/:roomId/start', () => ({ type: 'start' }));
 lobbyRoute('post', '/:roomId/bots', (body) => {
   if (typeof body.policyId !== 'string')
     return 'policyId must be the id of a bot (see GET /game/rooms/bots).';
+  // a seat of a Dreamfund table: one of its strategies (`GET /game/rooms/bots?kind=dreamfund`), sent as `dream:<id>` or plain
+  const dreamId = body.policyId.replace(/^dream:/, '');
+  const dreamPolicy = dreamfund.policies.find((policy) => policy.id === dreamId);
+  if (body.policyId.startsWith('dream:') || (dreamPolicy && !splitBotId(body.policyId))) {
+    if (!dreamPolicy)
+      return `Unknown strategy '${dreamId}': see GET /game/rooms/bots?kind=dreamfund.`;
+    if (body.name !== undefined && typeof body.name !== 'string') return 'name must be a string.';
+    if (body.professionId !== undefined && typeof body.professionId !== 'string') {
+      return 'professionId must be a character id.';
+    }
+    return {
+      type: 'add_bot',
+      name: body.name !== undefined ? body.name : dreamPolicy.name,
+      policyId: dreamPolicy.id,
+      ...(body.professionId ? { professionId: body.professionId } : {}),
+      ...(body.color ? { color: body.color } : {}),
+    };
+  }
   if (body.level !== undefined && !Object.prototype.hasOwnProperty.call(BOT_LEVELS, body.level)) {
     return `level must be one of: ${Object.keys(BOT_LEVELS).join(', ')}.`;
   }
