@@ -1,69 +1,10 @@
-import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
-import { applyEffectsToBooks, type GameBooks } from '../books';
-import { cashOnHandMinor, loanForShortfallMinor } from '../cash';
-import { fixedClock } from '../clock';
-import { findStage, applyCareerMoment, applyCareerStage, rollCareer } from '../career';
-import { normalizeCustomRules, classicRulesOfMode, type CustomRules } from '../custom-rules';
-import { difficultySettings } from '../difficulty';
-import { gameSetFor } from '../card-scale';
-import { professionIdAtDifficulty } from '../game-sets';
-import type { OpportunityCard } from '../opportunity-deck';
-import type { HarvestCard } from '../harvest-deck';
-import {
-  EMPTY_DREAM_LOG,
-  DREAM_MOMENTS,
-  canTakeDream,
-  drawDreamLanding,
-  type DreamLog,
-  type DreamSettings,
-} from '../dream-deck';
-import { buildDreamfundBoard, type BoardSetup } from '../dreamfund-board';
-import { emptyEffects, type BookSubscription } from '../effects';
-import {
-  drawEmergencyCard,
-  emptyEmergencyDeck,
-  quoteEmergency,
-  type EmergencyContext,
-  type EmergencySelection,
-} from '../emergency-deck';
-import { pickCashflowProfession } from '../engine';
-import { endIfOver } from '../game-end';
-import { identityText } from '../game-text';
-import {
-  drawHarvestCard,
-  indexOf,
-  initialMarkets,
-  ladderPayout,
-  playHarvestCard,
-  rideLadder,
-  sellHolding,
-  unitPriceNow,
-  valueOf,
-} from '../harvest';
-import { activeInsurances } from '../insurance';
-import { drawLifeCard, resolveLifeCard, type LifeDecision } from '../life-deck';
-import {
-  applyLifeOutcome,
-  endLifeLine,
-  lifeContext,
-  monthlyExpensesMinor,
-  netMonthlyMinor,
-} from '../life-books';
-import { endableLines } from '../life-deck';
-import { playBankLoan } from '../loan';
-import {
-  buyOpportunity,
-  drawOpportunityOffers,
-  quoteOpportunity,
-  rollsFor,
-  type OpportunityContext,
-  type OpportunitySettings,
-} from '../opportunity';
-import { payOffLiability } from '../liability-payoff';
-import { rollDie, seededRng, type Rng } from '../rng';
-import { salaryLinkedMinor, summarizeGameFinances } from '../saved-games';
-import { currentTurn, playTurn, settleDecision } from '../turn';
-import type { CashflowGameSet, CashflowProfession, CashflowGameState } from '../types';
+import { salaryLinkedMinor } from '../saved-games';
+import type { CustomRules } from '../custom-rules';
+import type { BoardSetup } from '../dreamfund-board';
+import { EMPTY_DREAM_LOG } from '../dream-deck';
+import type { LifeDecision } from '../life-deck';
+import { indexOf, ladderPayout, rideLadder, sellHolding, unitPriceNow, valueOf } from '../harvest';
+import { DreamPlayer, type DreamPlan } from '../dreamfund/player';
 import { expectedMonthlyMinor, type DreamPolicy, type DreamView } from './policies';
 
 /**
@@ -83,15 +24,6 @@ export interface DreamSimConfig {
   rules?: Partial<CustomRules>;
   /** A game not won or lost after this many rolls is a timeout. */
   maxTurns?: number;
-}
-
-/** A payment plan of a project: so much every Payday until what is left is paid. */
-interface SimPlan {
-  kind: 'mojo' | 'life' | 'smile' | 'emergency';
-  /** The dream card of a Smile project; the card of an emergency. */
-  id: string;
-  perMinor: number;
-  leftMinor: number;
 }
 
 export type DreamOutcome = 'won' | 'bankrupt' | 'timeout' | 'error';
@@ -147,129 +79,26 @@ export interface DreamGameRecord {
   }[];
 }
 
-const TODAY = '2026-11-15';
-const NOW = '2026-11-15T09:00:00.000Z';
-
 export class DreamSim {
-  books: GameBooks;
-  readonly rng: Rng;
-  private readonly rules: CustomRules;
-  private readonly gameSet: CashflowGameSet;
-  private readonly cards: OpportunityCard[];
-  private readonly harvestCards: HarvestCard[];
-  private readonly profession: CashflowProfession;
-  private readonly board: ReturnType<typeof buildDreamfundBoard>['board'];
-  private readonly deps;
-  private turns = 0;
-  private reserveMinor = 0;
-  private dreamSavedMinor = 0;
-  private dreamLived = false;
-  private readonly dreamTargetMinor: number;
-  private smile: {
-    cardId: string;
-    totalMinor: number;
-    savedMinor: number;
-    points: number;
-    round: number;
-  }[] = [];
-  private dreamPoints = 0;
-  /** What the Smile and Fire projects are paid by: a plan pays an installment at every Payday (the payment plans of the app). */
-  private plans: SimPlan[] = [];
-  private bonusPoints = 0;
+  /** The player's life: the rules are the engine's (`dreamfund/player.ts`), the decisions this class's policy's. */
+  readonly player: DreamPlayer;
   private readonly record: DreamGameRecord;
-  private readonly debtTags: string[];
 
   constructor(private readonly config: DreamSimConfig) {
-    this.rng = seededRng(config.seed);
-    this.rules = normalizeCustomRules({ mode: 'free', ...config.rules });
-    const gameSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories');
-    // Easy and Hard are characters of their own that share the story of the one asked for
-    const professionId = professionIdAtDifficulty(
-      gameSet,
-      config.professionId ?? 'dual-student-informatik',
-      this.rules.difficulty,
-    );
-    const profession = gameSet?.professions.find((candidate) => candidate.id === professionId);
-    if (!gameSet || !profession) throw new Error(`Unknown character ${professionId}`);
-    // the cards are as big as the character's price level makes them
-    const scaled = gameSetFor(gameSet, profession.priceFactor, { round: profession.roundNumbers });
-    this.gameSet = scaled;
-    this.cards = scaled.decks?.opportunity ?? [];
-    this.harvestCards = scaled.decks?.harvest ?? [];
-    this.profession = profession;
-    const setup: BoardSetup = {
-      shape: config.shape ?? 'ring',
-      size: config.size ?? 'medium',
+    this.player = DreamPlayer.fromSeed({
       seed: config.seed,
-    };
-    this.board = buildDreamfundBoard(setup).board;
-    const pick = pickCashflowProfession(
-      CASHFLOW_GAME_SETS,
-      'jfk-stories',
-      professionId,
-      TODAY,
-      'solo',
-      classicRulesOfMode(this.rules.mode),
-      setup,
-    );
-    const subscriptions: BookSubscription[] = pick.subscriptions.map((sub) => ({
-      title: sub.title,
-      account: sub.account,
-      amountMinor: sub.amountMinor,
-      startDate: TODAY,
-      endDate: '',
-      category: sub.category ?? '',
-      comment: '#dreamfund',
-      frequency: 'monthly',
-    }));
-    const kit = pick.starterKit;
-    this.debtTags = (kit.liabilities ?? []).map((liability) => liability.tag);
-    this.books = {
-      state: {
-        ...pick.state,
-        customRules: this.rules,
-        markets: initialMarkets(),
-        dreams: EMPTY_DREAM_LOG,
-      },
-      allocation: { daily: 60, splurge: 10, smile: 10, fire: 20 },
-      gameSet: scaled,
-      subscriptions,
-      transactions: pick.startingTransactions,
-      liabilities: (kit.liabilities ?? []).map((liability) => ({
-        tag: liability.tag,
-        amountMinor: liability.amountMinor,
-        investment: false,
-      })),
-      shares: (kit.shares ?? []).map((share) => ({ ...share })),
-      investments: [],
-      assets: [],
-      growProjects: [],
-    };
-    this.deps = {
-      clock: fixedClock(TODAY, NOW),
-      text: identityText,
-      money: (minor: number) => `${minor / 100}`,
-      plainMoney: (minor: number) => `${minor / 100}`,
-      lang: 'en' as const,
-      rng: this.rng,
-      opportunityCards: this.cards,
-      difficulty: this.rules.difficulty,
-      cards: {
-        textFor: () => ({}),
-        symbolFor: (symbol: string | undefined) => symbol,
-        sharedText: () => '',
-        groupName: (group: string) => group,
-      },
-    };
-    const project = profession.profile?.texts.en.dream.project;
-    this.dreamTargetMinor =
-      project?.buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0) ?? 0;
+      professionId: config.professionId,
+      shape: config.shape,
+      size: config.size,
+      rules: config.rules,
+    });
+    this.player.onEvent = (event) => this.log(event);
     this.record = {
       seed: config.seed,
       policyId: config.policy.id,
-      shape: setup.shape,
-      size: setup.size,
-      difficulty: this.rules.difficulty,
+      shape: this.player.setup.shape,
+      size: this.player.setup.size,
+      difficulty: this.player.rules.difficulty,
       outcome: 'timeout',
       turns: 0,
       paydays: 0,
@@ -280,7 +109,7 @@ export class DreamSim {
       expensesMinor: 0,
       peakPassiveMinor: 0,
       peakBankLoanMinor: 0,
-      lowestCashMinor: this.cash(),
+      lowestCashMinor: this.player.cash(),
       dreamPoints: 0,
       landings: {},
       taken: {},
@@ -292,99 +121,46 @@ export class DreamSim {
     };
   }
 
-  // ── the books ──
+  get books() {
+    return this.player.books;
+  }
 
-  private get state(): CashflowGameState {
-    return this.books.state;
+  private get p(): DreamPlayer {
+    return this.player;
   }
 
   cash(): number {
-    return cashOnHandMinor(this.books.transactions, this.books.allocation);
-  }
-
-  private setState(state: CashflowGameState): void {
-    this.books = { ...this.books, state };
-  }
-
-  private apply(effects: ReturnType<typeof emptyEffects>): void {
-    this.books = applyEffectsToBooks(this.books, effects);
-  }
-
-  private add(account: string, amountMinor: number, category: string): void {
-    const effects = emptyEffects(this.state, null);
-    effects.appendedTransactions.push({
-      account,
-      amountMinor,
-      date: TODAY,
-      time: '',
-      category,
-      comment: '#dreamfund',
-    });
-    this.apply(effects);
-  }
-
-  /** Money out of the account: the reserve gives back first, then the Bank loan covers what is still short. */
-  private spend(costMinor: number, category: string, fromReserve = true): void {
-    if (costMinor <= 0) return;
-    let cash = this.cash();
-    if (fromReserve && cash < costMinor && this.reserveMinor > 0) {
-      const back = Math.min(this.reserveMinor, costMinor - cash);
-      this.reserveMinor -= back;
-      this.add('Fire', back, '@Mojo');
-      cash += back;
-    }
-    if (cash < costMinor) {
-      const step = this.books.gameSet?.loanRule.incrementMinor ?? 0;
-      const loan = loanForShortfallMinor(costMinor, cash, step);
-      this.apply(playBankLoan(this.books, loan, this.deps, { mandatory: true }));
-    }
-    this.add('Daily', -costMinor, category);
+    return this.p.cash();
   }
 
   private log(event: string): void {
-    this.record.lastEvents = [...this.record.lastEvents, `${this.turns}:${event}`].slice(-8);
+    this.record.lastEvents = [...this.record.lastEvents, `${this.p.turns}:${event}`].slice(-8);
     const id = event.split(' ')[1];
     if (id && !event.startsWith('O ') && !event.startsWith('C ')) {
       this.record.drawn[id] = (this.record.drawn[id] ?? 0) + 1;
-      if (this.turns <= 60) this.record.drawnEarly[id] = (this.record.drawnEarly[id] ?? 0) + 1;
+      if (this.p.turns <= 60) this.record.drawnEarly[id] = (this.record.drawnEarly[id] ?? 0) + 1;
     }
-  }
-
-  private payDues(): void {
-    for (const due of this.state.paymentsDue ?? []) this.spend(due.costMinor, `@${due.category}`);
-    if ((this.state.paymentsDue ?? []).length > 0) {
-      this.setState({ ...this.state, paymentsDue: [] });
-    }
-  }
-
-  private monthlyExpenses(): number {
-    return monthlyExpensesMinor(this.state, this.books.subscriptions);
-  }
-
-  private debtsMinor(): number {
-    return this.books.liabilities
-      .filter((liability) => this.debtTags.includes(liability.tag))
-      .reduce((sum, liability) => sum + liability.amountMinor, 0);
   }
 
   private view(): DreamView {
-    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
-    const expenses = this.monthlyExpenses();
-    const cash = this.cash();
+    const p = this.p;
+    const finances = p.finances();
+    const expenses = p.monthlyExpenses();
+    const cash = p.cash();
     return {
       cashMinor: cash,
       monthlyExpensesMinor: expenses,
       passiveMinor: finances.passiveIncomeMinor,
-      reserveMinor: this.reserveMinor,
+      reserveMinor: p.reserveMinor,
       reserveTargetMinor: expenses * 3,
-      round: this.state.round,
-      debtsMinor: this.debtsMinor(),
-      dreamFundedMinor: this.dreamSavedMinor,
-      dreamTargetMinor: this.dreamTargetMinor,
+      round: p.state.round,
+      debtsMinor: p.debtsMinor(),
+      dreamFundedMinor: p.dreamSavedMinor,
+      dreamTargetMinor: p.dreamTargetMinor,
       spendableMinor: Math.max(0, cash - this.config.policy.bufferMonths * expenses),
-      markets: this.state.markets ?? {},
-      holdingsCount: (this.state.holdings ?? []).filter((holding) => !holding.ended).length,
-      difficulty: this.rules.difficulty,
+      markets: p.state.markets ?? {},
+      holdingsCount: (p.state.holdings ?? []).filter((holding) => !holding.ended).length,
+      difficulty: p.rules.difficulty,
     };
   }
 
@@ -393,7 +169,7 @@ export class DreamSim {
   run(): DreamGameRecord {
     const max = this.config.maxTurns ?? 400;
     try {
-      while (this.turns < max && currentTurn(this.state).phase !== 'over' && !this.record.wonTurn) {
+      while (this.p.turns < max && !this.p.isOver() && !this.record.wonTurn) {
         this.turn();
       }
     } catch (error) {
@@ -407,183 +183,87 @@ export class DreamSim {
   }
 
   private finish(): DreamGameRecord {
-    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
+    const p = this.p;
+    const finances = p.finances();
     const record = this.record;
-    const turn = currentTurn(this.state);
     if (record.outcome !== 'error') {
-      record.outcome = record.wonTurn
-        ? 'won'
-        : turn.outcome === 'bankrupt'
-          ? 'bankrupt'
-          : 'timeout';
+      record.outcome = record.wonTurn ? 'won' : p.outcome() === 'bankrupt' ? 'bankrupt' : 'timeout';
     }
-    record.turns = this.turns;
-    record.paydays = this.state.round;
-    record.cashMinor = this.cash();
-    record.reserveMinor = this.reserveMinor;
+    record.turns = p.turns;
+    record.paydays = p.state.round;
+    record.cashMinor = p.cash();
+    record.reserveMinor = p.reserveMinor;
     record.passiveMinor = finances.passiveIncomeMinor;
     record.expensesMinor = finances.expensesMinor;
-    record.dreamPoints = this.dreamPoints + this.bonusPoints;
-    record.netWorthMinor = this.netWorth();
+    record.dreamPoints = p.dreamPoints + p.bonusPoints;
+    record.netWorthMinor = p.netWorth();
     return record;
   }
 
-  private netWorth(): number {
-    const state = this.state;
-    const holdingsValue = (state.holdings ?? [])
-      .filter((holding) => !holding.ended)
-      .reduce((sum, holding) => {
-        const card = this.cards.find((candidate) => candidate.id === holding.cardId);
-        return sum + (card ? valueOf(card, holding, state) : 0);
-      }, 0);
-    const loans = this.books.liabilities.reduce((sum, liability) => sum + liability.amountMinor, 0);
-    return this.cash() + this.reserveMinor + this.dreamSavedMinor + holdingsValue - loans;
-  }
-
   private turn(): void {
-    const before = this.state.round;
-    const result = playTurn(this.books, {
-      ...this.deps,
-      board: this.board,
-      profession: this.profession,
-    });
-    let books = this.books;
-    for (const effects of result.effects) books = applyEffectsToBooks(books, effects);
-    this.books = books;
-    this.turns += 1;
-    const landed = result.move.landed.kind;
-    this.record.landings[landed] = (this.record.landings[landed] ?? 0) + 1;
-    for (let i = 0; i < this.state.round - before; i += 1) this.payday();
-    const pending = currentTurn(this.state).pending;
-    if (pending?.kind === 'story' && pending.tile && currentTurn(this.state).phase === 'decide') {
-      this.tile(pending.tile);
-    }
-    if (currentTurn(this.state).phase === 'decide') {
-      const settled = settleDecision(this.state, 'done', this.books.subscriptions);
-      this.setState(settled.state);
-    }
-    this.setState(endIfOver(this.state, this.books.subscriptions));
+    const p = this.p;
+    const rolled = p.roll();
+    this.record.landings[rolled.landed] = (this.record.landings[rolled.landed] ?? 0) + 1;
+    for (let i = 0; i < rolled.paydays; i += 1) this.payday();
+    const tile = p.pendingTile();
+    if (tile) this.tile(tile);
+    p.endTurn();
     this.track();
   }
 
   private track(): void {
-    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
+    const p = this.p;
+    const finances = p.finances();
     const record = this.record;
-    if (this.turns % 10 === 0 && record.trace.at(-1)?.turn !== this.turns) {
+    if (p.turns % 10 === 0 && record.trace.at(-1)?.turn !== p.turns) {
       record.trace.push({
-        turn: this.turns,
-        cash: Math.round(this.cash() / 100),
-        reserve: Math.round(this.reserveMinor / 100),
-        dream: Math.round(this.dreamSavedMinor / 100),
+        turn: p.turns,
+        cash: Math.round(p.cash() / 100),
+        reserve: Math.round(p.reserveMinor / 100),
+        dream: Math.round(p.dreamSavedMinor / 100),
         passive: Math.round(finances.passiveIncomeMinor / 100),
         expenses: Math.round(finances.expensesMinor / 100),
         living: Math.round(
-          (finances.expensesMinor - salaryLinkedMinor(this.state, this.books.subscriptions)) / 100,
+          (finances.expensesMinor - salaryLinkedMinor(p.state, p.books.subscriptions)) / 100,
         ),
         cashflow: Math.round(finances.monthlyCashflowMinor / 100),
-        holdings: (this.state.holdings ?? []).filter((h) => !h.ended).length,
-        plans: this.plans.length,
+        holdings: (p.state.holdings ?? []).filter((h) => !h.ended).length,
+        plans: p.plans.length,
       });
     }
-    const expenses = this.monthlyExpenses();
+    const expenses = p.monthlyExpenses();
     record.peakPassiveMinor = Math.max(record.peakPassiveMinor, finances.passiveIncomeMinor);
-    record.lowestCashMinor = Math.min(record.lowestCashMinor, this.cash());
+    record.lowestCashMinor = Math.min(record.lowestCashMinor, p.cash());
     const loan =
-      this.books.liabilities.find((liability) => liability.tag === 'Bank loan')?.amountMinor ?? 0;
+      p.books.liabilities.find((liability) => liability.tag === 'Bank loan')?.amountMinor ?? 0;
     record.peakBankLoanMinor = Math.max(record.peakBankLoanMinor, loan);
-    if (!record.reserveFullTurn && expenses > 0 && this.reserveMinor >= expenses * 3)
-      record.reserveFullTurn = this.turns;
-    if (!record.debtsRepaidTurn && this.debtsMinor() === 0) record.debtsRepaidTurn = this.turns;
-    if (!record.dreamLivedTurn && this.dreamLived) record.dreamLivedTurn = this.turns;
+    if (!record.reserveFullTurn && expenses > 0 && p.reserveMinor >= expenses * 3)
+      record.reserveFullTurn = p.turns;
+    if (!record.debtsRepaidTurn && p.debtsMinor() === 0) record.debtsRepaidTurn = p.turns;
+    if (!record.dreamLivedTurn && p.dreamLived) record.dreamLivedTurn = p.turns;
     if (!record.independentTurn && expenses > 0 && finances.escapedRatRace) {
-      record.independentTurn = this.turns;
+      record.independentTurn = p.turns;
     }
     if (
       !record.wonTurn &&
       record.reserveFullTurn &&
-      this.reserveMinor >= expenses * 3 &&
-      this.debtsMinor() === 0 &&
-      this.dreamLived &&
+      p.reserveMinor >= expenses * 3 &&
+      p.debtsMinor() === 0 &&
+      p.dreamLived &&
       finances.escapedRatRace
     ) {
-      record.wonTurn = this.turns;
+      record.wonTurn = p.turns;
     }
   }
 
   // ── a Payday: where the free money goes ──
 
-  /** A thin month is thinned out: the lines of life that can be ended are ended, the dearest first, until it is safe again. */
-  private trim(): void {
-    for (let guard = 0; guard < 8; guard += 1) {
-      const finances = summarizeGameFinances(this.state, this.books.subscriptions);
-      if (finances.monthlyCashflowMinor >= finances.expensesMinor * 0.1) return;
-      const lines = endableLines(this.state.lifeLines ?? []).filter((line) => line.amountMinor < 0);
-      if (lines.length === 0) return;
-      const worst = [...lines].sort((a, b) => a.amountMinor - b.amountMinor)[0];
-      const books = { state: this.state, subscriptions: this.books.subscriptions };
-      const effects = endLifeLine(books, worst.id, { date: TODAY, lang: 'en' });
-      if (!effects) return;
-      this.apply(effects);
-      this.payDues();
-    }
-  }
-
   private payday(): void {
-    this.trim();
-    this.payInstallments();
+    this.p.trim();
+    this.p.payInstallments();
     this.replan();
     this.extraPayments();
     this.track();
-  }
-
-  /** The installments of every plan are paid: the project they are for grows by them. */
-  private payInstallments(): void {
-    for (const plan of [...this.plans]) {
-      const pay = Math.min(plan.perMinor, plan.leftMinor);
-      if (pay <= 0) continue;
-      this.spend(pay, `@${plan.kind}`, plan.kind !== 'mojo');
-      plan.leftMinor -= pay;
-      if (plan.kind === 'mojo') this.reserveMinor += pay;
-      else if (plan.kind === 'life') this.dreamSavedMinor += pay;
-      else if (plan.kind === 'smile') {
-        const dream = this.smile.find((candidate) => candidate.cardId === plan.id);
-        if (dream) dream.savedMinor += pay;
-      }
-      if (plan.leftMinor <= 0) this.plans = this.plans.filter((candidate) => candidate !== plan);
-    }
-    this.checkDreams();
-  }
-
-  /** A dream that is fully funded is lived. */
-  private checkDreams(): void {
-    if (
-      !this.dreamLived &&
-      this.dreamTargetMinor > 0 &&
-      this.dreamSavedMinor >= this.dreamTargetMinor
-    ) {
-      this.dreamLived = true;
-      this.plans = this.plans.filter((plan) => plan.kind !== 'life');
-    }
-    for (const dream of [...this.smile]) {
-      if (dream.savedMinor < dream.totalMinor) continue;
-      this.dreamPoints += dream.points;
-      this.smile = this.smile.filter((candidate) => candidate !== dream);
-      this.plans = this.plans.filter(
-        (plan) => !(plan.kind === 'smile' && plan.id === dream.cardId),
-      );
-      const log: DreamLog = this.state.dreams ?? EMPTY_DREAM_LOG;
-      this.setState({
-        ...this.state,
-        dreams: {
-          ...log,
-          open: log.open.filter((open) => open.cardId !== dream.cardId),
-          lived: [
-            ...log.lived,
-            { cardId: dream.cardId, points: dream.points, round: this.state.round },
-          ],
-        },
-      });
-    }
   }
 
   /**
@@ -591,9 +271,10 @@ export class DreamSim {
    * after the plans already running (an emergency plan is paid first), in the order of the strategy.
    */
   private replan(): void {
+    const p = this.p;
     const policy = this.config.policy;
-    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
-    const committed = this.plans
+    const finances = p.finances();
+    const committed = p.plans
       .filter((plan) => plan.kind === 'emergency')
       .reduce((sum, plan) => sum + plan.perMinor, 0);
     let room = Math.max(
@@ -601,25 +282,24 @@ export class DreamSim {
       Math.floor((finances.monthlyCashflowMinor - committed) * policy.planShare),
     );
     const months = Math.max(3, policy.planMonths);
-    const set = (kind: SimPlan['kind'], id: string, left: number) => {
-      this.plans = this.plans.filter((plan) => !(plan.kind === kind && plan.id === id));
+    const set = (kind: DreamPlan['kind'], id: string, left: number) => {
+      p.plans = p.plans.filter((plan) => !(plan.kind === kind && plan.id === id));
       if (left <= 0 || room <= 0) return;
       const per = Math.min(room, Math.ceil(left / months));
-      this.plans.push({ kind, id, perMinor: per, leftMinor: left });
+      p.plans.push({ kind, id, perMinor: per, leftMinor: left });
       room -= per;
     };
     for (const priority of policy.priorities) {
       if (priority === 'reserve') {
-        set('mojo', 'mojo', Math.max(0, this.monthlyExpenses() * 3 - this.reserveMinor));
+        set('mojo', 'mojo', Math.max(0, p.monthlyExpenses() * 3 - p.reserveMinor));
       } else if (priority === 'dream') {
         const wait = policy.dreamAfterPassiveShare;
-        const living =
-          finances.expensesMinor - salaryLinkedMinor(this.state, this.books.subscriptions);
+        const living = finances.expensesMinor - salaryLinkedMinor(p.state, p.books.subscriptions);
         if (wait !== undefined && finances.passiveIncomeMinor < living * wait) continue;
-        if (!this.dreamLived && this.dreamTargetMinor > 0) {
-          set('life', 'life', this.dreamTargetMinor - this.dreamSavedMinor);
+        if (!p.dreamLived && p.dreamTargetMinor > 0) {
+          set('life', 'life', p.dreamTargetMinor - p.dreamSavedMinor);
         }
-        for (const dream of this.smile)
+        for (const dream of p.smile)
           set('smile', dream.cardId, dream.totalMinor - dream.savedMinor);
       }
     }
@@ -627,70 +307,31 @@ export class DreamSim {
 
   /** What is left over a buffer after the plans: lump sums into the reserve, the debts and the dreams, as the strategy ranks them. */
   private extraPayments(): void {
+    const p = this.p;
     const policy = this.config.policy;
-    const expenses = this.monthlyExpenses();
+    const expenses = p.monthlyExpenses();
     const buffer = policy.bufferMonths * expenses;
-    const free = () => Math.max(0, this.cash() - buffer);
+    const free = () => Math.max(0, p.cash() - buffer);
     for (const priority of policy.priorities) {
       if (priority === 'reserve') {
-        const put = Math.min(free(), Math.max(0, expenses * 3 - this.reserveMinor));
-        if (put > 0) {
-          this.add('Daily', -put, '@Mojo');
-          this.reserveMinor += put;
-        }
+        p.fundReserve(Math.min(free(), Math.max(0, expenses * 3 - p.reserveMinor)));
       } else if (priority === 'debt') {
-        for (const liability of [...this.books.liabilities]) {
+        for (const liability of [...p.books.liabilities]) {
           if (liability.amountMinor <= 0) continue;
           const isBank = liability.tag === 'Bank loan';
-          if (!isBank && !this.debtTags.includes(liability.tag)) continue;
+          if (!isBank && !p.debtTags.includes(liability.tag)) continue;
           if (isBank) {
-            const step = this.books.gameSet?.loanRule.incrementMinor ?? 100000;
-            const repay = Math.min(liability.amountMinor, Math.floor(free() / step) * step);
-            if (repay > 0) {
-              try {
-                this.apply(playBankLoan(this.books, -repay, this.deps));
-              } catch {
-                // the rules refuse it: it stays
-              }
-            }
+            const step = p.books.gameSet?.loanRule.incrementMinor ?? 100000;
+            p.repayBankLoan(Math.min(liability.amountMinor, Math.floor(free() / step) * step));
           } else if (free() >= liability.amountMinor) {
-            try {
-              for (const effects of payOffLiability(
-                this.books,
-                this.profession,
-                liability.tag,
-                this.deps,
-              )) {
-                this.apply(effects);
-              }
-            } catch {
-              // not allowed now: it stays
-            }
+            p.repayDebt(liability.tag);
           }
         }
       } else if (priority === 'dream') {
-        this.fundDreams(free() * policy.dreamShare);
+        p.fundDreams(free() * policy.dreamShare);
       }
     }
-    this.checkDreams();
-  }
-
-  /** Extra money for dreams: the life dream first, then the dreams taken from the Dream tiles. */
-  private fundDreams(money: number): void {
-    let left = Math.floor(money);
-    if (!this.dreamLived && this.dreamTargetMinor > 0 && left > 0) {
-      const put = Math.min(left, this.dreamTargetMinor - this.dreamSavedMinor);
-      this.spend(put, '@Dream', false);
-      this.dreamSavedMinor += put;
-      left -= put;
-    }
-    for (const dream of this.smile) {
-      if (left <= 0) break;
-      const put = Math.min(left, dream.totalMinor - dream.savedMinor);
-      this.spend(put, '@Dream', false);
-      dream.savedMinor += put;
-      left -= put;
-    }
+    p.checkDreams();
   }
 
   // ── the tiles ──
@@ -702,7 +343,8 @@ export class DreamSim {
       case 'life':
         return this.life();
       case 'career':
-        return this.career();
+        this.p.career();
+        return;
       case 'dream':
         return this.dream();
       case 'opportunity':
@@ -713,312 +355,97 @@ export class DreamSim {
   }
 
   private emergency(): void {
-    const cards = this.gameSet.decks?.emergency ?? [];
-    if (cards.length === 0) return;
-    const draw = drawEmergencyCard(
-      cards,
-      this.state.emergencyDeck ?? emptyEmergencyDeck(),
-      this.state.possessions ?? [],
-      this.rng,
-    );
-    this.setState({ ...this.state, emergencyDeck: draw.deck });
-    const level = difficultySettings(this.rules.difficulty);
-    const context: EmergencyContext = {
-      insurances: activeInsurances(this.state),
-      traits: this.state.traits ?? [],
-      openEmergencies: 0,
-      priceFactor: (this.profession.priceFactor ?? 1) * level.emergencyCostMultiplier,
-      deductibleCapMinor: level.insuranceDeductibleCapMinor,
-    };
-    const card = draw.card;
-    this.log(`E ${card.id}`);
-    let selection: EmergencySelection = { rolls: {} };
-    for (let guard = 0; guard < 10; guard += 1) {
-      const quote = quoteEmergency(card, selection, context);
-      if (quote.needsChoice) {
-        // the cheapest way out
-        let best: { id: string; pay: number } | null = null;
-        for (const choice of card.choices ?? []) {
-          let probe: EmergencySelection = {
-            ...selection,
-            choiceId: choice.id,
-            rolls: { ...(selection.rolls ?? {}) },
-          };
-          for (let i = 0; i < 6; i += 1) {
-            const q = quoteEmergency(card, probe, context);
-            if (!q.needsRolls.length) break;
-            probe = { ...probe, rolls: { ...probe.rolls, [q.needsRolls[0]]: 3 } };
-          }
-          const pay = quoteEmergency(card, probe, context).payMinor;
-          if (!best || pay < best.pay) best = { id: choice.id, pay };
-        }
-        selection = { ...selection, choiceId: best?.id };
-        continue;
-      }
-      if (quote.needsRolls.length > 0) {
-        selection = {
-          ...selection,
-          rolls: { ...selection.rolls, [quote.needsRolls[0]]: rollDie(this.rng) },
-        };
-        continue;
-      }
-      this.record.emergenciesPaidMinor += quote.payMinor;
-      this.payEmergency(card.id, card.payment === 'pay_now', quote.payMinor);
-      return;
-    }
+    const p = this.p;
+    const drawn = p.drawEmergency();
+    if (!drawn) return;
+    const pay = p.autoEmergencySelection(drawn.card, drawn.context);
+    if (pay === null) return;
+    this.record.emergenciesPaidMinor += pay;
+    this.payEmergency(drawn.card.id, drawn.card.payment === 'pay_now', pay);
   }
 
   /** An emergency is paid from cash, from the reserve, or - where the card allows - on a plan of 3, 6 or 12 Paydays with its surcharge. */
   private payEmergency(id: string, mustPayNow: boolean, payMinor: number): void {
-    const policy = this.config.policy;
-    const buffer = policy.bufferMonths * this.monthlyExpenses();
-    if (mustPayNow || this.cash() - payMinor >= buffer || this.reserveMinor >= payMinor) {
-      this.spend(payMinor, '@Emergency');
+    const p = this.p;
+    const buffer = this.config.policy.bufferMonths * p.monthlyExpenses();
+    if (mustPayNow || p.cash() - payMinor >= buffer || p.reserveMinor >= payMinor) {
+      p.payEmergencyNow(payMinor);
       return;
     }
-    const surcharge = difficultySettings(this.rules.difficulty).planSurchargePercents;
-    const finances = summarizeGameFinances(this.state, this.books.subscriptions);
-    const room = Math.max(
-      0,
-      finances.monthlyCashflowMinor - this.plans.reduce((sum, plan) => sum + plan.perMinor, 0),
-    );
-    const choices = [3, 6, 12].map((months, at) => {
-      const total = Math.round(payMinor * (1 + surcharge[at] / 100));
-      return { total, per: Math.ceil(total / months) };
-    });
+    const room = p.planRoomMinor();
+    const choices = p.emergencyPlanOptions(payMinor);
     const fits = choices.find((choice) => choice.per <= room) ?? choices[2];
-    this.plans.push({ kind: 'emergency', id, perMinor: fits.per, leftMinor: fits.total });
+    p.planEmergency(id, fits);
   }
 
   private life(): void {
-    const cards = this.gameSet.decks?.life ?? [];
-    const life = this.state.life;
-    if (cards.length === 0 || !life) return;
-    const draw = drawLifeCard(cards, this.state.lifeDeck ?? emptyEmergencyDeck(), life, this.rng);
-    this.setState({ ...this.state, lifeDeck: draw.deck });
-    const card = draw.card;
-    this.log(`L ${card.id}`);
+    const p = this.p;
+    const card = p.drawLife();
+    if (!card) return;
     let decision: LifeDecision;
     if (card.type === 'fate') decision = { kind: 'fate' };
     else if (card.type === 'dice') {
       // a wish for a baby, a risk worth taking only with a full reserve and a month that can carry it
-      const finances = summarizeGameFinances(this.state, this.books.subscriptions);
+      const finances = p.finances();
       const safe =
-        this.reserveMinor >= this.monthlyExpenses() * 3 &&
+        p.reserveMinor >= p.monthlyExpenses() * 3 &&
         finances.monthlyCashflowMinor >= finances.expensesMinor * 0.3;
       decision = card.optional && !safe ? { kind: 'pass' } : { kind: 'roll' };
     } else if (card.type === 'giving') decision = { kind: 'pass' };
     else if (card.options?.length) decision = { kind: 'option', id: card.options[0].id };
     else decision = this.lifeChoice(card);
-    const books = { state: this.state, subscriptions: this.books.subscriptions };
-    const outcome = resolveLifeCard(card, decision, lifeContext(books, 'en', this.rng), (id) =>
-      cards.find((c) => c.id === id),
-    );
-    this.apply(applyLifeOutcome(books, outcome, { date: TODAY, lang: 'en' }));
-    this.payDues();
+    p.resolveLife(card, decision);
   }
 
   /**
    * A choice of life: a sensible player takes what they can afford - a new monthly cost that leaves a good part of the month, and a
    * payment that cash and reserve can carry - and the strategy's appetite decides the rest.
    */
-  private lifeChoice(card: Parameters<typeof resolveLifeCard>[0]): LifeDecision {
-    const cards = this.gameSet.decks?.life ?? [];
-    const books = { state: this.state, subscriptions: this.books.subscriptions };
-    const probe = resolveLifeCard(
-      card,
-      { kind: 'accept' },
-      lifeContext(books, 'en', seededRng(1)),
-      (id) => cards.find((c) => c.id === id),
-    );
-    const impact = probe.lines.reduce((sum, line) => sum + line.amountMinor, 0);
-    const cashflow = summarizeGameFinances(
-      this.state,
-      this.books.subscriptions,
-    ).monthlyCashflowMinor;
-    const payNow = Math.max(0, -probe.oneTimeMinor);
-    const affordable = payNow <= this.cash() + this.reserveMinor;
-    const keeps = impact >= 0 || cashflow + impact >= cashflow * 0.4;
+  private lifeChoice(card: NonNullable<ReturnType<DreamPlayer['drawLife']>>): LifeDecision {
+    const p = this.p;
+    const probe = p.probeLife(card);
+    const cashflow = p.finances().monthlyCashflowMinor;
+    const affordable = probe.payNow <= p.cash() + p.reserveMinor;
+    const keeps = probe.impact >= 0 || cashflow + probe.impact >= cashflow * 0.4;
     if (!affordable || !keeps) return { kind: 'decline' };
-    return impact >= 0 || this.rng() < this.config.policy.lifeAcceptChance
+    return probe.impact >= 0 || p.rng() < this.config.policy.lifeAcceptChance
       ? { kind: 'accept' }
       : { kind: 'decline' };
   }
 
-  private career(): void {
-    const track = this.profession.career;
-    const career = this.state.career;
-    if (!track || !career) return;
-    const result = rollCareer(career, track, this.rng);
-    this.log(`C ${result.kind}`);
-    const books = { state: this.state, subscriptions: this.books.subscriptions };
-    if (result.kind === 'promoted' || result.kind === 'branch') {
-      const stage = findStage(track, result.kind === 'promoted' ? result.to : result.options[0]);
-      if (stage) {
-        this.apply(applyCareerStage(books, stage, { date: TODAY, lang: 'en' }));
-        this.payDues();
-      }
-    } else if (result.kind === 'moment') {
-      this.apply(applyCareerMoment(books, result.moment, { date: TODAY, lang: 'en' }));
-    } else if (result.kind === 'failed' && result.retakeMinor) {
-      this.spend(result.retakeMinor, '@Exam');
-    }
-  }
-
   private dream(): void {
-    const cards = this.gameSet.decks?.dream ?? [];
-    if (cards.length === 0) return;
-    const settings: DreamSettings = {
-      offersPerLanding: this.rules.dreamOffers,
-      maxOpenDreams: this.rules.maxOpenDreams,
-      lifeCanDecline: this.rules.lifeMayDecline,
-    };
-    const log: DreamLog = this.state.dreams ?? EMPTY_DREAM_LOG;
-    const landing = drawDreamLanding(
-      cards,
-      DREAM_MOMENTS,
-      this.state.dreamDeck ?? emptyEmergencyDeck(),
-      { log, life: this.state.life, settings },
-      this.rng,
-    );
-    this.setState({ ...this.state, dreamDeck: landing.deck });
+    const p = this.p;
+    const policy = this.config.policy;
+    const drawn = p.drawDream();
+    if (!drawn) return;
+    const { landing, cards } = drawn;
     if (landing.kind === 'moment') {
-      this.log(`D ${landing.moment.id}`);
-      this.moment(landing.moment.id, cards, settings, log);
+      p.moment(landing.moment.id, cards, (offers, openCount) =>
+        policy.dream(offers, this.view(), openCount),
+      );
       return;
     }
-    const pick = this.config.policy.dream(landing.offers, this.view(), log.open.length);
-    if (!pick || !canTakeDream(log, settings)) return;
-    this.takeDream(pick, log);
-  }
-
-  /** What a bot does with a dream moment: it uses it for the dreams it has open (the life dream is left as it is). */
-  private moment(
-    id: string,
-    cards: readonly import('../dream-deck').DreamCard[],
-    settings: DreamSettings,
-    log: DreamLog,
-  ): void {
-    const open = this.smile;
-    const cardOf = (cardId: string) => cards.find((candidate) => candidate.id === cardId);
-    const half = open.find((dream) => dream.savedMinor * 2 >= dream.totalMinor);
-    const gift = (minor: number) => {
-      const target = open[0];
-      if (target) target.savedMinor += minor;
-      else this.add('Smile', minor, '@Gift');
-    };
-    if (id === 'M01' && half) {
-      half.totalMinor = Math.round(half.savedMinor + (half.totalMinor - half.savedMinor) * 0.85);
-    } else if (id === 'M02') {
-      gift(30000);
-    } else if (id === 'M03' || id === 'M04') {
-      const trip = open.find((dream) => {
-        const category = cardOf(dream.cardId)?.category;
-        return (
-          category === 'travel' ||
-          category === 'wonders' ||
-          (id === 'M04' && category === 'adventure')
-        );
-      });
-      const partner = (this.state.life?.relationship ?? 'single') !== 'single';
-      if (trip && (id === 'M03' || partner)) {
-        const percent = id === 'M03' ? 20 : 25;
-        // the last-minute deal needs the dream to be funded completely right now
-        if (
-          id === 'M04' ||
-          this.cash() >= (trip.totalMinor - trip.savedMinor) * (1 - percent / 100)
-        ) {
-          trip.totalMinor = Math.round(trip.totalMinor * (1 - percent / 100));
-          trip.savedMinor = Math.min(trip.savedMinor, trip.totalMinor);
-        }
-      }
-    } else if (id === 'M05') {
-      const landing = drawDreamLanding(
-        cards,
-        [],
-        this.state.dreamDeck ?? emptyEmergencyDeck(),
-        { log, life: this.state.life, settings, forceOffers: 3 },
-        this.rng,
-      );
-      if (landing.kind === 'offers') {
-        const pick = this.config.policy.dream(landing.offers, this.view(), log.open.length);
-        if (pick && canTakeDream(log, settings)) this.takeDream(pick, log);
-      }
-    } else if (id === 'M06') {
-      const net = netMonthlyMinor(this.state, this.books.subscriptions);
-      gift(Math.round(net * 0.05));
-    } else if (id === 'M07') {
-      this.bonusPoints += open.filter(
-        (dream) => dream.savedMinor > 0 && this.state.round - dream.round >= 6,
-      ).length;
-    }
-    this.checkDreams();
-  }
-
-  private takeDream(pick: import('../dream-deck').DreamCard, log: DreamLog): void {
-    this.smile.push({
-      cardId: pick.id,
-      totalMinor: pick.totalMinor,
-      savedMinor: 0,
-      points: pick.points,
-      round: this.state.round,
-    });
-    this.setState({
-      ...this.state,
-      dreams: {
-        ...log,
-        open: [
-          ...log.open,
-          { cardId: pick.id, projectTitle: pick.title.en, round: this.state.round },
-        ],
-      },
-    });
-  }
-
-  private opportunitySettings(): OpportunitySettings {
-    return {
-      offersPerLanding: this.rules.opportunityOffers,
-      maxSideHustles: this.rules.maxSideHustles,
-      savingsCardCopies: this.rules.savingsCardCopies,
-    };
-  }
-
-  private opportunityContext(): OpportunityContext {
-    const debt = this.books.liabilities
-      .filter((liability) => liability.tag !== 'Bank loan')
-      .reduce((sum, liability) => sum + liability.amountMinor, 0);
-    return {
-      life: this.state.life,
-      careerStage: Number(/\d+/.exec(this.state.career?.stage ?? 'C1')?.[0] ?? 1),
-      holdings: this.state.holdings ?? [],
-      debtMinor: debt,
-    };
+    const log = p.state.dreams ?? EMPTY_DREAM_LOG;
+    const pick = policy.dream(landing.offers, this.view(), log.open.length);
+    if (!pick || !p.canTakeDream()) return;
+    p.takeDream(pick);
   }
 
   private opportunity(): void {
+    const p = this.p;
     const policy = this.config.policy;
     const view = this.view();
-    const pile = policy.pile(view, this.rng);
+    const pile = policy.pile(view, p.rng);
     if (!pile) return;
-    const context = this.opportunityContext();
-    const settings = this.opportunitySettings();
-    const draw = drawOpportunityOffers(
-      this.cards,
-      this.state.opportunityDeck,
-      pile,
-      settings,
-      context,
-      this.rng,
-    );
-    this.setState({ ...this.state, opportunityDeck: draw.deck });
+    const offers = p.drawOpportunity(pile);
     const held = new Map<string, number>();
-    for (const holding of this.state.holdings ?? []) {
+    for (const holding of p.state.holdings ?? []) {
       if (!holding.ended) held.set(holding.cardId, holding.units ?? 1);
     }
-    const pick = policy.take(draw.offers, view, held);
+    const pick = policy.take(offers, view, held);
     if (!pick) return;
     let choice = pick.choice;
-    let quote = quoteOpportunity(pick.card, choice, context, settings, this.cards);
+    let quote = p.quoteOpportunity(pick.card, choice);
     if (quote.needsSwap && quote.sideHustles.length > 0) {
       // give up the weakest hustle, and only for a card that is clearly better
       const weakest = [...quote.sideHustles].sort(
@@ -1027,68 +454,41 @@ export class DreamSim {
       const weakestMonthly = Math.max(weakest.lineMinor ?? 0, weakest.cashflowMinor);
       if (expectedMonthlyMinor(pick.card) < weakestMonthly * 1.3) return;
       choice = { ...choice, swapOut: weakest.cardId };
-      quote = quoteOpportunity(pick.card, choice, context, settings, this.cards);
+      quote = p.quoteOpportunity(pick.card, choice);
     }
     if (!quote.ok) return;
-    this.spend(quote.costMinor, `@${pick.card.title.en}`);
-    const purchase = buyOpportunity(
-      this.books,
-      pick.card,
-      choice,
-      rollsFor(pick.card, this.rng, this.rules.difficulty),
-      {
-        date: TODAY,
-        lang: 'en',
-        context,
-        cards: this.cards,
-        difficulty: this.rules.difficulty,
-      },
-    );
-    this.apply(purchase.effects);
-    this.payDues();
+    p.buyOpportunity(pick.card, choice, quote.costMinor);
     this.record.taken[pick.card.id] = (this.record.taken[pick.card.id] ?? 0) + 1;
-    this.log(`O ${pick.card.id}`);
   }
 
   private harvest(): void {
+    const p = this.p;
     const policy = this.config.policy;
-    const draw = drawHarvestCard(this.harvestCards, this.state.harvestDeck, this.rng);
-    this.setState({ ...this.state, harvestDeck: draw.deck });
-    const context = {
-      cards: this.cards,
-      lang: 'en' as const,
-      date: TODAY,
-      rng: this.rng,
-      difficulty: this.rules.difficulty,
-    };
-    this.log(`H ${draw.card.id}`);
-    const played = playHarvestCard(this.books, draw.card, context);
-    this.apply(played.effects);
-    this.payDues();
-    const pending = played.pending;
+    const context = p.harvestContext();
+    const { pending } = p.playHarvest();
     // a window to sell in
-    for (const holding of [...(this.state.holdings ?? [])]) {
+    for (const holding of [...(p.state.holdings ?? [])]) {
       if (holding.ended || !holding.marketTag) continue;
       const open =
         pending.window === 'ALL' ||
         (Array.isArray(pending.window) && pending.window.includes(holding.marketTag));
       if (!open) continue;
-      const card = this.cards.find((candidate) => candidate.id === holding.cardId);
+      const card = p.cards.find((candidate) => candidate.id === holding.cardId);
       if (!card || (!card.share && holding.assetBaseMinor === undefined)) continue;
       if (
         !policy.sellWindow(
           this.view(),
           { title: holding.title, tag: holding.marketTag },
-          indexOf(this.state, holding.marketTag),
+          indexOf(p.state, holding.marketTag),
         )
       )
         continue;
       const gross = card.share
-        ? unitPriceNow(card, holding, this.state) * (holding.units ?? 0)
-        : valueOf(card, holding, this.state);
-      this.apply(
+        ? unitPriceNow(card, holding, p.state) * (holding.units ?? 0)
+        : valueOf(card, holding, p.state);
+      p.apply(
         sellHolding(
-          this.books,
+          p.books,
           holding.title,
           { grossMinor: gross, costsMinor: 0, owedMinor: 0 },
           context,
@@ -1098,29 +498,29 @@ export class DreamSim {
     // a buyer
     for (const sale of pending.sales) {
       if (!policy.acceptBuyer(this.view(), sale)) continue;
-      const live = (this.state.holdings ?? []).some(
+      const live = (p.state.holdings ?? []).some(
         (holding) => holding.title === sale.holding && !holding.ended,
       );
       if (!live) continue;
-      this.apply(sellHolding(this.books, sale.holding, sale, context));
-      this.payDues();
+      p.apply(sellHolding(p.books, sale.holding, sale, context));
+      p.payDues();
     }
     // a hype
     for (let offer of pending.ladders) {
-      const live = (this.state.holdings ?? []).some(
+      const live = (p.state.holdings ?? []).some(
         (holding) => holding.title === offer.holding && !holding.ended,
       );
       if (!live) continue;
       let choice = policy.ladder(this.view(), offer);
       if (choice === 'skip') continue;
       for (let step = 0; step < 6 && choice === 'ride' && offer.state !== 'done'; step += 1) {
-        offer = rideLadder(offer, this.rng).offer;
+        offer = rideLadder(offer, p.rng).offer;
         if (offer.state === 'done') break;
         choice = policy.ladder(this.view(), offer);
       }
-      this.apply(
+      p.apply(
         sellHolding(
-          this.books,
+          p.books,
           offer.holding,
           { grossMinor: ladderPayout(offer), costsMinor: 0, owedMinor: 0 },
           context,
