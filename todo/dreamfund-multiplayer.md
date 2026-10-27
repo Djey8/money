@@ -69,3 +69,30 @@ Slices 1-4 are pure domain (fast tests, no server); 5-6 the backend; 7 the front
 - Win rules for a table: `first-win` (first to all five goals), `all-done` (until everyone has won or is bankrupt),
   `round-limit` (ranked by goal progress and dream points).
 - Ranking handicap: the expected score of a player in the Elo duels uses the map's win rate of their character and difficulty.
+
+## The leaderboard and the competition (JFK, 2026-10-27; slices 8 and 9)
+
+- **A world of its own.** The Dreamfund has its own tab and its own leaderboard - nothing of the classic ratings, results or screens is
+  reused or shown in it; the classic edition stays as the backup tab until it is cleaned out. New storage (approved) with a `dreamfund`
+  kind, never mixing the two games' players, results or ratings.
+- **One rating per player and per difficulty.** A person and a bot have a rating for each of Easy, Normal and Hard (three, as the game
+  has three; the dimension is easy to extend) - "the edition has another dimension, the difficulty". The characters are a dimension of
+  the bots: every bot is a strategy playing a character, each at every difficulty, so everybody can be put at every table and the
+  leaderboard shows how a bot progresses through the levels.
+- **Bots start with their own Elo**, seeded from the map (`docs/dreamfund-balance/matrix.json`: the win rate of a strategy on a
+  character and level) and then move with their results; the more they play, the more they appear on the board (provisional until a
+  number of rated games, like the classic).
+- **What counts in a result:** the goals reached, the dream points, debts repaid and the Mojo reserve, and the win (`scoring.ts`), and
+  the handicap of the character and level (the expected result of a player comes from the map).
+- **Tournaments for the bots (slice 9):** headless round robins / brackets per difficulty over the strategies and characters, run on the
+  server or by script, that give every bot persona its starting rating per level; the same machinery later runs seasons.
+- **Open question:** whether a bot persona is `strategy x character` (many more rows) or a strategy that plays a random character at
+  each table (fewer rows, the character's difficulty averaged out). Recommended: persona = strategy; the board can be filtered by
+  character, and the rating is kept per strategy and level (with a per-character breakdown).
+
+## What the MCP is for (slice 6, decided with JFK)
+
+Playing a table move by move through an agent costs too many tokens (every call re-reads all the text before it), so the MCP is
+deliberately small: **an agent watches a table on demand** (`get_cashflow_game` action `table_review`: one page with every player's
+goals, pace against the simulation and what to watch) and can open or join a table or play when asked; the guide for agents is
+`docs/domain/DREAMFUND_TABLE_GUIDE.md`.

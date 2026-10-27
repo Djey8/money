@@ -286,6 +286,30 @@ async function withRating(view) {
 /** The table as an agent needs it to play: the seats without their books, and only the reader's own books. */
 function slimView(view) {
   const { table } = view;
+  if (table.kind === 'dreamfund') {
+    return {
+      id: view.id,
+      kind: 'dreamfund',
+      version: table.version,
+      phase: table.phase,
+      tableRound: table.tableRound,
+      activeSeat: table.activeSeat,
+      youSeat: table.youSeat,
+      paused: table.clock ? table.clock.pausedAt !== null : false,
+      legalActions: view.legalActions,
+      trade: table.trade,
+      players: table.players.map((p) => ({
+        seat: p.seat,
+        name: p.name,
+        bot: !!p.bot,
+        away: !!p.away,
+        professionId: p.professionId,
+        ...(p.seat === table.youSeat
+          ? { life: p.life, pending: p.pending, harvest: p.harvest }
+          : {}),
+      })),
+    };
+  }
   return {
     id: view.id,
     version: table.version,
@@ -312,6 +336,15 @@ function readerHasMove(view) {
   if (table.phase !== 'playing') return table.phase !== 'lobby';
   if (table.youSeat === null || table.youSeat === undefined) return false;
   if (table.clock && table.clock.pausedAt !== null) return false;
+  if (table.kind === 'dreamfund') {
+    // your turn, a Harvest card's options for you, or a card on offer you may answer
+    return (
+      table.activeSeat === table.youSeat ||
+      view.legalActions.some((a) =>
+        ['harvest_sell', 'harvest_accept', 'harvest_ladder', 'accept_trade'].includes(a.type),
+      )
+    );
+  }
   return (
     table.activeSeat === table.youSeat ||
     (Array.isArray(table.holdSeats) && table.holdSeats.includes(table.youSeat)) ||
@@ -328,6 +361,20 @@ router.get(
   ...guard('r'),
   handle(async (req, res) => {
     res.json({ seats: await rooms().seatsOfRoom(req.userId, req.params.roomId) });
+  }),
+);
+
+/**
+ * `GET /game/rooms/{roomId}/review` - a short review of a running (or finished) Dreamfund table, for somebody who only watches it: where
+ * every player stands on the goals, what they have and owe, how they compare with the simulation of their character and level, and
+ * what to watch. A page, not the table: an agent asked "how are we doing?" reads this and not the books and the history. Anybody who may
+ * look at the table may ask (a public table, or a seat at it); a classic table answers 400.
+ */
+router.get(
+  '/:roomId/review',
+  ...guard('r'),
+  handle(async (req, res) => {
+    res.json(await rooms().reviewRoom(req.userId, req.params.roomId));
   }),
 );
 

@@ -387,6 +387,23 @@ function createGameRoomService({
     return doc;
   }
 
+  /**
+   * A short review of a Dreamfund table for somebody who watches it (a person, or an agent asked "how are we doing?"): where every
+   * player stands on the goals, what they have and owe, the pace against the simulation and what to watch. Anybody who may look at the
+   * table may ask; nothing is saved. A classic table has no such review.
+   */
+  async function reviewRoom(userId, roomId) {
+    const doc = await loadFor(userId, roomId);
+    if (doc.table.kind !== 'dreamfund') {
+      throw new RoomError(
+        'review_not_available',
+        400,
+        'Only a Dreamfund table can be reviewed this way.',
+      );
+    }
+    return { id: doc.roomId, version: doc.table.version, ...kindOf(doc.table).review(doc.table) };
+  }
+
   /** The table, as `userId` may see it (a stranger sees a public table as a spectator). */
   async function getRoom(userId, roomId) {
     return roomView(await loadFor(userId, roomId), userId);
@@ -1104,6 +1121,7 @@ function createGameRoomService({
   return {
     createRoom,
     getRoom,
+    reviewRoom,
     seatsOfRoom,
     sitTogether,
     runCommand,

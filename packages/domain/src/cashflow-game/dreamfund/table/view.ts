@@ -38,6 +38,10 @@ export interface DreamTableView {
   hostSeat: number;
   /** The viewer's seat, or null for a spectator. */
   you: number | null;
+  /** The same, under the name the classic table's readers use. */
+  youSeat: number | null;
+  /** Seats the table waits for (classic: the turn hold); none at a Dreamfund table. */
+  holdSeats: number[];
   /** Turn order as seats. */
   order: number[];
   activeSeat: number | null;
@@ -83,6 +87,8 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
     settings: table.settings,
     hostSeat: seatOf(table, table.hostId),
     you: you >= 0 ? you : null,
+    youSeat: you >= 0 ? you : null,
+    holdSeats: [],
     order: table.order.map((id) => seatOf(table, id)),
     activeSeat: table.activePlayerId ? seatOf(table, table.activePlayerId) : null,
     tableRound: table.tableRound,

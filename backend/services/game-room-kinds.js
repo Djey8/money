@@ -5,6 +5,7 @@ const domain = require('@money/domain');
 const dreamTable = require('@money/domain/dist/cashflow-game/dreamfund/table/reducer');
 const dreamBots = require('@money/domain/dist/cashflow-game/dreamfund/table/bot');
 const dreamView = require('@money/domain/dist/cashflow-game/dreamfund/table/view');
+const dreamReview = require('@money/domain/dist/cashflow-game/dreamfund/table/review');
 const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-sim/policies');
 
 /**
@@ -42,6 +43,7 @@ const dreamfund = {
   // the clock reads only what the two tables share
   deadline: (table) => domain.nextDeadline(table),
   humansOut: dreamHumansOut,
+  review: (table) => dreamReview.reviewDreamTable(table),
   /** The next step of the first bot that has one, played through the rules; null when none has. */
   botStep: (table, ctx) => {
     const step = dreamBots.nextBotStep(table);

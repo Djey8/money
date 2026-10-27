@@ -13,8 +13,8 @@ describe('extractOperations against the real openapi.yaml', () => {
   const operations = extractOperations(spec);
   const byId = Object.fromEntries(operations.map((op) => [op.operationId, op]));
 
-  it('finds exactly 189 operations', () => {
-    expect(operations).toHaveLength(189);
+  it('finds exactly 190 operations', () => {
+    expect(operations).toHaveLength(190);
   });
 
   it('leaves out a stream: the live channel of a table is x-mcp-skip, not a tool', () => {

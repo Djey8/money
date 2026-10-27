@@ -3,6 +3,7 @@ import type { FetchLike } from '../../src/client';
 import { buildToolList, dispatchToolCall } from '../../src/tools/dispatch';
 import { TOOLS } from '../../src/tools/registry';
 import { OPERATIONS } from '../../src/generated/operations';
+import { loadExplainTopics } from '../../src/tools/explain';
 
 /**
  * The multiplayer table actions of get_cashflow_game / play_cashflow_game (todo/cashflow-multiplayer.md slice S7): what an
@@ -100,7 +101,7 @@ describe('what an agent sees in tools/list', () => {
         ).actions,
       ),
     ].filter(([name]) => name.startsWith('table'));
-    expect(actions.length).toBe(19);
+    expect(actions.length).toBe(20);
     for (const [, action] of actions) expect(OPERATIONS[action.operationId]).toBeDefined();
     expect(OPERATIONS.streamGameRoomEvents).toBeUndefined();
     expect(JSON.stringify(TOOLS)).not.toContain('streamGameRoomEvents');
@@ -258,5 +259,26 @@ describe('what a table call becomes on the wire', () => {
     expect(result.isError).toBe(true);
     expect((result.content[0] as { text: string }).text).toContain('roomId');
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('watching a Dreamfund table', () => {
+  it('table_review is one cheap read of the review operation, and the tool says to ask on demand and not to poll', () => {
+    const tool = TOOLS.find((t) => t.name === 'get_cashflow_game') as never as {
+      description: string;
+      actions: Record<string, { operationId: string }>;
+    };
+    expect(tool.actions['table_review'].operationId).toBe('getGameRoomReview');
+    expect(OPERATIONS['getGameRoomReview']).toBeDefined();
+    expect(tool.description).toContain('table_review');
+    expect(tool.description).toContain('never in a loop');
+    expect(tool.description).toContain('dreamfund_table_guide');
+  });
+
+  it('table_create can open a Dreamfund table and the guide for agents is a topic', () => {
+    const create = OPERATIONS['createGameRoom'] as never as { requestBodySchema?: unknown };
+    expect(JSON.stringify(create)).toContain('dreamfund');
+    const topics = loadExplainTopics();
+    expect(Object.keys(topics)).toContain('dreamfund_table_guide');
   });
 });

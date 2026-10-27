@@ -244,4 +244,55 @@ describe('a Dreamfund room', () => {
     expect(early.status).toBeGreaterThanOrEqual(400);
     await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
   });
+
+  maybe(
+    'can be reviewed by a seat and by somebody who only watches a public table - small, and not for a classic table',
+    async () => {
+      const made = await call(host, 'post', '/game/rooms', {
+        kind: 'dreamfund',
+        nickname: 'Hanna',
+        settings: {
+          name: 'Watched',
+          professions: 'random',
+          turnOrder: 'seat',
+          spectators: true,
+          endCondition: 'round-limit',
+          roundLimit: 40,
+        },
+      });
+      const roomId = made.body.id;
+      roomIds.push(roomId);
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'dream:expert' });
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'dream:sapling' });
+      await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+      // the bots play on while the person watches: after a few moves the page says where everybody stands
+      await sleep(1500);
+      for (const viewer of [host, guest]) {
+        const review = await call(viewer, 'get', `/game/rooms/${roomId}/review`);
+        expect(review.status).toBe(200);
+        expect(review.body.players).toHaveLength(3);
+        expect(review.body.summary.length).toBeGreaterThan(0);
+        expect(review.body.players[0]).toHaveProperty('goals');
+        expect(review.body.players[0]).toHaveProperty('pace');
+        expect(Array.isArray(review.body.players[0].watch)).toBe(true);
+        expect(JSON.stringify(review.body).length).toBeLessThan(8000);
+      }
+      // the slim table of a Dreamfund table: the seats without their lives
+      const slim = await call(guest, 'get', `/game/rooms/${roomId}?slim=true`);
+      expect(slim.status).toBe(200);
+      expect(slim.body.kind).toBe('dreamfund');
+      expect(slim.body.players.every((p) => p.life === undefined)).toBe(true);
+
+      // a classic table cannot be reviewed this way
+      const classic = await call(host, 'post', '/game/rooms', {
+        nickname: 'Hanna',
+        settings: { name: 'Classic', visibility: 'public' },
+      });
+      roomIds.push(classic.body.id);
+      const no = await call(host, 'get', `/game/rooms/${classic.body.id}/review`);
+      expect(no.status).toBe(400);
+      await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
+      await call(host, 'delete', `/game/rooms/${classic.body.id}?confirm=true`);
+    },
+  );
 });

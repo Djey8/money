@@ -6690,6 +6690,12 @@ paths:
                   enum: [en, de, es, fr, cn, ar]
                   default: en
                   description: The language the table's text (titles, notes) is written in, fixed for the whole game.
+                kind:
+                  type: string
+                  enum: [classic, dreamfund]
+                  default: classic
+                  description: >-
+                    Which game the table plays. `dreamfund` is the Dreamfund (Traumtopf): everyone plays their own life on the same map with the same difficulty, the Harvest market is the table's, and Opportunity cards can be traded for a fee. Its `settings` are `name`, `visibility`, `maxSeats`, `difficulty` (easy|medium|hard), `shape` (ring|infinity|rectangle|square|mountain), `size` (small|medium|large), `mode` (guided|strict), `customRules`, `professions` (duplicates|unique|random), `turnOrder`, `clock`, `awayAfterTimeouts`, `endCondition` (first-win|all-done|round-limit), `roundLimit`, `spectators`, `pace`, `ranked`. Bots: `listGameBots?kind=dreamfund`; a bot is seated with `policyId` `dream:<id>`.
                 settings:
                   $ref: '#/components/schemas/GameRoomSettingsInput'
             example:
@@ -6799,6 +6805,14 @@ paths:
     get:
       operationId: listGameBots
       summary: The bots a host can seat
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          description: '`dreamfund` lists the twelve strategies of the Dreamfund simulation (id, name) instead of the classic personas.'
+          schema:
+            type: string
+            enum: [classic, dreamfund]
       description: >-
         Game accounts only; requires `game:r`. The characters a host can seat at a table with `addGameRoomBot`, each playing one strategy of the strategy lab and tournament (`CASHFLOW_STRATEGY_LAB.md`, `CASHFLOW_TOURNAMENT.md`). `id` is what `policyId` takes; `difficulty` is how often the strategy won tables in the tournament (easy, medium, hard, champion) - a guide, not a promise: the dice decide a lot.
       security:
@@ -7118,6 +7132,83 @@ paths:
               example:
                 seats:
                   - { seat: 0, name: Ada, bot: false, listed: true, rating: 1534, ratedGames: 7 }
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /game/rooms/{roomId}/review:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGameRoomReview
+      summary: A short review of a Dreamfund table
+      description: >-
+        Game accounts only; requires `game:r`. A page for somebody who watches a Dreamfund table - a person, or an agent asked "how are we doing?": where every player stands on the four goals (reserve, debts, dream, independence; in percent), the score and rank, what they have and owe (cash, reserve, passive income against the cost of living, the monthly cash flow, net worth, a Bank loan), their `pace` against the best strategies of the simulation for their character and level (100 is that pace at this month), what to `watch` for each, the markets that have moved most, a card on offer and a `summary`. Anybody who may look at the table may ask (a public table, or a seat at it); nothing is changed. Small on purpose: read this instead of the whole table and its log - an agent pays for every token it reads. A classic table answers 400 `review_not_available`.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  version:
+                    type: integer
+                  tableRound:
+                    type: integer
+                  phase:
+                    type: string
+                  difficulty:
+                    type: string
+                  endCondition:
+                    type: string
+                  players:
+                    type: array
+                    items:
+                      type: object
+                  markets:
+                    type: array
+                    items:
+                      type: object
+                  summary:
+                    type: array
+                    items:
+                      type: string
+              example:
+                id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                version: 212
+                tableRound: 38
+                phase: playing
+                difficulty: medium
+                endCondition: round-limit
+                players:
+                  - {
+                      seat: 0,
+                      name: Anna,
+                      character: lena-pflege,
+                      months: 15,
+                      outcome: playing,
+                      rank: 1,
+                      score: 612,
+                      goals: { reserve: 100, debts: 40, dream: 22, independence: 31 },
+                      pace: 104,
+                      watch: [],
+                    }
+                markets: []
+                summary:
+                  ['Round 38: Anna (lena-pflege) leads with a score of 612, 1 of 4 goals met.']
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
@@ -11183,7 +11274,7 @@ components:
       type: object
       required: [type]
       description: >-
-        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat.
+        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMFUND table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`; `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
       properties:
         type:
           type: string
@@ -11210,6 +11301,24 @@ components:
             - done
             - propose_undo
             - vote_undo
+            - pay_emergency
+            - answer_life
+            - choose_career_branch
+            - take_dream
+            - choose_pile
+            - take_opportunity
+            - skip
+            - end_turn
+            - settle_payday
+            - fund_reserve
+            - fund_dream
+            - repay_debt
+            - repay_bank_loan
+            - set_plan
+            - sell_holding
+            - harvest_sell
+            - harvest_accept
+            - harvest_ladder
         yes:
           type: boolean
           description: With `vote_undo`, whether the voter agrees to go back one turn.

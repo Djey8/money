@@ -429,7 +429,7 @@ export const TOOLS: ToolDefinition[] = [
       'the saved games, the account storage left (`storage`) and one saved game with its step log. review / review_save: ' +
       'the game analyst - judges the decisions of the running game or a saved game (best ... blunder, the turning ' +
       'point, a comparison with the strategy lab); read explain_concept topic cashflow_strategy_lab (the strategies), cashflow_card_lab (what each card is worth: which Deals help, which Doodads ruin you, what the dice cards cost) and cashflow_cards (every card by id - the history names picked cards by id) to turn it into ' +
-      'advice. A DREAMFUND (Traumtopf) game - the game with a life, Opportunity and Harvest cards - is judged as a story (milestones, purchases, loans, missed chances, findings, compared with the simulation of its own character and difficulty - 200 games per strategy, ten characters, three levels): read explain_concept topics dreamfund_review_guide, dreamfund_map (the whole table of characters, difficulties and strategies) and dreamfund_game_en (or _de) for how to read it and what to say; the Dreamfund moves themselves cannot be played through this API yet. MULTIPLAYER TABLES: tables lists the public tables you can join (scope open, default), the tables you sit ' +
+      'advice. A DREAMFUND (Traumtopf) game - the game with a life, Opportunity and Harvest cards - is judged as a story (milestones, purchases, loans, missed chances, findings, compared with the simulation of its own character and difficulty - 200 games per strategy, ten characters, three levels): read explain_concept topics dreamfund_review_guide, dreamfund_map (the whole table of characters, difficulties and strategies) and dreamfund_game_en (or _de) for how to read it and what to say; the moves of a Dreamfund SOLO game cannot be played through this API (those of a Dreamfund TABLE can - see below). MULTIPLAYER TABLES: tables lists the public tables you can join (scope open, default), the tables you sit ' +
       'at (scope mine) or the ones that are over (scope recent); table reads ONE table as you may see it - every ' +
       "player's books and cards are open, with `version`, `youSeat`, `activeSeat`, the `clock` and YOUR `legalActions`, " +
       'the only moves play_cashflow_game action table_move will accept from you right now. WAITING FOR YOUR TURN COSTS ' +
@@ -438,7 +438,7 @@ export const TOOLS: ToolDefinition[] = [
       'the game is over; `timedOut: true` means nothing happened yet, so just call it again (never poll faster). ' +
       'Slim leaves the other books out; drop `slim` when you need to study them. `wait: "change"` with `since` (the ' +
       '`version` you saw) waits for any change instead. table_log pages through what happened (`after`). ' +
-      'table_seats shows who sits at a table (rating, record, picture version of each seat). table_bots lists the bots a host can seat (id, name, difficulty, how it plays). LEADERBOARD: leaderboard ' +
+      'table_seats shows who sits at a table (rating, record, picture version of each seat). table_bots lists the bots a host can seat (id, name, difficulty, how it plays; `kind: dreamfund` lists the strategies of a Dreamfund table). DREAMFUND TABLES - WATCHING ONE: to follow a table (yours, or a public one) and tell the user how it goes, call table_review with the roomId: a small page with the goals of every player in percent, score and rank, cash, reserve, passive income against the cost of living, net worth, the pace against the simulation of their character and level, and what to watch. Call it ON DEMAND - when the user asks "how are we doing?" - and never in a loop; do not read `table` or `table_log` for that (they are the whole books and history and cost many tokens; every call re-reads everything before it). Read explain_concept topic dreamfund_table_guide first. LEADERBOARD: leaderboard ' +
       '(type all|human|bot, minGames, limit, after) lists players by rating - humans who opted in, and each bot persona at ' +
       'each level as a player of its own; player (playerId) shows one with their last results; my_player is your own ' +
       'profile (rating, counters, whether you are listed). A finished table says in `rating` whether it counted. ' +
@@ -450,6 +450,7 @@ export const TOOLS: ToolDefinition[] = [
       table_log: action('getGameRoomLog'),
       table_seats: action('listGameRoomSeats'),
       table_bots: action('listGameBots'),
+      table_review: action('getGameRoomReview'),
       leaderboard: action('getGameLeaderboard'),
       player: action('getGamePlayer'),
       my_player: action('getMyGamePlayer'),
@@ -478,6 +479,7 @@ export const TOOLS: ToolDefinition[] = [
       'run, and when a session is done clean up with prune_saves so at most 500 saves remain. Requires a PAT ' +
       'with game:w. reset, delete_save and prune_saves destroy data and require confirm: true - never without ' +
       "the user's say-so for games you did not create in this session. " +
+      'DREAMFUND TABLE: table_create with `kind: dreamfund` opens a Dreamfund table (settings: difficulty, shape, size, mode, endCondition, ...; see explain_concept topic dreamfund_table_guide); everything below works on it, with its own moves (pay_emergency, answer_life, take_opportunity, fund_reserve, ... listed in your legalActions). Playing a whole table costs many calls and tokens - the usual use is to WATCH one with get_cashflow_game table_review. ' +
       'MULTIPLAYER (a table of several players, you as one seat; read explain_concept topic cashflow_game_guide, ' +
       'section "Playing at a table"): table_create opens a table (settings.name, ranked, ...; your name is your account nickname) and returns an invite ' +
       'code, table_join takes a seat (roomId or code), table_ready, table_start (host), table_profession ' +
