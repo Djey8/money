@@ -2473,7 +2473,7 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     expect(component.traitInfo).toBeNull();
   });
 
-  it('the character step: a grid with the example characters first, then the chosen one with its numbers', () => {
+  it('the character step: a grid with the edition characters, then the chosen one with its numbers', () => {
     const { component } = soloComponent();
     component.appState.currency = '€';
     component.toCharacter();
@@ -2483,8 +2483,8 @@ describe('CashflowGameComponent solo mode (JFK, 2026-10-05)', () => {
     // lowest monthly cashflow first
     const flows = component.characterOptions.map((option) => option.cashflow);
     expect(flows).toEqual([...flows].sort((a, b) => a - b));
-    // the test characters are in the grid as examples
-    expect(names).toEqual(expect.arrayContaining(['Softwareentwickler/in', 'Freiberufler/in']));
+    // the old test characters are not offered
+    expect(names).toEqual(['Jonas']);
 
     component.pickCharacter(component.characterOptions[0]);
     expect(component.characterChosen).toBe(true);

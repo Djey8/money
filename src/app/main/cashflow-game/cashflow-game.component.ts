@@ -1725,10 +1725,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     cashflow: number;
     cashflowText: string;
   }[] {
-    const custom =
-      this.selectedGameSet?.edition === 'custom' || this.selectedGameSetId === 'custom-jfk';
+    // the test characters of the table bots' champion book (custom-jfk) are not offered any more (JFK, 2026-10-27): only the edition's own
+    const custom = this.selectedGameSet?.edition === 'custom';
     const sets = custom
-      ? this.gameSets.filter((set) => set.edition === 'custom' || set.id === 'custom-jfk')
+      ? this.gameSets.filter((set) => set.edition === 'custom')
       : this.gameSets.filter((set) => set.id === this.selectedGameSetId);
     return sets
       .flatMap((set) =>
