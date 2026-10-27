@@ -24,6 +24,7 @@ import {
 } from '../../table/types';
 import { canOffer } from '../../opportunity';
 import { DreamPlayer } from '../player';
+import { splitDreamBotId } from './bot-levels';
 import { normalizeDreamSettings } from './settings';
 import { goalsOf, isWon, rankStandings, standingOf } from './scoring';
 import {
@@ -279,6 +280,9 @@ function lobbyCommand(
       if (playerId !== table.hostId) fail('NOT_HOST', 'Only the host can seat a bot.');
       if (table.phase !== 'lobby') fail('WRONG_PHASE', 'The game has already started.');
       if (table.players.length >= table.settings.maxSeats) fail('TABLE_FULL', 'The table is full.');
+      if (!splitDreamBotId(command.policyId)) {
+        fail('UNKNOWN_COMMAND', `Unknown bot strategy or level '${command.policyId}'.`);
+      }
       if (command.professionId && !dreamCharacterIds().includes(command.professionId)) {
         fail('UNKNOWN_PROFESSION', `Unknown character '${command.professionId}'.`);
       }

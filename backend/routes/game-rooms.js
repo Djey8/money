@@ -219,6 +219,7 @@ router.get(
     if (req.query.kind === 'dreamfund') {
       return res.json({
         items: dreamfund.policies.map((policy) => ({ ...policy, policyId: policy.id })),
+        levels: dreamfund.levels,
       });
     }
     const profiles = botProfiles();
@@ -540,10 +541,22 @@ lobbyRoute('post', '/:roomId/bots', (body) => {
     return 'policyId must be the id of a bot (see GET /game/rooms/bots).';
   // a seat of a Dreamfund table: one of its strategies (`GET /game/rooms/bots?kind=dreamfund`), sent as `dream:<id>` or plain
   const dreamId = body.policyId.replace(/^dream:/, '');
-  const dreamPolicy = dreamfund.policies.find((policy) => policy.id === dreamId);
-  if (body.policyId.startsWith('dream:') || (dreamPolicy && !splitBotId(body.policyId))) {
-    if (!dreamPolicy)
-      return `Unknown strategy '${dreamId}': see GET /game/rooms/bots?kind=dreamfund.`;
+  const dreamParts = dreamfund.splitBotId(dreamId);
+  if (body.policyId.startsWith('dream:') || (dreamParts && !splitBotId(body.policyId))) {
+    if (!dreamParts) {
+      return `Unknown strategy or level '${dreamId}': see GET /game/rooms/bots?kind=dreamfund.`;
+    }
+    if (body.level !== undefined && !dreamfund.levels.some((l) => l.id === body.level)) {
+      return `level must be one of: ${dreamfund.levels.map((l) => l.id).join(', ')}.`;
+    }
+    const dreamPolicy = dreamfund.policies.find((policy) => policy.id === dreamParts.base);
+    // a level given on its own applies to a plain strategy id; an id that already carries one keeps it
+    const chosen =
+      body.level !== undefined && dreamParts.level === 'master'
+        ? body.level === 'master'
+          ? dreamParts.base
+          : `${dreamParts.base}--${body.level}`
+        : dreamId;
     if (body.name !== undefined && typeof body.name !== 'string') return 'name must be a string.';
     if (body.professionId !== undefined && typeof body.professionId !== 'string') {
       return 'professionId must be a character id.';
@@ -551,7 +564,7 @@ lobbyRoute('post', '/:roomId/bots', (body) => {
     return {
       type: 'add_bot',
       name: body.name !== undefined ? body.name : dreamPolicy.name,
-      policyId: dreamPolicy.id,
+      policyId: chosen,
       ...(body.professionId ? { professionId: body.professionId } : {}),
       ...(body.color ? { color: body.color } : {}),
     };

@@ -87,3 +87,70 @@ describe('the bots of a Dreamfund table', () => {
     expect(a.players.map((p) => p.life)).toEqual(b.players.map((p) => p.life));
   });
 });
+
+describe('the levels of a bot', () => {
+  it('splits an id into the strategy and the level, and refuses what does not exist', async () => {
+    const { splitDreamBotId, dreamBotId } = await import('./bot-levels');
+    expect(splitDreamBotId('expert')).toEqual({ base: 'expert', level: 'master' });
+    expect(splitDreamBotId('expert--casual')).toEqual({ base: 'expert', level: 'casual' });
+    expect(splitDreamBotId('expert--genius')).toBeNull();
+    expect(splitDreamBotId('nobody')).toBeNull();
+    expect(dreamBotId('saver', 'beginner')).toBe('saver--beginner');
+    expect(dreamBotId('saver', 'master')).toBe('saver');
+  });
+
+  it('seat a bot of a level, refuse an unknown one, and a beginner slips where a master does not', () => {
+    let t = createDreamTable(
+      {
+        id: 't',
+        hostId: 'host',
+        hostName: 'Hanna',
+        seed: 2,
+        settings: { name: 'L', professions: 'random' },
+      },
+      ctx,
+    ).table;
+    t = applyDreamCommand(
+      t,
+      'host',
+      { type: 'add_bot', name: 'Casual', policyId: 'expert--casual' },
+      ctx,
+    ).table;
+    expect(t.players[1].bot?.policyId).toBe('expert--casual');
+    expect(() =>
+      applyDreamCommand(t, 'host', { type: 'add_bot', name: 'X', policyId: 'expert--genius' }, ctx),
+    ).toThrow(/Unknown bot/);
+  });
+
+  it('slip as often as the level says: never for a master, always at a chance of one', async () => {
+    const { withDreamMistakes } = await import('./bot-levels');
+    const { DREAM_POLICIES } = await import('../../dreamfund-sim/policies');
+    const policy = DREAM_POLICIES.find((p) => p.id === 'expert')!;
+    const view = {
+      cashMinor: 0,
+      monthlyExpensesMinor: 0,
+      passiveMinor: 0,
+      reserveMinor: 0,
+      reserveTargetMinor: 0,
+      round: 1,
+      debtsMinor: 0,
+      dreamFundedMinor: 0,
+      dreamTargetMinor: 0,
+      spendableMinor: 0,
+      markets: {},
+      holdingsCount: 0,
+      difficulty: 'medium' as const,
+    };
+    const holding = { title: 'X', tag: 'tech' };
+    const coin = () => 0.01;
+    expect(withDreamMistakes(policy, 0, coin)).toBe(policy);
+    const always = withDreamMistakes(policy, 1, coin);
+    for (const index of [0.8, 1, 1.3]) {
+      expect(always.sellWindow(view, holding, index)).toBe(
+        !policy.sellWindow(view, holding, index),
+      );
+    }
+    const never = withDreamMistakes(policy, 0.0001, () => 0.5);
+    expect(never.sellWindow(view, holding, 1.3)).toBe(policy.sellWindow(view, holding, 1.3));
+  });
+});

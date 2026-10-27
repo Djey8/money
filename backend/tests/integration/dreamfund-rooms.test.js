@@ -129,6 +129,13 @@ describe('a Dreamfund room', () => {
       });
       expect(bot.status).toBe(200);
       expect(bot.body.table.players[1]).toMatchObject({ bot: { policyId: 'expert' } });
+      // a bot of a skill level: the strategy with a chance of a slip (master, strong, casual, beginner)
+      const levelled = await call(host, 'post', `/game/rooms/${made.body.id}/bots`, {
+        policyId: 'dream:saver',
+        level: 'casual',
+      });
+      expect(levelled.status).toBe(200);
+      expect(levelled.body.table.players[2].bot.policyId).toBe('saver--casual');
       const wrong = await call(host, 'post', `/game/rooms/${made.body.id}/bots`, {
         policyId: 'dream:nobody',
       });

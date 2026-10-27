@@ -6,6 +6,7 @@ const dreamTable = require('@money/domain/dist/cashflow-game/dreamfund/table/red
 const dreamBots = require('@money/domain/dist/cashflow-game/dreamfund/table/bot');
 const dreamView = require('@money/domain/dist/cashflow-game/dreamfund/table/view');
 const dreamReview = require('@money/domain/dist/cashflow-game/dreamfund/table/review');
+const dreamLevels = require('@money/domain/dist/cashflow-game/dreamfund/table/bot-levels');
 const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-sim/policies');
 
 /**
@@ -51,6 +52,10 @@ const dreamfund = {
   },
   /** The strategies a bot of this table may play. */
   policies: DREAM_POLICIES.map((policy) => ({ id: policy.id, name: policy.name })),
+  /** The skill levels of a bot and the chance of a slip at each. */
+  levels: Object.entries(dreamLevels.DREAM_BOT_LEVELS).map(([id, mistakes]) => ({ id, mistakes })),
+  /** `expert--casual` -> { base, level }; null when it is not a bot of this table. */
+  splitBotId: dreamLevels.splitDreamBotId,
 };
 
 /** The rules of a table (by what it says it is). */

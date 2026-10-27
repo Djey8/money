@@ -1,6 +1,7 @@
 import { TableCommandError } from '../../table/types';
 import { seededRng } from '../../rng';
 import { DREAM_POLICIES } from '../../dreamfund-sim/policies';
+import { DREAM_BOT_LEVELS, splitDreamBotId, withDreamMistakes } from './bot-levels';
 import { DreamBot, type MoneyActor } from '../bot';
 import { DreamPlayer } from '../player';
 import {
@@ -20,7 +21,8 @@ import type { DreamCommand, DreamEvent, DreamSeat, DreamTable } from './types';
  */
 
 export const botPolicy = (policyId: string) =>
-  DREAM_POLICIES.find((policy) => policy.id === policyId) ?? DREAM_POLICIES[0];
+  DREAM_POLICIES.find((policy) => policy.id === (splitDreamBotId(policyId)?.base ?? policyId)) ??
+  DREAM_POLICIES[0];
 
 /** A bot's own luck: stable for a table in a given position, and it spends none of the table's dice. */
 const luckOf = (table: DreamTable, seatId: string) => {
@@ -162,9 +164,17 @@ export function dreamBotCommands(table: DreamTable, botId: string): DreamCommand
   const seat = table.players.find((p) => p.id === botId);
   if (!seat?.bot || table.phase !== 'playing' || !seat.life) return [];
   if (seat.status !== 'active' || table.finishers.some((f) => f.playerId === botId)) return [];
-  const bot = new DreamBot(botPolicy(seat.bot.policyId));
-  const p = wake(table, seat);
   const luck = luckOf(table, botId);
+  const level = splitDreamBotId(seat.bot.policyId)?.level ?? 'master';
+  // a bot of a lower level slips now and then (its own luck decides, never the table's dice)
+  const bot = new DreamBot(
+    withDreamMistakes(
+      botPolicy(seat.bot.policyId),
+      DREAM_BOT_LEVELS[level],
+      luckOf(table, `${botId}:slip`),
+    ),
+  );
+  const p = wake(table, seat);
   const harvest = harvestCommands(bot, p, seat);
   if (harvest.length > 0) return harvest;
   const answer = answerOffer(table, bot, p, botId);
