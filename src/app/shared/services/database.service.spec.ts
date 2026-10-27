@@ -412,10 +412,23 @@ describe('DatabaseService (selfhosted mode)', () => {
       rows.push({ id: 'tx_3', account: 'Daily', amount: 3, category: '@C' });
       await save();
 
-      expect(cryptic.encrypt.mock.calls.length).toBe(8); // edited row + new row, 4 fields each
+      expect(cryptic.encrypt.mock.calls.length).toBe(5); // the one field that changed + the new row, 4 fields
       expect(sentPayload(1)[1].amount).toBe('enc(99)');
       expect(sentPayload(1)[2].id).toBe('enc(tx_3)');
       expect(sentPayload(1)[0]).toBe(sentPayload(0)[0]); // untouched row reused as-is
+    });
+
+    it('re-encrypts only the moved date of a row whose other fields are unchanged (a Payday)', async () => {
+      rows = rows.map((row) => ({ ...row, date: '2026-10-27' }));
+      await save();
+      cryptic.encrypt.mockClear();
+
+      rows = rows.map((row) => ({ ...row, date: '2026-09-27' }));
+      await save();
+
+      expect(cryptic.encrypt.mock.calls.length).toBe(2); // one date per row, not 5 fields per row
+      expect(sentPayload(1)[0].date).toBe('enc(2026-09-27)');
+      expect(sentPayload(1)[0].id).toBe(sentPayload(0)[0].id);
     });
 
     it('re-encrypts everything after the key or session changed (configEpoch)', async () => {

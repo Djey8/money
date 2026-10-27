@@ -361,6 +361,15 @@ export class DatabaseService {
    * own IV, carries its own salt, and decrypts on its own.
    */
   private readonly encryptedRowCache = new WeakMap<object, { signature: string; row: any }>();
+  /**
+   * The leaves of the last encrypted form of each transaction, by its id: a Payday of a game moves the date of every transaction, and
+   * of each row only that one field changed - the other six keep their ciphertext (JFK, 2026-10-27: a Payday of a long Dreamfund game
+   * re-encrypted 12,000 values). The same field of the same row keeps its ciphertext, which it already had on the server.
+   */
+  private readonly encryptedLeaves = new Map<
+    string,
+    { config: string; leaves: Record<string, { plain: string; cipher: string }> }
+  >();
 
   private encryptTransactionRows(rows: any[]): any[] {
     // epoch changes with the key/session, the flag with the on/off toggle,
@@ -376,7 +385,24 @@ export class DatabaseService {
       const hit = this.encryptedRowCache.get(item);
       if (hit && hit.signature === signature) return hit.row;
       const row = this.convertForStorage(JSON.parse(JSON.stringify(item)));
-      this.encryptObjectValues(row);
+      const id = typeof item.id === 'string' ? item.id : undefined;
+      const before = id ? this.encryptedLeaves.get(id) : undefined;
+      const known = before?.config === config ? before.leaves : {};
+      const leaves: Record<string, { plain: string; cipher: string }> = {};
+      for (const key of Object.keys(row)) {
+        const value = row[key];
+        if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') {
+          const plain = value.toString();
+          const old = known[key];
+          const cipher =
+            old && old.plain === plain ? old.cipher : this.cryptic.encrypt(plain, 'database');
+          leaves[key] = { plain, cipher };
+          row[key] = cipher;
+        } else if (typeof value === 'object' && value !== null) {
+          this.encryptObjectValues(value);
+        }
+      }
+      if (id) this.encryptedLeaves.set(id, { config, leaves });
       this.encryptedRowCache.set(item, { signature, row });
       return row;
     });
