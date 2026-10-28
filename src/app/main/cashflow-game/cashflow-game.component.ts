@@ -1272,6 +1272,18 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The tile is left without a card (a dream refused, or a free game's choice). */
   passStackTile(): void {
+    // at a Dreamfund table a dream or an Opportunity card that is still open is left with the table's own move first
+    const remote = this.remote;
+    const pending = this.appState.cashflowGame.turn?.pending;
+    const open =
+      (!!pending?.dream && !pending.dream.taken && !pending.dream.declined) ||
+      (!!pending?.opportunity && !pending.opportunity.taken && !pending.opportunity.passed);
+    if (remote?.dreamfund && remote.dreamMove && open) {
+      void remote.dreamMove({ type: 'skip' }).then((outcome) => {
+        if (outcome.ok) this.finishSoloDecision('done');
+      });
+      return;
+    }
     if (this.stackTile?.tile === 'dream' && !this.appState.cashflowGame.turn?.pending?.dream) {
       this.cashflowGameService.declineDreams({
         onSuccess: () => undefined,

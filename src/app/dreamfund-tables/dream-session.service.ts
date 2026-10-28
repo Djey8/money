@@ -52,6 +52,14 @@ export type DreamResolvedView =
   | { kind: 'life'; cardId: string; decision: string; outcome?: unknown }
   | { kind: 'career'; result: unknown; reached?: string }
   | { kind: 'dream'; offers?: string[]; taken?: string; declined?: boolean; moment?: string }
+  | {
+      kind: 'opportunity';
+      pile?: string;
+      offers?: string[];
+      taken?: string;
+      told?: string[];
+      passed?: boolean;
+    }
   | { kind: string };
 
 export type DreamPending =
@@ -86,6 +94,9 @@ export interface DreamPendingInfo {
 }
 
 export interface DreamHarvestOpen {
+  cardId?: string;
+  told?: string[];
+  window?: string[] | 'ALL';
   sellable: string[];
   sales: { holding: string; grossMinor: number; costsMinor: number; owedMinor: number }[];
   ladders: { holding: string }[];

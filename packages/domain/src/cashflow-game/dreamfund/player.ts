@@ -957,7 +957,7 @@ export class DreamPlayer {
   }
 
   /** A card taken: paid and in the books. The quote has to be `ok`. */
-  buyOpportunity(card: OpportunityCard, choice: OpportunityChoice, costMinor: number): void {
+  buyOpportunity(card: OpportunityCard, choice: OpportunityChoice, costMinor: number): string[] {
     const context = this.opportunityContext();
     this.spend(costMinor, `@${card.title.en}`);
     const purchase = buyOpportunity(
@@ -976,6 +976,7 @@ export class DreamPlayer {
     this.apply(purchase.effects);
     this.payDues();
     this.log(`O ${card.id}`);
+    return purchase.told;
   }
 
   // ── Harvest ──

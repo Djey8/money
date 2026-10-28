@@ -1398,6 +1398,15 @@
                   >
                     {{ 'CashflowGame.solo.openCard' | translate }}
                   </button>
+                  <!-- at a Dreamfund table the card was drawn for the player: it can be read once more -->
+                  <button
+                    class="btn btn--sm cf-btn-outlined"
+                    *ngIf="stackPlayed && remote?.dreamfund"
+                    [disabled]="isBusy"
+                    (click)="openStackTile()"
+                  >
+                    {{ 'CashflowGame.solo.openCard' | translate }}
+                  </button>
                   <button
                     class="btn btn--primary"
                     *ngIf="stackPlayed"

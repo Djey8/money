@@ -2988,8 +2988,9 @@ export class CashflowGameService {
     );
   }
 
+  /** A classic table is played: the stack tiles of the Dreamfund are part of a solo game and of a Dreamfund table, not of this. */
   private remote_(): boolean {
-    return !!RemoteGameHook.current;
+    return !!RemoteGameHook.current && !RemoteGameHook.current.dreamfund;
   }
 
   /** What a card asks of the player: their life, the stage of their career, what they owe, what they already own. */

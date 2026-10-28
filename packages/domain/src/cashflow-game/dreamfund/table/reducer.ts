@@ -808,9 +808,18 @@ function doCommand(
       const quote = p.quoteOpportunity(card, choice);
       if (!quote.ok)
         return refuse(`That card cannot be taken (${quote.reason ?? 'not possible'}).`);
-      p.buyOpportunity(card, choice, quote.costMinor);
+      const told = p.buyOpportunity(card, choice, quote.costMinor);
       emit('opportunity_taken', id, { cardId: card.id, costMinor: quote.costMinor });
-      return { pending: null };
+      return {
+        pending: null,
+        resolved: {
+          kind: 'opportunity',
+          pile: pending.pile,
+          offers: pending.offers,
+          taken: card.id,
+          told,
+        },
+      };
     }
     case 'skip': {
       if (!pending) return refuse('There is nothing to leave.');
@@ -825,7 +834,16 @@ function doCommand(
         pending: null,
         ...(pending.kind === 'dream'
           ? { resolved: { kind: 'dream' as const, offers: pending.offers, declined: true } }
-          : {}),
+          : pending.kind === 'opportunity'
+            ? {
+                resolved: {
+                  kind: 'opportunity' as const,
+                  pile: pending.pile,
+                  offers: pending.offers,
+                  passed: true,
+                },
+              }
+            : {}),
       };
     }
     case 'end_turn': {
@@ -1002,6 +1020,9 @@ function broadcastHarvest(
     }
     p.setState({ ...p.state, markets: { ...moved } });
     const open = {
+      cardId,
+      told: pending.told,
+      window: pending.window,
       sellable: p.harvestSellable(pending),
       sales: pending.sales.map((s) => ({
         holding: s.holding,
@@ -1012,7 +1033,8 @@ function broadcastHarvest(
       ladders: pending.ladders,
     };
     current = sleep(current, seat.id, p, {
-      harvest: open.sellable.length || open.sales.length || open.ladders.length ? open : null,
+      // everybody sees the card, whether or not it brought them anything to sell
+      harvest: open,
     });
   }
   return { ...current, markets: moved, rngState: trng.state() };

@@ -1,5 +1,10 @@
 import type { GameBooks } from '@money/domain';
-import type { DreamPending, DreamPendingInfo, DreamResolvedView } from './dream-session.service';
+import type {
+  DreamHarvestOpen,
+  DreamPending,
+  DreamPendingInfo,
+  DreamResolvedView,
+} from './dream-session.service';
 
 /**
  * What a Dreamfund table wants from a player next, in the shape the solo screen keeps it (todo/dreamfund-tables-solo-ui.md, R4): the
@@ -13,6 +18,8 @@ import type { DreamPending, DreamPendingInfo, DreamResolvedView } from './dream-
 export interface DreamPendingExtras {
   info?: DreamPendingInfo | null;
   resolved?: DreamResolvedView | null;
+  /** The Harvest card the table drew, with what the player may still do about it. */
+  harvest?: DreamHarvestOpen | null;
 }
 
 export function withDreamPending(
@@ -72,6 +79,27 @@ export function withDreamPending(
     default:
       break;
   }
+  // the Harvest tile: the card the table drew for everybody, and what is still open to sell
+  const harvest = extras.harvest;
+  if (open.tile === 'harvest' && harvest?.cardId) {
+    next = {
+      ...open,
+      harvest: {
+        cardId: harvest.cardId,
+        told: harvest.told ?? [],
+        window: harvest.window ?? [],
+        sales: harvest.sales.map((sale) => ({
+          holding: sale.holding,
+          label: sale.holding,
+          grossMinor: sale.grossMinor,
+          costsMinor: sale.costsMinor,
+          owedMinor: sale.owedMinor,
+          netMinor: sale.grossMinor - sale.costsMinor - sale.owedMinor,
+        })),
+        ladders: harvest.ladders as never,
+      },
+    };
+  }
   // a card that was dealt with this turn stays on the screen with what came of it, until the next roll
   const done = extras.resolved as (DreamResolvedView & Record<string, unknown>) | null | undefined;
   if (!card && done?.kind === 'emergency' && typeof done['cardId'] === 'string') {
@@ -93,6 +121,17 @@ export function withDreamPending(
         done: true,
         ...(done['reached'] ? { reached: done['reached'] as string } : {}),
       },
+    };
+  } else if (!card && done?.kind === 'opportunity') {
+    next = {
+      ...open,
+      opportunity: {
+        pile: done['pile'] as string | undefined,
+        offers: (done['offers'] as string[] | undefined) ?? [],
+        told: (done['told'] as string[] | undefined) ?? [],
+        ...(done['taken'] ? { taken: done['taken'] as string, dreamTaken: true } : {}),
+        ...(done['passed'] ? { passed: true } : {}),
+      } as never,
     };
   } else if (!card && done?.kind === 'dream') {
     next = {
@@ -116,6 +155,8 @@ export function withDreamPending(
       },
     };
   }
+  // a card that was dealt with: only Done is left on its tile
+  if (!card && done && next !== open) next = { ...next, played: true };
   if (next === open) return books;
   return { ...books, state: { ...books.state, turn: { ...turn, pending: next } } };
 }

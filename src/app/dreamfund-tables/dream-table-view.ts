@@ -1,6 +1,7 @@
 import type { TableView } from '@money/domain';
 import type { DreamPlayerData } from '@money/domain/dist/cashflow-game/dreamfund/player';
 import type {
+  DreamHarvestOpen,
   DreamPending,
   DreamPendingInfo,
   DreamResolvedView,
@@ -69,6 +70,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         dreamPending: (player as unknown as { pending?: unknown }).pending ?? null,
         dreamInfo: (player as unknown as { pendingInfo?: unknown }).pendingInfo ?? null,
         dreamResolved: (player as unknown as { resolved?: unknown }).resolved ?? null,
+        dreamHarvest: (player as unknown as { harvest?: unknown }).harvest ?? null,
       };
     }),
     order: view.order,
@@ -120,8 +122,21 @@ export function pendingOf(view: TableView, seat: number): DreamPending | { kind:
 export function extrasOf(
   view: TableView,
   seat: number,
-): { info: DreamPendingInfo | null; resolved: DreamResolvedView | null } {
+): {
+  info: DreamPendingInfo | null;
+  resolved: DreamResolvedView | null;
+  harvest: DreamHarvestOpen | null;
+} {
   const player = view.players[seat] as unknown as
-    { dreamInfo?: DreamPendingInfo | null; dreamResolved?: DreamResolvedView | null } | undefined;
-  return { info: player?.dreamInfo ?? null, resolved: player?.dreamResolved ?? null };
+    | {
+        dreamInfo?: DreamPendingInfo | null;
+        dreamResolved?: DreamResolvedView | null;
+        dreamHarvest?: DreamHarvestOpen | null;
+      }
+    | undefined;
+  return {
+    info: player?.dreamInfo ?? null,
+    resolved: player?.dreamResolved ?? null,
+    harvest: player?.dreamHarvest ?? null,
+  };
 }

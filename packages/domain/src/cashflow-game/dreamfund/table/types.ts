@@ -87,9 +87,22 @@ export type DreamResolved =
   /** The Career tile: what the die said (a branch: and the path taken). */
   | { kind: 'career'; result: unknown; reached?: string }
   /** The Dream tile: the dreams on offer, and what was done with them (taken, left, or a moment that happened). */
-  | { kind: 'dream'; offers?: string[]; taken?: string; declined?: boolean; moment?: string };
+  | { kind: 'dream'; offers?: string[]; taken?: string; declined?: boolean; moment?: string }
+  /** The Opportunity tile: the pile, the cards on offer, the card taken (what the dice said), or that none was. */
+  | {
+      kind: 'opportunity';
+      pile?: string;
+      offers?: string[];
+      taken?: string;
+      told?: string[];
+      passed?: boolean;
+    };
 
 export interface DreamHarvestOpen {
+  /** The card that was drawn for the table, what it did (told in words), and the markets that are open for selling. */
+  cardId: string;
+  told: string[];
+  window: string[] | 'ALL';
   /** The titles of the holdings that may be sold now, at today's price. */
   sellable: string[];
   /** Buyers' offers: the holding and what is offered gross. */

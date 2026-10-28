@@ -2185,6 +2185,10 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   sell(window: { holding: string; units: number; isShare: boolean }): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'harvest_sell', holding: window.holding });
+      return;
+    }
     this.busy = true;
     this.service.sellInWindow(
       window.holding,
@@ -2194,16 +2198,28 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   acceptSale(holding: string): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'harvest_accept', holding });
+      return;
+    }
     this.busy = true;
     this.service.acceptHarvestSale(holding, this.callbacks);
   }
 
   ride(holding: string): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'harvest_ladder', holding, action: 'ride' });
+      return;
+    }
     this.busy = true;
     this.service.rideHarvestLadder(holding, this.callbacks);
   }
 
   cashOut(holding: string): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'harvest_ladder', holding, action: 'cash' });
+      return;
+    }
     this.busy = true;
     this.service.cashOutHarvestLadder(holding, this.callbacks);
   }
@@ -2251,11 +2267,26 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   choosePile(pile: OpportunityPile): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'choose_pile', pile });
+      return;
+    }
     this.busy = true;
     this.service.drawOpportunity(pile, this.callbacks);
   }
 
   take(card: OpportunityCard): void {
+    if (this.dreamTable) {
+      const choice = this.choiceOf(card);
+      void this.dreamMove({
+        type: 'take_opportunity',
+        cardId: card.id,
+        ...(choice.units ? { units: choice.units } : {}),
+        ...(choice.steps ? { steps: choice.steps } : {}),
+        ...(choice.swapOut ? { swapOut: choice.swapOut } : {}),
+      });
+      return;
+    }
     this.busy = true;
     // a planned card lives in Grow: the project opens there as soon as it is made (JFK, 2026-10-26)
     this.service.takeOpportunity(card.id, this.choiceOf(card), {
@@ -2269,6 +2300,10 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   passOpportunity(): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'skip' });
+      return;
+    }
     this.busy = true;
     this.service.passOpportunity(this.callbacks);
   }
@@ -2276,6 +2311,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
   readonly cardText = cardText;
   /** The player throws the die of the card they bought. */
   rollPurchase(): void {
+    // the table threw the die when the card was bought
+    if (this.dreamTable) return;
     void this.roll(() => this.service.rollOpportunityPurchase(this.callbacks));
   }
 
