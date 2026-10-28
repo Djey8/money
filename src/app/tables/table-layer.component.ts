@@ -18,6 +18,8 @@ import { TableStageComponent } from './table-stage.component';
 import { TradeOfferComponent } from './trade-offer.component';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
+import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
+import { moneyOf } from '../dreamfund-tables/dream-table-view';
 
 /**
  * The online layer on top of the solo game's own screen (todo/cashflow-multiplayer-solo-ui.md R2): whose turn it is and how much
@@ -28,7 +30,13 @@ import { TablesApiService } from './tables-api.service';
 @Component({
   selector: 'app-table-layer',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableStageComponent, TradeOfferComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableStageComponent,
+    TradeOfferComponent,
+    DreamMoneyComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
   template: `
@@ -134,6 +142,17 @@ import { TablesApiService } from './tables-api.service';
           </span>
         </button>
       </div>
+
+      <!-- a Dreamfund table: the player's own money moves, as the table's own commands -->
+      <app-dream-money
+        *ngIf="dreamMoney() as money"
+        [summary]="money.summary"
+        [paydayDue]="money.paydayDue"
+        [canAct]="money.canAct"
+        [busy]="busy()"
+        [lang]="lang"
+        (move)="move($event)"
+      ></app-dream-money>
 
       <div class="tl-looking" *ngIf="lookedName() as who" role="status">
         <span>{{ t.lookingAt.replace('{name}', who) }}</span>
@@ -575,6 +594,16 @@ export class TableLayerComponent implements OnDestroy {
     if (row.outcome === 'left') return `${t.placeLeft} - ${t.placeOut}: #${row.rank}`;
     return `${t.placeNow}: #${row.rank}`;
   }
+
+  /** At a Dreamfund table, the player's own money: shown while their own books are on screen. */
+  readonly dreamMoney = computed(() => {
+    const view = this.view();
+    if (!view || view.youSeat === null || view.phase !== 'playing') return null;
+    if ((view as { kind?: string }).kind !== 'dreamfund' || this.mode.looking() !== null)
+      return null;
+    const own = moneyOf(view, view.youSeat);
+    return own ? { ...own, canAct: view.activeSeat === view.youSeat } : null;
+  });
 
   readonly rows = computed(() => {
     const table = this.view();

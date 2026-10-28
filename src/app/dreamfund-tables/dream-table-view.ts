@@ -2,6 +2,7 @@ import type { TableView } from '@money/domain';
 import type { DreamPlayerData } from '@money/domain/dist/cashflow-game/dreamfund/player';
 import type {
   DreamHarvestOpen,
+  DreamLifeSummary,
   DreamPending,
   DreamPendingInfo,
   DreamResolvedView,
@@ -71,6 +72,8 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         dreamInfo: (player as unknown as { pendingInfo?: unknown }).pendingInfo ?? null,
         dreamResolved: (player as unknown as { resolved?: unknown }).resolved ?? null,
         dreamHarvest: (player as unknown as { harvest?: unknown }).harvest ?? null,
+        dreamSummary: (player as unknown as { summary?: unknown }).summary ?? null,
+        dreamPaydayDue: (player as unknown as { paydayDue?: boolean }).paydayDue === true,
       };
     }),
     order: view.order,
@@ -139,4 +142,16 @@ export function extrasOf(
     resolved: player?.dreamResolved ?? null,
     harvest: player?.dreamHarvest ?? null,
   };
+}
+
+/** The numbers of the seat's life (cash, reserve, dream, debts, plans), and whether a Payday still waits to be settled. */
+export function moneyOf(
+  view: TableView,
+  seat: number,
+): { summary: DreamLifeSummary; paydayDue: boolean } | null {
+  const player = view.players[seat] as unknown as
+    { dreamSummary?: DreamLifeSummary | null; dreamPaydayDue?: boolean } | undefined;
+  return player?.dreamSummary
+    ? { summary: player.dreamSummary, paydayDue: player.dreamPaydayDue === true }
+    : null;
 }
