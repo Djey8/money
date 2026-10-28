@@ -40,4 +40,21 @@ describe('DreamTableGameDriver', () => {
     expect((await driver.buy('x')).ok).toBe(false);
     expect(played).toEqual([]);
   });
+
+  it('turns what a tile card decides into the commands of the table', async () => {
+    const { driver, played } = make();
+    await driver.dreamMove({ decision: 'pay', pay: 3 });
+    await driver.dreamMove({ decision: 'answer', answer: 'option', option: 'x' });
+    await driver.dreamMove({ decision: 'takeCard', cardId: 'S01', units: 2 });
+    await driver.dreamMove({ decision: 'ladder', holding: 'ETF', action: 'cash' });
+    await driver.dreamMove({ decision: 'leave' });
+    expect(played).toEqual([
+      { type: 'pay_emergency', pay: 3 },
+      { type: 'answer_life', decision: 'option', option: 'x' },
+      { type: 'take_opportunity', cardId: 'S01', units: 2 },
+      { type: 'harvest_ladder', holding: 'ETF', action: 'cash' },
+      { type: 'skip' },
+    ]);
+    expect((await driver.dreamMove({ decision: 'nonsense' })).ok).toBe(false);
+  });
 });

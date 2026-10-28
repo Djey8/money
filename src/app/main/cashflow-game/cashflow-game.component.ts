@@ -1279,7 +1279,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       (!!pending?.dream && !pending.dream.taken && !pending.dream.declined) ||
       (!!pending?.opportunity && !pending.opportunity.taken && !pending.opportunity.passed);
     if (remote?.dreamfund && remote.dreamMove && open) {
-      void remote.dreamMove({ type: 'skip' }).then((outcome) => {
+      void remote.dreamMove({ decision: 'leave' }).then((outcome) => {
         if (outcome.ok) this.finishSoloDecision('done');
       });
       return;

@@ -4,7 +4,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivatedRoute } from '@angular/router';
 import { TableRoomSwitchComponent } from './table-room-switch.component';
 import { TableRoomComponent } from './table-room.component';
-import { DreamRoomComponent } from '../dreamfund-tables/dream-room.component';
 
 describe('TableRoomSwitchComponent', () => {
   const setup = (kind: string | undefined) => {
@@ -42,8 +41,7 @@ describe('TableRoomSwitchComponent', () => {
     expect(setup(undefined).game).toBe('classic');
   });
 
-  it('knows both rooms', () => {
+  it('opens the one room page for both games', () => {
     expect(TableRoomComponent).toBeDefined();
-    expect(DreamRoomComponent).toBeDefined();
   });
 });

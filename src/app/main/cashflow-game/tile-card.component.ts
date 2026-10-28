@@ -1936,7 +1936,9 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   /** A decision of this tile, sent to the table; false when it was refused (the toast says why). */
-  private async dreamMove(command: Record<string, unknown>): Promise<boolean> {
+  private async dreamMove(
+    command: { decision: string } & Record<string, unknown>,
+  ): Promise<boolean> {
     const remote = this.dreamTable;
     if (!remote?.dreamMove) return false;
     this.busy = true;
@@ -1969,7 +1971,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   payEmergency(how: 'now' | number): void {
-    void this.dreamMove({ type: 'pay_emergency', pay: how });
+    void this.dreamMove({ decision: 'pay', pay: how });
   }
 
   ngOnInit(): void {
@@ -2186,7 +2188,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   sell(window: { holding: string; units: number; isShare: boolean }): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'harvest_sell', holding: window.holding });
+      void this.dreamMove({ decision: 'sellInWindow', holding: window.holding });
       return;
     }
     this.busy = true;
@@ -2199,7 +2201,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   acceptSale(holding: string): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'harvest_accept', holding });
+      void this.dreamMove({ decision: 'acceptBuyer', holding });
       return;
     }
     this.busy = true;
@@ -2208,7 +2210,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   ride(holding: string): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'harvest_ladder', holding, action: 'ride' });
+      void this.dreamMove({ decision: 'ladder', holding, action: 'ride' });
       return;
     }
     this.busy = true;
@@ -2217,7 +2219,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   cashOut(holding: string): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'harvest_ladder', holding, action: 'cash' });
+      void this.dreamMove({ decision: 'ladder', holding, action: 'cash' });
       return;
     }
     this.busy = true;
@@ -2268,7 +2270,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   choosePile(pile: OpportunityPile): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'choose_pile', pile });
+      void this.dreamMove({ decision: 'pile', pile });
       return;
     }
     this.busy = true;
@@ -2279,7 +2281,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
     if (this.dreamTable) {
       const choice = this.choiceOf(card);
       void this.dreamMove({
-        type: 'take_opportunity',
+        decision: 'takeCard',
         cardId: card.id,
         ...(choice.units ? { units: choice.units } : {}),
         ...(choice.steps ? { steps: choice.steps } : {}),
@@ -2301,7 +2303,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   passOpportunity(): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'skip' });
+      void this.dreamMove({ decision: 'leave' });
       return;
     }
     this.busy = true;
@@ -2782,7 +2784,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   chooseEmergency(id: string): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'emergency_choose', choiceId: id });
+      void this.dreamMove({ decision: 'choose', choiceId: id });
       return;
     }
     this.service.chooseEmergencyOption(id, this.callbacks);
@@ -2792,7 +2794,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
     if (this.dreamTable) {
       // the table rolls the die; it is seen tumbling and coming to rest on what it rolled
       void this.roll(async () => {
-        await this.dreamMove({ type: 'emergency_roll', key });
+        await this.dreamMove({ decision: 'rollDie', key });
         const rolled = this.dreamEmergency?.['rolls'] as Record<string, number> | undefined;
         return rolled?.[key] ? [rolled[key]] : [];
       });
@@ -2806,7 +2808,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   rerollEmergency(): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'emergency_reroll' });
+      void this.dreamMove({ decision: 'rollAgain' });
       return;
     }
     this.service.rerollEmergency(this.callbacks);
@@ -2848,10 +2850,10 @@ export class TileCardComponent implements OnInit, OnDestroy {
     if (this.dreamTable) {
       const asked =
         decision.kind === 'option'
-          ? { decision: 'option', option: (decision as { id: string }).id }
-          : { decision: decision.kind };
+          ? { answer: 'option', option: (decision as { id: string }).id }
+          : { answer: decision.kind };
       void this.roll(async () => {
-        await this.dreamMove({ type: 'answer_life', ...asked });
+        await this.dreamMove({ decision: 'answer', ...asked });
         return this.service.lifeView?.outcome?.rolls?.slice(0, 3) ?? [];
       });
       return;
@@ -3038,7 +3040,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
   chooseBranch(id: string): void {
     if (this.dreamTable) {
       const index = this.service.careerView?.options.findIndex((stage) => stage.id === id) ?? -1;
-      if (index >= 0) void this.dreamMove({ type: 'choose_career_branch', index });
+      if (index >= 0) void this.dreamMove({ decision: 'branch', index });
       return;
     }
     this.busy = true;
@@ -3071,7 +3073,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   takeDream(id: string): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'take_dream', cardId: id });
+      void this.dreamMove({ decision: 'takeDream', cardId: id });
       return;
     }
     this.busy = true;
@@ -3083,7 +3085,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   declineDreams(): void {
     if (this.dreamTable) {
-      void this.dreamMove({ type: 'skip' });
+      void this.dreamMove({ decision: 'leave' });
       return;
     }
     this.service.declineDreams(this.callbacks);

@@ -1,6 +1,29 @@
 import { TableGameDriver } from '../tables/table-game-driver';
 import type { RemoteOutcome } from '../shared/services/remote-game';
 
+type Rest = Record<string, unknown>;
+
+/** What the tile cards of the solo screen decide, and the command of the table each one is. */
+const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
+  pay: (d) => ({ type: 'pay_emergency', pay: d['pay'] }),
+  choose: (d) => ({ type: 'emergency_choose', choiceId: d['choiceId'] }),
+  rollDie: (d) => ({ type: 'emergency_roll', key: d['key'] }),
+  rollAgain: () => ({ type: 'emergency_reroll' }),
+  answer: (d) => ({
+    type: 'answer_life',
+    decision: d['answer'],
+    ...(d['option'] ? { option: d['option'] } : {}),
+  }),
+  branch: (d) => ({ type: 'choose_career_branch', index: d['index'] }),
+  takeDream: (d) => ({ type: 'take_dream', cardId: d['cardId'] }),
+  pile: (d) => ({ type: 'choose_pile', pile: d['pile'] }),
+  takeCard: (d) => ({ type: 'take_opportunity', ...d }),
+  leave: () => ({ type: 'skip' }),
+  sellInWindow: (d) => ({ type: 'harvest_sell', holding: d['holding'] }),
+  acceptBuyer: (d) => ({ type: 'harvest_accept', holding: d['holding'] }),
+  ladder: (d) => ({ type: 'harvest_ladder', holding: d['holding'], action: d['action'] }),
+};
+
 /**
  * The solo screen's moves at a Dreamfund table (todo/dreamfund-tables-solo-ui.md, R4): the same driver as the classic table's, with the
  * Dreamfund's commands. The server rolls the dice, draws the cards and books them; this sends what the player decided. Moves the
@@ -13,8 +36,11 @@ export class DreamTableGameDriver extends TableGameDriver {
   private notHere = (..._args: unknown[]): Promise<RemoteOutcome> =>
     Promise.resolve({ ok: false, message: DreamTableGameDriver.NOT_HERE, events: [] });
 
-  /** A decision of a tile card: the table's command as it is. */
-  dreamMove(command: Record<string, unknown>): Promise<RemoteOutcome> {
+  /** A decision of a tile card, turned into the table's own command. */
+  dreamMove(decision: { decision: string } & Record<string, unknown>): Promise<RemoteOutcome> {
+    const { decision: name, ...rest } = decision;
+    const command = DECISIONS[name]?.(rest);
+    if (!command) return this.notHere();
     return this.move(command);
   }
 

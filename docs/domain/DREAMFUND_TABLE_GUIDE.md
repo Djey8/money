@@ -43,3 +43,11 @@ do it only when the user wants the agent to play, and then use `table` with `wai
 `professions` duplicates|unique|random, `endCondition` first-win|all-done|round-limit with `roundLimit`, `clock`, `spectators`). Seat
 bots with `table_add_bot` and `policyId` `dream:<strategy>` (the strategies: `get_cashflow_game` `table_bots` with `kind: dreamfund`),
 then `table_start`.
+
+## In the app
+
+A person plays a Dreamfund table on the solo Dreamfund screen, inside the same multiplayer flow as the classic game: the lobby, the create-table panel
+and the leaderboard have a Classic / Dreamfund choice, the table opens on the one room page, and once it is played the app shows the books of the seat
+on screen (the map with every token, the cards, the Smile, Fire and Mojo pages) with the table layer on top - the players in the queue, the popups of
+what the others do, a panel for your own money - and the classic end screen with the ranking and what it meant for the rating. An agent does not need
+any of that: it reads the table with `table_review` and plays with the moves in `legalActions`.

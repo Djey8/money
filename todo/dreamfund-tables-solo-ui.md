@@ -45,3 +45,16 @@ guard); one concern per commit; `npm run verify` and `npm run build:selfhosted` 
   the viewer's language (the cards are in the client).
 - What the table keeps per seat that the solo keeps globally (the Harvest markets are shared at a table; the solo has its own).
 - Looking at another player's books must show their Smile/Fire pages too, read only.
+
+## Status (2026-10-28)
+
+R1 to R7 are built, tested in the browser against the local stack (a person rolls, lands on every kind of tile, answers cards, pays, takes
+dreams and Opportunities, ends a ranked game and files it) and pushed to `develop`. What is still open, in the order it matters:
+
+- **Other languages** (es, fr, cn, ar): the Dreamfund words (texts of the money panel, the events, the lobby choice) are English and German; other
+  languages show English.
+- **Hold, undo and the turn gate** are not part of a Dreamfund table (`holdSeats` is empty, no undo vote).
+- **Dream moment (M05)** for humans, and the Smile / Fire / Mojo pages read only: money is moved from the money panel of the table layer, not from the
+  app's pages.
+- The Fire project of an emergency paid at once is not made (only plans show as Fire projects); the solo game makes a project for every emergency.
+- Texts nobody reads any more in `dream-texts.ts` (the old room's) can be pruned.
