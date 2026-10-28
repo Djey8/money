@@ -2985,6 +2985,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   rollCareer(): void {
+    // the table has rolled the die already
+    if (this.dreamTable) return;
     void this.roll(() => {
       this.service.rollCareerTile(this.callbacks);
       const result = this.service.careerView?.result;
@@ -2997,6 +2999,11 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   chooseBranch(id: string): void {
+    if (this.dreamTable) {
+      const index = this.service.careerView?.options.findIndex((stage) => stage.id === id) ?? -1;
+      if (index >= 0) void this.dreamMove({ type: 'choose_career_branch', index });
+      return;
+    }
     this.busy = true;
     this.service.reachStage(id, this.callbacks);
   }
@@ -3020,11 +3027,16 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   drawDreamOffers(count: number): void {
+    if (this.dreamTable) return;
     this.selectedOffer = null;
     this.service.drawDream(this.callbacks, { forceOffers: count });
   }
 
   takeDream(id: string): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'take_dream', cardId: id });
+      return;
+    }
     this.busy = true;
     this.service.takeDream(id, this.callbacks);
     // the project opens at once, to be funded or planned
@@ -3033,6 +3045,10 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   declineDreams(): void {
+    if (this.dreamTable) {
+      void this.dreamMove({ type: 'skip' });
+      return;
+    }
     this.service.declineDreams(this.callbacks);
   }
 

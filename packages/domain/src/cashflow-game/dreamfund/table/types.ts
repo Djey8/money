@@ -67,7 +67,7 @@ export type DreamPending =
       rerolled?: boolean;
     }
   | { kind: 'life'; cardId: string }
-  | { kind: 'career_branch'; options: string[] }
+  | { kind: 'career_branch'; options: string[]; roll?: number }
   | { kind: 'dream'; offers: string[] }
   | { kind: 'opportunity_pile' }
   | { kind: 'opportunity'; pile: OpportunityPile; offers: string[] };
@@ -83,7 +83,11 @@ export type DreamResolved =
       payMinor: number;
       how: 'now' | 3 | 6 | 12;
     }
-  | { kind: 'life'; cardId: string; decision: string; outcome?: unknown };
+  | { kind: 'life'; cardId: string; decision: string; outcome?: unknown }
+  /** The Career tile: what the die said (a branch: and the path taken). */
+  | { kind: 'career'; result: unknown; reached?: string }
+  /** The Dream tile: the dreams on offer, and what was done with them (taken, left, or a moment that happened). */
+  | { kind: 'dream'; offers?: string[]; taken?: string; declined?: boolean; moment?: string };
 
 export interface DreamHarvestOpen {
   /** The titles of the holdings that may be sold now, at today's price. */

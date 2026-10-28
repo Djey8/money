@@ -162,4 +162,12 @@ export function applyDreamExtrasToApp(state: AppStateService, app: DreamApp): vo
   state.allFireEmergencies = app.fire as typeof state.allFireEmergencies;
   const game = state.cashflowGame as { dreams?: { open: DreamApp['openDreams'] } };
   if (game.dreams) game.dreams = { ...game.dreams, open: app.openDreams };
+  // a dream taken this turn: the card shows the project it became (named in the viewer's language)
+  const pending = state.cashflowGame.turn?.pending as
+    { dream?: { dreamTakenCardId?: string; taken?: string } } | undefined;
+  const takenId = pending?.dream?.dreamTakenCardId;
+  if (pending?.dream && takenId) {
+    const project = app.openDreams.find((open) => open.cardId === takenId);
+    if (project) pending.dream.taken = project.projectTitle;
+  }
 }

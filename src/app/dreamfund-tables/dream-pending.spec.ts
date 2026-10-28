@@ -89,4 +89,30 @@ describe('withDreamPending', () => {
     });
     expect(pendingOf(life)['life']).toMatchObject({ cardId: 'L3', decision: 'accept' });
   });
+
+  it('shows the career die and the paths of a branch, and what a promotion came to', () => {
+    const branch = withDreamPending(books({ tile: 'career' }), {
+      kind: 'career_branch',
+      options: ['S2a', 'S2b'],
+      roll: 6,
+    });
+    expect(pendingOf(branch)['career']).toMatchObject({
+      result: { kind: 'branch', options: ['S2a', 'S2b'], roll: 6 },
+    });
+    const done = withDreamPending(books({ tile: 'career' }), null, {
+      resolved: { kind: 'career', result: { kind: 'promoted', to: 'S2', roll: 5 }, reached: 'S2' },
+    });
+    expect(pendingOf(done)['career']).toMatchObject({ done: true, reached: 'S2' });
+  });
+
+  it('shows the dreams on offer and what was done with them', () => {
+    const left = withDreamPending(books({ tile: 'dream' }), null, {
+      resolved: { kind: 'dream', offers: ['D1'], declined: true },
+    });
+    expect(pendingOf(left)['dream']).toMatchObject({ offers: ['D1'], declined: true });
+    const taken = withDreamPending(books({ tile: 'dream' }), null, {
+      resolved: { kind: 'dream', offers: ['D1', 'D2'], taken: 'D2' },
+    });
+    expect(pendingOf(taken)['dream']).toMatchObject({ dreamTakenCardId: 'D2' });
+  });
 });

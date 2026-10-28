@@ -769,8 +769,12 @@ function doCommand(
     case 'choose_career_branch': {
       if (pending?.kind !== 'career_branch') return refuse('There is no career branch to choose.');
       if (!pending.options[command.index]) return refuse('There is no such path.');
-      p.careerApply({ kind: 'branch', options: pending.options, roll: 0 }, command.index);
-      return { pending: null };
+      const result = { kind: 'branch' as const, options: pending.options, roll: pending.roll ?? 0 };
+      p.careerApply(result, command.index);
+      return {
+        pending: null,
+        resolved: { kind: 'career', result, reached: pending.options[command.index] },
+      };
     }
     case 'take_dream': {
       if (pending?.kind !== 'dream' || !pending.offers.includes(command.cardId)) {
@@ -780,7 +784,10 @@ function doCommand(
       const card = p.dreamCard(command.cardId);
       if (!card) return refuse('That dream card is gone.');
       p.takeDream(card);
-      return { pending: null };
+      return {
+        pending: null,
+        resolved: { kind: 'dream', offers: pending.offers, taken: card.id },
+      };
     }
     case 'choose_pile': {
       if (pending?.kind !== 'opportunity_pile') return refuse('There is no pile to choose now.');
@@ -814,7 +821,12 @@ function doCommand(
       ) {
         return refuse('This one has to be answered.');
       }
-      return { pending: null };
+      return {
+        pending: null,
+        ...(pending.kind === 'dream'
+          ? { resolved: { kind: 'dream' as const, offers: pending.offers, declined: true } }
+          : {}),
+      };
     }
     case 'end_turn': {
       if (!table.turnRolled) return refuse('Roll first.');
@@ -915,25 +927,31 @@ function enterTile(
       const result = p.careerRoll();
       if (!result) return { pending: null };
       if (result.kind === 'branch') {
-        return { pending: { kind: 'career_branch', options: result.options } };
+        return { pending: { kind: 'career_branch', options: result.options, roll: result.roll } };
       }
       p.careerApply(result);
       emit('career', id, { result: result.kind });
-      return { pending: null };
+      return {
+        pending: null,
+        resolved: {
+          kind: 'career',
+          result,
+          ...(result.kind === 'promoted' ? { reached: result.to } : {}),
+        },
+      };
     }
     case 'dream': {
       const drawn = p.drawDream();
       if (!drawn) return { pending: null };
       if (drawn.landing.kind === 'moment') {
         p.moment(drawn.landing.moment.id, drawn.cards, () => null);
-        return { pending: null };
+        return { pending: null, resolved: { kind: 'dream', moment: drawn.landing.moment.id } };
       }
-      return {
-        pending:
-          p.canTakeDream() && drawn.landing.offers.length > 0
-            ? { kind: 'dream', offers: drawn.landing.offers.map((o) => o.id) }
-            : null,
-      };
+      const offers = drawn.landing.offers.map((o) => o.id);
+      return p.canTakeDream() && offers.length > 0
+        ? { pending: { kind: 'dream', offers } }
+        : // the dreams are shown, but there is room for none
+          { pending: null, resolved: { kind: 'dream', offers, declined: true } };
     }
     case 'opportunity':
       return { pending: { kind: 'opportunity_pile' } };

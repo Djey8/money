@@ -25,7 +25,15 @@ export function withDreamPending(
   if (!turn || !open || open.kind !== 'story') return books;
   let next = open;
   const card = pending as
-    (DreamPending & { cardId?: string; offers?: string[]; pile?: string }) | null | undefined;
+    | (DreamPending & {
+        cardId?: string;
+        offers?: string[];
+        pile?: string;
+        options?: string[];
+        roll?: number;
+      })
+    | null
+    | undefined;
   switch (card?.kind) {
     case 'emergency':
       if (card.cardId) {
@@ -50,6 +58,14 @@ export function withDreamPending(
     case 'dream':
       next = { ...open, dream: { offers: card.offers ?? [] } };
       break;
+    case 'career_branch':
+      next = {
+        ...open,
+        career: {
+          result: { kind: 'branch', options: card.options ?? [], roll: card.roll ?? 0 },
+        } as never,
+      };
+      break;
     case 'opportunity':
       next = { ...open, opportunity: { pile: card.pile, offers: card.offers ?? [], told: [] } };
       break;
@@ -67,6 +83,26 @@ export function withDreamPending(
         ...(done['choiceId'] ? { choiceId: done['choiceId'] as string } : {}),
         ...(done['rolls'] ? { rolls: done['rolls'] as Record<string, number> } : {}),
         dreamPaid: { payMinor: done['payMinor'], how: done['how'] },
+      } as never,
+    };
+  } else if (!card && done?.kind === 'career') {
+    next = {
+      ...open,
+      career: {
+        result: done['result'] as never,
+        done: true,
+        ...(done['reached'] ? { reached: done['reached'] as string } : {}),
+      },
+    };
+  } else if (!card && done?.kind === 'dream') {
+    next = {
+      ...open,
+      dream: {
+        offers: (done['offers'] as string[] | undefined) ?? [],
+        ...(done['moment'] ? { moment: done['moment'] as string } : {}),
+        ...(done['declined'] ? { declined: true } : {}),
+        // the Smile project of the dream taken is named by the bridge, in the language of the screen
+        ...(done['taken'] ? { dreamTakenCardId: done['taken'] } : {}),
       } as never,
     };
   } else if (!card && done?.kind === 'life' && typeof done['cardId'] === 'string') {

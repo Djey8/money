@@ -50,6 +50,8 @@ export type DreamResolvedView =
       how: 'now' | 3 | 6 | 12;
     }
   | { kind: 'life'; cardId: string; decision: string; outcome?: unknown }
+  | { kind: 'career'; result: unknown; reached?: string }
+  | { kind: 'dream'; offers?: string[]; taken?: string; declined?: boolean; moment?: string }
   | { kind: string };
 
 export type DreamPending =
@@ -61,7 +63,7 @@ export type DreamPending =
       rerolled?: boolean;
     }
   | { kind: 'life'; cardId: string }
-  | { kind: 'career_branch'; options: string[] }
+  | { kind: 'career_branch'; options: string[]; roll?: number }
   | { kind: 'dream'; offers: string[] }
   | { kind: 'opportunity_pile' }
   | { kind: 'opportunity'; pile: string; offers: string[] };

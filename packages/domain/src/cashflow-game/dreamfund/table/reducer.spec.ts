@@ -313,3 +313,41 @@ describe('the Emergency card at a Dreamfund table', () => {
     expect(seat.resolved).toMatchObject({ kind: 'emergency', how: 'now' });
   });
 });
+
+describe('the Dream and Career tiles at a Dreamfund table', () => {
+  const seatOf = (t: DreamTable, who: string) => t.players.find((p) => p.id === who)!;
+
+  it('shows a dream taken, and the dreams left, as what the turn came to', () => {
+    const t = started();
+    const who = t.activePlayerId!;
+    const cards = DreamPlayer.restore(seatOf(t, who).life!, () => 0.5, { sharedMarkets: true })
+      .gameSet.decks!.dream!;
+    const offers = [cards[0].id, cards[1].id];
+    const asked = {
+      ...t,
+      players: t.players.map((p) =>
+        p.id === who ? { ...p, pending: { kind: 'dream' as const, offers } } : p,
+      ),
+    };
+    const taken = run(asked, who, { type: 'take_dream', cardId: offers[0] });
+    expect(seatOf(taken, who).resolved).toMatchObject({ kind: 'dream', taken: offers[0], offers });
+    const left = run(asked, who, { type: 'skip' });
+    expect(seatOf(left, who).resolved).toMatchObject({ kind: 'dream', declined: true });
+  });
+
+  it('keeps the die of a career branch, and the path taken', () => {
+    const t = started();
+    const who = t.activePlayerId!;
+    const asked = {
+      ...t,
+      players: t.players.map((p) =>
+        p.id === who
+          ? { ...p, pending: { kind: 'career_branch' as const, options: ['x', 'y'], roll: 5 } }
+          : p,
+      ),
+    };
+    expect(() => run(asked, who, { type: 'choose_career_branch', index: 4 })).toThrow(
+      /no such path/i,
+    );
+  });
+});
