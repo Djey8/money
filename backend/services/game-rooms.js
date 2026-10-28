@@ -905,7 +905,17 @@ function createGameRoomService({
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await loadFor(userId, roomId);
       const player = doc.table.players.find((p) => p.id === userId);
-      if (!player || !player.books) {
+      // a Dreamfund seat keeps its life (the books, the reserve, the dreams): filed with what the solo game keeps in the app
+      const dream = doc.table.kind === 'dreamfund' && player && player.life;
+      const entities = dream
+        ? require('@money/domain/dist/cashflow-game/dreamfund/app-entities').dreamAppEntities(
+            player.life,
+            doc.language === 'de' ? 'de' : 'en',
+            nowIso(),
+          )
+        : null;
+      const books = entities ? entities.books : player && player.books;
+      if (!player || !books) {
         throw new RoomError(
           'room_forbidden',
           403,
@@ -934,7 +944,7 @@ function createGameRoomService({
         if (error instanceof store.RoomConflictError) continue;
         throw error;
       }
-      const gameSet = player.books.gameSet;
+      const gameSet = books.gameSet;
       const profession = gameSet?.professions?.find((p) => p.id === player.professionId);
       const label = `${doc.table.settings.name} · ${profession ? profession.title : 'Cashflow'}`;
       let result;
@@ -943,7 +953,7 @@ function createGameRoomService({
         const ranked = (doc.table.result?.ranking ?? []).find((entry) => entry.playerId === userId);
         result = await filer(
           userId,
-          player.books,
+          books,
           typeof name === 'string' && name.trim() ? name.trim() : label,
           {
             table: doc.table.settings.name,
@@ -952,6 +962,9 @@ function createGameRoomService({
             rank: ranked ? ranked.rank : null,
             outcome: ranked ? ranked.outcome : undefined,
           },
+          entities
+            ? { mojo: entities.mojo, smile: entities.smile, fire: entities.fire }
+            : undefined,
         );
       } catch (error) {
         await release(roomId, userId);

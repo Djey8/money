@@ -35,7 +35,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
     kind: 'dreamfund' as const,
     id: view.id,
     version: view.version,
-    phase: view.phase === 'abandoned' ? 'closed' : view.phase,
+    phase: view.phase,
     settings: {
       ...view.settings,
       // the game set the characters come from, and the classic table's own switches that a Dreamfund table does not have

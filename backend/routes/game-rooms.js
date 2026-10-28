@@ -115,11 +115,11 @@ function rooms() {
       clocks,
       bots,
       // A finished game is filed in a player's own saved games through the saved-games store (slice S5).
-      filer: (userId, books, name, multiplayer) =>
+      filer: (userId, books, name, multiplayer, extras) =>
         fileFinishedGame(
           { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
           userId,
-          { books, name, multiplayer },
+          { books, name, multiplayer, extras },
         ),
       // one name per account: the nickname of the account is the name at every table
       nicknameOf,
@@ -310,22 +310,25 @@ const MAX_WAIT_SECONDS = () => Number(process.env.GAME_ROOMS_MAX_WAIT_SECONDS) |
 async function withRating(view) {
   if (view.table.phase !== 'finished') return view;
   try {
-    const result = await require('../repositories/game-stats-store').getResult(
-      getGameStatsDb(),
-      view.id,
-    );
+    // each game has a board of its own: the result is filed there
+    const dream = view.table.kind === 'dreamfund';
+    const result = await require(
+      dream ? '../repositories/game-dream-stats-store' : '../repositories/game-stats-store',
+    ).getResult(getGameStatsDb(), view.id);
     if (!result) return view;
     return {
       ...view,
       rating: {
         ranked: result.counted,
-        ...(result.counted ? {} : { why: result.rankedWhy }),
-        changes: result.participants.map((p) => ({
-          seat: p.seat,
-          before: Math.round(p.ratingBefore),
-          after: Math.round(p.ratingAfter),
-          delta: Math.round(p.delta * 10) / 10,
-        })),
+        ...(result.counted ? {} : { why: dream ? result.why : result.rankedWhy }),
+        changes: result.participants
+          .filter((p) => p.ratingBefore !== undefined)
+          .map((p) => ({
+            seat: p.seat,
+            before: Math.round(p.ratingBefore),
+            after: Math.round(p.ratingAfter),
+            delta: Math.round(p.delta * 10) / 10,
+          })),
       },
     };
   } catch {

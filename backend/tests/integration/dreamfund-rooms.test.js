@@ -415,6 +415,18 @@ describe('a Dreamfund room', () => {
       });
       expect(JSON.stringify(profile.body)).not.toContain(host.userId);
 
+      // the game says whether it counted, in the table's own reading: the classic end screen shows it
+      const ended = await call(host, 'get', `/game/rooms/${roomId}`);
+      expect(ended.body.rating).toMatchObject({ ranked: true });
+      expect(ended.body.rating.changes.length).toBeGreaterThanOrEqual(2);
+      // and it is filed as a saved game with what the solo game keeps (the Mojo, the dream)
+      const filed = await call(host, 'post', `/game/rooms/${roomId}/save`, {});
+      expect(filed.status).toBe(200);
+      expect(filed.body.id).toBeTruthy();
+      const saved = await call(host, 'get', '/game/saves');
+      expect(saved.status).toBe(200);
+      expect(JSON.stringify(saved.body)).toContain(filed.body.id);
+
       // the classic board did not move
       const classicAfter = await call(host, 'get', '/game/leaderboard?type=bot&minGames=0&limit=1');
       expect(JSON.stringify(classicAfter.body)).toBe(JSON.stringify(classicBefore.body));

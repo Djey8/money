@@ -324,7 +324,7 @@ function requireRunning(state) {
  * like any other - as a game that has ended, without an undo history (a table has none to give). `books` are the player's
  * books at the table; nothing about the other players or the table goes into it.
  */
-async function fileFinishedGame(deps, userId, { books, name, multiplayer }) {
+async function fileFinishedGame(deps, userId, { books, name, multiplayer, extras }) {
   return withSaves(deps, userId, async (context) => {
     const { session, settings, data } = context;
     const id = newGameId();
@@ -343,7 +343,15 @@ async function fileFinishedGame(deps, userId, { books, name, multiplayer }) {
       schema: SAVED_GAME_SCHEMA,
       summary,
       steps: [],
-      snapshot: snapshotFromBooks(named),
+      // a Dreamfund game also keeps what the solo game keeps in the app: the Mojo, the Smile and the Fire projects
+      snapshot: extras
+        ? {
+            ...snapshotFromBooks(named),
+            mojo: extras.mojo,
+            allSmileProjects: extras.smile,
+            allFireEmergencies: extras.fire,
+          }
+        : snapshotFromBooks(named),
     };
     const games = readIndex(data, session);
     return {
