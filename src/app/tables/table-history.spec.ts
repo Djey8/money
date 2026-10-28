@@ -65,4 +65,23 @@ describe('historyLines', () => {
     expect(lines[2].detail).toMatch(/^Gold · 5[.,]000$/);
     expect(lines[0].who).toBe('');
   });
+
+  it('tells the Dreamfund events in their own words, with the card and the price', () => {
+    const lines = historyLines(
+      view,
+      [
+        event(1, 'emergency', 0, { tile: 'emergency' }),
+        event(2, 'opportunity_taken', 1, { cardId: 'S01', costMinor: 50000 }),
+        event(3, 'goal_reached', 0, { goal: 'reserve', round: 4 }),
+      ],
+      'en',
+    );
+    expect(lines.map((line) => [line.who, line.title])).toEqual([
+      ['Ann', 'reached a goal'],
+      ['Ben', 'took an Opportunity'],
+      ['Ann', 'landed on an Emergency'],
+    ]);
+    expect(lines[0].detail).toBe('the reserve');
+    expect(lines[1].detail).toContain('500');
+  });
 });

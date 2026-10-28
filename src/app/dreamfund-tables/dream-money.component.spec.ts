@@ -19,7 +19,7 @@ const summary = (over: Partial<DreamLifeSummary> = {}): DreamLifeSummary =>
     dreamPoints: 0,
     goals: { reserve: 0, debts: 0, dream: 0, independence: 0 },
     debts: [{ tag: 'Student loan', amountMinor: 150000 }],
-    holdings: [],
+    holdings: [{ title: 'Dividend ETF', cardId: 'S01', monthlyMinor: 1200, paidMinor: 5000 }],
     plans: [{ kind: 'mojo', id: 'mojo', perMinor: 30000, leftMinor: 680000 }],
     smile: [],
     career: null,
@@ -78,5 +78,45 @@ describe('DreamMoneyComponent', () => {
     expect(moves).toEqual([{ type: 'settle_payday' }]);
     render({ canAct: false });
     expect(fixture.nativeElement.textContent).not.toContain('Student loan');
+  });
+
+  it('sells a holding at the market, or offers it to the others for a price', () => {
+    render({ canAct: true, allowed: ['offer_trade'] });
+    const input = fixture.nativeElement.querySelectorAll('input.dm-amount');
+    // the amount of the month is the first field; the price of the offer is the next
+    const price = (input as NodeListOf<HTMLInputElement>)[1];
+    price.value = '30';
+    price.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    click('Sell');
+    click('Offer');
+    expect(moves).toEqual([
+      { type: 'sell_holding', holding: 'Dividend ETF' },
+      { type: 'offer_trade', holding: 'Dividend ETF', priceMinor: 3000 },
+    ]);
+  });
+
+  it('answers an offer of somebody else, off turn, and lets the seller take a counter offer', () => {
+    const trade = {
+      sellerSeat: 1,
+      holding: 'Dividend ETF',
+      cardId: 'S01',
+      toSeat: null,
+      priceMinor: 5000,
+      counters: [],
+      declinedSeats: [],
+    };
+    render({ canAct: false, trade, youSeat: 0, allowed: ['accept_trade', 'decline_trade'] });
+    click('Accept');
+    click('Decline');
+    expect(moves).toEqual([{ type: 'accept_trade' }, { type: 'decline_trade' }]);
+    render({
+      canAct: false,
+      trade: { ...trade, sellerSeat: 0, counters: [{ seat: 1, priceMinor: 4000 }] },
+      youSeat: 0,
+      names: ['Ann', 'Ben'],
+    });
+    click('Ben');
+    expect(moves).toEqual([{ type: 'accept_trade', fromSeat: 1 }]);
   });
 });

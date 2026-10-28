@@ -1,5 +1,14 @@
 import { signal } from '@angular/core';
-import { CLASSIC_RAT_RACE_BOARD, moveToken, type TableView } from '@money/domain';
+import {
+  buildDreamfundBoard,
+  CLASSIC_RAT_RACE_BOARD,
+  moveToken,
+  type BoardSetup,
+  type GameBooks,
+  type RatRaceBoard,
+  type TableView,
+} from '@money/domain';
+import { dreamEventDetail, dreamEventTitle } from '../dreamfund-tables/dream-event-texts';
 import type { TableEventLine } from './table-session.service';
 import { tableLayerTexts, type TableLayerTexts } from './table-layer.texts';
 
@@ -61,7 +70,29 @@ const TOLD = new Set([
   'trade_made',
   'player_escaped',
   'player_bankrupt',
+  // the Dreamfund's own
+  'emergency',
+  'life',
+  'career',
+  'dream',
+  'opportunity',
+  'opportunity_taken',
+  'harvest',
+  'holding_sold',
+  'goal_reached',
+  'player_won',
 ]);
+
+/** The map a table is played on: the classic ring, or the Dreamfund's own (its setup is in every seat's books). */
+function boardOf(view: TableView): RatRaceBoard {
+  if ((view as { kind?: string }).kind !== 'dreamfund') return CLASSIC_RAT_RACE_BOARD;
+  for (const player of view.players) {
+    const setup = (player.books as unknown as GameBooks | null)?.state.boardSetup as
+      BoardSetup | undefined;
+    if (setup) return buildDreamfundBoard(setup).board as unknown as RatRaceBoard;
+  }
+  return CLASSIC_RAT_RACE_BOARD;
+}
 
 /**
  * Tells the other players' moves round by round (JFK, 2026-10-17): their dice tumble, their token walks space by space, the card
@@ -249,7 +280,7 @@ export class TablePresenter {
         await this.pause(450 * this.beat);
         // the token walks to where the roll took it
         if (total > 0) {
-          for (const space of moveToken(CLASSIC_RAT_RACE_BOARD, from, total).entered) {
+          for (const space of moveToken(boardOf(view), from, total).entered) {
             this.tokenAt.update((at) => ({ ...at, [seat]: space.index }));
             await this.pause(260 * this.beat);
           }
@@ -374,6 +405,18 @@ export class TablePresenter {
         this.stage.set(this.base(line, view, t.stBankrupt));
         await this.pause(2000 * this.beat);
         return;
+      default: {
+        // the Dreamfund's own events: a headline, and the card or the amount when there is one
+        const headline = dreamEventTitle(line.type, this.lang());
+        if (!headline) return;
+        const detail = dreamEventDetail(line.type, line.data, this.lang());
+        this.stage.set({
+          ...this.base(line, view, headline),
+          ...(detail ? { patch: { text: detail, tone: 'neutral' as const } } : {}),
+        });
+        await this.pause((line.type === 'player_won' ? 2000 : 1300) * this.beat);
+        return;
+      }
     }
   }
 

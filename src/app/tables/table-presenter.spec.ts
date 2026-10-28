@@ -127,4 +127,28 @@ describe('TablePresenter', () => {
     const doodad = told.find((s) => s.patch?.tone === 'minus')!;
     expect(doodad.patch!.text).toMatch(/−400/);
   });
+
+  it('tells a Dreamfund move of another player on the stage, and not the own ones', async () => {
+    jest.useFakeTimers();
+    try {
+      const presenter = new TablePresenter(() => 'en');
+      const stages: Stage[] = [];
+      presenter.push(
+        [
+          line(1, 'opportunity_taken', 1, { cardId: 'S01', costMinor: 50000 }),
+          line(2, 'goal_reached', 0, { goal: 'reserve' }),
+        ],
+        view,
+      );
+      for (let t = 0; t < 8000 && presenter.busy(); t += 20) {
+        const stage = presenter.stage();
+        if (stage && stages[stages.length - 1] !== stage) stages.push(stage);
+        await jest.advanceTimersByTimeAsync(20);
+      }
+      expect(stages.map((stage) => stage.headline)).toEqual(['took an Opportunity']);
+      expect(stages[0].who).toBe('Ben');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

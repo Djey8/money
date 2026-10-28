@@ -19,7 +19,8 @@ import { TradeOfferComponent } from './trade-offer.component';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
 import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
-import { moneyOf } from '../dreamfund-tables/dream-table-view';
+import { extrasOf, moneyOf } from '../dreamfund-tables/dream-table-view';
+import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
 
 /**
  * The online layer on top of the solo game's own screen (todo/cashflow-multiplayer-solo-ui.md R2): whose turn it is and how much
@@ -149,6 +150,11 @@ import { moneyOf } from '../dreamfund-tables/dream-table-view';
         [summary]="money.summary"
         [paydayDue]="money.paydayDue"
         [canAct]="money.canAct"
+        [trade]="money.trade"
+        [youSeat]="money.youSeat"
+        [names]="money.names"
+        [allowed]="allowedActions()"
+        [harvest]="money.harvest"
         [busy]="busy()"
         [lang]="lang"
         (move)="move($event)"
@@ -595,6 +601,14 @@ export class TableLayerComponent implements OnDestroy {
     return `${t.placeNow}: #${row.rank}`;
   }
 
+  /** The moves the table lists for the player now. */
+  readonly allowedActions = computed(
+    () =>
+      this.session()
+        ?.legalActions()
+        .map((entry) => entry.action as string) ?? [],
+  );
+
   /** At a Dreamfund table, the player's own money: shown while their own books are on screen. */
   readonly dreamMoney = computed(() => {
     const view = this.view();
@@ -602,7 +616,16 @@ export class TableLayerComponent implements OnDestroy {
     if ((view as { kind?: string }).kind !== 'dreamfund' || this.mode.looking() !== null)
       return null;
     const own = moneyOf(view, view.youSeat);
-    return own ? { ...own, canAct: view.activeSeat === view.youSeat } : null;
+    if (!own) return null;
+    const trade = (view as unknown as { dreamTrade?: DreamTableView['trade'] }).dreamTrade ?? null;
+    return {
+      ...own,
+      canAct: view.activeSeat === view.youSeat,
+      trade,
+      youSeat: view.youSeat,
+      harvest: extrasOf(view, view.youSeat).harvest,
+      names: view.players.map((player) => player.name),
+    };
   });
 
   readonly rows = computed(() => {

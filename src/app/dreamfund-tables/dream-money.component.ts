@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import type { DreamLifeSummary } from './dream-session.service';
+import type { DreamHarvestOpen, DreamLifeSummary, DreamTableView } from './dream-session.service';
 import { dreamMoney, dreamTexts, type DreamTexts } from './dream-texts';
 
 interface Goal {
@@ -99,6 +99,48 @@ interface Goal {
             </button>
           </div>
 
+          <!-- what the player owns: sold at the market, or offered to the others -->
+          <div class="dm-plans" *ngIf="summary.holdings.length">
+            <small>{{ t.holdings }}:</small>
+            <div class="dm-row" *ngFor="let holding of summary.holdings; trackBy: trackHolding">
+              <span class="dm-goal"
+                >{{ holding.title }} · {{ m(holding.monthlyMinor) }} {{ t.perMonth }}</span
+              >
+              <button
+                type="button"
+                class="tx-btn tx-btn--small"
+                [disabled]="busy"
+                (click)="move.emit({ type: 'sell_holding', holding: holding.title })"
+              >
+                {{ t.sell }}
+              </button>
+              <ng-container *ngIf="!trade && can('offer_trade')">
+                <input
+                  type="number"
+                  min="0"
+                  class="dm-amount"
+                  [(ngModel)]="tradePrice"
+                  [placeholder]="t.price"
+                  [attr.aria-label]="t.price"
+                />
+                <button
+                  type="button"
+                  class="tx-btn tx-btn--small"
+                  [disabled]="busy || !minor(tradePrice)"
+                  (click)="
+                    move.emit({
+                      type: 'offer_trade',
+                      holding: holding.title,
+                      priceMinor: minor(tradePrice),
+                    })
+                  "
+                >
+                  {{ t.offerTrade }}
+                </button>
+              </ng-container>
+            </div>
+          </div>
+
           <!-- how much goes to a goal at every Payday -->
           <div class="dm-plans">
             <small>{{ t.plans }}:</small>
@@ -123,6 +165,120 @@ interface Goal {
             </div>
           </div>
         </ng-container>
+
+        <!-- a Harvest card drawn at the table: anybody may sell into it until the turn of its drawer is over -->
+        <div
+          class="dm-plans"
+          *ngIf="
+            harvest && (harvest.sellable.length || harvest.sales.length || harvest.ladders.length)
+          "
+        >
+          <small>{{ t.harvest }}:</small>
+          <div class="dm-row">
+            <button
+              type="button"
+              class="tx-btn tx-btn--small"
+              *ngFor="let title of harvest.sellable"
+              [disabled]="busy"
+              (click)="move.emit({ type: 'harvest_sell', holding: title })"
+            >
+              {{ t.sellIntoMarket }}: {{ title }}
+            </button>
+            <button
+              type="button"
+              class="tx-btn tx-btn--small"
+              *ngFor="let sale of harvest.sales"
+              [disabled]="busy"
+              (click)="move.emit({ type: 'harvest_accept', holding: sale.holding })"
+            >
+              {{ t.buyerOffers }}: {{ sale.holding }} {{ m(sale.grossMinor) }}
+            </button>
+            <ng-container *ngFor="let ladder of harvest.ladders">
+              <button
+                type="button"
+                class="tx-btn tx-btn--small"
+                [disabled]="busy"
+                (click)="
+                  move.emit({ type: 'harvest_ladder', holding: ladder.holding, action: 'ride' })
+                "
+              >
+                {{ t.ride }}: {{ ladder.holding }}
+              </button>
+              <button
+                type="button"
+                class="tx-btn tx-btn--small"
+                [disabled]="busy"
+                (click)="
+                  move.emit({ type: 'harvest_ladder', holding: ladder.holding, action: 'cash' })
+                "
+              >
+                {{ t.cashOut }}
+              </button>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- a holding offered to the others: answered by anybody, off turn too -->
+        <div class="dm-trade" *ngIf="trade as tr">
+          <strong>{{ tr.holding }} · {{ m(tr.priceMinor) }}</strong>
+          <div class="dm-row" *ngIf="tr.sellerSeat !== youSeat">
+            <button
+              type="button"
+              class="tx-btn tx-btn--primary tx-btn--small"
+              *ngIf="can('accept_trade')"
+              [disabled]="busy"
+              (click)="move.emit({ type: 'accept_trade' })"
+            >
+              {{ t.accept }}
+            </button>
+            <ng-container *ngIf="can('counter_trade')">
+              <input
+                type="number"
+                min="0"
+                class="dm-amount"
+                [(ngModel)]="counterPrice"
+                [placeholder]="t.price"
+                [attr.aria-label]="t.price"
+              />
+              <button
+                type="button"
+                class="tx-btn tx-btn--small"
+                [disabled]="busy || !minor(counterPrice)"
+                (click)="move.emit({ type: 'counter_trade', priceMinor: minor(counterPrice) })"
+              >
+                {{ t.counter }}
+              </button>
+            </ng-container>
+            <button
+              type="button"
+              class="tx-btn tx-btn--small"
+              *ngIf="can('decline_trade')"
+              [disabled]="busy"
+              (click)="move.emit({ type: 'decline_trade' })"
+            >
+              {{ t.decline }}
+            </button>
+          </div>
+          <div class="dm-row" *ngIf="tr.sellerSeat === youSeat">
+            <button
+              type="button"
+              class="tx-btn tx-btn--small"
+              [disabled]="busy"
+              (click)="move.emit({ type: 'withdraw_trade' })"
+            >
+              {{ t.withdraw }}
+            </button>
+            <button
+              type="button"
+              class="tx-btn tx-btn--small"
+              *ngFor="let counter of tr.counters"
+              [disabled]="busy"
+              (click)="move.emit({ type: 'accept_trade', fromSeat: counter.seat })"
+            >
+              {{ names[counter.seat] }}: {{ m(counter.priceMinor) }}
+            </button>
+          </div>
+        </div>
       </div>
     </details>
   `,
@@ -177,7 +333,25 @@ export class DreamMoneyComponent {
   @Input() busy = false;
   @Output() move = new EventEmitter<Record<string, unknown>>();
 
+  /** A holding offered to the table, if one is (the table holds one offer at a time). */
+  @Input() trade: DreamTableView['trade'] = null;
+  @Input() youSeat: number | null = null;
+  /** The names of the seats, to say who made a counter offer. */
+  @Input() names: string[] = [];
+  /** What the table lists as possible for the player now (the server decides, the panel only shows). */
+  @Input() allowed: string[] = [];
+  /** The Harvest card's open options for the player. */
+  @Input() harvest: DreamHarvestOpen | null = null;
+
   amount: number | null = null;
+  tradePrice: number | null = null;
+  counterPrice: number | null = null;
+
+  can(action: string): boolean {
+    return this.allowed.includes(action);
+  }
+
+  trackHolding = (_: number, holding: { title: string }): string => holding.title;
   /** What the player typed for each plan (by key), until it is set. */
   plans: Record<string, number> = {};
 

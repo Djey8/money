@@ -86,7 +86,9 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
       banksMs: [],
       timeouts: [],
     },
+    // the classic trade screen is for classic cards: a Dreamfund offer is answered from the money panel
     trade: null,
+    dreamTrade: view.trade,
     holdSeats: [],
     undo: null,
     result: view.result

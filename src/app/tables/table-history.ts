@@ -3,6 +3,7 @@ import type { RemoteHistoryLine } from '../shared/services/remote-game';
 import { tableInspectorTexts } from './table-inspector.texts';
 import { tableLayerTexts } from './table-layer.texts';
 import type { TableEventLine } from './table-session.service';
+import { dreamEventDetail, dreamEventTitle } from '../dreamfund-tables/dream-event-texts';
 
 /** What goes into the game's history. Bookkeeping events (turn changes, holds) are the screen's business, not history. */
 const SHOWN = new Set([
@@ -36,6 +37,19 @@ const SHOWN = new Set([
   'game_finished',
   'paused',
   'resumed',
+  // the Dreamfund's own
+  'payday',
+  'emergency',
+  'life',
+  'career',
+  'dream',
+  'opportunity',
+  'opportunity_taken',
+  'harvest',
+  'harvest_sold',
+  'holding_sold',
+  'goal_reached',
+  'player_won',
 ]);
 
 const money = (minor: unknown): string =>
@@ -115,8 +129,9 @@ export function historyLines(
   return lines
     .map((event, index): RemoteHistoryLine => {
       const player = event.seat === null ? undefined : view.players[event.seat];
-      let title = words[event.type] ?? event.type.replace(/_/g, ' ');
-      let detail = detailOf(event);
+      let title =
+        words[event.type] ?? (dreamEventTitle(event.type, lang) || event.type.replace(/_/g, ' '));
+      let detail = detailOf(event) || dreamEventDetail(event.type, event.data, lang);
       let cardId: string | undefined;
       if (event.type === 'card_drawn' && event.seat !== null) {
         cardId = cardIdOf(event.data);

@@ -577,7 +577,7 @@ const text = (value: Localized | undefined, lang: string) => value?.[lang] ?? va
 
 /** A card of a pile by its id, in the table's language: its title and story. */
 export function cardText(
-  deck: 'emergency' | 'life' | 'dream' | 'opportunity',
+  deck: 'emergency' | 'life' | 'dream' | 'opportunity' | 'harvest',
   id: string,
   lang: string,
 ): { title: string; story: string } {
