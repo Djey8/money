@@ -992,6 +992,11 @@ body.table-mode :is(.bottom-nav-add, .desktop-nav-add) {
   display: none !important;
 }
 
+/* A game played with others: more of a holding is only bought through the game (the card planned in Grow), never from the balance sheet. */
+body.table-mode :is(app-info-asset, app-info-share, app-info-investment) #buyButton {
+  display: none !important;
+}
+
 /* Another player's books: nothing at all can be done with them, whatever panel is open. */
 body.table-view-only
   :is(

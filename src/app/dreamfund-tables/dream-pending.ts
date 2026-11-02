@@ -42,6 +42,7 @@ export function withDreamPending(
         options?: string[];
         roll?: number;
         planned?: { cardId: string; title: string };
+        rolling?: { cardId: string };
       })
     | null
     | undefined;
@@ -87,6 +88,10 @@ export function withDreamPending(
           // an investment planned in Grow: its project waits to be bought from there
           ...(card.planned
             ? { taken: card.planned.cardId, planned: true, projectTitle: card.planned.title }
+            : {}),
+          // a card with a die: the player throws it before anything is paid
+          ...(card.rolling
+            ? { taken: card.rolling.cardId, rollFor: { cardId: card.rolling.cardId } }
             : {}),
         },
       };
@@ -148,6 +153,7 @@ export function withDreamPending(
         offers: (done['offers'] as string[] | undefined) ?? [],
         told: (done['told'] as string[] | undefined) ?? [],
         ...(done['taken'] ? { taken: done['taken'] as string, dreamTaken: true } : {}),
+        ...(done['project'] ? { projectTitle: done['project'] as string } : {}),
         ...(done['passed'] ? { passed: true } : {}),
       } as never,
     };

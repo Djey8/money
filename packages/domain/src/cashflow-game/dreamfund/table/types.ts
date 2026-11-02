@@ -76,6 +76,8 @@ export type DreamPending =
       offers: string[];
       /** An investment planned in Grow: bought from there, or let go (JFK, 2026-11-02: the game is played as solo). */
       planned?: { cardId: string; title: string };
+      /** A card with a die is taken: the player throws it, and only then it is paid and in the books (as alone). */
+      rolling?: { cardId: string; choice: OpportunityChoice };
     };
 
 /** What a Harvest card left open to a player: they may still sell into it until the turn of the player who drew it is over. */
@@ -102,6 +104,8 @@ export type DreamResolved =
       taken?: string;
       told?: string[];
       passed?: boolean;
+      /** The title of the Grow project the card became. */
+      project?: string;
     };
 
 export interface DreamHarvestOpen {
@@ -267,11 +271,19 @@ export type DreamCommand =
   | { type: 'choose_career_branch'; index: number }
   | { type: 'take_dream'; cardId: string }
   | { type: 'choose_pile'; pile: OpportunityPile }
-  | { type: 'take_opportunity'; cardId: string; choice?: OpportunityChoice }
+  | {
+      type: 'take_opportunity';
+      cardId: string;
+      choice?: OpportunityChoice;
+      /** Bots and the passive turn take a card at once, without the throw of the player. */
+      immediate?: boolean;
+    }
   /** An investment card is planned: its project opens in Grow, with the numbers, and nothing is bought yet. */
   | { type: 'plan_opportunity'; cardId: string; swapOut?: string }
   /** The planned project is bought from Grow (the units are decided there). */
   | { type: 'buy_planned'; title: string; units?: number; steps?: number }
+  /** The player throws the die of the card they took. */
+  | { type: 'roll_opportunity' }
   /** Leaves the decision open on the table as it is (no dream taken, no card bought). */
   | { type: 'skip' }
   | { type: 'end_turn' }

@@ -241,7 +241,7 @@ export const LIFE_CARDS: LifeCard[] = [
   {
     id: 'L09',
     copies: 2,
-    type: 'choice',
+    type: 'fate',
     title: {
       en: 'A Cat Moves In',
       de: 'Eine Katze zieht ein',
@@ -262,7 +262,7 @@ export const LIFE_CARDS: LifeCard[] = [
     requires: {
       pet: 'none',
     },
-    accept: {
+    effects: {
       oneTimeMinor: -30000,
       monthlyMinor: 7000,
       setState: {
@@ -273,7 +273,7 @@ export const LIFE_CARDS: LifeCard[] = [
   {
     id: 'L10',
     copies: 1,
-    type: 'choice',
+    type: 'fate',
     title: {
       en: 'A Dog Moves In',
       de: 'Ein Hund zieht ein',
@@ -294,7 +294,7 @@ export const LIFE_CARDS: LifeCard[] = [
     requires: {
       pet: 'none',
     },
-    accept: {
+    effects: {
       oneTimeMinor: -45000,
       monthlyMinor: 12000,
       setState: {

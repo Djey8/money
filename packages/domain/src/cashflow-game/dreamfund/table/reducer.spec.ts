@@ -364,6 +364,36 @@ describe('the Dreamfund table: play', () => {
     expect(() => run(t, 'bob', { type: 'reopen_pick' })).toThrow(/begun/);
   });
 
+  it('a card with a die waits for the throw of the player, then it is a project that carries what the card told', () => {
+    const t0 = started({}, 5);
+    const who = t0.activePlayerId!;
+    const open: DreamTable = {
+      ...t0,
+      turnRolled: true,
+      players: t0.players.map((seat) =>
+        seat.id === who
+          ? { ...seat, pending: { kind: 'opportunity', pile: 'seed', offers: ['S01'] } }
+          : seat,
+      ),
+    };
+    const books = (t: DreamTable) =>
+      DreamPlayer.restore(t.players.find((seat) => seat.id === who)!.life!, () => 0.5, {
+        sharedMarkets: true,
+      }).books;
+    const taken = run(open, who, { type: 'take_opportunity', cardId: 'S01' });
+    const seat = taken.players.find((s2) => s2.id === who)!;
+    expect(seat.pending).toMatchObject({ kind: 'opportunity', rolling: { cardId: 'S01' } });
+    expect(books(taken).growProjects).toHaveLength(0);
+    expect(() => run(taken, who, { type: 'skip' })).toThrow(/die/);
+    const thrown = run(taken, who, { type: 'roll_opportunity' });
+    const project = books(thrown).growProjects[0];
+    expect(thrown.players.find((s2) => s2.id === who)!.pending).toBeNull();
+    expect(project.details?.type).toBe('subscription-action');
+    expect(project.details?.monthlySavingsMinor).toBeGreaterThan(0);
+    expect(project.details?.links?.length).toBeGreaterThan(0);
+    expect(project.details?.actionItems?.length).toBeGreaterThan(0);
+  });
+
   it('refuses a move that is not possible, and changes nothing', () => {
     const t = started();
     const who = t.activePlayerId!;

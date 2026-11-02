@@ -4,6 +4,7 @@ import type {
   BookGrowLoan,
   BookInvestment,
   BookLiability,
+  BookGrowUpdate,
   BookShare,
   BookSubscription,
   GameEffects,
@@ -33,6 +34,8 @@ export interface BookGrowProject {
   share: BookShare | null;
   investment: BookInvestment | null;
   loan: BookGrowLoan | null;
+  /** What a card tells about its project (type, risks, links, tasks, the saving): the pages of a table show it from here. */
+  details?: NonNullable<BookGrowUpdate['details']>;
   updatedAt: string;
 }
 
@@ -144,6 +147,9 @@ export function applyEffectsToBooks(books: GameBooks, effects: GameEffects): Gam
       ...(update.investment !== undefined ? { investment: update.investment } : {}),
       ...(update.loan !== undefined ? { loan: update.loan } : {}),
       ...(update.notes !== undefined ? { notes: update.notes } : {}),
+      ...(update.details !== undefined
+        ? { details: { ...(base.details ?? {}), ...update.details } }
+        : {}),
       ...(update.updatedAt !== undefined ? { updatedAt: update.updatedAt } : {}),
     };
     if (update.sharePriceMinor !== undefined && next.share) {

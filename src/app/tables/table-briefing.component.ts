@@ -86,7 +86,8 @@ export interface BriefingInsurance {
         inset: 0;
         z-index: 3000;
         overflow-y: auto;
-        background: var(--color-bg, #f5f6f8);
+        background: var(--color-background);
+        color: var(--color-text);
       }
       .tb-sheet {
         max-width: 640px;
@@ -119,9 +120,9 @@ export interface BriefingInsurance {
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
-        border: 1px solid var(--color-border, #d9dde3);
+        border: 1px solid var(--color-border-light);
         border-radius: 10px;
-        background: var(--color-surface, #fff);
+        background: var(--color-surface);
       }
       .tb-insurance small {
         display: block;
@@ -134,7 +135,7 @@ export interface BriefingInsurance {
         position: sticky;
         bottom: 0;
         padding: 8px 0;
-        background: var(--color-bg, #f5f6f8);
+        background: var(--color-background);
       }
       .tb-waiting {
         font-size: 0.85rem;

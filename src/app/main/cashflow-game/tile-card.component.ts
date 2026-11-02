@@ -770,6 +770,60 @@ interface OpportunityBandLike extends OpportunityRollLike {
           </ng-container>
         </ng-container>
 
+        <!-- the whole card as it was dealt: the head, the story, the numbers and what each throw of the die decides -->
+        <ng-template #oppCard let-card>
+          <header class="tc-card-head">
+            <span class="tc-kind" [attr.data-kind]="kindOf(card)">{{
+              kindLabel(card) | translate
+            }}</span>
+            <small class="tc-pile-mark">
+              {{ pileIcon(card.pile) }}
+              {{ 'CashflowGame.opportunity.pile.' + card.pile | translate }}
+            </small>
+          </header>
+          <h4 class="tc-card-title">{{ card.title[lang] }}</h4>
+          <div class="tc-keys">
+            <span class="tc-key" *ngFor="let key of keywords(card); trackBy: trackValue">
+              {{ keywordLabel(key) }}
+            </span>
+          </div>
+          <p class="tc-card-story">{{ card.story[lang] }}</p>
+          <div class="tc-facts">
+            <div
+              class="tc-fact"
+              *ngFor="let fact of keyFacts(card); trackBy: trackFact"
+              [attr.data-tone]="fact.tone"
+            >
+              <span class="tc-fact-label">{{ fact.label | translate }}</span>
+              <strong class="tc-fact-value">{{ fact.value }}</strong>
+            </div>
+          </div>
+          <ul class="tc-benefits" *ngIf="moreFacts(card).length">
+            <li *ngFor="let fact of moreFacts(card); trackBy: trackValue">
+              {{ fact }}
+            </li>
+          </ul>
+          <p class="tc-note" *ngIf="card.estimate">
+            {{ 'CashflowGame.opportunity.estimate' | translate }}
+          </p>
+          <ng-container *ngFor="let table of opportunityDiceTables(card); trackBy: trackTable">
+            <section class="tc-dice-table">
+              <h5>
+                {{ 'CashflowGame.dice.title' | translate
+                }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
+              </h5>
+              <div class="tc-dice-row" *ngFor="let row of table.rows" [attr.data-tone]="row.tone">
+                <strong class="tc-dice-range">{{ row.range }}</strong>
+                <span>
+                  <span *ngFor="let line of row.lines; trackBy: trackValue" class="tc-dice-line">{{
+                    line
+                  }}</span>
+                </span>
+              </div>
+            </section>
+          </ng-container>
+        </ng-template>
+
         <!-- ───────────── OPPORTUNITY ───────────── -->
         <ng-container *ngSwitchCase="'opportunity'">
           <ng-container *ngIf="opportunity as o">
@@ -798,67 +852,9 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 *ngFor="let offer of o.offers; trackBy: trackOffer"
                 [attr.data-kind]="kindOf(offer.card)"
               >
-                <header class="tc-card-head">
-                  <span class="tc-kind" [attr.data-kind]="kindOf(offer.card)">{{
-                    kindLabel(offer.card) | translate
-                  }}</span>
-                  <small class="tc-pile-mark">
-                    {{ pileIcon(offer.card.pile) }}
-                    {{ 'CashflowGame.opportunity.pile.' + offer.card.pile | translate }}
-                  </small>
-                </header>
-                <h4 class="tc-card-title">{{ offer.card.title[lang] }}</h4>
-                <div class="tc-keys">
-                  <span
-                    class="tc-key"
-                    *ngFor="let key of keywords(offer.card); trackBy: trackValue"
-                  >
-                    {{ keywordLabel(key) }}
-                  </span>
-                </div>
-                <p class="tc-card-story">{{ offer.card.story[lang] }}</p>
-                <div class="tc-facts">
-                  <div
-                    class="tc-fact"
-                    *ngFor="let fact of keyFacts(offer.card); trackBy: trackFact"
-                    [attr.data-tone]="fact.tone"
-                  >
-                    <span class="tc-fact-label">{{ fact.label | translate }}</span>
-                    <strong class="tc-fact-value">{{ fact.value }}</strong>
-                  </div>
-                </div>
-                <ul class="tc-benefits" *ngIf="moreFacts(offer.card).length">
-                  <li *ngFor="let fact of moreFacts(offer.card); trackBy: trackValue">
-                    {{ fact }}
-                  </li>
-                </ul>
-                <p class="tc-note" *ngIf="offer.card.estimate">
-                  {{ 'CashflowGame.opportunity.estimate' | translate }}
-                </p>
                 <ng-container
-                  *ngFor="let table of opportunityDiceTables(offer.card); trackBy: trackTable"
-                >
-                  <section class="tc-dice-table">
-                    <h5>
-                      {{ 'CashflowGame.dice.title' | translate
-                      }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
-                    </h5>
-                    <div
-                      class="tc-dice-row"
-                      *ngFor="let row of table.rows"
-                      [attr.data-tone]="row.tone"
-                    >
-                      <strong class="tc-dice-range">{{ row.range }}</strong>
-                      <span>
-                        <span
-                          *ngFor="let line of row.lines; trackBy: trackValue"
-                          class="tc-dice-line"
-                          >{{ line }}</span
-                        >
-                      </span>
-                    </div>
-                  </section>
-                </ng-container>
+                  *ngTemplateOutlet="oppCard; context: { $implicit: offer.card }"
+                ></ng-container>
                 <!-- the side hustles are full: one has to go -->
                 <ng-container *ngIf="quoteOf(offer.card) as quote">
                   <div class="tc-swap" *ngIf="quote.needsSwap">
@@ -907,7 +903,11 @@ interface OpportunityBandLike extends OpportunityRollLike {
 
             <!-- a card was taken: it is paid, then it is a project -->
             <ng-container *ngIf="o.taken as taken">
-              <h4 class="tc-title">{{ pileIcon(taken.pile) }} {{ taken.title[lang] }}</h4>
+              <article class="tc-offer tc-offer--card" [attr.data-kind]="kindOf(taken)">
+                <ng-container
+                  *ngTemplateOutlet="oppCard; context: { $implicit: taken }"
+                ></ng-container>
+              </article>
               <p class="tc-note" *ngIf="o.paymentOpen">
                 {{ 'CashflowGame.opportunity.payFirst' | translate }}
               </p>
@@ -918,30 +918,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
                     'CashflowGame.opportunity.rollFor' | translate: { title: rollCard.title[lang] }
                   }}
                 </p>
-                <ng-container
-                  *ngFor="let table of opportunityDiceTables(rollCard); trackBy: trackTable"
-                >
-                  <section class="tc-dice-table">
-                    <h5>
-                      {{ 'CashflowGame.dice.title' | translate
-                      }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
-                    </h5>
-                    <div
-                      class="tc-dice-row"
-                      *ngFor="let row of table.rows"
-                      [attr.data-tone]="row.tone"
-                    >
-                      <strong class="tc-dice-range">{{ row.range }}</strong>
-                      <span>
-                        <span
-                          *ngFor="let line of row.lines; trackBy: trackValue"
-                          class="tc-dice-line"
-                          >{{ line }}</span
-                        >
-                      </span>
-                    </div>
-                  </section>
-                </ng-container>
+
                 <button
                   type="button"
                   class="tc-btn tc-btn--gold tc-btn--wide"
@@ -970,6 +947,16 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 </button>
               </ng-container>
             </ng-container>
+            <!-- at a table the turn goes on from the card itself: no way back to the dashboard first -->
+            <button
+              type="button"
+              class="tc-btn tc-btn--wide"
+              *ngIf="dreamTable && o.taken && !o.rollFor"
+              [disabled]="busy"
+              (click)="finish.emit()"
+            >
+              {{ 'CashflowGame.solo.done' | translate }}
+            </button>
             <p *ngIf="o.passed">{{ 'CashflowGame.opportunity.passed' | translate }}</p>
           </ng-container>
         </ng-container>
@@ -2374,8 +2361,14 @@ export class TileCardComponent implements OnInit, OnDestroy {
   readonly cardText = cardText;
   /** The player throws the die of the card they bought. */
   rollPurchase(): void {
-    // the table threw the die when the card was bought
-    if (this.dreamTable) return;
+    // at a table the throw is the table's: the card is paid and booked with it
+    if (this.dreamTable) {
+      void this.roll(async () => {
+        await this.dreamMove({ decision: 'rollCard' });
+        return [];
+      });
+      return;
+    }
     void this.roll(() => this.service.rollOpportunityPurchase(this.callbacks));
   }
 

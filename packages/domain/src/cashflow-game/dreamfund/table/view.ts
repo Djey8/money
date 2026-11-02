@@ -401,6 +401,7 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
       case 'opportunity':
         add('take_opportunity', { pile: p.pile, offers: p.offers });
         add('plan_opportunity', { offers: p.offers });
+        if (p.rolling) add('roll_opportunity', { cardId: p.rolling.cardId });
         if (p.planned) {
           add('buy_planned', { title: p.planned.title });
           add('end_turn');

@@ -132,6 +132,7 @@ const DREAMFUND_COMMANDS = {
     }),
   },
   skip: { ...none, build: () => ({ type: 'skip' }) },
+  roll_opportunity: { ...none, build: () => ({ type: 'roll_opportunity' }) },
   confirm_briefing: { ...none, build: () => ({ type: 'confirm_briefing' }) },
   reopen_pick: { ...none, build: () => ({ type: 'reopen_pick' }) },
   end_turn: { ...none, build: () => ({ type: 'end_turn' }) },

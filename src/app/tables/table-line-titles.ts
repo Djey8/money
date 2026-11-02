@@ -71,3 +71,39 @@ export function shownDebtTags(
   }
   return shown;
 }
+
+const TAGGED = /(CashflowGame\.[A-Za-z0-9_.]+)(?:::(\{[^}]*\}))?/g;
+
+/**
+ * The words the game wrote into the notes of the Grow projects as keys (a table's books are made without a language: `key::{params}`)
+ * in the language of the screen.
+ */
+export function withShownGameText(
+  books: GameBooks,
+  say: (key: string, params?: Record<string, string>) => string | null,
+): GameBooks {
+  if (
+    !books.growProjects.some((project) =>
+      project.notes.some((n) => n.text.includes('CashflowGame.')),
+    )
+  ) {
+    return books;
+  }
+  const worded = (text: string) =>
+    text.replace(TAGGED, (whole, key: string, params?: string) => {
+      let parsed: Record<string, string> | undefined;
+      try {
+        parsed = params ? (JSON.parse(params) as Record<string, string>) : undefined;
+      } catch {
+        parsed = undefined;
+      }
+      return say(key, parsed) ?? whole;
+    });
+  return {
+    ...books,
+    growProjects: books.growProjects.map((project) => ({
+      ...project,
+      notes: project.notes.map((note) => ({ ...note, text: worded(note.text) })),
+    })),
+  };
+}

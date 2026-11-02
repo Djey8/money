@@ -24,7 +24,7 @@ import {
   type Table,
   type TableErrorCode,
 } from '../../table/types';
-import { canOffer } from '../../opportunity';
+import { canOffer, projectTitleOf } from '../../opportunity';
 import { DreamPlayer } from '../player';
 import { splitDreamBotId } from './bot-levels';
 import { normalizeDreamSettings } from './settings';
@@ -211,6 +211,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'take_opportunity',
   'plan_opportunity',
   'buy_planned',
+  'roll_opportunity',
   'skip',
   'end_turn',
   'fund_reserve',
@@ -936,27 +937,37 @@ function doCommand(
       emit('opportunity_planned', id, { cardId: card.id });
       return { pending: { ...pending, planned } };
     }
+    case 'roll_opportunity':
     case 'buy_planned':
     case 'take_opportunity': {
       const planned = pending?.kind === 'opportunity' ? pending.planned : undefined;
+      const rolling = pending?.kind === 'opportunity' ? pending.rolling : undefined;
       const wanted =
-        command.type === 'buy_planned'
-          ? planned && planned.title === command.title
-            ? planned.cardId
-            : ''
-          : command.cardId;
+        command.type === 'roll_opportunity'
+          ? (rolling?.cardId ?? '')
+          : command.type === 'buy_planned'
+            ? planned && planned.title === command.title
+              ? planned.cardId
+              : ''
+            : command.cardId;
       if (pending?.kind !== 'opportunity' || !wanted || !pending.offers.includes(wanted)) {
         return refuse('That card is not on offer.');
       }
       const card = p.opportunityCard(wanted);
       if (!card) return refuse('That card is gone.');
       const choice =
-        command.type === 'buy_planned'
-          ? { units: command.units, steps: command.steps, swapOut: undefined }
-          : (command.choice ?? {});
+        command.type === 'roll_opportunity'
+          ? (rolling?.choice ?? {})
+          : command.type === 'buy_planned'
+            ? { units: command.units, steps: command.steps, swapOut: undefined }
+            : (command.choice ?? {});
       const quote = p.quoteOpportunity(card, choice);
       if (!quote.ok)
         return refuse(`That card cannot be taken (${quote.reason ?? 'not possible'}).`);
+      // a card with a die waits for the player's throw, as alone: nothing is paid or booked before it
+      if (command.type === 'take_opportunity' && !command.immediate && (card.dice || card.onBuy)) {
+        return { pending: { ...pending, rolling: { cardId: card.id, choice } } };
+      }
       const told = p.buyOpportunity(card, choice, quote.costMinor);
       emit('opportunity_taken', id, { cardId: card.id, costMinor: quote.costMinor });
       return {
@@ -967,6 +978,7 @@ function doCommand(
           offers: pending.offers,
           taken: card.id,
           told,
+          project: projectTitleOf(card, 'en'),
         },
       };
     }
@@ -978,6 +990,9 @@ function doCommand(
         pending.kind === 'career_branch'
       ) {
         return refuse('This one has to be answered.');
+      }
+      if (pending.kind === 'opportunity' && pending.rolling) {
+        return refuse('Throw the die of the card you took first.');
       }
       if (pending.kind === 'dream') emit('dream_declined', id, { offers: pending.offers });
       if (pending.kind === 'opportunity') {
@@ -1572,6 +1587,8 @@ export function passiveCommands(table: DreamTable, playerId: string): DreamComma
       ];
     case 'career_branch':
       return [{ type: 'choose_career_branch', index: 0 }];
+    case 'opportunity':
+      return pending.rolling ? [{ type: 'roll_opportunity' }] : [{ type: 'skip' }];
     default:
       return [{ type: 'skip' }];
   }

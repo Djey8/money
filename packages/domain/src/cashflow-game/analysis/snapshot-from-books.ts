@@ -34,10 +34,34 @@ export function snapshotFromBooks(books: GameBooks): GameSnapshot {
       status: project.status,
       description: project.description,
       strategy: project.strategy,
-      riskScore: 0,
-      risks: '',
-      links: [],
-      actionItems: [],
+      // what the card told about the project (JFK, 2026-11-03): type, risks, links, tasks and - for a saving - the numbers
+      ...(project.details?.type ? { type: project.details.type } : {}),
+      ...(project.details?.category !== undefined ? { category: project.details.category } : {}),
+      ...(project.details?.pattern !== undefined ? { pattern: project.details.pattern } : {}),
+      ...(project.details?.reasoning !== undefined ? { reasoning: project.details.reasoning } : {}),
+      ...(project.details?.insights !== undefined ? { insights: project.details.insights } : {}),
+      ...(project.details?.alternative !== undefined
+        ? { alternative: project.details.alternative }
+        : {}),
+      ...(project.details?.alternativeCostMinor !== undefined
+        ? { alternativeCost: fromMinorUnits(project.details.alternativeCostMinor) }
+        : {}),
+      ...(project.details?.currentCostMinor !== undefined
+        ? { currentCost: fromMinorUnits(project.details.currentCostMinor) }
+        : {}),
+      ...(project.details?.targetCostMinor !== undefined
+        ? { targetCost: fromMinorUnits(project.details.targetCostMinor) }
+        : {}),
+      ...(project.details?.monthlySavingsMinor !== undefined
+        ? { monthlySavings: fromMinorUnits(project.details.monthlySavingsMinor) }
+        : {}),
+      ...(project.details?.annualSavingsMinor !== undefined
+        ? { annualSavings: fromMinorUnits(project.details.annualSavingsMinor) }
+        : {}),
+      riskScore: project.details?.riskScore ?? 0,
+      risks: project.details?.risks ?? '',
+      links: (project.details?.links ?? []).map((link) => ({ ...link })),
+      actionItems: (project.details?.actionItems ?? []).map((item) => ({ ...item, done: false })),
       notes: project.notes,
       cashflow: fromMinorUnits(project.cashflowMinor),
       amount: fromMinorUnits(project.amountMinor),

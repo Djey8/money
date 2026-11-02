@@ -150,7 +150,7 @@ function pendingCommand(
       const offers = pending.offers.flatMap((id) => p.opportunityCard(id) ?? []);
       const pick = bot.opportunity(p, offers, bot.view(p));
       return pick
-        ? { type: 'take_opportunity', cardId: pick.card.id, choice: pick.choice }
+        ? { type: 'take_opportunity', cardId: pick.card.id, choice: pick.choice, immediate: true }
         : { type: 'skip' };
     }
   }

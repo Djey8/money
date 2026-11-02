@@ -36,7 +36,7 @@ import {
 } from '../emergency-deck';
 import { pickCashflowProfession } from '../engine';
 import { endIfOver } from '../game-end';
-import { identityText } from '../game-text';
+import { taggedText } from '../game-text';
 import {
   drawHarvestCard,
   initialMarkets,
@@ -245,7 +245,7 @@ export class DreamPlayer {
     };
     this.deps = {
       clock: fixedClock(TODAY, NOW),
-      text: identityText,
+      text: taggedText,
       money: (minor: number) => `${minor / 100}`,
       plainMoney: (minor: number) => `${minor / 100}`,
       lang: 'en' as const,

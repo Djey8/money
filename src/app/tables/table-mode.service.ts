@@ -31,7 +31,7 @@ import { applyDreamExtrasToApp, dreamLifeToApp } from './dream-books-bridge';
 import { extrasOf, lifeOf, pendingOf } from '../dreamfund-tables/dream-table-view';
 import { withDreamPending } from '../dreamfund-tables/dream-pending';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
-import { shownDebtTags, withShownLineTitles } from './table-line-titles';
+import { shownDebtTags, withShownGameText, withShownLineTitles } from './table-line-titles';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { TableGameDriver } from './table-game-driver';
 import { DreamTableGameDriver } from '../dreamfund-tables/dream-table-game-driver';
@@ -601,7 +601,13 @@ export class TableModeService {
           return text === key ? null : text;
         };
         const debts = this.debtsOf(view, seat);
-        shownInLanguage = withShownLineTitles(shown, say, debts);
+        shownInLanguage = withShownGameText(
+          withShownLineTitles(shown, say, debts),
+          (key, params) => {
+            const text = translate.instant(key, params);
+            return text === key ? null : text;
+          },
+        );
         this.debtNames = shownDebtTags(debts, say);
       } catch {
         // without the app's own translations (a bare test) the books are shown as they are

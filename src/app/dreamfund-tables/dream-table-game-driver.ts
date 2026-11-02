@@ -20,6 +20,7 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
   takeDream: (d) => ({ type: 'take_dream', cardId: d['cardId'] }),
   pile: (d) => ({ type: 'choose_pile', pile: d['pile'] }),
   takeCard: (d) => ({ type: 'take_opportunity', ...d }),
+  rollCard: () => ({ type: 'roll_opportunity' }),
   planCard: (d) => ({ type: 'plan_opportunity', cardId: d['cardId'], swapOut: d['swapOut'] }),
   leave: () => ({ type: 'skip' }),
   sellInWindow: (d) => ({ type: 'harvest_sell', holding: d['holding'] }),
