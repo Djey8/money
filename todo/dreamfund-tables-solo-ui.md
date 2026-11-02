@@ -54,7 +54,11 @@ dreams and Opportunities, ends a ranked game and files it) and pushed to `develo
 - **Other languages** (es, fr, cn, ar): the Dreamfund words (texts of the money panel, the events, the lobby choice) are English and German; other
   languages show English.
 - **Hold, undo and the turn gate** are not part of a Dreamfund table (`holdSeats` is empty, no undo vote).
-- **Dream moment (M05)** for humans, and the Smile / Fire / Mojo pages read only: money is moved from the money panel of the table layer, not from the
-  app's pages.
+- **Dream moment (M05)** for humans. (Done 2026-11-02: the money panel is gone; funding, repaying, selling and plans go through the app's own pages,
+  the table strip keeps only the month, the Harvest options and trades.)
 - The Fire project of an emergency paid at once is not made (only plans show as Fire projects); the solo game makes a project for every emergency.
 - Texts nobody reads any more in `dream-texts.ts` (the old room's) can be pruned.
+- **Balance after the life attributes (2026-11-02):** every character with a car now starts with `life.car` (the car Emergencies can find them), the
+  flat emergencies are bound to the home and five new Emergency cards to children, partner and study. Run `npm run simulate:dreamfund` and the
+  tournament (`scripts/dreamfund-tournament.js`) again, and recalibrate the bots' ratings if the picture changed.
+- The solo (non-table) game has no car insurance offers (`offerCarInsurance` is applied by the Dreamfund player only); Dream cards have no `needs` yet.
