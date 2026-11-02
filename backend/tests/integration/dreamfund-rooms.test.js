@@ -251,6 +251,10 @@ describe('a Dreamfund room', () => {
       command: { type: 'set_insurance', kind: 'household', on: 'yes' },
     });
     expect(badInsurance.status).toBe(400);
+    const badBuy = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+      command: { type: 'buy_planned', title: 'WORLD', units: 0 },
+    });
+    expect(badBuy.status).toBe(400);
     const early = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
       command: { type: 'end_turn' },
     });

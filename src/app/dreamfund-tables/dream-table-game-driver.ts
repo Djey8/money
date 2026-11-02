@@ -20,6 +20,7 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
   takeDream: (d) => ({ type: 'take_dream', cardId: d['cardId'] }),
   pile: (d) => ({ type: 'choose_pile', pile: d['pile'] }),
   takeCard: (d) => ({ type: 'take_opportunity', ...d }),
+  planCard: (d) => ({ type: 'plan_opportunity', cardId: d['cardId'], swapOut: d['swapOut'] }),
   leave: () => ({ type: 'skip' }),
   sellInWindow: (d) => ({ type: 'harvest_sell', holding: d['holding'] }),
   acceptBuyer: (d) => ({ type: 'harvest_accept', holding: d['holding'] }),
@@ -147,7 +148,14 @@ export class DreamTableGameDriver extends TableGameDriver {
   override draw = this.notHere;
   override buy = this.notHere;
   override plan = this.notHere;
-  override buyPlanned = this.notHere;
+  /** What was planned in Grow is bought from there: the units are decided in the Add dialog. */
+  override buyPlanned(title: string, quantity?: number): Promise<RemoteOutcome> {
+    return this.move({
+      type: 'buy_planned',
+      title,
+      ...(quantity ? { units: quantity } : {}),
+    });
+  }
   override payDoodad = this.notHere;
   override payMarket = this.notHere;
   override rollDecision = this.notHere;

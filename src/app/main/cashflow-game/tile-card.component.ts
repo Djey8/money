@@ -31,6 +31,7 @@ import {
   dreamsForMoment,
   fromMinorUnits,
   keywordsOfCard,
+  projectTitleOf,
   type DreamMomentId,
   type LifeCard,
   type LifeDecision,
@@ -2320,6 +2321,17 @@ export class TileCardComponent implements OnInit, OnDestroy {
   take(card: OpportunityCard): void {
     if (this.dreamTable) {
       const choice = this.choiceOf(card);
+      // an investment is planned in Grow first, as in the solo game: the project opens there, and what is bought is decided from it
+      if (card.growType === 'income-growth') {
+        void this.dreamMove({
+          decision: 'planCard',
+          cardId: card.id,
+          ...(choice.swapOut ? { swapOut: choice.swapOut } : {}),
+        }).then((ok) => {
+          if (ok) this.openGrow.emit(projectTitleOf(card, 'en'));
+        });
+        return;
+      }
       void this.dreamMove({
         decision: 'takeCard',
         cardId: card.id,

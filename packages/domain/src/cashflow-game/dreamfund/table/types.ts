@@ -70,7 +70,13 @@ export type DreamPending =
   | { kind: 'career_branch'; options: string[]; roll?: number }
   | { kind: 'dream'; offers: string[] }
   | { kind: 'opportunity_pile' }
-  | { kind: 'opportunity'; pile: OpportunityPile; offers: string[] };
+  | {
+      kind: 'opportunity';
+      pile: OpportunityPile;
+      offers: string[];
+      /** An investment planned in Grow: bought from there, or let go (JFK, 2026-11-02: the game is played as solo). */
+      planned?: { cardId: string; title: string };
+    };
 
 /** What a Harvest card left open to a player: they may still sell into it until the turn of the player who drew it is over. */
 /** A card that was dealt with in the turn, for the screen to show what happened. */
@@ -252,6 +258,10 @@ export type DreamCommand =
   | { type: 'take_dream'; cardId: string }
   | { type: 'choose_pile'; pile: OpportunityPile }
   | { type: 'take_opportunity'; cardId: string; choice?: OpportunityChoice }
+  /** An investment card is planned: its project opens in Grow, with the numbers, and nothing is bought yet. */
+  | { type: 'plan_opportunity'; cardId: string; swapOut?: string }
+  /** The planned project is bought from Grow (the units are decided there). */
+  | { type: 'buy_planned'; title: string; units?: number; steps?: number }
   /** Leaves the decision open on the table as it is (no dream taken, no card bought). */
   | { type: 'skip' }
   | { type: 'end_turn' }
@@ -327,6 +337,12 @@ export type DreamEventType =
   | 'dream'
   | 'opportunity'
   | 'opportunity_taken'
+  | 'opportunity_offers'
+  | 'opportunity_planned'
+  | 'opportunity_passed'
+  | 'life_answered'
+  | 'dream_taken'
+  | 'dream_declined'
   | 'harvest'
   | 'harvest_sold'
   | 'trade_offered'

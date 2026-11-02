@@ -226,6 +226,69 @@ describe('the Dreamfund table: play', () => {
     expect(mine(later).state.insurance?.active).not.toContain('household');
   });
 
+  it('tells everybody what a player drew and what they decided, with the card', () => {
+    let t = started({}, 11);
+    const seen: { type: string; data?: Record<string, unknown> }[] = [];
+    for (let guard = 0; guard < 400 && t.phase === 'playing'; guard += 1) {
+      const who = t.activePlayerId!;
+      let moved = false;
+      for (const command of passiveCommands(t, who)) {
+        try {
+          const result = applyDreamCommand(t, who, command, ctx);
+          seen.push(...result.events);
+          t = result.table;
+          moved = true;
+          break;
+        } catch (error) {
+          if (!(error instanceof TableCommandError)) throw error;
+        }
+      }
+      if (!moved) break;
+      if (t.tableRound > 12) break;
+    }
+    const landed = seen.filter((e) => ['emergency', 'life'].includes(e.type));
+    expect(landed.length).toBeGreaterThan(0);
+    expect(landed.every((e) => typeof e.data?.['cardId'] === 'string')).toBe(true);
+    const answers = seen.filter((e) => e.type === 'life_answered');
+    expect(answers.every((e) => e.data?.['cardId'] && e.data?.['decision'])).toBe(true);
+    expect(seen.some((e) => e.type === 'opportunity_passed' || e.type === 'dream_declined')).toBe(
+      true,
+    );
+  });
+
+  it('plans an investment in Grow first and buys it from there, or lets the chance go', () => {
+    const t0 = started({}, 5);
+    const who = t0.activePlayerId!;
+    const withOffer = (t: DreamTable): DreamTable => ({
+      ...t,
+      turnRolled: true,
+      players: t.players.map((seat) =>
+        seat.id === who
+          ? { ...seat, pending: { kind: 'opportunity', pile: 'seed', offers: ['S10'] } }
+          : seat,
+      ),
+    });
+    const grow = (t: DreamTable) =>
+      DreamPlayer.restore(t.players.find((seat) => seat.id === who)!.life!, () => 0.5, {
+        sharedMarkets: true,
+      }).books;
+    const planned = run(withOffer(t0), who, { type: 'plan_opportunity', cardId: 'S10' });
+    expect(grow(planned).growProjects.map((g) => [g.title, g.phase])).toEqual([['WORLD', 'plan']]);
+    expect(grow(planned).shares).toHaveLength(grow(t0).shares.length);
+    expect(() => run(planned, who, { type: 'buy_planned', title: 'OTHER' })).toThrow(
+      /not on offer/,
+    );
+    const bought = run(planned, who, { type: 'buy_planned', title: 'WORLD', units: 2 });
+    expect(grow(bought).shares.some((share) => share.tag === 'WORLD' && share.quantity === 2)).toBe(
+      true,
+    );
+    expect(bought.players.find((seat) => seat.id === who)!.pending).toBeNull();
+    // leaving it: the chance is missed
+    const left = run(planned, who, { type: 'skip' });
+    expect(grow(left).growProjects[0].phase).toBe('completed');
+    expect(grow(left).state.opportunityPlans).toEqual([]);
+  });
+
   it('refuses a move that is not possible, and changes nothing', () => {
     const t = started();
     const who = t.activePlayerId!;

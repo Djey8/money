@@ -63,6 +63,12 @@ describe('DreamTableGameDriver', () => {
       kind: 'car_full',
       on: true,
     });
+    await driver.dreamMove({ decision: 'planCard', cardId: 'S10' });
+    await driver.buyPlanned('WORLD', 3);
+    expect(played.slice(-2)).toEqual([
+      { type: 'plan_opportunity', cardId: 'S10', swapOut: undefined },
+      { type: 'buy_planned', title: 'WORLD', units: 3 },
+    ]);
     expect((await driver.dreamMove({ decision: 'nonsense' })).ok).toBe(false);
   });
 });

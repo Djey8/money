@@ -15,6 +15,12 @@ const EN: Record<string, string> = {
   dream: 'landed on a Dream tile',
   opportunity: 'looked for an Opportunity',
   opportunity_taken: 'took an Opportunity',
+  opportunity_offers: 'was offered Opportunities',
+  opportunity_planned: 'planned an investment in Grow',
+  opportunity_passed: 'passed on the Opportunities',
+  life_answered: 'decided about a Life card',
+  dream_taken: 'took a dream',
+  dream_declined: 'left the dreams',
   harvest: 'drew a Harvest card',
   harvest_sold: 'sold into the Harvest',
   holding_sold: 'sold a holding',
@@ -33,6 +39,12 @@ const DE: Record<string, string> = {
   dream: 'ist auf einem Traumfeld gelandet',
   opportunity: 'hat nach einer Chance gesucht',
   opportunity_taken: 'hat eine Chance genutzt',
+  opportunity_offers: 'bekam Chancen angeboten',
+  opportunity_planned: 'hat eine Anlage in Grow geplant',
+  opportunity_passed: 'hat die Chancen ausgelassen',
+  life_answered: 'hat über eine Lebenskarte entschieden',
+  dream_taken: 'hat einen Traum genommen',
+  dream_declined: 'hat die Träume gelassen',
   harvest: 'hat eine Ernte-Karte gezogen',
   harvest_sold: 'hat in die Ernte verkauft',
   holding_sold: 'hat eine Beteiligung verkauft',
@@ -68,6 +80,39 @@ const WHAT: Record<string, { en: string; de: string }> = {
   bank_loan: { en: 'bank loan repaid', de: 'Bankkredit getilgt' },
 };
 
+const DECISIONS: Record<string, { en: string; de: string }> = {
+  accept: { en: 'accepted', de: 'angenommen' },
+  decline: { en: 'declined', de: 'abgelehnt' },
+  pass: { en: 'passed', de: 'weitergegeben' },
+  fate: { en: 'it happened', de: 'es ist passiert' },
+  give: { en: 'gave', de: 'gegeben' },
+  lend: { en: 'lent', de: 'geliehen' },
+};
+
+type Deck = 'emergency' | 'life' | 'dream' | 'opportunity' | 'harvest';
+
+/** The names of the cards of a list of ids, in one line. */
+function names(deck: Deck, ids: unknown, lang: string): string {
+  return (Array.isArray(ids) ? ids : [])
+    .map((id) => cardText(deck, String(id), lang).title)
+    .join(', ');
+}
+
+/** The card an event is about, when it names one: so a history line can open it. */
+export function dreamEventCard(
+  type: string,
+  data: Record<string, unknown> | undefined,
+): string | undefined {
+  const id = data?.['cardId'];
+  if (typeof id === 'string' && id) return id;
+  const offers = data?.['offers'];
+  return type === 'dream_declined' || type === 'opportunity_passed' || type === 'opportunity_offers'
+    ? typeof (offers as unknown[] | undefined)?.[0] === 'string'
+      ? String((offers as unknown[])[0])
+      : undefined
+    : undefined;
+}
+
 /** The detail line of a Dreamfund event: the card, the price, the goal. */
 export function dreamEventDetail(
   type: string,
@@ -93,8 +138,35 @@ export function dreamEventDetail(
       const gross = typeof d['grossMinor'] === 'number' ? dreamMoney(d['grossMinor'], lang) : '';
       return [String(d['holding'] ?? ''), gross].filter(Boolean).join(' · ');
     }
+    case 'emergency':
+      return d['cardId'] ? cardText('emergency', String(d['cardId']), lang).title : '';
+    case 'life':
+      return d['cardId'] ? cardText('life', String(d['cardId']), lang).title : '';
+    case 'dream':
+      return names('dream', d['offers'], lang);
+    case 'opportunity_planned':
+      return cardText('opportunity', String(d['cardId'] ?? ''), lang).title;
+    case 'opportunity_offers':
+    case 'opportunity_passed':
+      return names('opportunity', d['offers'], lang);
+    case 'dream_declined':
+      return names('dream', d['offers'], lang);
+    case 'dream_taken':
+      return cardText('dream', String(d['cardId'] ?? ''), lang).title;
+    case 'life_answered': {
+      const said = String(d['decision'] ?? '');
+      return [cardText('life', String(d['cardId'] ?? ''), lang).title, DECISIONS[said]?.[l] ?? said]
+        .filter(Boolean)
+        .join(' · ');
+    }
     case 'money_moved': {
       const what = WHAT[String(d['what'] ?? '')]?.[l] ?? '';
+      if (d['what'] === 'emergency' && d['cardId']) {
+        const plan = typeof d['how'] === 'number' ? ` · ${d['how']} ×` : '';
+        const pay =
+          typeof d['payMinor'] === 'number' ? ` · ${dreamMoney(d['payMinor'], lang)}` : '';
+        return `${cardText('emergency', String(d['cardId']), lang).title}${pay}${plan}`;
+      }
       const amount =
         typeof d['amountMinor'] === 'number'
           ? dreamMoney(d['amountMinor'], lang)

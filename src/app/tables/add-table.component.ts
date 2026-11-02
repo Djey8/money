@@ -188,6 +188,21 @@ function accountName(): string {
           <!-- the game -->
           <section class="at-group">
             <h3>{{ a.groupGame }}</h3>
+            <div class="at-row">
+              <div class="at-label">
+                <strong>{{ a.ranked }}</strong>
+                <small>{{ a.rankedHint }}</small>
+              </div>
+              <label class="at-switch">
+                <input
+                  type="checkbox"
+                  name="ranked"
+                  [(ngModel)]="form.ranked"
+                  [attr.aria-label]="a.ranked"
+                />
+                <span class="at-switch-track"></span>
+              </label>
+            </div>
             <ng-container *ngIf="dream">
               <div class="at-row at-row--stack">
                 <div class="at-label">
@@ -268,21 +283,6 @@ function accountName(): string {
                 </div>
               </div>
             </ng-container>
-            <div class="at-row">
-              <div class="at-label">
-                <strong>{{ a.ranked }}</strong>
-                <small>{{ a.rankedHint }}</small>
-              </div>
-              <label class="at-switch">
-                <input
-                  type="checkbox"
-                  name="ranked"
-                  [(ngModel)]="form.ranked"
-                  [attr.aria-label]="a.ranked"
-                />
-                <span class="at-switch-track"></span>
-              </label>
-            </div>
             <div class="at-row at-row--stack">
               <div class="at-label">
                 <strong>{{ a.endCondition }}</strong>

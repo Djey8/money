@@ -394,6 +394,11 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
         break;
       case 'opportunity':
         add('take_opportunity', { pile: p.pile, offers: p.offers });
+        add('plan_opportunity', { offers: p.offers });
+        if (p.planned) {
+          add('buy_planned', { title: p.planned.title });
+          add('end_turn');
+        }
         add('skip');
         break;
     }

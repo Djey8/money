@@ -525,7 +525,10 @@ export class TableModeService {
       if (!view || view.youSeat === null || view.phase !== 'playing') return null;
       if (view.activeSeat !== view.youSeat || !view.turnRolled || this.looking() !== null)
         return null;
-      if (pendingOf(view, view.youSeat) || RemoteGameHook.holdUpdates) return null;
+      const open = pendingOf(view, view.youSeat) as { kind?: string; planned?: unknown } | null;
+      // an investment planned in Grow can be left with the turn (the chance is missed), as in the solo game
+      if ((open && !(open.kind === 'opportunity' && open.planned)) || RemoteGameHook.holdUpdates)
+        return null;
       return { label: words.endTurn, disabled: this.presenter.busy() };
     }
     if (!view || view.youSeat === null || !view.holdSeats.includes(view.youSeat)) return null;

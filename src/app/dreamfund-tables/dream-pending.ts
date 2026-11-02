@@ -38,6 +38,7 @@ export function withDreamPending(
         pile?: string;
         options?: string[];
         roll?: number;
+        planned?: { cardId: string; title: string };
       })
     | null
     | undefined;
@@ -74,7 +75,18 @@ export function withDreamPending(
       };
       break;
     case 'opportunity':
-      next = { ...open, opportunity: { pile: card.pile, offers: card.offers ?? [], told: [] } };
+      next = {
+        ...open,
+        opportunity: {
+          pile: card.pile,
+          offers: card.offers ?? [],
+          told: [],
+          // an investment planned in Grow: its project waits to be bought from there
+          ...(card.planned
+            ? { taken: card.planned.cardId, planned: true, projectTitle: card.planned.title }
+            : {}),
+        },
+      };
       break;
     default:
       break;

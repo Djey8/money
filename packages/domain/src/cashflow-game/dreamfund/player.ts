@@ -67,7 +67,10 @@ import {
 import { playBankLoan } from '../loan';
 import {
   buyOpportunity,
+  closeOpportunityPlans,
   drawOpportunityOffers,
+  planOpportunity,
+  projectTitleOf,
   quoteOpportunity,
   rollsFor,
   type OpportunityChoice,
@@ -470,6 +473,7 @@ export class DreamPlayer {
 
   /** Done deciding: the turn ends (and the game, when it is over). */
   endTurn(): void {
+    this.closePlans();
     if (currentTurn(this.state).phase === 'decide') {
       const settled = settleDecision(this.state, 'done', this.books.subscriptions);
       this.setState(settled.state);
@@ -972,6 +976,23 @@ export class DreamPlayer {
     );
   }
 
+  /** An investment card is planned: the Grow project is made with its numbers and nothing is paid. */
+  planOpportunity(card: OpportunityCard, swapOut?: string): { cardId: string; title: string } {
+    const effects = planOpportunity(this.books, card, this.deps, {
+      lang: 'en',
+      swapOut,
+      validTurns: 1,
+    });
+    this.apply(effects);
+    return { cardId: card.id, title: projectTitleOf(card, 'en') };
+  }
+
+  /** The planned cards that were not bought in time are chances missed: their projects say so. */
+  closePlans(): void {
+    const effects = closeOpportunityPlans(this.books, 'en', TODAY);
+    if (effects) this.apply(effects);
+  }
+
   /** A card taken: paid and in the books. The quote has to be `ok`. */
   buyOpportunity(card: OpportunityCard, choice: OpportunityChoice, costMinor: number): string[] {
     const context = this.opportunityContext();
@@ -990,6 +1011,13 @@ export class DreamPlayer {
       },
     );
     this.apply(purchase.effects);
+    // the plan of the card is used
+    this.setState({
+      ...this.state,
+      opportunityPlans: (this.state.opportunityPlans ?? []).filter(
+        (plan) => plan.cardId !== card.id,
+      ),
+    });
     this.payDues();
     this.log(`O ${card.id}`);
     return purchase.told;

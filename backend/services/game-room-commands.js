@@ -87,6 +87,33 @@ const DREAMFUND_COMMANDS = {
     check: (c) => (PILES.includes(c.pile) ? null : `pile must be one of ${PILES.join(', ')}.`),
     build: (c) => ({ type: 'choose_pile', pile: c.pile }),
   },
+  plan_opportunity: {
+    fields: ['cardId', 'swapOut'],
+    check: (c) =>
+      text(c.cardId, 'cardId') || (c.swapOut === undefined ? null : text(c.swapOut, 'swapOut')),
+    build: (c) => ({
+      type: 'plan_opportunity',
+      cardId: c.cardId,
+      ...(c.swapOut ? { swapOut: c.swapOut } : {}),
+    }),
+  },
+  buy_planned: {
+    fields: ['title', 'units', 'steps'],
+    check: (c) =>
+      text(c.title, 'title') ||
+      (c.units === undefined || (Number.isSafeInteger(c.units) && c.units > 0)
+        ? null
+        : 'units must be a positive whole number.') ||
+      (c.steps === undefined || (Number.isSafeInteger(c.steps) && c.steps > 0)
+        ? null
+        : 'steps must be a positive whole number.'),
+    build: (c) => ({
+      type: 'buy_planned',
+      title: c.title,
+      ...(c.units !== undefined ? { units: c.units } : {}),
+      ...(c.steps !== undefined ? { steps: c.steps } : {}),
+    }),
+  },
   take_opportunity: {
     fields: ['cardId', 'units', 'steps', 'swapOut'],
     check: (c) =>

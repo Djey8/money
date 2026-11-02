@@ -209,6 +209,8 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'take_dream',
   'choose_pile',
   'take_opportunity',
+  'plan_opportunity',
+  'buy_planned',
   'skip',
   'end_turn',
   'fund_reserve',
@@ -675,12 +677,19 @@ function doCommand(
       }
       const tile = p.pendingTile();
       if (!tile) return { pending: null, resolved: null, paydayDue: rolled.paydays > 0 };
-      emit(TILE_EVENT[tile] ?? 'rolled', id, { tile });
-      return {
-        resolved: null,
-        ...enterTile(tile, p, rng, emit, id),
-        paydayDue: rolled.paydays > 0,
-      };
+      // the landing is told with the card the tile dealt, so everybody at the table can read what was drawn
+      const landing = enterTile(tile, p, rng, emit, id);
+      const dealt = landing.pending ?? landing.resolved;
+      const dealtData = dealt as unknown as Record<string, unknown> | null | undefined;
+      emit(TILE_EVENT[tile] ?? 'rolled', id, {
+        tile,
+        ...(typeof dealtData?.['cardId'] === 'string' ? { cardId: dealtData['cardId'] } : {}),
+        ...(Array.isArray(dealtData?.['offers']) ? { offers: dealtData['offers'] } : {}),
+      });
+      if (landing.resolved?.kind === 'life') {
+        emit('life_answered', id, { cardId: landing.resolved.cardId, decision: 'fate' });
+      }
+      return { resolved: null, ...landing, paydayDue: rolled.paydays > 0 };
     }
     case 'pay_emergency': {
       if (pending?.kind !== 'emergency') return refuse('There is no emergency to pay.');
@@ -704,7 +713,12 @@ function doCommand(
         if (!option) return refuse('A plan runs over 3, 6 or 12 Paydays.');
         p.planEmergency(card.id, option);
       }
-      emit('money_moved', id, { what: 'emergency', payMinor: pay, how: command.pay });
+      emit('money_moved', id, {
+        what: 'emergency',
+        cardId: card.id,
+        payMinor: pay,
+        how: command.pay,
+      });
       return {
         pending: null,
         resolved: {
@@ -762,6 +776,10 @@ function doCommand(
         card,
         typeof d === 'string' ? { kind: d } : { kind: 'option', id: d.option },
       );
+      emit('life_answered', id, {
+        cardId: card.id,
+        decision: typeof d === 'string' ? d : d.option,
+      });
       return {
         pending: null,
         resolved: {
@@ -790,6 +808,7 @@ function doCommand(
       const card = p.dreamCard(command.cardId);
       if (!card) return refuse('That dream card is gone.');
       p.takeDream(card);
+      emit('dream_taken', id, { cardId: card.id });
       return {
         pending: null,
         resolved: { kind: 'dream', offers: pending.offers, taken: card.id },
@@ -798,19 +817,46 @@ function doCommand(
     case 'choose_pile': {
       if (pending?.kind !== 'opportunity_pile') return refuse('There is no pile to choose now.');
       const offers = p.drawOpportunity(command.pile);
+      emit('opportunity_offers', id, { pile: command.pile, offers: offers.map((o) => o.id) });
       return {
         pending: offers.length
           ? { kind: 'opportunity', pile: command.pile, offers: offers.map((o) => o.id) }
           : null,
       };
     }
-    case 'take_opportunity': {
+    case 'plan_opportunity': {
       if (pending?.kind !== 'opportunity' || !pending.offers.includes(command.cardId)) {
         return refuse('That card is not on offer.');
       }
+      if (pending.planned) return refuse('A card is planned already: buy it in Grow, or leave it.');
       const card = p.opportunityCard(command.cardId);
       if (!card) return refuse('That card is gone.');
-      const choice = command.choice ?? {};
+      if (card.growType !== 'income-growth') return refuse('This card is taken, not planned.');
+      const quote = p.quoteOpportunity(card, { swapOut: command.swapOut });
+      if (!quote.ok)
+        return refuse(`That card cannot be taken (${quote.reason ?? 'not possible'}).`);
+      const planned = p.planOpportunity(card, command.swapOut);
+      emit('opportunity_planned', id, { cardId: card.id });
+      return { pending: { ...pending, planned } };
+    }
+    case 'buy_planned':
+    case 'take_opportunity': {
+      const planned = pending?.kind === 'opportunity' ? pending.planned : undefined;
+      const wanted =
+        command.type === 'buy_planned'
+          ? planned && planned.title === command.title
+            ? planned.cardId
+            : ''
+          : command.cardId;
+      if (pending?.kind !== 'opportunity' || !wanted || !pending.offers.includes(wanted)) {
+        return refuse('That card is not on offer.');
+      }
+      const card = p.opportunityCard(wanted);
+      if (!card) return refuse('That card is gone.');
+      const choice =
+        command.type === 'buy_planned'
+          ? { units: command.units, steps: command.steps, swapOut: undefined }
+          : (command.choice ?? {});
       const quote = p.quoteOpportunity(card, choice);
       if (!quote.ok)
         return refuse(`That card cannot be taken (${quote.reason ?? 'not possible'}).`);
@@ -836,6 +882,11 @@ function doCommand(
       ) {
         return refuse('This one has to be answered.');
       }
+      if (pending.kind === 'dream') emit('dream_declined', id, { offers: pending.offers });
+      if (pending.kind === 'opportunity') {
+        p.closePlans();
+        emit('opportunity_passed', id, { pile: pending.pile, offers: pending.offers });
+      }
       return {
         pending: null,
         ...(pending.kind === 'dream'
@@ -854,6 +905,20 @@ function doCommand(
     }
     case 'end_turn': {
       if (!table.turnRolled) return refuse('Roll first.');
+      // an investment planned in Grow and not bought is left with the turn: the chance is missed
+      if (pending?.kind === 'opportunity' && pending.planned) {
+        emit('opportunity_passed', id, { pile: pending.pile, offers: pending.offers });
+        p.endTurn();
+        return {
+          pending: null,
+          resolved: {
+            kind: 'opportunity',
+            pile: pending.pile,
+            offers: pending.offers,
+            passed: true,
+          },
+        };
+      }
       if (pending) return refuse('Decide about the card first.');
       p.endTurn();
       return {};
