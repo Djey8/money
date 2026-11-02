@@ -77,6 +77,10 @@ Harvest cards still roll their own dice when you draw them; the draw is your act
 
 **Undo.** The last action of a turn can be undone.
 
+**At a table** an **investment** is first **planned**: its project opens in Grow with the numbers, nothing is bought. You decide
+there how many units to buy and book it with the **buy** button, or you leave it - then the chance is missed with the end of your
+turn. Everything another player draws and decides is told to the whole table, with the card, and the history lines open the card.
+
 ## Your life: the attributes, the insurances and what they do
 
 Every character has a **life**, and the life is a handful of **attributes**. You see them as the badges on the game screen - tap one
@@ -269,6 +273,11 @@ speaks of a given holding. So the **Sell** button of a project also sells **at a
 Something breaks. Cards come in five tiers - **spark, flame, blaze, wildfire, inferno** - from a broken bike grip to a house fire. An
 insurance may cover the bill; the rest is paid from your cash, by a payment plan, or by the Bank loan. In the guided and strict modes an
 emergency has to be dealt with before the game goes on.
+
+At a **table** the emergency plays as it does alone: you can **pay it now**, spread it over **3, 6 or 12 Paydays** (with the plan's
+surcharge), or **create the Fire project** - nothing is paid yet, the project opens on the Fire page and you put money into it from
+there, step by step. In the guided and the strict game the turn is not over before an emergency taken as a Fire project is paid or
+planned. A fine or a fee that has to be paid at once cannot become a project.
 
 ### ❤ Life (27 cards)
 

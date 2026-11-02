@@ -87,7 +87,7 @@ export type DreamResolved =
       choiceId?: string;
       rolls?: Record<string, number>;
       payMinor: number;
-      how: 'now' | 3 | 6 | 12;
+      how: 'now' | 'later' | 3 | 6 | 12;
     }
   | { kind: 'life'; cardId: string; decision: string; outcome?: unknown }
   /** The Career tile: what the die said (a branch: and the path taken). */
@@ -243,7 +243,9 @@ export type DreamCommand =
   // Play: the active player's turn.
   | { type: 'roll' }
   /** An Emergency card: the choice it asks for (if any), and how it is paid - now, or on a plan of 3, 6 or 12 Paydays. */
-  | { type: 'pay_emergency'; choiceId?: string; pay: 'now' | 3 | 6 | 12 }
+  | { type: 'pay_emergency'; choiceId?: string; pay: 'now' | 'later' | 3 | 6 | 12 }
+  /** Money from the cash into an emergency that was taken as a Fire project. */
+  | { type: 'fund_emergency'; id: string; amountMinor: number }
   /** The choice of an Emergency card that has options. */
   | { type: 'emergency_choose'; choiceId: string }
   /** Rolls one of the card's dice (`main`, `bucket:<id>`, `extra`, `reroll`): the table rolls it. */

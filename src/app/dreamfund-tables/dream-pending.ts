@@ -1,4 +1,5 @@
 import type { GameBooks } from '@money/domain';
+import { cardText } from './dream-texts';
 import type {
   DreamHarvestOpen,
   DreamPending,
@@ -20,6 +21,8 @@ export interface DreamPendingExtras {
   resolved?: DreamResolvedView | null;
   /** The Harvest card the table drew, with what the player may still do about it. */
   harvest?: DreamHarvestOpen | null;
+  /** The language of the screen: the title of the Fire project an emergency became. */
+  lang?: string;
 }
 
 export function withDreamPending(
@@ -122,7 +125,10 @@ export function withDreamPending(
         skipped: [],
         ...(done['choiceId'] ? { choiceId: done['choiceId'] as string } : {}),
         ...(done['rolls'] ? { rolls: done['rolls'] as Record<string, number> } : {}),
-        dreamPaid: { payMinor: done['payMinor'], how: done['how'] },
+        // taken as a Fire project: the card says so and opens it; paid or planned: what it came to
+        ...(done['how'] === 'later'
+          ? { projectTitle: cardText('emergency', done['cardId'], extras.lang ?? 'en').title }
+          : { dreamPaid: { payMinor: done['payMinor'], how: done['how'] } }),
       } as never,
     };
   } else if (!card && done?.kind === 'career') {

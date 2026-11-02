@@ -408,6 +408,7 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
   add('fund_dream');
   add('repay_debt');
   add('repay_bank_loan');
+  add('fund_emergency');
   add('set_insurance');
   add('set_plan');
   add('sell_holding');

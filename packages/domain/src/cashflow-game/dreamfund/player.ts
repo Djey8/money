@@ -101,6 +101,8 @@ export interface DreamPlan {
   id: string;
   perMinor: number;
   leftMinor: number;
+  /** What the project cost in all (an emergency): what is paid is the total less what is left. */
+  totalMinor?: number;
 }
 
 export interface DreamProject {
@@ -705,7 +707,45 @@ export class DreamPlayer {
 
   /** An emergency on a plan: a part is paid at every Payday. */
   planEmergency(id: string, option: { total: number; per: number }): void {
-    this.plans.push({ kind: 'emergency', id, perMinor: option.per, leftMinor: option.total });
+    this.plans.push({
+      kind: 'emergency',
+      id,
+      perMinor: option.per,
+      leftMinor: option.total,
+      totalMinor: option.total,
+    });
+  }
+
+  /** An emergency taken as a Fire project, as in the solo game: nothing is paid yet, the player pays or plans it from its page. */
+  openEmergency(id: string, payMinor: number): void {
+    this.plans.push({
+      kind: 'emergency',
+      id,
+      perMinor: 0,
+      leftMinor: payMinor,
+      totalMinor: payMinor,
+    });
+  }
+
+  /** Emergencies that wait for a payment and have no plan: the turn is not over before they are dealt with. */
+  unsettledEmergencies(): DreamPlan[] {
+    return this.plans.filter(
+      (plan) => plan.kind === 'emergency' && plan.perMinor <= 0 && plan.leftMinor > 0,
+    );
+  }
+
+  /** Money put into an emergency project from the cash: what could be paid is returned. */
+  fundEmergency(id: string, amountMinor: number): number {
+    const plan = this.plans.find(
+      (candidate) => candidate.kind === 'emergency' && candidate.id === id,
+    );
+    if (!plan) return 0;
+    const put = Math.min(amountMinor, plan.leftMinor, this.cash());
+    if (put <= 0) return 0;
+    this.add('Daily', -put, `@${this.emergencyCard(id)?.title.en ?? 'Emergency'}`);
+    plan.leftMinor -= put;
+    if (plan.leftMinor <= 0) this.plans = this.plans.filter((candidate) => candidate !== plan);
+    return put;
   }
 
   /** What is left of a month after the plans that already run. */

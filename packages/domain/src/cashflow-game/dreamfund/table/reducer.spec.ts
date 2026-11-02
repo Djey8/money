@@ -289,6 +289,44 @@ describe('the Dreamfund table: play', () => {
     expect(grow(left).state.opportunityPlans).toEqual([]);
   });
 
+  it('takes an emergency as a Fire project, pays it from the cash in steps, and does not let the turn end before', () => {
+    const t0 = started({ mode: 'strict' }, 5);
+    const who = t0.activePlayerId!;
+    const cards = DreamPlayer.restore(t0.players.find((s) => s.id === who)!.life!, () => 0.5, {
+      sharedMarkets: true,
+    }).gameSet.decks!.emergency!;
+    const card = cards.find((c) => c.payment === 'plan_ok' && c.type === 'fixed')!;
+    const open: DreamTable = {
+      ...t0,
+      turnRolled: true,
+      players: t0.players.map((seat) =>
+        seat.id === who ? { ...seat, pending: { kind: 'emergency', cardId: card.id } } : seat,
+      ),
+    };
+    const life = (t: DreamTable) =>
+      DreamPlayer.restore(t.players.find((s) => s.id === who)!.life!, () => 0.5, {
+        sharedMarkets: true,
+      });
+    const cash0 = life(open).cash();
+    const later = run(open, who, { type: 'pay_emergency', pay: 'later' });
+    expect(life(later).cash()).toBe(cash0);
+    const plan = life(later).plans.find((p) => p.kind === 'emergency')!;
+    expect(plan).toMatchObject({ id: card.id, perMinor: 0 });
+    expect(() => run(later, who, { type: 'end_turn' })).toThrow(/Fire project/);
+    const part = run(later, who, { type: 'fund_emergency', id: card.id, amountMinor: 1000 });
+    expect(life(part).plans.find((p) => p.kind === 'emergency')!.leftMinor).toBe(
+      plan.leftMinor - 1000,
+    );
+    expect(life(part).cash()).toBe(cash0 - 1000);
+    const paid = run(later, who, {
+      type: 'fund_emergency',
+      id: card.id,
+      amountMinor: plan.leftMinor,
+    });
+    expect(life(paid).plans.some((p) => p.kind === 'emergency')).toBe(false);
+    expect(() => run(paid, who, { type: 'end_turn' })).not.toThrow();
+  });
+
   it('refuses a move that is not possible, and changes nothing', () => {
     const t = started();
     const who = t.activePlayerId!;

@@ -80,6 +80,11 @@ Chancen-Karten (der Kauf wartet auf deinen Wurf, und Fertig wird verweigert, bis
 
 **Rückgängig.** Die letzte Handlung eines Zugs lässt sich rückgängig machen.
 
+**An einem Tisch** wird eine **Anlage** zuerst **geplant**: Ihr Projekt öffnet sich in Grow mit den Zahlen, gekauft ist nichts. Dort
+entscheidest du, wie viele Einheiten du kaufst, und buchst es mit dem **Kaufen**-Knopf - oder du lässt es, dann ist die Chance mit dem
+Ende deines Zuges verpasst. Alles, was ein anderer Spieler zieht und entscheidet, wird dem ganzen Tisch mit der Karte erzählt, und die
+Zeilen der Historie öffnen die Karte.
+
 ## Dein Leben: die Merkmale, die Versicherungen und was sie bewirken
 
 Jeder Charakter hat ein **Leben**, und das Leben besteht aus ein paar **Merkmalen**. Du siehst sie als Abzeichen auf dem Spielbildschirm -
@@ -278,6 +283,11 @@ Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht 
 Etwas geht kaputt. Die Karten haben fünf Stufen - **Funke, Flamme, Brand, Lauffeuer, Inferno** - vom kaputten Lenkergriff bis zum
 Hausbrand. Eine Versicherung kann die Rechnung decken; den Rest zahlst du aus dem Bargeld, mit einem Zahlungsplan oder mit dem
 Bankkredit. In den Modi geführt und streng muss ein Notfall erledigt werden, bevor das Spiel weitergeht.
+
+An einem **Tisch** läuft ein Notfall wie allein: Du kannst ihn **sofort bezahlen**, auf **3, 6 oder 12 Zahltage** verteilen (mit dem
+Aufschlag des Plans) oder das **Fire-Projekt anlegen** - bezahlt ist dann noch nichts, das Projekt öffnet sich auf der Fire-Seite, und
+du zahlst dort Schritt für Schritt ein. Im geführten und im strengen Spiel ist der Zug erst vorbei, wenn ein als Fire-Projekt
+genommener Notfall bezahlt oder geplant ist. Ein Bußgeld oder eine Gebühr, die sofort bezahlt werden muss, wird kein Projekt.
 
 ### ❤ Leben (27 Karten)
 

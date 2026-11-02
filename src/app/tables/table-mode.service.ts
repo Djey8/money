@@ -567,7 +567,7 @@ export class TableModeService {
     this.seat.set(seat);
     // a Dreamfund seat's open decision is written into the turn as the solo screen keeps it (the card the server drew)
     const shown = lifeOf(view, seat)
-      ? withDreamPending(books, pendingOf(view, seat), extrasOf(view, seat))
+      ? withDreamPending(books, pendingOf(view, seat), { ...extrasOf(view, seat), lang: this.lang })
       : books;
     applyBooksToApp(AppStateService.instance, shown, discardsOf(view), this.bankLocationNames());
     // a Dreamfund seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen

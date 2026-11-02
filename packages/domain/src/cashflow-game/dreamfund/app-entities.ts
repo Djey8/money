@@ -195,8 +195,8 @@ export function dreamAppEntities(
         {
           id: `${card.title[l]}-plan`,
           title: card.title[l],
-          target: fromMinorUnits(plan.leftMinor),
-          amount: 0,
+          target: fromMinorUnits(plan.totalMinor ?? plan.leftMinor),
+          amount: fromMinorUnits((plan.totalMinor ?? plan.leftMinor) - plan.leftMinor),
           notes: '',
         },
       ],

@@ -517,6 +517,14 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     ) {
       return { decision: 'fundReserve', amountMinor };
     }
+    const emergency = state.allFireEmergencies.find(
+      (fire) =>
+        (fire as { emergencyCardId?: string }).emergencyCardId &&
+        fire.title.toLowerCase() === title,
+    ) as { emergencyCardId?: string } | undefined;
+    if (emergency?.emergencyCardId) {
+      return { decision: 'fundEmergency', amountMinor, id: emergency.emergencyCardId } as never;
+    }
     if (state.allSmileProjects.some((smile) => smile.title.toLowerCase() === title)) {
       return { decision: 'fundDream', amountMinor };
     }

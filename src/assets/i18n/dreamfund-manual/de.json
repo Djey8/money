@@ -158,6 +158,10 @@
         {
           "type": "p",
           "text": "**Rückgängig.** Die letzte Handlung eines Zugs lässt sich rückgängig machen."
+        },
+        {
+          "type": "p",
+          "text": "**An einem Tisch** wird eine **Anlage** zuerst **geplant**: Ihr Projekt öffnet sich in Grow mit den Zahlen, gekauft ist nichts. Dort entscheidest du, wie viele Einheiten du kaufst, und buchst es mit dem **Kaufen**-Knopf - oder du lässt es, dann ist die Chance mit dem Ende deines Zuges verpasst. Alles, was ein anderer Spieler zieht und entscheidet, wird dem ganzen Tisch mit der Karte erzählt, und die Zeilen der Historie öffnen die Karte."
         }
       ]
     },
@@ -512,6 +516,10 @@
         {
           "type": "p",
           "text": "Etwas geht kaputt. Die Karten haben fünf Stufen - **Funke, Flamme, Brand, Lauffeuer, Inferno** - vom kaputten Lenkergriff bis zum Hausbrand. Eine Versicherung kann die Rechnung decken; den Rest zahlst du aus dem Bargeld, mit einem Zahlungsplan oder mit dem Bankkredit. In den Modi geführt und streng muss ein Notfall erledigt werden, bevor das Spiel weitergeht."
+        },
+        {
+          "type": "p",
+          "text": "An einem **Tisch** läuft ein Notfall wie allein: Du kannst ihn **sofort bezahlen**, auf **3, 6 oder 12 Zahltage** verteilen (mit dem Aufschlag des Plans) oder das **Fire-Projekt anlegen** - bezahlt ist dann noch nichts, das Projekt öffnet sich auf der Fire-Seite, und du zahlst dort Schritt für Schritt ein. Im geführten und im strengen Spiel ist der Zug erst vorbei, wenn ein als Fire-Projekt genommener Notfall bezahlt oder geplant ist. Ein Bußgeld oder eine Gebühr, die sofort bezahlt werden muss, wird kein Projekt."
         },
         {
           "type": "h3",

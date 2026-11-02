@@ -37,8 +37,8 @@ const DREAMFUND_COMMANDS = {
   pay_emergency: {
     fields: ['pay', 'choiceId'],
     check: (c) =>
-      !['now', 3, 6, 12].includes(c.pay)
-        ? "pay must be 'now' or a plan of 3, 6 or 12 Paydays."
+      !['now', 'later', 3, 6, 12].includes(c.pay)
+        ? "pay must be 'now', 'later' or a plan of 3, 6 or 12 Paydays."
         : c.choiceId === undefined || typeof c.choiceId === 'string'
           ? null
           : 'choiceId must be a string.',
@@ -143,6 +143,11 @@ const DREAMFUND_COMMANDS = {
     fields: ['amountMinor'],
     check: (c) => amount(c.amountMinor, 'amountMinor'),
     build: (c) => ({ type: 'fund_dream', amountMinor: c.amountMinor }),
+  },
+  fund_emergency: {
+    fields: ['id', 'amountMinor'],
+    check: (c) => text(c.id, 'id') || amount(c.amountMinor, 'amountMinor'),
+    build: (c) => ({ type: 'fund_emergency', id: c.id, amountMinor: c.amountMinor }),
   },
   repay_debt: {
     fields: ['tag'],

@@ -49,7 +49,13 @@ describe('DreamPlayer', () => {
     expect(options[2].total).toBeGreaterThan(options[0].total);
     p.planEmergency('E01', options[1]);
     expect(p.plans).toEqual([
-      { kind: 'emergency', id: 'E01', perMinor: options[1].per, leftMinor: options[1].total },
+      {
+        kind: 'emergency',
+        id: 'E01',
+        perMinor: options[1].per,
+        leftMinor: options[1].total,
+        totalMinor: options[1].total,
+      },
     ]);
     const before = p.cash();
     p.payInstallments();

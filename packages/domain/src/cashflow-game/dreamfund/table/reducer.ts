@@ -217,6 +217,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'fund_dream',
   'repay_debt',
   'repay_bank_loan',
+  'fund_emergency',
   'set_insurance',
   'set_plan',
   'settle_payday',
@@ -601,7 +602,7 @@ function play(
   const player = wake(table, seat, rng.rng);
   let patch: Partial<DreamSeat>;
   try {
-    patch = doCommand(table, seat, player, command, rng.rng, emit);
+    patch = doCommand(table, seat, player, command, rng.rng, emit, internal);
   } catch (error) {
     if (error instanceof TableCommandError) throw error;
     return fail(
@@ -646,6 +647,7 @@ function doCommand(
   command: DreamCommand,
   rng: Rng,
   emit: Emit,
+  internal = false,
 ): Partial<DreamSeat> {
   const id = seat.id;
   const pending = seat.pending;
@@ -707,6 +709,7 @@ function doCommand(
         : p.autoEmergencySelection(card, context, command.choiceId);
       if (pay === null) return refuse('The emergency could not be worked out.');
       if (command.pay === 'now') p.payEmergencyNow(pay);
+      else if (command.pay === 'later') p.openEmergency(card.id, pay);
       else {
         if (card.payment === 'pay_now') return refuse('This emergency has to be paid at once.');
         const option = p.emergencyPlanOptions(pay).find((o) => o.months === command.pay);
@@ -920,6 +923,12 @@ function doCommand(
         };
       }
       if (pending) return refuse('Decide about the card first.');
+      // an emergency taken as a Fire project is paid or planned before the game goes on (the guided and the strict game)
+      if (!internal && p.rules.mode !== 'free' && p.unsettledEmergencies().length > 0) {
+        return refuse(
+          'Pay the emergency from its Fire project, or plan it, before you end the turn.',
+        );
+      }
       p.endTurn();
       return {};
     }
@@ -936,6 +945,15 @@ function doCommand(
       p.fundDreams(put);
       p.checkDreams();
       emit('money_moved', id, { what: 'dream', amountMinor: put });
+      return {};
+    }
+    case 'fund_emergency': {
+      if (!p.plans.some((plan) => plan.kind === 'emergency' && plan.id === command.id)) {
+        return refuse('That emergency is not open.');
+      }
+      const put = p.fundEmergency(command.id, command.amountMinor);
+      if (put <= 0) return refuse('There is no cash to pay it with.');
+      emit('money_moved', id, { what: 'emergency_fund', cardId: command.id, amountMinor: put });
       return {};
     }
     case 'repay_debt': {

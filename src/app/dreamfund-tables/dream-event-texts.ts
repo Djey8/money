@@ -78,6 +78,7 @@ const WHAT: Record<string, { en: string; de: string }> = {
   dream: { en: 'into the dream', de: 'in den Traum' },
   debt: { en: 'debt repaid', de: 'Schuld getilgt' },
   bank_loan: { en: 'bank loan repaid', de: 'Bankkredit getilgt' },
+  emergency_fund: { en: 'paid into an emergency', de: 'in einen Notfall gezahlt' },
 };
 
 const DECISIONS: Record<string, { en: string; de: string }> = {
@@ -161,8 +162,12 @@ export function dreamEventDetail(
     }
     case 'money_moved': {
       const what = WHAT[String(d['what'] ?? '')]?.[l] ?? '';
+      if (d['what'] === 'emergency_fund' && d['cardId']) {
+        return `${cardText('emergency', String(d['cardId']), lang).title} · ${dreamMoney(Number(d['amountMinor']), lang)}`;
+      }
       if (d['what'] === 'emergency' && d['cardId']) {
-        const plan = typeof d['how'] === 'number' ? ` · ${d['how']} ×` : '';
+        const plan =
+          typeof d['how'] === 'number' ? ` · ${d['how']} ×` : d['how'] === 'later' ? ' · Fire' : '';
         const pay =
           typeof d['payMinor'] === 'number' ? ` · ${dreamMoney(d['payMinor'], lang)}` : '';
         return `${cardText('emergency', String(d['cardId']), lang).title}${pay}${plan}`;

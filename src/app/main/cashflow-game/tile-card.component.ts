@@ -220,6 +220,15 @@ interface OpportunityBandLike extends OpportunityRollLike {
                     {{ 'CashflowGame.emergency.payNow' | translate }} {{ amount(e.quote.payMinor) }}
                     {{ currency }}
                   </button>
+                  <button
+                    *ngIf="!dreamMustPayNow"
+                    type="button"
+                    class="tc-btn tc-btn--wide"
+                    [disabled]="busy"
+                    (click)="payEmergency('later')"
+                  >
+                    {{ 'CashflowGame.emergency.createProject' | translate }}
+                  </button>
                   <ng-container *ngIf="!dreamMustPayNow">
                     <button
                       *ngFor="let plan of dreamPlans; trackBy: trackIndex"
@@ -2002,7 +2011,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
     return (this.dreamEmergency?.['dreamPaid'] as never) ?? null;
   }
 
-  payEmergency(how: 'now' | number): void {
+  payEmergency(how: 'now' | 'later' | number): void {
     void this.dreamMove({ decision: 'pay', pay: how });
   }
 
