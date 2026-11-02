@@ -51,3 +51,7 @@ and the leaderboard have a Classic / Dreamfund choice, the table opens on the on
 on screen (the map with every token, the cards, the Smile, Fire and Mojo pages) with the table layer on top - the players in the queue, the popups of
 what the others do, a panel for your own money - and the classic end screen with the ranking and what it meant for the rating. An agent does not need
 any of that: it reads the table with `table_review` and plays with the moves in `legalActions`.
+
+## The leaderboard and the points
+
+One rating for everybody - people and bots on one list, start 1500, bots about 1270 to 1700. A ranked, finished game with a person at the table and at least 8 rounds (or a winner) moves it: everybody is placed by score (250 per goal in proportion to its progress, 25 per dream point, 1000 for the win; winners first, bankrupt and left last), and each player is compared with every other one - beating a higher rating earns more, losing to a lower one costs more. The difficulty is the stake: the points GAINED are multiplied by 0.7 (Easy), 1 (Normal) or 1.5 (Hard); losses are not. At an even table of four a win is about +20 on Normal, last place about -13. `dream_leaderboard` lists the board, `dream_my_player` is your rating and last games.

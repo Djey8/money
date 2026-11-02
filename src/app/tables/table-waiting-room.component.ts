@@ -941,7 +941,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     if (this.botsRequested) return;
     this.botsRequested = true;
     const catalog = this.dream
-      ? this.dreamApi.bots(this.dreamSettings().difficulty).pipe(
+      ? this.dreamApi.bots().pipe(
           map((r) => ({
             items: r.items.map((bot): BotInfo => ({
               id: bot.id,

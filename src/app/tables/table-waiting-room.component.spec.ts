@@ -118,7 +118,7 @@ describe('TableWaitingRoomComponent at a Dreamfund table', () => {
     open.click();
     fixture.detectChanges();
     http
-      .expectOne((r) => r.url.includes('/v1/game/rooms/bots?kind=dreamfund&difficulty=hard'))
+      .expectOne((r) => r.url.includes('/v1/game/rooms/bots?kind=dreamfund'))
       .flush({ items: [{ id: 'saver', name: 'Cautious saver', ratings: { master: 1450 } }] });
     fixture.detectChanges();
     expect(element.textContent).toContain('Cautious saver');

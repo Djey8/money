@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TablesApiService, type GamePlayer } from './tables-api.service';
@@ -23,17 +24,16 @@ type Filter = 'all' | 'human' | 'bot';
 @Component({
   selector: 'app-tables-leaderboard',
   standalone: true,
-  imports: [CommonModule, TablePlayerInfoComponent],
+  imports: [CommonModule, RouterLink, TablePlayerInfoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
     <section class="lb" [attr.dir]="rtl ? 'rtl' : 'ltr'">
-      <div class="lb-tabs" role="radiogroup" [attr.aria-label]="d.gameChoice">
+      <div class="tl-games" role="radiogroup" [attr.aria-label]="d.gameChoice">
         <button
           type="button"
           role="radio"
-          class="lb-tab"
-          [class.lb-tab--on]="game === 'classic'"
+          [class.tl-games--on]="game === 'classic'"
           [attr.aria-checked]="game === 'classic'"
           (click)="setGame('classic')"
         >
@@ -42,28 +42,17 @@ type Filter = 'all' | 'human' | 'bot';
         <button
           type="button"
           role="radio"
-          class="lb-tab"
-          [class.lb-tab--on]="game === 'dreamfund'"
+          [class.tl-games--on]="game === 'dreamfund'"
           [attr.aria-checked]="game === 'dreamfund'"
           (click)="setGame('dreamfund')"
         >
           {{ d.gameDream }}
         </button>
       </div>
-      <!-- the Dreamfund has one rating for each difficulty -->
-      <div class="lb-tabs" role="tablist" *ngIf="game === 'dreamfund'">
-        <button
-          *ngFor="let level of levels"
-          type="button"
-          role="tab"
-          class="lb-tab"
-          [class.lb-tab--on]="difficulty === level"
-          [attr.aria-selected]="difficulty === level"
-          (click)="chooseDifficulty(level)"
-        >
-          {{ d[level] }}
-        </button>
-      </div>
+      <!-- one list for everybody: how the points are worked out is told in the manual -->
+      <a class="lb-how" *ngIf="game === 'dreamfund'" routerLink="/docs/dreamfund"
+        >ⓘ {{ d.howPoints }}</a
+      >
       <div class="lb-me" *ngIf="me as mine">
         <button type="button" class="lb-me-card" (click)="open(mine)">
           <span class="lb-me-rating">{{ mine.rating }}</span>
@@ -129,7 +118,7 @@ type Filter = 'all' | 'human' | 'bot';
       <button type="button" class="tx-btn tx-btn--small lb-more" *ngIf="next" (click)="more()">
         {{ t.more }}
       </button>
-      <p class="lb-hint">{{ t.hint }}</p>
+      <p class="lb-hint">{{ game === 'dreamfund' ? d.boardHint : t.hint }}</p>
     </section>
 
     <app-table-player-info
@@ -144,6 +133,12 @@ type Filter = 'all' | 'human' | 'bot';
         display: flex;
         flex-direction: column;
         gap: 12px;
+      }
+      .lb-how {
+        align-self: flex-start;
+        font-size: 0.85rem;
+        color: var(--color-primary, #2a7de1);
+        text-decoration: none;
       }
       .lb-me {
         display: flex;
@@ -330,8 +325,6 @@ export class TablesLeaderboardComponent implements OnInit {
   rtl: boolean;
   /** The game of the board: the classic Cashflow's, or the Dreamfund's (shared with the lobby, kept on this device). */
   game: TableGame = savedGame();
-  readonly levels = ['easy', 'medium', 'hard'] as const;
-  difficulty: 'easy' | 'medium' | 'hard' = 'medium';
   filter: Filter = 'all';
   items: GamePlayer[] = [];
   next: string | null = null;
@@ -375,12 +368,6 @@ export class TablesLeaderboardComponent implements OnInit {
     this.load();
   }
 
-  chooseDifficulty(level: 'easy' | 'medium' | 'hard'): void {
-    this.difficulty = level;
-    this.load();
-    this.loadMe();
-  }
-
   /** A player of the classic board opens their panel (the Dreamfund board has none yet). */
   open(player: GamePlayer): void {
     if (this.game === 'classic') this.selected = player;
@@ -415,7 +402,7 @@ export class TablesLeaderboardComponent implements OnInit {
   private fromDreamMe(me: DreamMyPlayer): GamePlayer {
     return {
       ...this.fromDream({
-        ...me.ratings[this.difficulty],
+        ...me.rating,
         pictureId: me.pictureId,
         pictureVersion: me.pictureVersion,
       }),
@@ -467,7 +454,7 @@ export class TablesLeaderboardComponent implements OnInit {
     const source =
       this.game === 'dreamfund'
         ? this.dreamApi
-            .leaderboard(this.difficulty, this.filter)
+            .leaderboard(this.filter)
             .pipe(map((page) => ({ ...page, items: page.items.map((row) => this.fromDream(row)) })))
         : this.api.leaderboard(this.filter);
     source.subscribe({
@@ -489,7 +476,7 @@ export class TablesLeaderboardComponent implements OnInit {
     const source =
       this.game === 'dreamfund'
         ? this.dreamApi
-            .leaderboard(this.difficulty, this.filter, this.next)
+            .leaderboard(this.filter, this.next)
             .pipe(map((page) => ({ ...page, items: page.items.map((row) => this.fromDream(row)) })))
         : this.api.leaderboard(this.filter, this.next);
     source.subscribe({

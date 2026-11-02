@@ -7148,18 +7148,12 @@ paths:
   /game/dreamfund/leaderboard:
     get:
       operationId: getDreamfundLeaderboard
-      summary: The Dreamfund leaderboard at a difficulty
+      summary: The Dreamfund leaderboard
       description: >-
-        Game accounts only; requires `game:r`. The Dreamfund has a leaderboard of its own - nothing of the classic board is in it. There is one rating per difficulty (`easy`, `medium`, `hard`): a person and a bot have each a rating at each level, and a bot is a strategy at a skill level (master, strong, casual, beginner) that starts where the simulation's map puts it and moves with its games. Pairwise Elo from the placing of each finished, ranked table (the goals reached, the dream points and the win count); what a player is expected to do depends on the character, so a place as a hard character earns more. Players with at least `minGames` rated games (default 1: bots appear as they play); humans are listed only when they switched themselves on (`setMyDreamfundPlayer`). Never an account id - players are known by their `playerId`.
+        Game accounts only; requires `game:r`. The Dreamfund has a leaderboard of its own - nothing of the classic board is in it. There is ONE rating for everybody, people and bots on the same list (start 1500; a bot is a strategy at a skill level - master, strong, casual, beginner - that starts where the bot tournaments put it, the best near 1700, and moves with its games). Pairwise Elo from the placing of each finished, ranked table (the goals reached, the dream points and the win count): you gain from every player you place above and lose to every player below, by how far apart your ratings are. The difficulty of the game is the stake: the points you GAIN are multiplied by 0.7 on Easy, 1 on Normal and 1.5 on Hard (what you lose is not), and a harder character is expected to place lower, so the same place earns more. Players with at least `minGames` rated games (default 1: bots appear as they play); humans are listed only when they switched themselves on (`setMyDreamfundPlayer`). Never an account id - players are known by their `playerId`.
       security:
         - bearerAuth: []
       parameters:
-        - name: difficulty
-          in: query
-          schema:
-            type: string
-            enum: [easy, medium, hard]
-            default: medium
         - name: type
           in: query
           schema:
@@ -7228,7 +7222,7 @@ paths:
       operationId: getMyDreamfundPlayer
       summary: Your own Dreamfund profile
       description: >-
-        Game accounts only; requires `game:r`. Your profile on the Dreamfund board with a rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points) for each difficulty, your last results, and whether you are `visible` on the board. Made on first use.
+        Game accounts only; requires `game:r`. Your profile on the Dreamfund board with your rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points), your last results, and whether you are `visible` on the board. Made on first use.
       security:
         - bearerAuth: []
       responses:

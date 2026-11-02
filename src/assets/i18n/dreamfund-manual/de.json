@@ -1,7 +1,22 @@
 {
   "title": "Traumtopf (Dreamfund) - das Spiel, die Karten und die Zahlen",
   "subtitle": "Die Karte, jede Kartenart, die Ziele und wie man gewinnt - mit den Statistiken der Charaktere.",
-  "order": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13"],
+  "order": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+  ],
   "sections": {
     "s1": {
       "nav": "Überblick",
@@ -366,6 +381,106 @@
       ]
     },
     "s10": {
+      "nav": "Zusammen spielen: dein Ranking und deine Punkte",
+      "title": "Zusammen spielen: dein Ranking und deine Punkte",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Jeder Spieler hat **eine Wertung** - dasselbe Prinzip wie eine Schachwertung. **Alle starten bei 1500.** Das ist die Mitte: die Bots in der Bestenliste reichen von etwa 1270 bis etwa 1700, du spielst dich also an den besten Bots vorbei auf Platz 1. Menschen und Bots stehen in **einer Liste**."
+        },
+        {
+          "type": "h3",
+          "text": "Welche Spiele zählen"
+        },
+        {
+          "type": "p",
+          "text": "Ein Spiel zählt für deine Wertung, wenn der Tisch **gewertet** ist, mindestens ein Mensch am Tisch saß, das Spiel **beendet** wurde und es entweder einen Sieger gab oder **mindestens 8 Runden** gespielt wurden. Zählt ein Spiel nicht, steht am Ende warum (\"Nicht gewertet: unter 8 Runden\"). Wer ein begonnenes Spiel verlässt, hat gegen alle verloren, die geblieben sind."
+        },
+        {
+          "type": "h3",
+          "text": "Wie ein Spiel alle platziert"
+        },
+        {
+          "type": "p",
+          "text": "Am Ende bekommt jeder Spieler eine Punktzahl:"
+        },
+        {
+          "type": "table",
+          "head": ["Was", "Punkte"],
+          "rows": [
+            [
+              "Jedes Ziel, im Verhältnis zu deinem Fortschritt (Reserve, schuldenfrei, Traum, Unabhängigkeit): ein erreichtes Ziel sind 250, eines zu 60% erledigt 150",
+              "bis zu 250"
+            ],
+            ["Jeder Traumpunkt", "25"],
+            ["Gewinnen (alle Ziele)", "1000"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Die Reihenfolge: wer gewonnen hat, steht vorn (der früheste Sieger zuerst), dann alle nach Punktzahl, bei Gleichstand entscheidet das Vermögen. Wer pleite ging oder gegangen ist, liegt hinter allen, die es nicht sind."
+        },
+        {
+          "type": "h3",
+          "text": "Vom Platz zu deinen Punkten"
+        },
+        {
+          "type": "p",
+          "text": "Dein Platz wird mit **jedem anderen Spieler am Tisch** einzeln verglichen. Über einem Spieler zu landen ist ein Sieg gegen ihn, darunter eine Niederlage."
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Gegen einen Spieler mit **höherer** Wertung zu gewinnen bringt **mehr** als gegen einen mit niedrigerer.",
+            "Gegen einen Spieler mit **niedrigerer** Wertung zu verlieren kostet **mehr** als gegen einen höheren.",
+            "Je größer der Abstand, desto überraschender das Ergebnis - und desto mehr bewegt es dich."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Du bekommst den Durchschnitt dieser Duelle. Als Gefühl: an einem Tisch mit vier gleich bewerteten Spielern ist **Platz 1 etwa +20** und **der letzte Platz etwa -13** (in deinen ersten 20 Spielen sind die Zahlen größer, damit eine neue Wertung schnell ihren Platz findet; mit `~` markiert, bis du 5 Spiele gespielt hast). Ein Sieg gegen drei Bots mit 1700 ist etwa +30 wert, gegen drei Bots mit 1300 etwa +10."
+        },
+        {
+          "type": "h3",
+          "text": "Schwerer spielen, mehr Punkte"
+        },
+        {
+          "type": "p",
+          "text": "Die Schwierigkeit des Spiels ist der **Einsatz**: die Punkte, die du **gewinnst**, werden multipliziert."
+        },
+        {
+          "type": "table",
+          "head": ["Schwierigkeit", "Punkte, die du gewinnst", "Was du verlierst"],
+          "rows": [
+            ["Leicht", "x 0,7", "dasselbe"],
+            ["Normal", "x 1", "dasselbe"],
+            ["Schwer", "x 1,5", "dasselbe"]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Derselbe Sieg an einem gleich starken Tisch ist also etwa +14 auf Leicht, +20 auf Normal und +30 auf Schwer. Ein schlechtes Spiel kostet überall dasselbe - du verlierst nie mehr, weil du dich an Schwer wagst. Auch der Charakter zählt: manche sind schwerer als andere (das wissen wir aus tausenden simulierten Spielen), derselbe Platz bringt mit einem schweren Charakter etwas mehr und mit einem leichten etwas weniger."
+        },
+        {
+          "type": "h3",
+          "text": "Die Bots"
+        },
+        {
+          "type": "p",
+          "text": "Jeder Bot ist eine **Strategie** auf einer **Spielstärke** (Meister, stark, gelegentlich, Anfänger) - der Meister spielt seine Strategie sauber, die anderen verpatzen mal etwas. Jeder hat von Anfang an seine eigene Wertung aus einem Turnier, das die Bots gegeneinander gespielt haben, und sie bewegt sich mit seinen Spielen wie deine. Darum steht ein Anfänger-Bot niedrig und die besten Meister bei etwa 1700."
+        },
+        {
+          "type": "h3",
+          "text": "Die Bestenliste"
+        },
+        {
+          "type": "p",
+          "text": "Eine Liste, beste Wertung zuerst. Ein Mensch steht erst darauf, wenn er **Mich in der Bestenliste zeigen** einschaltet; ein Bot erscheint, sobald er ein gewertetes Spiel gespielt hat. Die Wertung fällt nie unter 100."
+        }
+      ]
+    },
+    "s11": {
       "nav": "Regeln und Einstellungen",
       "title": "Regeln und Einstellungen",
       "blocks": [
@@ -405,7 +520,7 @@
         }
       ]
     },
-    "s11": {
+    "s12": {
       "nav": "Wege zum Sieg",
       "title": "Wege zum Sieg",
       "blocks": [
@@ -431,7 +546,7 @@
         }
       ]
     },
-    "s12": {
+    "s13": {
       "nav": "Die Statistiken der Charaktere",
       "title": "Die Statistiken der Charaktere",
       "blocks": [
@@ -851,7 +966,7 @@
         }
       ]
     },
-    "s13": {
+    "s14": {
       "nav": "Die zehn Charaktere und die drei Schwierigkeiten",
       "title": "Die zehn Charaktere und die drei Schwierigkeiten",
       "blocks": [

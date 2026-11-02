@@ -228,7 +228,6 @@ export interface DreamBoardRow {
   name: string;
   type: 'human' | 'bot';
   level?: 'master' | 'strong' | 'casual' | 'beginner';
-  difficulty: 'easy' | 'medium' | 'hard';
   rating: number;
   peakRating: number;
   ratedGames: number;
@@ -247,7 +246,8 @@ export interface DreamMyPlayer {
   pictureVersion?: number;
   name: string;
   visible: boolean;
-  ratings: Record<'easy' | 'medium' | 'hard', DreamBoardRow>;
+  /** The one rating of the board, with the counters of every ranked game. */
+  rating: DreamBoardRow;
   recent: {
     tableId: string;
     name: string;
@@ -263,7 +263,7 @@ export interface DreamBotCatalog {
   items: {
     id: string;
     name: string;
-    /** What the bot is rated at the table's difficulty, at each skill level. */
+    /** What the bot is rated now, at each skill level. */
     ratings?: Partial<Record<'master' | 'strong' | 'casual' | 'beginner', number>>;
   }[];
   levels: { id: 'master' | 'strong' | 'casual' | 'beginner'; mistakes: number }[];
@@ -291,10 +291,8 @@ export class DreamApiService {
     );
   }
 
-  bots(difficulty: 'easy' | 'medium' | 'hard' = 'medium'): Observable<DreamBotCatalog> {
-    return this.http.get<DreamBotCatalog>(
-      `${this.base}/bots?kind=dreamfund&difficulty=${difficulty}`,
-    );
+  bots(): Observable<DreamBotCatalog> {
+    return this.http.get<DreamBotCatalog>(`${this.base}/bots?kind=dreamfund`);
   }
 
   create(input: DreamCreateInput): Observable<{ id: string; inviteCode?: string }> {
@@ -318,11 +316,10 @@ export class DreamApiService {
   }
 
   leaderboard(
-    difficulty: 'easy' | 'medium' | 'hard',
     type: 'all' | 'human' | 'bot',
     after?: string,
   ): Observable<{ items: DreamBoardRow[]; next: string | null }> {
-    const query = `difficulty=${difficulty}&type=${type}&limit=25${after ? `&after=${encodeURIComponent(after)}` : ''}`;
+    const query = `type=${type}&limit=25${after ? `&after=${encodeURIComponent(after)}` : ''}`;
     return this.http.get<{ items: DreamBoardRow[]; next: string | null }>(
       `${environment.selfhosted.apiUrl}/v1/game/dreamfund/leaderboard?${query}`,
     );

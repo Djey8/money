@@ -26,9 +26,21 @@ class DreamStatsConflictError extends Error {
   }
 }
 
+/**
+ * The board has one rating for everybody (2026-11-02): a profile written with a rating for each difficulty keeps its middle one as
+ * its rating.
+ */
+function upgrade(doc) {
+  if (doc && doc.ratings && !doc.ratings.overall) {
+    const { easy, medium, hard } = doc.ratings;
+    doc.ratings = { overall: medium || easy || hard };
+  }
+  return doc;
+}
+
 async function getProfile(db, playerId) {
   try {
-    return await db.get(profileId(playerId));
+    return upgrade(await db.get(profileId(playerId)));
   } catch (error) {
     if (notFound(error)) return null;
     throw error;
@@ -58,7 +70,7 @@ async function saveProfile(db, doc) {
 /** The human profile of an account, or null. */
 async function findHumanProfile(db, accountId) {
   const found = await db.find({ selector: { kind: 'dprofile', accountId }, limit: 1 });
-  return found.docs[0] || null;
+  return upgrade(found.docs[0] || null);
 }
 
 async function getResult(db, tableId) {
@@ -95,7 +107,7 @@ async function resultsOfPlayer(db, playerId, limit = 20) {
 /** Every profile of the board, visible or not. */
 async function listProfiles(db) {
   const found = await db.find({ selector: { kind: 'dprofile' }, limit: 20000 });
-  return found.docs;
+  return found.docs.map(upgrade);
 }
 
 module.exports = {

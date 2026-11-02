@@ -9,13 +9,15 @@ const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-s
 
 /**
  * The Dreamfund leaderboard's service (todo/dreamfund-multiplayer.md, slice 8): when a Dreamfund table finishes, its result is filed
- * once and - if it counts - every player's rating at the table's difficulty moves (`rateTable`, the domain's pure scoring). A person has
- * one profile with a rating for each difficulty; so has each bot (a strategy at a skill level), starting where the simulation's map puts
- * it. Humans are listed only when they switched "show me" on; bots always, once they have played. A world of its own: nothing is read
+ * once and - if it counts - every player's rating moves (`rateTable`, the domain's pure scoring; a harder game pays more for a gain). A
+ * person has one rating; so has each bot (a strategy at a skill level), starting where the tournaments put it. Humans are listed only when they switched "show me" on; bots always, once they have played. A world of its own: nothing is read
  * from or written to the classic board.
  */
 
-const LEVELS = ['easy', 'medium', 'hard'];
+// the board has one rating for everybody; the difficulty of a game is its stake (rating.DIFFICULTY_STAKE)
+const LEVELS = ['overall'];
+const OVERALL = 'overall';
+const DIFFICULTIES = ['easy', 'medium', 'hard'];
 const MAX_RETRIES = 8;
 
 const botPlayerId = (botId) => uuidV5(`dream-bot:${botId}`);
@@ -67,9 +69,7 @@ function createDreamStats({
         LEVELS.map((level) => [
           level,
           emptyLevel(
-            fields.type === 'bot'
-              ? rating.botStartRating(fields.botId, level)
-              : rating.DREAM_START_RATING,
+            fields.type === 'bot' ? rating.botStartRating(fields.botId) : rating.DREAM_START_RATING,
           ),
         ]),
       ),
@@ -138,8 +138,10 @@ function createDreamStats({
       return null;
     const tableId = room.roomId;
     if (await store.getResult(db, tableId)) return null;
-    const difficulty = table.settings.difficulty;
-    const level = LEVELS.includes(difficulty) ? difficulty : 'medium';
+    const level = OVERALL;
+    const difficulty = DIFFICULTIES.includes(table.settings.difficulty)
+      ? table.settings.difficulty
+      : 'medium';
     const humans = table.players.filter((p) => !p.bot && p.life).length;
     const someoneWon = table.finishers.some((f) => f.outcome === 'won');
     const verdict = rating.countsForRating({
@@ -171,7 +173,7 @@ function createDreamStats({
       rank: standing.rank,
       outcome: standing.outcome,
     }));
-    const changes = verdict.counted ? rating.rateTable(seats, level) : [];
+    const changes = verdict.counted ? rating.rateTable(seats, difficulty) : [];
     const change = (playerId) => changes.find((c) => c.playerId === playerId);
 
     const doc = {
@@ -180,7 +182,7 @@ function createDreamStats({
       version: rating.DREAM_RATING_VERSION,
       endedAt: now().toISOString(),
       name: table.settings.name,
-      difficulty: level,
+      difficulty,
       shape: table.settings.shape,
       size: table.settings.size,
       endCondition: table.settings.endCondition,
@@ -236,7 +238,7 @@ function createDreamStats({
     return doc;
   }
 
-  /** How a profile is shown at a difficulty (never an account id). */
+  /** How a profile is shown (never an account id). */
   function present(profile, level) {
     const l = profile.ratings[level];
     const c = l.counters;
@@ -245,7 +247,6 @@ function createDreamStats({
       name: profile.displayName,
       type: profile.type,
       ...(profile.botId ? { botId: profile.botId } : {}),
-      difficulty: level,
       rating: Math.round(l.rating),
       peakRating: Math.round(l.peak),
       baseRating: Math.round(l.base),
@@ -263,9 +264,9 @@ function createDreamStats({
     };
   }
 
-  /** The board at a difficulty: players with at least `minGames` rated games (bots appear as they play), best rating first. */
-  async function board({ difficulty = 'medium', type, minGames = 1, limit = 50, skip = 0 } = {}) {
-    const level = LEVELS.includes(difficulty) ? difficulty : 'medium';
+  /** The board: players with at least `minGames` rated games (bots appear as they play), best rating first. */
+  async function board({ type, minGames = 1, limit = 50, skip = 0 } = {}) {
+    const level = OVERALL;
     const profiles = await store.listProfiles(db);
     const rows = profiles
       .filter((p) => p.visible && (type === 'human' || type === 'bot' ? p.type === type : true))
@@ -304,7 +305,7 @@ function createDreamStats({
     return !!profile && profile.visible === true;
   }
 
-  /** A player with every difficulty and the last results. */
+  /** A player of the board with the last results. */
   async function player(playerId) {
     const profile = await store.getProfile(db, playerId);
     if (!profile || (!profile.visible && profile.type === 'human')) return null;
@@ -312,7 +313,7 @@ function createDreamStats({
       playerId: profile.playerId,
       name: profile.displayName,
       type: profile.type,
-      ratings: Object.fromEntries(LEVELS.map((level) => [level, present(profile, level)])),
+      rating: present(profile, OVERALL),
       recent: (await store.resultsOfPlayer(db, playerId, 15)).map((r) => ({
         tableId: r.tableId,
         name: r.name,
@@ -341,7 +342,7 @@ function createDreamStats({
       : {};
   };
 
-  /** The account's own profile (made on first use), with every difficulty. */
+  /** The account's own profile (made on first use). */
   async function me(accountId, fallbackName) {
     const profile = await ensureHumanProfile(accountId, fallbackName);
     return {
@@ -356,7 +357,7 @@ function createDreamStats({
       playerId: profile.playerId,
       name: profile.displayName,
       type: profile.type,
-      ratings: Object.fromEntries(LEVELS.map((level) => [level, present(profile, level)])),
+      rating: present(profile, OVERALL),
       recent: (await store.resultsOfPlayer(db, profile.playerId, 15)).map((r) => ({
         tableId: r.tableId,
         name: r.name,
@@ -385,9 +386,7 @@ function createDreamStats({
   async function reconcileBase(botId) {
     const profile = await store.getProfile(db, botPlayerId(botId));
     if (!profile) return 0;
-    const wanted = Object.fromEntries(
-      LEVELS.map((level) => [level, rating.botStartRating(botId, level)]),
-    );
+    const wanted = { [OVERALL]: rating.botStartRating(botId) };
     if (LEVELS.every((level) => Math.round(profile.ratings[level].base) === wanted[level]))
       return 0;
     let moved = 0;
@@ -428,8 +427,7 @@ function createDreamStats({
    * table's difficulty. A person who has not played yet shows the starting rating; no pictures, no stats panel for now.
    */
   async function seatsOf(table) {
-    const difficulty = table.settings && table.settings.difficulty;
-    const level = LEVELS.includes(difficulty) ? difficulty : 'medium';
+    const level = OVERALL;
     const out = [];
     for (const [seat, player] of table.players.entries()) {
       const profile = player.bot
@@ -455,14 +453,15 @@ function createDreamStats({
     return out;
   }
 
-  /** What each bot (an id with its skill level) is rated now at a difficulty: its profile's rating, or its starting rating. */
-  async function botRatings(botIds, level) {
+  /** What each bot (an id with its skill level) is rated now: its profile's rating, or its starting rating. */
+  async function botRatings(botIds) {
+    const level = OVERALL;
     const out = {};
     for (const botId of botIds) {
       const profile = await store.getProfile(db, botPlayerId(botId));
       out[botId] = profile
         ? Math.round(profile.ratings[level].rating)
-        : rating.botStartRating(botId, level);
+        : rating.botStartRating(botId);
     }
     return out;
   }

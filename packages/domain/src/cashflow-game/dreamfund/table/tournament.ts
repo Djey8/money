@@ -154,7 +154,7 @@ export function runBotTournament(options: TournamentOptions): TournamentBot[] {
       });
     }
     // the table's own K: a tournament rates with `k` for everybody
-    const changes = rateTable(ranked, options.difficulty);
+    const changes = rateTable(ranked, options.difficulty, { stake: false });
     for (const change of changes) {
       const bot = bots.get(change.playerId) as TournamentBot;
       const seat = ranked.find((r) => r.playerId === change.playerId) as RatedSeat;

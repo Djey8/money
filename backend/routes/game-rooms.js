@@ -74,13 +74,7 @@ function stats() {
     statsService = createGameStats({
       db: getGameStatsDb(),
       nicknameOf,
-      // a person's picture is the account's: fetched under the id of the account's game profile (made when it is missing)
-      pictureOf: async (accountId) => {
-        const picture = await profilePicture.getPicture(getUsersDb(), accountId);
-        if (!picture) return null;
-        const profile = await stats().ensureHumanProfile(accountId);
-        return profile ? { playerId: profile.playerId, pictureVersion: picture.updatedAt } : null;
-      },
+      log: (message, meta) => logger.warn(message, meta),
     });
   }
   return statsService;
@@ -92,7 +86,13 @@ function dreamStats() {
     dreamStatsService = createDreamStats({
       db: getGameStatsDb(),
       nicknameOf,
-      log: (message, meta) => logger.warn(message, meta),
+      // a person's picture is the account's: fetched under the id of the account's game profile (made when it is missing)
+      pictureOf: async (accountId) => {
+        const picture = await profilePicture.getPicture(getUsersDb(), accountId);
+        if (!picture) return null;
+        const profile = await stats().ensureHumanProfile(accountId);
+        return profile ? { playerId: profile.playerId, pictureVersion: picture.updatedAt } : null;
+      },
     });
   }
   return dreamStatsService;
@@ -242,17 +242,13 @@ router.get(
   handle(async (req, res) => {
     // the bots of a Dreamfund table are the twelve strategies of the simulation (docs/DREAMFUND_SIMULATION.md): `?kind=dreamfund`
     if (req.query.kind === 'dreamfund') {
-      const level = ['easy', 'hard'].includes(req.query.difficulty)
-        ? req.query.difficulty
-        : 'medium';
       const skills = dreamfund.levels.map((l) => l.id);
       const idOf = (id, skill) => (skill === 'master' ? id : `${id}--${skill}`);
-      // what each bot is rated at the table's difficulty, at each skill level (the lobby sorts and shows it)
+      // what each bot is rated at each skill level (the lobby sorts and shows it)
       let rated = {};
       try {
         rated = await dreamStats().botRatings(
           dreamfund.policies.flatMap((p) => skills.map((skill) => idOf(p.id, skill))),
-          level,
         );
       } catch (error) {
         logger.warn('Dreamfund bot ratings could not be read', { error: error.message });

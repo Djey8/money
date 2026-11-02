@@ -315,11 +315,9 @@ describe('a Dreamfund room', () => {
       );
       // the bots are permanent profiles: count from where the last run left them
       const ratedBefore = async () =>
-        (
-          await gameRooms
-            .dreamStats()
-            .board({ difficulty: 'easy', type: 'bot', minGames: 0, limit: 200 })
-        ).find((r) => r.name === 'Informed investor')?.ratedGames ?? 0;
+        (await gameRooms.dreamStats().board({ type: 'bot', minGames: 0, limit: 200 })).find(
+          (r) => r.name === 'Informed investor',
+        )?.ratedGames ?? 0;
       const gamesBefore = await ratedBefore();
       const made = await call(host, 'post', '/game/rooms', {
         kind: 'dreamfund',
@@ -358,7 +356,7 @@ describe('a Dreamfund room', () => {
       // the board takes the result a moment after the game ends
       let board;
       for (let i = 0; i < 40; i += 1) {
-        board = await call(host, 'get', '/game/dreamfund/leaderboard?difficulty=easy&type=bot');
+        board = await call(host, 'get', '/game/dreamfund/leaderboard?type=bot');
         if (board.body.items.find((r) => r.name === 'Informed investor')?.ratedGames > gamesBefore)
           break;
         await sleep(250);
@@ -371,16 +369,8 @@ describe('a Dreamfund room', () => {
       const expert = board.body.items.find((r) => r.name === 'Informed investor');
       expect(expert).toMatchObject({
         type: 'bot',
-        difficulty: 'easy',
         ratedGames: gamesBefore + 1,
       });
-      // the same bot has nothing on the other difficulties
-      const medium = await call(
-        host,
-        'get',
-        '/game/dreamfund/leaderboard?difficulty=medium&type=bot',
-      );
-      expect(medium.body.items.find((r) => r.name === 'Informed investor')).toBeUndefined();
       // a beginner starts below the master of the same strategy family and the board is ordered by rating
       const ratings = board.body.items.map((r) => r.rating);
       expect([...ratings].sort((a, b) => b - a)).toEqual(ratings);
@@ -388,23 +378,15 @@ describe('a Dreamfund room', () => {
       // the person is on the board only after they switch it on
       const mine = await call(host, 'get', '/game/dreamfund/players/me');
       expect(mine.status).toBe(200);
-      expect(mine.body.ratings.easy.ratedGames).toBe(1);
+      expect(mine.body.rating.ratedGames).toBe(1);
       expect(mine.body.visible).toBe(false);
-      const humansBefore = await call(
-        host,
-        'get',
-        '/game/dreamfund/leaderboard?difficulty=easy&type=human',
-      );
+      const humansBefore = await call(host, 'get', '/game/dreamfund/leaderboard?type=human');
       expect(
         humansBefore.body.items.find((r) => r.playerId === mine.body.playerId),
       ).toBeUndefined();
       const shown = await call(host, 'put', '/game/dreamfund/players/me', { visible: true });
       expect(shown.body.visible).toBe(true);
-      const humansAfter = await call(
-        host,
-        'get',
-        '/game/dreamfund/leaderboard?difficulty=easy&type=human',
-      );
+      const humansAfter = await call(host, 'get', '/game/dreamfund/leaderboard?type=human');
       expect(humansAfter.body.items.find((r) => r.playerId === mine.body.playerId)).toBeTruthy();
       const profile = await call(host, 'get', `/game/dreamfund/players/${mine.body.playerId}`);
       expect(profile.status).toBe(200);
@@ -430,7 +412,7 @@ describe('a Dreamfund room', () => {
       // the classic board did not move
       const classicAfter = await call(host, 'get', '/game/leaderboard?type=bot&minGames=0&limit=1');
       expect(JSON.stringify(classicAfter.body)).toBe(JSON.stringify(classicBefore.body));
-      const bad = await call(host, 'get', '/game/dreamfund/leaderboard?difficulty=insane');
+      const bad = await call(host, 'get', '/game/dreamfund/leaderboard?type=nobody');
       expect(bad.status).toBe(400);
     },
   );
@@ -440,11 +422,12 @@ describe('a Dreamfund room', () => {
       const stats = gameRooms.dreamStats();
       await stats.seedBots();
       expect((await stats.seedBots()).made).toBe(0);
-      const board = await stats.board({ difficulty: 'hard', type: 'bot', minGames: 0, limit: 200 });
+      const board = await stats.board({ type: 'bot', minGames: 0, limit: 200 });
       const names = board.map((row) => row.name);
       expect(board.length).toBeGreaterThanOrEqual(44);
       expect(new Set(names).size).toBe(names.length);
-      expect(board.every((row) => row.games === 0 && row.provisional)).toBe(true);
+      // (a bot that has played in this run is on the board with its games; the others start unplayed)
+      expect(board.filter((row) => row.games === 0 && row.provisional).length).toBeGreaterThan(30);
       // the bots average where a person starts (1500) and the best sit well above: a person plays their way up to them
       expect(board[0].rating).toBeGreaterThan(1600);
       const mean = board.reduce((sum, row) => sum + row.rating, 0) / board.length;
@@ -480,12 +463,41 @@ describe('a Dreamfund room', () => {
       await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
     },
   );
-  maybe('offers the strategies with their rating at the table difficulty', async () => {
-    const bots = await call(host, 'get', '/game/rooms/bots?kind=dreamfund&difficulty=hard');
+  maybe('offers the strategies with their rating at every skill level', async () => {
+    const bots = await call(host, 'get', '/game/rooms/bots?kind=dreamfund');
     expect(bots.status).toBe(200);
     const expert = bots.body.items.find((bot) => bot.id === 'expert');
     expect(expert.name).toBeTruthy();
     expect(typeof expert.ratings.master).toBe('number');
     expect(expert.ratings.beginner).toBeLessThan(expert.ratings.master);
   });
+  maybe(
+    'shows the account picture at a Dreamfund seat, in the lobby line and on the board profile',
+    async () => {
+      const png =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+      expect((await call(host, 'put', '/profile/picture', { image: png })).status).toBe(200);
+      const mine = await call(host, 'get', '/game/dreamfund/players/me');
+      expect(mine.body.pictureId).toBeTruthy();
+      expect(mine.body.pictureVersion).toBeTruthy();
+      const made = await call(host, 'post', '/game/rooms', {
+        kind: 'dreamfund',
+        nickname: 'Hanna',
+        settings: { name: 'Pictures' },
+      });
+      roomIds.push(made.body.id);
+      const list = await call(host, 'get', '/game/rooms?scope=mine&kind=dreamfund');
+      const seat = list.body.items.find((r) => r.id === made.body.id).seats[0];
+      expect(seat.playerId).toBe(mine.body.pictureId);
+      expect(seat.pictureVersion).toBe(mine.body.pictureVersion);
+      // the table-mate path of the picture endpoint serves it
+      const image = await call(
+        host,
+        'get',
+        `/game/players/${seat.playerId}/picture?v=${seat.pictureVersion}&table=${made.body.id}`,
+      );
+      expect(image.status).toBe(200);
+      await call(host, 'delete', `/game/rooms/${made.body.id}?confirm=true`);
+    },
+  );
 });

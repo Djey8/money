@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TablesLeaderboardComponent } from './tables-leaderboard.component';
 
@@ -36,7 +36,7 @@ describe('TablesLeaderboardComponent', () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TablesLeaderboardComponent, TranslateModule.forRoot()],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     fixture = TestBed.createComponent(TablesLeaderboardComponent);
     http = TestBed.inject(HttpTestingController);
@@ -55,12 +55,12 @@ describe('TablesLeaderboardComponent', () => {
     fixture.detectChanges();
   };
 
-  it('shows the Dreamfund board, one rating per difficulty, in the same list', () => {
+  it('shows the Dreamfund board, one rating for everybody, in the same list', () => {
     board([]);
     me(player({ playerId: 'me', type: 'human' }));
     fixture.componentInstance.setGame('dreamfund');
     http
-      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?difficulty=medium&type=all'))
+      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?type=all'))
       .flush({
         items: [
           {
@@ -89,25 +89,23 @@ describe('TablesLeaderboardComponent', () => {
         playerId: 'me',
         name: 'Me',
         visible: false,
-        ratings: { easy: {}, medium: { rating: 1490, provisional: true }, hard: {} },
+        rating: { rating: 1490, provisional: true },
         recent: [],
       });
     fixture.detectChanges();
     expect(element.textContent).toContain('Informed investor');
     expect(element.textContent).toContain('1490');
-    fixture.componentInstance.chooseDifficulty('hard');
+    // one list: no difficulty to choose, the people filter asks for the same list again
+    fixture.componentInstance.choose('human');
     http
-      .expectOne((r) => r.url.includes('difficulty=hard&type=all'))
+      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?type=human'))
       .flush({ items: [], next: null });
-    http
-      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/me'))
-      .flush({
-        playerId: 'me',
-        name: 'Me',
-        visible: false,
-        ratings: { easy: {}, medium: {}, hard: { rating: 1400, provisional: true } },
-        recent: [],
-      });
+    // the tabs of the three difficulties are gone: the buttons are the game, and who is on the list
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLElement>,
+    ).map((b) => b.textContent!.trim());
+    expect(buttons).not.toContain('Hard');
+    expect(buttons).not.toContain('Easy');
     expect(localStorage.getItem('mm.tables.game')).toBe('dreamfund');
   });
 

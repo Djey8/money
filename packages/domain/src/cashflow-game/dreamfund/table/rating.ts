@@ -37,6 +37,12 @@ export const LEVEL_OFFSET: Record<DreamBotLevel, number> = {
 /** How far above the starting rating the best bot sits (the tournaments' result; used when no tournament has rated a bot). */
 const BEST_BOT_ABOVE_START = 180;
 
+/**
+ * What a harder game is worth (JFK, 2026-11-02: one ranking, and a win on Hard earns more): the points a player GAINS from a game are
+ * multiplied by the difficulty's stake. What a player loses is not - a bad game costs the same on every difficulty.
+ */
+export const DIFFICULTY_STAKE: Record<DreamfundLevel, number> = { easy: 0.7, medium: 1, hard: 1.5 };
+
 const clampRate = (rate: number) => Math.min(0.98, Math.max(0.01, rate));
 const odds = (rate: number) => clampRate(rate) / (1 - clampRate(rate));
 const elo = (ratio: number) => 400 * Math.log10(ratio);
@@ -68,9 +74,14 @@ export function characterStrength(character: string | null, level: DreamfundLeve
  * average 1500, where a person starts, so a person plays their way up to the best); the
  * others are below it by what their win rate says (the average over the characters), and a lower skill level by its offset.
  */
-export function botStartRating(botId: string, level: DreamfundLevel): number {
+export function botStartRating(botId: string, level?: DreamfundLevel): number {
   const parts = splitDreamBotId(botId);
   if (!parts) return DREAM_START_RATING;
+  // the board has one rating for everybody: a bot starts at the average of what the tournaments found at the three difficulties
+  if (level === undefined) {
+    const all = LEVELS.map((each) => botStartRating(botId, each));
+    return Math.round(all.reduce((sum, value) => sum + value, 0) / all.length);
+  }
   // what the bot tournaments found, when they have been run (scripts/dreamfund-tournament.js)
   const played = DREAM_BOT_RATINGS[level]?.[botId];
   if (played !== undefined) return played;
@@ -127,7 +138,11 @@ export function expected(
 }
 
 /** What a finished table does to everybody's rating at the table's difficulty. */
-export function rateTable(seats: RatedSeat[], level: DreamfundLevel): RatingChange[] {
+export function rateTable(
+  seats: RatedSeat[],
+  level: DreamfundLevel,
+  options: { stake?: boolean } = {},
+): RatingChange[] {
   const strength = (seat: RatedSeat) => characterStrength(seat.character, level);
   const deltas = new Map<string, number>(seats.map((s) => [s.playerId, 0]));
   for (let i = 0; i < seats.length; i += 1) {
@@ -152,7 +167,10 @@ export function rateTable(seats: RatedSeat[], level: DreamfundLevel): RatingChan
     }
   }
   return seats.map((seat) => {
-    const after = Math.max(DREAM_RATING_FLOOR, seat.rating + (deltas.get(seat.playerId) ?? 0));
+    const raw = deltas.get(seat.playerId) ?? 0;
+    // a harder game pays more for what is gained (a tournament of bots measures strength and does not use the stake)
+    const change = raw > 0 && options.stake !== false ? raw * DIFFICULTY_STAKE[level] : raw;
+    const after = Math.max(DREAM_RATING_FLOOR, seat.rating + change);
     return {
       playerId: seat.playerId,
       before: seat.rating,

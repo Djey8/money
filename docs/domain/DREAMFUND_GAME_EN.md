@@ -210,6 +210,56 @@ salary stops). The game goes on: the badge is a milestone, not the end.
 
 **How long is a game?** A normal game is about **90 turns** (roughly 36 months), a fast one 30, a long one 120.
 
+## Playing together: your ranking and your points
+
+Every player has **one rating** - the same idea as a chess rating. **Everybody starts at 1500.** It is the middle: the bots on the leaderboard run from about 1270 up to about 1700, so to get to place 1 you play your way up past the best bots. People and bots are on **one list**.
+
+### Which games count
+
+A game counts for your rating when the table is **ranked**, at least one person sat at it, the game was **finished**, and it either had a winner or ran **at least 8 rounds**. A game that does not count says why at the end ("Not ranked: under 8 rounds"). If you leave a game that has begun, it counts as a loss against everybody who stayed.
+
+### How a game places everybody
+
+At the end every player gets a score:
+
+| What                                                                                                                                             | Points    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| Each goal, in proportion to how far you got (the reserve, no debts, the dream, independence): a goal reached is 250, one that is 60% done is 150 | up to 250 |
+| Each dream point                                                                                                                                 | 25        |
+| Winning (all the goals)                                                                                                                          | 1000      |
+
+The order: whoever won comes first (the earliest winner on top), then everybody by score, and a tie is decided by net worth. A player who went bankrupt, or left, is behind everybody who did not.
+
+### From the place to your points
+
+Your place is compared with **each other player at the table**, one by one. Placing above a player is a win against them, below is a loss.
+
+- Beating a player with a **higher** rating earns **more** than beating one with a lower rating.
+- Losing to a player with a **lower** rating costs **more** than losing to a higher one.
+- The bigger the gap, the more surprising the result - and the more it moves you.
+
+You gain or lose the average of these duels. As a feeling: at a table of four players with equal ratings, **first place is about +20** and **last place about -13** (in your first 20 games the numbers are bigger, so a new rating finds its place quickly; they are shown with a `~` until you have played 5 games). Winning against three bots rated 1700 is worth about +30, against three bots rated 1300 about +10.
+
+### Harder game, more points
+
+The difficulty of the game is the **stake**: the points you **gain** are multiplied.
+
+| Difficulty | Points you gain | What you lose |
+| ---------- | --------------- | ------------- |
+| Easy       | x 0.7           | the same      |
+| Normal     | x 1             | the same      |
+| Hard       | x 1.5           | the same      |
+
+So the same win at an even table is about +14 on Easy, +20 on Normal and +30 on Hard. A bad game costs the same everywhere - so you never lose more for daring Hard. The character matters too: some characters are harder than others (we know it from thousands of simulated games), so the same place earns a little more with a hard character and a little less with an easy one.
+
+### The bots
+
+Every bot is a **strategy** at a **skill level** (master, strong, casual, beginner) - the master plays its strategy cleanly, the others slip now and then. Each has its own rating from the start, set by a tournament the bots played against each other, and it moves with its games like yours. That is why a beginner bot sits low and the best masters near 1700.
+
+### The leaderboard
+
+One list, best rating first. A person is on it only after switching on **Show me on the leaderboard**; a bot appears once it has played a ranked game. The rating never falls below 100.
+
 ## Rules and settings
 
 The game's rules are chosen at the start and cannot change during it:

@@ -75,10 +75,11 @@ Slices 1-4 are pure domain (fast tests, no server); 5-6 the backend; 7 the front
 - **A world of its own.** The Dreamfund has its own tab and its own leaderboard - nothing of the classic ratings, results or screens is
   reused or shown in it; the classic edition stays as the backup tab until it is cleaned out. New storage (approved) with a `dreamfund`
   kind, never mixing the two games' players, results or ratings.
-- **One rating per player and per difficulty.** A person and a bot have a rating for each of Easy, Normal and Hard (three, as the game
-  has three; the dimension is easy to extend) - "the edition has another dimension, the difficulty". The characters are a dimension of
-  the bots: every bot is a strategy playing a character, each at every difficulty, so everybody can be put at every table and the
-  leaderboard shows how a bot progresses through the levels.
+- **One rating per player (changed 2026-11-02, JFK).** First there was a rating per difficulty; it confused ("why three boards?"). Now the
+  board has ONE rating for people and bots, start 1500 (bots run about 1270-1700, set by the tournaments, averaged over the three
+  difficulties). The difficulty is the **stake**: gains are multiplied (Easy 0.7, Normal 1, Hard 1.5), losses are not
+  (`DIFFICULTY_STAKE` in `rating.ts`); the character's handicap from the map stays. Explained in the manual
+  (`docs/DREAMFUND_GAME.md`, "Playing together: your ranking and your points"). Old profiles keep their middle rating.
 - **Bots start with their own Elo**, seeded from the map (`docs/dreamfund-balance/matrix.json`: the win rate of a strategy on a
   character and level) and then move with their results; the more they play, the more they appear on the board (provisional until a
   number of rated games, like the classic).

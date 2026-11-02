@@ -220,6 +220,56 @@ wegfällt). Das Spiel geht weiter: Das Abzeichen ist ein Meilenstein, nicht das 
 
 **Wie lang ist ein Spiel?** Ein normales Spiel dauert etwa **90 Züge** (grob 36 Monate), ein schnelles 30, ein langes 120.
 
+## Zusammen spielen: dein Ranking und deine Punkte
+
+Jeder Spieler hat **eine Wertung** - dasselbe Prinzip wie eine Schachwertung. **Alle starten bei 1500.** Das ist die Mitte: die Bots in der Bestenliste reichen von etwa 1270 bis etwa 1700, du spielst dich also an den besten Bots vorbei auf Platz 1. Menschen und Bots stehen in **einer Liste**.
+
+### Welche Spiele zählen
+
+Ein Spiel zählt für deine Wertung, wenn der Tisch **gewertet** ist, mindestens ein Mensch am Tisch saß, das Spiel **beendet** wurde und es entweder einen Sieger gab oder **mindestens 8 Runden** gespielt wurden. Zählt ein Spiel nicht, steht am Ende warum ("Nicht gewertet: unter 8 Runden"). Wer ein begonnenes Spiel verlässt, hat gegen alle verloren, die geblieben sind.
+
+### Wie ein Spiel alle platziert
+
+Am Ende bekommt jeder Spieler eine Punktzahl:
+
+| Was                                                                                                                                                     | Punkte     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Jedes Ziel, im Verhältnis zu deinem Fortschritt (Reserve, schuldenfrei, Traum, Unabhängigkeit): ein erreichtes Ziel sind 250, eines zu 60% erledigt 150 | bis zu 250 |
+| Jeder Traumpunkt                                                                                                                                        | 25         |
+| Gewinnen (alle Ziele)                                                                                                                                   | 1000       |
+
+Die Reihenfolge: wer gewonnen hat, steht vorn (der früheste Sieger zuerst), dann alle nach Punktzahl, bei Gleichstand entscheidet das Vermögen. Wer pleite ging oder gegangen ist, liegt hinter allen, die es nicht sind.
+
+### Vom Platz zu deinen Punkten
+
+Dein Platz wird mit **jedem anderen Spieler am Tisch** einzeln verglichen. Über einem Spieler zu landen ist ein Sieg gegen ihn, darunter eine Niederlage.
+
+- Gegen einen Spieler mit **höherer** Wertung zu gewinnen bringt **mehr** als gegen einen mit niedrigerer.
+- Gegen einen Spieler mit **niedrigerer** Wertung zu verlieren kostet **mehr** als gegen einen höheren.
+- Je größer der Abstand, desto überraschender das Ergebnis - und desto mehr bewegt es dich.
+
+Du bekommst den Durchschnitt dieser Duelle. Als Gefühl: an einem Tisch mit vier gleich bewerteten Spielern ist **Platz 1 etwa +20** und **der letzte Platz etwa -13** (in deinen ersten 20 Spielen sind die Zahlen größer, damit eine neue Wertung schnell ihren Platz findet; mit `~` markiert, bis du 5 Spiele gespielt hast). Ein Sieg gegen drei Bots mit 1700 ist etwa +30 wert, gegen drei Bots mit 1300 etwa +10.
+
+### Schwerer spielen, mehr Punkte
+
+Die Schwierigkeit des Spiels ist der **Einsatz**: die Punkte, die du **gewinnst**, werden multipliziert.
+
+| Schwierigkeit | Punkte, die du gewinnst | Was du verlierst |
+| ------------- | ----------------------- | ---------------- |
+| Leicht        | x 0,7                   | dasselbe         |
+| Normal        | x 1                     | dasselbe         |
+| Schwer        | x 1,5                   | dasselbe         |
+
+Derselbe Sieg an einem gleich starken Tisch ist also etwa +14 auf Leicht, +20 auf Normal und +30 auf Schwer. Ein schlechtes Spiel kostet überall dasselbe - du verlierst nie mehr, weil du dich an Schwer wagst. Auch der Charakter zählt: manche sind schwerer als andere (das wissen wir aus tausenden simulierten Spielen), derselbe Platz bringt mit einem schweren Charakter etwas mehr und mit einem leichten etwas weniger.
+
+### Die Bots
+
+Jeder Bot ist eine **Strategie** auf einer **Spielstärke** (Meister, stark, gelegentlich, Anfänger) - der Meister spielt seine Strategie sauber, die anderen verpatzen mal etwas. Jeder hat von Anfang an seine eigene Wertung aus einem Turnier, das die Bots gegeneinander gespielt haben, und sie bewegt sich mit seinen Spielen wie deine. Darum steht ein Anfänger-Bot niedrig und die besten Meister bei etwa 1700.
+
+### Die Bestenliste
+
+Eine Liste, beste Wertung zuerst. Ein Mensch steht erst darauf, wenn er **Mich in der Bestenliste zeigen** einschaltet; ein Bot erscheint, sobald er ein gewertetes Spiel gespielt hat. Die Wertung fällt nie unter 100.
+
 ## Regeln und Einstellungen
 
 Die Regeln des Spiels werden am Anfang gewählt und können im Spiel nicht geändert werden:

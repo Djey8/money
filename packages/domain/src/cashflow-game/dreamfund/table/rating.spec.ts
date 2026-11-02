@@ -1,5 +1,6 @@
 import {
   botStartRating,
+  DIFFICULTY_STAKE,
   characterStrength,
   countsForRating,
   expected,
@@ -137,5 +138,31 @@ describe('the rating of the Dreamfund board', () => {
     expect(countsForRating({ ...base, ranked: false, humans: 0, tournament: true }).counted).toBe(
       true,
     );
+  });
+
+  it('pays more for a win on a harder game, and charges the same for a loss', () => {
+    const duel = (level: 'easy' | 'medium' | 'hard') =>
+      rateTable([seat({ playerId: 'a', rank: 1 }), seat({ playerId: 'b', rank: 2 })], level);
+    const gain = (level: 'easy' | 'medium' | 'hard') => duel(level)[0].delta;
+    const loss = (level: 'easy' | 'medium' | 'hard') => duel(level)[1].delta;
+    expect(gain('hard')).toBeCloseTo(gain('medium') * DIFFICULTY_STAKE.hard, 1);
+    expect(gain('easy')).toBeCloseTo(gain('medium') * DIFFICULTY_STAKE.easy, 1);
+    expect(gain('hard')).toBeGreaterThan(gain('medium'));
+    expect(gain('easy')).toBeLessThan(gain('medium'));
+    expect(loss('hard')).toBeCloseTo(loss('easy'), 5);
+    // a tournament of bots measures strength: no stake
+    const plain = rateTable(
+      [seat({ playerId: 'a', rank: 1 }), seat({ playerId: 'b', rank: 2 })],
+      'hard',
+      { stake: false },
+    );
+    expect(plain[0].delta).toBeCloseTo(gain('medium'), 1);
+  });
+
+  it('starts a bot at the average of what the tournaments found at the three difficulties', () => {
+    const levels = (['easy', 'medium', 'hard'] as const).map((level) =>
+      botStartRating('expert', level),
+    );
+    expect(botStartRating('expert')).toBe(Math.round(levels.reduce((a, b) => a + b, 0) / 3));
   });
 });

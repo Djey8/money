@@ -27,6 +27,8 @@ export interface DreamTexts {
   easy: string;
   medium: string;
   hard: string;
+  howPoints: string;
+  boardHint: string;
   easyHint: string;
   mediumHint: string;
   hardHint: string;
@@ -209,10 +211,15 @@ const EN: DreamTexts = {
   easy: 'Easy',
   medium: 'Normal',
   hard: 'Hard',
+  howPoints: 'How the points are worked out',
+  boardHint:
+    'Only ranked games count: finished, with a person at the table and at least 8 rounds (or a winner). Beating strong players earns more; a win on Hard earns 1.5 x the points, on Easy 0.7 x.',
   easyHint:
-    'A good place to start, also for children: round numbers, fewer lines in the budget, friendlier cards.',
-  mediumHint: 'For everyone: a realistic budget and cards with real prices.',
-  hardHint: 'A real challenge: everything is tight, mistakes hurt, it takes a strategy and luck.',
+    'A good place to start, also for children: round numbers, fewer lines in the budget, friendlier cards. Ranked wins earn 0.7 x the points.',
+  mediumHint:
+    'For everyone: a realistic budget and cards with real prices. Ranked wins earn the normal points.',
+  hardHint:
+    'A real challenge: everything is tight, mistakes hurt, it takes a strategy and luck. Ranked wins earn 1.5 x the points.',
   map: 'The map',
   shape: 'Shape',
   size: 'Size',
@@ -394,11 +401,15 @@ const DE: Partial<DreamTexts> = {
   easy: 'Leicht',
   medium: 'Normal',
   hard: 'Schwer',
+  howPoints: 'So werden die Punkte berechnet',
+  boardHint:
+    'Nur gewertete Spiele zählen: beendet, mit einem Menschen am Tisch und mindestens 8 Runden (oder einem Sieger). Starke Gegner zu schlagen bringt mehr; ein Sieg auf Schwer das 1,5-fache der Punkte, auf Leicht das 0,7-fache.',
   easyHint:
-    'Ein guter Einstieg, auch für Kinder: runde Zahlen, weniger Zeilen im Budget, freundlichere Karten.',
-  mediumHint: 'Für alle: ein realistisches Budget und Karten mit echten Preisen.',
+    'Ein guter Einstieg, auch für Kinder: runde Zahlen, weniger Zeilen im Budget, freundlichere Karten. Gewertete Siege bringen das 0,7-fache der Punkte.',
+  mediumHint:
+    'Für alle: ein realistisches Budget und Karten mit echten Preisen. Gewertete Siege bringen die normalen Punkte.',
   hardHint:
-    'Eine echte Herausforderung: alles ist knapp, Fehler tun weh, es braucht Strategie und Glück.',
+    'Eine echte Herausforderung: alles ist knapp, Fehler tun weh, es braucht Strategie und Glück. Gewertete Siege bringen das 1,5-fache der Punkte.',
   map: 'Die Karte',
   shape: 'Form',
   size: 'Größe',

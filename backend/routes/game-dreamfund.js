@@ -32,14 +32,11 @@ const limiter = rateLimit({
 const guard = (level) => [requireScope(`game:${level}`), requireGameAccount, limiter];
 const invalid = (res, detail) =>
   problem(res, 400, 'validation_invalid', 'Invalid leaderboard request', detail);
-const LEVELS = ['easy', 'medium', 'hard'];
 
-/** `GET /game/dreamfund/leaderboard` - the board at a difficulty, best rating first. */
+/** `GET /game/dreamfund/leaderboard` - the board (one rating for everybody), best rating first. */
 router.get('/leaderboard', ...guard('r'), async (req, res, next) => {
   try {
-    const { difficulty = 'medium', type, minGames, limit, after } = req.query;
-    if (!LEVELS.includes(difficulty))
-      return invalid(res, "difficulty must be 'easy', 'medium' or 'hard'.");
+    const { type, minGames, limit, after } = req.query;
     if (type !== undefined && !['all', 'human', 'bot'].includes(type)) {
       return invalid(res, "type must be 'all', 'human' or 'bot'.");
     }
@@ -52,7 +49,6 @@ router.get('/leaderboard', ...guard('r'), async (req, res, next) => {
     }
     if (!Number.isInteger(skip) || skip < 0) return invalid(res, 'after must be a position.');
     const rows = await dreamStats().board({
-      difficulty,
       type: type === 'all' ? undefined : type,
       minGames: min,
       limit: size + 1,
@@ -60,7 +56,6 @@ router.get('/leaderboard', ...guard('r'), async (req, res, next) => {
     });
     const more = rows.length > size;
     return res.json({
-      difficulty,
       items: rows.slice(0, size),
       next: more ? String(skip + size) : null,
     });
@@ -69,7 +64,7 @@ router.get('/leaderboard', ...guard('r'), async (req, res, next) => {
   }
 });
 
-/** `GET /game/dreamfund/players/me` - your own profile with a rating for each difficulty. */
+/** `GET /game/dreamfund/players/me` - your own profile with your rating and your last results. */
 router.get('/players/me', ...guard('r'), async (req, res, next) => {
   try {
     return res.json(await dreamStats().me(req.userId, await nicknameOf(req.userId)));
@@ -90,7 +85,7 @@ router.put('/players/me', ...guard('w'), async (req, res, next) => {
   }
 });
 
-/** `GET /game/dreamfund/players/{playerId}` - a player of the board with every difficulty and the last results. */
+/** `GET /game/dreamfund/players/{playerId}` - a player of the board with the last results. */
 router.get('/players/:playerId', ...guard('r'), async (req, res, next) => {
   try {
     const found = await dreamStats().player(req.params.playerId);

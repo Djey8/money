@@ -443,29 +443,6 @@ function savedFilters(): TableFilters {
         gap: 14px;
       }
       /* the places to go: three equal buttons in one row */
-      .tl-games {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 4px;
-        padding: 4px;
-        border: 1px solid var(--color-border, #d9dde3);
-        border-radius: 12px;
-        background: var(--color-surface, #fff);
-      }
-      .tl-games button {
-        min-height: 2.4rem;
-        border: 0;
-        border-radius: 9px;
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .tl-games--on {
-        background: var(--color-primary, #2a7de1) !important;
-        color: #fff !important;
-      }
       .tl-nav {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1131,15 +1108,15 @@ export class TablesLobbyComponent implements OnInit {
     });
     // my rating and picture: nice to show, never in the way
     if (this.game === 'dreamfund') {
-      // the Dreamfund has a rating for each difficulty: the lobby shows the middle one
+      // the Dreamfund has one rating, like the classic game
       this.dreamApi.me().subscribe({
         next: (me) => {
           this.me = {
             playerId: me.pictureId ?? me.playerId,
             ...(me.pictureVersion ? { pictureVersion: me.pictureVersion } : {}),
             name: me.name,
-            rating: me.ratings.medium.rating,
-            provisional: me.ratings.medium.provisional,
+            rating: me.rating.rating,
+            provisional: me.rating.provisional,
           } as GamePlayer;
           this.cdr.markForCheck();
         },
