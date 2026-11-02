@@ -206,6 +206,26 @@ describe('the Dreamfund table: play', () => {
     expect(t.players.find((p) => p.id === first)!.life!.turns).toBeGreaterThanOrEqual(1);
   });
 
+  it('lets a player choose the insurances: at once before the first roll, with the next Payday after it', () => {
+    const t = started();
+    const who = t.activePlayerId!;
+    const mine = (current: DreamTable) =>
+      DreamPlayer.restore(current.players.find((p) => p.id === who)!.life!, () => 0.5, {
+        sharedMarkets: true,
+      });
+    expect(mine(t).state.insurance?.active).toContain('household');
+    const dropped = run(t, who, { type: 'set_insurance', kind: 'household', on: false });
+    expect(mine(dropped).state.insurance?.active).not.toContain('household');
+    expect(() => run(t, who, { type: 'set_insurance', kind: 'unknown', on: true })).toThrow(
+      /no such insurance/,
+    );
+    // after a roll the change is only written down
+    const rolled = run(dropped, who, { type: 'roll' });
+    const later = run(rolled, who, { type: 'set_insurance', kind: 'household', on: true });
+    expect(mine(later).state.insurance?.pending).toEqual([{ kind: 'household', on: true }]);
+    expect(mine(later).state.insurance?.active).not.toContain('household');
+  });
+
   it('refuses a move that is not possible, and changes nothing', () => {
     const t = started();
     const who = t.activePlayerId!;

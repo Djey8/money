@@ -1133,18 +1133,48 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The insurances of the running game, for the character view (rebuilt only when something changes, so the rows are not drawn again). */
   private insuranceCache: {
     key: string;
-    rows: { kind: string; premium: number; held: boolean; heldNext: boolean }[];
+    rows: { kind: string; premium: number; held: boolean; heldNext: boolean; fresh?: boolean }[];
   } | null = null;
-  get insuranceRows(): { kind: string; premium: number; held: boolean; heldNext: boolean }[] {
+  get insuranceRows(): {
+    kind: string;
+    premium: number;
+    held: boolean;
+    heldNext: boolean;
+    fresh?: boolean;
+  }[] {
     const rows = this.cashflowGameService.insurances.map((offer) => ({
       kind: offer.kind,
       premium: this.cashflowGameService.insurancePremium(offer),
       held: offer.held,
       heldNext: offer.heldNext,
+      fresh: offer.fresh,
     }));
     const key = JSON.stringify(rows);
     if (this.insuranceCache?.key !== key) this.insuranceCache = { key, rows };
     return this.insuranceCache.rows;
+  }
+
+  /** The insurances are asked once at the start of a table game, before the first roll: they count at once then. */
+  insuranceAsked = false;
+
+  get askInsurance(): boolean {
+    const remote = RemoteGameHook.current;
+    return (
+      !!remote?.dreamfund &&
+      !this.insuranceAsked &&
+      (this.appState.cashflowGame.turn?.count ?? 1) === 0 &&
+      this.cashflowGameService.insurances.length > 0
+    );
+  }
+
+  /** Opens the insurance list of the character; the question is answered with it. */
+  chooseInsurance(): void {
+    this.insuranceAsked = true;
+    this.goToInsurance();
+  }
+
+  keepInsurance(): void {
+    this.insuranceAsked = true;
   }
 
   toggleInsurance(change: { kind: string; on: boolean }): void {
@@ -1336,7 +1366,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The insurances of the character as chosen for the start: all of them, unless one was left out. */
   startInsurances: string[] | undefined = undefined;
 
-  get setupInsuranceRows(): { kind: string; premium: number; held: boolean; heldNext: boolean }[] {
+  get setupInsuranceRows(): {
+    kind: string;
+    premium: number;
+    held: boolean;
+    heldNext: boolean;
+    fresh?: boolean;
+  }[] {
     const profession = this.selectedProfession;
     if (!this.characterChosen || !profession) return [];
     const rows = profession.expenses
@@ -1357,7 +1393,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   private setupInsuranceCache: {
     key: string;
-    rows: { kind: string; premium: number; held: boolean; heldNext: boolean }[];
+    rows: { kind: string; premium: number; held: boolean; heldNext: boolean; fresh?: boolean }[];
   } | null = null;
 
   /** Hop in or out of an insurance before the game starts: the premium and the cover follow from the first Payday. */
@@ -1395,12 +1431,12 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   private traitChipsCache: {
     key: string;
-    chips: { key: string; icon: string; text: string; detail?: string }[];
+    chips: { key: string; icon: string; text: string; detail?: string; raw?: string }[];
   } | null = null;
 
   /** The traits of the character as chips: what has happened to them, and their step on the career ladder. */
-  get traitChips(): { key: string; icon: string; text: string; detail?: string }[] {
-    const chips: { key: string; icon: string; text: string; detail?: string }[] = [
+  get traitChips(): { key: string; icon: string; text: string; detail?: string; raw?: string }[] {
+    const chips: { key: string; icon: string; text: string; detail?: string; raw?: string }[] = [
       ...this.lifeBadges,
     ];
     const career = this.careerBadge;
@@ -1425,6 +1461,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     value: string;
     text: string;
     extra?: string;
+    more?: string;
   } | null {
     const chip = this.traitChips.find((candidate) => candidate.key === this.openTrait);
     if (!chip) return null;
@@ -1445,11 +1482,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         extra = `${this.translate.instant('CashflowGame.career.paydaysIn', { now: next.paydaysIn, min: next.minPaydays })} · ${this.translate.instant('CashflowGame.career.needs', { roll: next.rollFrom })}`;
       }
     }
+    // what this value in particular does (Single, Own flat, Employed...): the card tells it after the general words
+    const valueKey = chip.raw ? `CashflowGame.life.valueInfo.${chip.raw}` : '';
+    const more = valueKey ? t(valueKey) : '';
     return {
       icon: chip.icon,
       title: t(`CashflowGame.life.badge.${chip.key}`),
       value: chip.detail ?? chip.text,
       text: t(`CashflowGame.life.info.${chip.key}`),
+      ...(more && more !== valueKey ? { more } : {}),
       ...(extra ? { extra } : {}),
     };
   }
@@ -1474,7 +1515,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   private get traitLife() {
     const life = this.appState.cashflowGame.life;
     if (life) return life;
-    return this.characterChosen && this.selectedProfession?.profile ? INITIAL_LIFE_STATE : null;
+    return this.characterChosen && this.selectedProfession?.profile
+      ? { ...INITIAL_LIFE_STATE, ...this.selectedProfession.lifeStart }
+      : null;
   }
 
   /** The insurances held: those of the running game, or those chosen for the start. */
@@ -1485,19 +1528,26 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.setupInsuranceRows.filter((row) => row.held).length;
   }
 
-  get lifeBadges(): { icon: string; text: string; key: string }[] {
+  get lifeBadges(): { icon: string; text: string; key: string; raw?: string }[] {
     const life = this.traitLife;
     if (!life) return [];
     const v = (value: string) => this.translate.instant(`CashflowGame.life.value.${value}`);
-    const badges: { icon: string; text: string; key: string }[] = [
-      { key: 'relationship', icon: '❤️', text: v(life.relationship) },
-      { key: 'home', icon: '🏠', text: v(life.home) },
-      { key: 'location', icon: '📍', text: v(life.location) },
-      { key: 'employment', icon: '💼', text: v(life.employment) },
+    const badges: { icon: string; text: string; key: string; raw?: string }[] = [
+      { key: 'relationship', icon: '❤️', text: v(life.relationship), raw: life.relationship },
+      { key: 'home', icon: '🏠', text: v(life.home), raw: life.home },
+      { key: 'location', icon: '📍', text: v(life.location), raw: life.location },
+      { key: 'employment', icon: '💼', text: v(life.employment), raw: life.employment },
     ];
+    if (life.education)
+      badges.push({ key: 'education', icon: '📚', text: v('studying'), raw: 'studying' });
     if (life.kids > 0) badges.splice(1, 0, { key: 'kids', icon: '👶', text: `× ${life.kids}` });
     if (life.pet !== 'none')
-      badges.push({ key: 'pet', icon: life.pet === 'cat' ? '🐱' : '🐶', text: v(life.pet) });
+      badges.push({
+        key: 'pet',
+        icon: life.pet === 'cat' ? '🐱' : '🐶',
+        text: v(life.pet),
+        raw: life.pet,
+      });
     if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('yes') });
     const held = this.insurancesHeld;
     if (held > 0) badges.push({ key: 'insurance', icon: '🛡️', text: `× ${held}` });

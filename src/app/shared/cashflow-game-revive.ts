@@ -55,6 +55,7 @@ const NUMBER_FIELDS = new Set([
 const BOOLEAN_FIELDS = new Set([
   'on',
   'car',
+  'education',
   'rerolled',
   'boost',
   'declined',

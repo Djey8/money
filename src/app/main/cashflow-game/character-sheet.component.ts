@@ -121,6 +121,9 @@ type SheetId = 'cashflow' | 'income' | 'balance';
     <section class="cs-group cs-group--insurance" [style.order]="2" *ngIf="insurances.length">
       <h4>{{ 'CashflowGame.insurance.title' | translate }}</h4>
       <p class="cs-story">{{ 'CashflowGame.insurance.intro' | translate }}</p>
+      <p class="cs-story cs-insurance-new" *ngIf="hasFresh" role="status">
+        🚗 {{ 'CashflowGame.insurance.fresh' | translate }}
+      </p>
       <ul class="cs-insurance">
         <li *ngFor="let row of insurances; trackBy: trackKind">
           <span class="cs-insurance-text">
@@ -414,12 +417,21 @@ export class CharacterSheetComponent {
   /** The emergency reserve project was asked for. */
   @Output() reserveOpen = new EventEmitter<void>();
   /** The insurances of a running game, with what waits for the next Payday. */
-  @Input() insurances: { kind: string; premium: number; held: boolean; heldNext: boolean }[] = [];
+  @Input() insurances: {
+    kind: string;
+    premium: number;
+    held: boolean;
+    heldNext: boolean;
+    fresh?: boolean;
+  }[] = [];
   /** What the character holds of the reserve against three months of expenses now (a running game). */
   @Input() reserveStatus: { held: number; target: number; ok: boolean } | null = null;
   /** What runs on the account now (a running game). */
   @Input() effects: ActiveEffect[] = [];
   @Output() effectProject = new EventEmitter<string>();
+  get hasFresh(): boolean {
+    return this.insurances.some((row) => row.fresh);
+  }
   @Output() insuranceToggle = new EventEmitter<{ kind: string; on: boolean }>();
   trackKind = (_index: number, row: { kind: string }): string => row.kind;
 

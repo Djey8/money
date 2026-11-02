@@ -22,6 +22,8 @@ export interface LifeState {
   home: HomeKind;
   location: LocationKind;
   employment: EmploymentKind;
+  /** In training (a dual student): the study ends when the career reaches the stage that says so. Absent: not studying. */
+  education?: boolean;
 }
 
 export const INITIAL_LIFE_STATE: LifeState = {
@@ -37,6 +39,11 @@ export const INITIAL_LIFE_STATE: LifeState = {
 /** The life state a card may ask for: a value, or any of several. */
 export type LifeRequirement = {
   [K in keyof LifeState]?: LifeState[K] | LifeState[K][];
+} & {
+  /** At least this many children (`kids: 1` would ask for exactly one). */
+  kidsAtLeast?: number;
+  /** Any relationship but single. */
+  partner?: boolean;
 };
 
 /** What a card changes of the life state (`kidsDelta`: children added). */
@@ -128,7 +135,12 @@ export interface LifeDraw {
 
 export function meetsRequirement(requires: LifeRequirement | undefined, life: LifeState): boolean {
   if (!requires) return true;
-  return (Object.keys(requires) as (keyof LifeState)[]).every((key) => {
+  if (requires.kidsAtLeast !== undefined && life.kids < requires.kidsAtLeast) return false;
+  if (requires.partner !== undefined && (life.relationship !== 'single') !== requires.partner) {
+    return false;
+  }
+  return (Object.keys(requires) as (keyof LifeState | 'kidsAtLeast' | 'partner')[]).every((key) => {
+    if (key === 'kidsAtLeast' || key === 'partner') return true;
     const wanted = requires[key];
     const has = life[key];
     return Array.isArray(wanted)

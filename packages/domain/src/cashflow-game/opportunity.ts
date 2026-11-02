@@ -5,7 +5,7 @@ import {
   type GameEffects,
 } from './effects';
 import { emptyEmergencyDeck, type EmergencyDeckState, type EmergencyLang } from './emergency-deck';
-import type { LifeState } from './life-deck';
+import { meetsRequirement, type LifeState } from './life-deck';
 import type { GameBooks } from './books';
 import {
   OPPORTUNITY_PILES,
@@ -130,6 +130,7 @@ export function canOffer(
 ): boolean {
   const need = card.requires;
   if (need?.home && context.life?.home !== need.home) return false;
+  if (need?.life && (!context.life || !meetsRequirement(need.life, context.life))) return false;
   if (need?.careerStage !== undefined && context.careerStage < need.careerStage) return false;
   if (need?.debtMinor !== undefined && context.debtMinor < need.debtMinor) return false;
   if (need?.owns) {

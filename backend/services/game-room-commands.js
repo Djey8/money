@@ -127,6 +127,12 @@ const DREAMFUND_COMMANDS = {
     check: (c) => amount(c.amountMinor, 'amountMinor'),
     build: (c) => ({ type: 'repay_bank_loan', amountMinor: c.amountMinor }),
   },
+  set_insurance: {
+    fields: ['kind', 'on'],
+    check: (c) =>
+      text(c.kind, 'kind') || (typeof c.on === 'boolean' ? null : 'on must be true or false.'),
+    build: (c) => ({ type: 'set_insurance', kind: c.kind, on: c.on }),
+  },
   set_plan: {
     fields: ['kind', 'id', 'perMinor'],
     check: (c) =>

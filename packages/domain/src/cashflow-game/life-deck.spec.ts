@@ -79,9 +79,14 @@ describe('the Life stack (temp_cards v0.3)', () => {
       expect(c.title.en && c.title.de && c.story.en && c.story.de).toBeTruthy();
   });
 
-  it('starts a custom character with a life: single, no car, no pet, employed', () => {
+  it('starts the dual student in a shared flat, employed and in education, with the car he is paying off', () => {
     const books = start();
-    expect(books.state.life).toEqual(INITIAL_LIFE_STATE);
+    expect(books.state.life).toEqual({
+      ...INITIAL_LIFE_STATE,
+      home: 'shared_flat',
+      education: true,
+      car: true,
+    });
     expect(books.state.livingStandard).toBe(1);
     expect(netMonthlyMinor(books.state, books.subscriptions)).toBe(283300 - 84500);
   });

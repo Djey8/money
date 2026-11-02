@@ -50,7 +50,13 @@ describe('CashflowGameService: life, career and dreams', () => {
 
   it('a character of the custom edition starts with a life, a career and no dreams', () => {
     const game = state().cashflowGame;
-    expect(game.life).toMatchObject({ relationship: 'single', kids: 0, car: false });
+    expect(game.life).toMatchObject({
+      relationship: 'single',
+      kids: 0,
+      car: true,
+      home: 'shared_flat',
+      education: true,
+    });
     expect(game.career).toMatchObject({ stage: 'C1' });
     expect(game.dreams).toEqual({ open: [], lived: [], bonusPoints: 0 });
     expect(game.lineTitles?.['incomeTax']).toBeTruthy();

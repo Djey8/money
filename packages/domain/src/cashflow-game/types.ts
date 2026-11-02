@@ -145,6 +145,10 @@ export interface CashflowProfession {
   starterKit: CashflowStarterKit;
   /** Custom editions: who this is, what matters to them and what they dream of. The classic cards have none. */
   profile?: CashflowProfessionProfile;
+  /** Where the life starts, as far as it differs from a single person with a flat of their own (JFK, 2026-11-02): home, partner, children, car, study. */
+  lifeStart?: Partial<LifeState>;
+  /** What this character's insurances cost compared with the Dual Student's (1): the premiums at the start and for a car added later. Absent: 1. */
+  insuranceFactor?: number;
 }
 
 export interface CashflowLoanRule {
@@ -513,6 +517,8 @@ export interface CashflowGameState {
     active: string[];
     premiums: Record<string, string>;
     pending: { kind: string; on: boolean }[];
+    /** Insurances newly on offer (a car was bought): the player has not answered yet. */
+    fresh?: string[];
   };
   /** The life of the character (JFK, 2026-10-26): partner, children, pet, car, home, city, job - the badges of the profile. */
   life?: LifeState;

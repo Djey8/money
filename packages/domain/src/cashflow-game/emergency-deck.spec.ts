@@ -16,6 +16,7 @@ import {
   insuranceOffers,
   queueInsuranceChange,
 } from './insurance';
+import { INITIAL_LIFE_STATE, type LifeState } from './life-deck';
 import { seededRng } from './rng';
 import { initialCashflowGameState } from './types';
 
@@ -28,9 +29,9 @@ const insured: EmergencyContext = {
 const bare: EmergencyContext = { insurances: [], traits: [], openEmergencies: 0 };
 
 describe('the Emergency stack (temp_cards v0.2)', () => {
-  it('has the 45 cards, each once, in English and German', () => {
-    expect(EMERGENCY_CARDS).toHaveLength(45);
-    expect(new Set(EMERGENCY_CARDS.map((c) => c.id)).size).toBe(45);
+  it('has the 50 cards, each once, in English and German', () => {
+    expect(EMERGENCY_CARDS).toHaveLength(50);
+    expect(new Set(EMERGENCY_CARDS.map((c) => c.id)).size).toBe(50);
     for (const c of EMERGENCY_CARDS) {
       expect(c.title.en && c.title.de && c.story.en && c.story.de).toBeTruthy();
       expect(c.actions.length).toBeGreaterThan(0);
@@ -164,12 +165,44 @@ describe('drawing an emergency', () => {
     const rng = seededRng(3);
     let deck = emptyEmergencyDeck();
     const kinds = new Set<string>();
-    for (let i = 0; i < 44; i += 1) {
+    for (let i = 0; i < 50; i += 1) {
       const draw = drawEmergencyCard(EMERGENCY_CARDS, deck, ['car', 'pet'], rng);
       kinds.add(draw.card.requires ?? 'none');
       deck = draw.deck;
     }
     expect(kinds).toEqual(new Set(['none', 'car', 'pet']));
+  });
+
+  it('a card bound to the life only comes to a life it fits: children, a partner, a study, a flat', () => {
+    const single: LifeState = { ...INITIAL_LIFE_STATE, education: true };
+    const family: LifeState = {
+      ...INITIAL_LIFE_STATE,
+      relationship: 'married',
+      kids: 2,
+      home: 'own_flat',
+    };
+    const drawn = (life: LifeState, seed: number) => {
+      let deck = emptyEmergencyDeck();
+      const ids = new Set<string>();
+      const rng = seededRng(seed);
+      for (let i = 0; i < 50; i += 1) {
+        const draw = drawEmergencyCard(EMERGENCY_CARDS, deck, ['car', 'pet'], rng, life);
+        ids.add(draw.card.id);
+        deck = draw.deck;
+      }
+      return ids;
+    };
+    const alone = drawn(single, 7);
+    for (const id of ['E46', 'E47', 'E48', 'E50']) expect(alone.has(id)).toBe(false);
+    expect(alone.has('E49') && alone.has('E17')).toBe(true);
+    const parents = drawn(family, 7);
+    expect(parents.has('E46') || parents.has('E47') || parents.has('E48')).toBe(true);
+    expect(parents.has('E50')).toBe(true);
+    // a study is over: no semester fee, no laptop before the exams
+    expect(parents.has('E49') || parents.has('E17')).toBe(false);
+    // living with the parents there is no flat to burn down
+    const home = drawn({ ...single, education: false, home: 'with_parents' }, 7);
+    expect(['E26', 'E27', 'E29', 'E30'].some((id) => home.has(id))).toBe(false);
   });
 
   it('tells which cards were lucky on the way', () => {

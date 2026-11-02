@@ -49,6 +49,8 @@ export interface CareerStage {
   bonus?: { percent: number; netMinor: number; everyPaydays: number };
   livingStandard: number;
   companyCar?: boolean;
+  /** The study ends with this stage (a dual student's first full-time contract): the life state is not 'in education' any more. */
+  endsEducation?: boolean;
   next: CareerNext | null;
   links: { label: Localized; url: string }[];
 }
@@ -263,6 +265,14 @@ export function applyCareerStage(
       ? {
           life: { ...state.life, car: true },
           possessions: [...(state.possessions ?? []).filter((p) => p !== 'car'), 'car'],
+        }
+      : {}),
+    ...(stage.endsEducation && state.life
+      ? {
+          life: {
+            ...(stage.companyCar ? { ...state.life, car: true } : state.life),
+            education: false,
+          },
         }
       : {}),
   };

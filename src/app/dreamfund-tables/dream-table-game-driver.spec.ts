@@ -57,6 +57,12 @@ describe('DreamTableGameDriver', () => {
       { type: 'harvest_ladder', holding: 'ETF', action: 'cash' },
       { type: 'skip' },
     ]);
+    await driver.dreamMove({ decision: 'setInsurance', kind: 'car_full', on: true });
+    expect(played[played.length - 1]).toEqual({
+      type: 'set_insurance',
+      kind: 'car_full',
+      on: true,
+    });
     expect((await driver.dreamMove({ decision: 'nonsense' })).ok).toBe(false);
   });
 });

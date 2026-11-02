@@ -3442,6 +3442,35 @@
   line-height: 1.4;
 }
 
+.cf-insurance-ask {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-primary, #1976d2);
+  border-radius: 8px;
+  background: var(--color-primary-light, #e3f0fd);
+}
+
+.cf-insurance-ask p {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+}
+
+.cf-insurance-ask-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cf-trait-more {
+  margin-top: 4px !important;
+}
+
+.cf-traits-hint {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.75;
+}
+
 .cf-trait-extra {
   margin-top: 4px !important;
   font-weight: 600;

@@ -55,6 +55,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
       },
     ],
     homeAmount: 650,
+    lifeStart: { car: true },
+    insuranceFactor: 1.35,
     extras: [{ key: 'car', title: 'Auto & Mobilität', amount: 280 }],
     dream: {
       title: {
@@ -243,6 +245,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
       },
     ],
     homeAmount: 820,
+    lifeStart: { kids: 1, car: true },
+    insuranceFactor: 0.85,
     extras: [
       { key: 'childcare', title: 'Kita & Kind', amount: 360 },
       { key: 'car', title: 'Auto & Mobilität', amount: 190 },
@@ -422,6 +426,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
       },
     ],
     homeAmount: 1050,
+    lifeStart: { car: true },
+    insuranceFactor: 1.1,
     extras: [{ key: 'car', title: 'Auto & Mobilität', amount: 230 }],
     dream: {
       title: { en: 'A year under sail', de: 'Ein Jahr unter Segeln' },
@@ -605,6 +611,7 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
       },
     ],
     homeAmount: 1050,
+    insuranceFactor: 1.25,
     extras: [{ key: 'workTools', title: 'Arbeitsmittel & Software', amount: 220 }],
     dream: {
       title: { en: 'Studio and gallery in a loft', de: 'Atelier und Galerie im Loft' },
@@ -781,6 +788,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     homeKey: 'mortgageRent',
     homeTitle: 'Eigenheim-Hypothek',
     homeAmount: 1650,
+    lifeStart: { relationship: 'married', kids: 2, car: true },
+    insuranceFactor: 1.5,
     extras: [
       { key: 'childcare', title: 'Kinder & Betreuung', amount: 600 },
       { key: 'car', title: 'Auto & Mobilität', amount: 480 },
@@ -954,6 +963,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     homeKey: 'mortgageRent',
     homeTitle: 'Eigenheim-Hypothek',
     homeAmount: 1900,
+    lifeStart: { relationship: 'married', kids: 1, car: true },
+    insuranceFactor: 1.45,
     extras: [
       { key: 'childcare', title: 'Kind', amount: 380 },
       { key: 'car', title: 'Auto & Mobilität', amount: 520 },
@@ -1138,6 +1149,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     homeKey: 'mortgageRent',
     homeTitle: 'Eigenheim-Hypothek',
     homeAmount: 2400,
+    lifeStart: { relationship: 'married', kids: 2, car: true },
+    insuranceFactor: 1.7,
     extras: [
       { key: 'childcare', title: 'Kinder', amount: 520 },
       { key: 'car', title: 'Auto & Mobilität', amount: 650 },
@@ -1312,6 +1325,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
     homeKey: 'mortgageRent',
     homeTitle: 'Eigenheim-Hypothek',
     homeAmount: 1050,
+    lifeStart: { car: true },
+    insuranceFactor: 1.3,
     extras: [{ key: 'car', title: 'Auto & Mobilität', amount: 400 }],
     dream: {
       title: { en: 'A small vineyard', de: 'Ein kleines Weingut' },
@@ -1479,6 +1494,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
       },
     ],
     homeAmount: 640,
+    lifeStart: { relationship: 'married', car: true },
+    insuranceFactor: 0.9,
     extras: [{ key: 'car', title: 'Auto & Mobilität', amount: 220 }],
     dream: {
       title: { en: 'A cabin by the lake', de: 'Eine Hütte am See' },

@@ -49,7 +49,7 @@ import {
   valueOf,
   type HarvestLadderOffer,
 } from '../harvest';
-import { activeInsurances } from '../insurance';
+import { activeInsurances, chooseInsurance, offerCarInsurance } from '../insurance';
 import {
   drawLifeCard,
   endableLines,
@@ -255,6 +255,7 @@ export class DreamPlayer {
         groupName: (group: string) => group,
       },
     };
+    this.books = this.withCarOffer(this.books);
     const project = profession.profile?.texts.en.dream.project;
     this.dreamTargetMinor =
       project?.buckets.reduce((sum, bucket) => sum + bucket.targetMinor, 0) ?? 0;
@@ -330,11 +331,25 @@ export class DreamPlayer {
   }
 
   setState(state: CashflowGameState): void {
-    this.books = { ...this.books, state };
+    this.books = this.withCarOffer({ ...this.books, state });
   }
 
   apply(effects: ReturnType<typeof emptyEffects>): void {
-    this.books = applyEffectsToBooks(this.books, effects);
+    this.books = this.withCarOffer(applyEffectsToBooks(this.books, effects));
+  }
+
+  /** A player with a car is offered the car insurances (the start, a card, a company car): the lines wait, unheld, until the player hops in. */
+  private withCarOffer(books: GameBooks): GameBooks {
+    return offerCarInsurance(books, {
+      priceFactor: this.profession.priceFactor,
+      insuranceFactor: this.profession.insuranceFactor,
+      date: TODAY,
+    });
+  }
+
+  /** Hop in or out of an insurance: at once while no die has been rolled, else with the next Payday. */
+  setInsurance(kind: string, on: boolean): void {
+    this.setState(chooseInsurance(this.state, kind, on, this.turns === 0));
   }
 
   add(account: string, amountMinor: number, category: string): void {
@@ -614,6 +629,7 @@ export class DreamPlayer {
       this.state.emergencyDeck ?? emptyEmergencyDeck(),
       this.state.possessions ?? [],
       this.rng,
+      this.state.life,
     );
     this.setState({ ...this.state, emergencyDeck: draw.deck });
     const context = this.emergencyContext();

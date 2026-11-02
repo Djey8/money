@@ -42,6 +42,7 @@ export const DUAL_STUDENT_CAREER: CareerTrack = {
     {
       id: 'C2',
       stage: 2,
+      endsEducation: true,
       title: {
         en: 'Junior Data Analyst',
         de: 'Junior Data Analyst',

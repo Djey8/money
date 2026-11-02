@@ -1944,7 +1944,7 @@ export class CashflowGameService {
           skipped: [] as string[],
           deck: { ...deck, seen: [...deck.seen.filter((id) => id !== named.id), named.id] },
         }
-      : drawEmergencyCard(cards, deck, game.possessions ?? [], this.rng);
+      : drawEmergencyCard(cards, deck, game.possessions ?? [], this.rng, game.life);
     this.recordTileCard('emergency', draw.card);
     state.cashflowGame = {
       ...game,
@@ -2027,6 +2027,15 @@ export class CashflowGameService {
 
   /** Hop in or hop out of an insurance: it takes effect with the next Payday. */
   setInsurance(kind: string, on: boolean, callbacks: CashflowGameCallbacks): void {
+    const remote = RemoteGameHook.current;
+    if (remote?.dreamfund && remote.dreamMove) {
+      // a table keeps the insurances on its server: the answer comes back with the table's next update
+      void remote.dreamMove({ decision: 'setInsurance', kind, on }).then((outcome) => {
+        if (outcome.ok) callbacks.onSuccess();
+        else callbacks.onError(outcome.message ?? 'The insurance could not be changed.');
+      });
+      return;
+    }
     const state = AppStateService.instance;
     const next = queueInsuranceChange(state.cashflowGame, kind, on);
     if (next === state.cashflowGame) {

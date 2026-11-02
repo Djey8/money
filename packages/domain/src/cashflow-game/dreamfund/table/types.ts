@@ -262,6 +262,8 @@ export type DreamCommand =
   | { type: 'fund_dream'; amountMinor: number }
   | { type: 'repay_debt'; tag: string }
   | { type: 'repay_bank_loan'; amountMinor: number }
+  /** Hops in or out of an insurance: at once before the first roll, else with the next Payday. */
+  | { type: 'set_insurance'; kind: string; on: boolean }
   | { type: 'set_plan'; kind: 'mojo' | 'life' | 'smile'; id: string; perMinor: number }
   // Selling and trading what the player owns.
   /** The way out that is always there: a holding sold at the market price less a discount. */

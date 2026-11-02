@@ -1,5 +1,5 @@
 /**
- * The Dreamfund Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): 45 cards in English and German. Amounts are
+ * The Dreamfund Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): 50 cards in English and German. Amounts are
  * in minor units of the game money (Dream Taler / Traumtaler, 1 DT = 1 EUR). Generated from the card notes; edit the cards here.
  * Kept out of the domain package's main entry like the other printed content (the Firebase edition ships none of it).
  */
@@ -930,6 +930,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E14',
+    needs: { home: ['own_flat', 'with_partner'] },
     tier: 'flame',
     category: 'home',
     type: 'choice',
@@ -1481,6 +1482,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E17',
+    needs: { education: true },
     tier: 'blaze',
     category: 'tech',
     type: 'choice',
@@ -1780,6 +1782,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E21',
+    needs: { home: ['own_flat', 'shared_flat'] },
     tier: 'blaze',
     category: 'home',
     type: 'dice',
@@ -1988,6 +1991,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E24',
+    needs: { home: ['own_flat', 'with_partner'] },
     tier: 'blaze',
     category: 'home',
     type: 'multi',
@@ -2363,6 +2367,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E26',
+    needs: { home: ['own_flat', 'shared_flat', 'with_partner'] },
     tier: 'wildfire',
     category: 'home',
     type: 'multi',
@@ -2445,6 +2450,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E27',
+    needs: { home: ['own_flat', 'shared_flat', 'with_partner'] },
     tier: 'wildfire',
     category: 'liability',
     type: 'multi',
@@ -2603,6 +2609,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E29',
+    needs: { home: ['own_flat', 'shared_flat', 'with_partner'] },
     tier: 'wildfire',
     category: 'home',
     type: 'multi',
@@ -2846,6 +2853,7 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   },
   {
     id: 'E30',
+    needs: { home: ['own_flat', 'shared_flat', 'with_partner'] },
     tier: 'inferno',
     category: 'home',
     type: 'multi',
@@ -2973,5 +2981,225 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
         url: 'https://www.verivox.de/hausratversicherung/themen/hotelkosten/',
       },
     ],
+  },
+  {
+    id: 'E46',
+    tier: 'spark',
+    category: 'family',
+    type: 'fixed',
+    payment: 'plan_ok',
+    needs: { kidsAtLeast: 1 },
+    estimate: true,
+    title: {
+      en: 'School Trip and Supplies',
+      de: 'Klassenfahrt und Schulbedarf',
+    },
+    story: {
+      en: 'A letter from school: the class trip next month, plus a new backpack and the whole list of supplies. It is due on Friday.',
+      de: 'Ein Brief aus der Schule: die Klassenfahrt im nächsten Monat, dazu ein neuer Ranzen und die ganze Materialliste. Fällig bis Freitag.',
+    },
+    buckets: [
+      {
+        id: 'b1',
+        title: {
+          en: 'Trip, backpack and supplies',
+          de: 'Fahrt, Ranzen und Material',
+        },
+        amountMinor: 15000,
+      },
+    ],
+    actions: [
+      {
+        text: {
+          en: 'Ask the school about a subsidy or a payment in instalments',
+          de: 'Frage in der Schule nach einem Zuschuss oder Ratenzahlung',
+        },
+        priority: 'medium',
+      },
+      {
+        text: {
+          en: 'Buy supplies second-hand where you can',
+          de: 'Kaufe Material gebraucht, wo es geht',
+        },
+        priority: 'low',
+      },
+    ],
+    links: [],
+  },
+  {
+    id: 'E47',
+    tier: 'spark',
+    category: 'family',
+    type: 'fixed',
+    payment: 'pay_now',
+    needs: { kidsAtLeast: 1 },
+    estimate: true,
+    title: {
+      en: 'Sick Child, No Daycare',
+      de: 'Krankes Kind, keine Betreuung',
+    },
+    story: {
+      en: 'Fever at 5 a.m. The daycare will not take the child, and someone has to stay home: a day without pay, the pharmacy, a visit to the doctor.',
+      de: 'Fieber um 5 Uhr morgens. Die Kita nimmt das Kind nicht, und jemand muss zu Hause bleiben: ein Tag ohne Gehalt, die Apotheke, der Arztbesuch.',
+    },
+    buckets: [
+      {
+        id: 'b1',
+        title: {
+          en: 'Lost pay, medicine and co-payments',
+          de: 'Verdienstausfall, Medikamente und Zuzahlungen',
+        },
+        amountMinor: 9000,
+      },
+    ],
+    actions: [
+      {
+        text: {
+          en: 'Ask about child sick days (Kinderkrankentage)',
+          de: 'Frage nach Kinderkrankentagen',
+        },
+        priority: 'high',
+      },
+      {
+        text: {
+          en: 'Keep a small stock of fever medicine at home',
+          de: 'Halte einen kleinen Vorrat Fiebermittel zu Hause',
+        },
+        priority: 'low',
+      },
+    ],
+    links: [],
+  },
+  {
+    id: 'E48',
+    tier: 'flame',
+    category: 'health',
+    type: 'fixed',
+    payment: 'plan_ok',
+    needs: { kidsAtLeast: 1 },
+    estimate: true,
+    title: {
+      en: 'Braces for the Child',
+      de: 'Zahnspange fürs Kind',
+    },
+    story: {
+      en: 'The orthodontist says it cannot wait: braces for three years. The health insurer pays most, but the part that is left is yours.',
+      de: 'Der Kieferorthopäde sagt, es kann nicht warten: drei Jahre Zahnspange. Die Kasse zahlt das meiste, der Rest bleibt bei dir.',
+    },
+    buckets: [
+      {
+        id: 'b1',
+        title: {
+          en: 'Own share of the braces',
+          de: 'Eigenanteil an der Zahnspange',
+        },
+        amountMinor: 120000,
+      },
+    ],
+    actions: [
+      {
+        text: {
+          en: 'Ask the insurer what exactly it covers before you sign',
+          de: 'Frage die Kasse, was genau sie übernimmt, bevor du unterschreibst',
+        },
+        priority: 'high',
+      },
+      {
+        text: {
+          en: 'Spread the cost with a payment plan',
+          de: 'Verteile die Kosten mit einem Zahlplan',
+        },
+        priority: 'medium',
+      },
+    ],
+    links: [],
+  },
+  {
+    id: 'E49',
+    tier: 'spark',
+    category: 'admin',
+    type: 'fixed',
+    payment: 'plan_ok',
+    needs: { education: true },
+    estimate: true,
+    title: {
+      en: 'Semester Fee and Textbooks',
+      de: 'Semesterbeitrag und Fachbücher',
+    },
+    story: {
+      en: 'The new semester starts: the fee for the student services and the transport pass, and three textbooks the library only has twice.',
+      de: 'Das neue Semester beginnt: der Beitrag für Studierendenwerk und Semesterticket und drei Fachbücher, die die Bibliothek nur zweimal hat.',
+    },
+    buckets: [
+      {
+        id: 'b1',
+        title: {
+          en: 'Fee, pass and textbooks',
+          de: 'Beitrag, Ticket und Fachbücher',
+        },
+        amountMinor: 35000,
+      },
+    ],
+    actions: [
+      {
+        text: {
+          en: 'Buy the books second-hand or share them with a classmate',
+          de: 'Kaufe die Bücher gebraucht oder teile sie mit einem Kommilitonen',
+        },
+        priority: 'medium',
+      },
+      {
+        text: {
+          en: 'Check the library before you buy anything',
+          de: 'Schau erst in die Bibliothek, bevor du etwas kaufst',
+        },
+        priority: 'low',
+      },
+    ],
+    links: [],
+  },
+  {
+    id: 'E50',
+    tier: 'flame',
+    category: 'health',
+    type: 'fixed',
+    payment: 'plan_ok',
+    needs: { partner: true },
+    estimate: true,
+    title: {
+      en: 'Partner Needs a Dentist',
+      de: 'Partner braucht den Zahnarzt',
+    },
+    story: {
+      en: 'Your partner has had a toothache for a week and finally goes: a root canal and a crown. They ask you to help with the part the insurance does not pay.',
+      de: 'Dein Partner hat seit einer Woche Zahnschmerzen und geht endlich hin: Wurzelbehandlung und Krone. Du hilfst bei dem Teil, den die Kasse nicht zahlt.',
+    },
+    buckets: [
+      {
+        id: 'b1',
+        title: {
+          en: 'Share of the crown and the treatment',
+          de: 'Anteil an Krone und Behandlung',
+        },
+        amountMinor: 60000,
+      },
+    ],
+    actions: [
+      {
+        text: {
+          en: 'Ask for a cost plan before the treatment starts',
+          de: 'Lass dir vor der Behandlung einen Heil- und Kostenplan geben',
+        },
+        priority: 'high',
+      },
+      {
+        text: {
+          en: 'Keep the bonus booklet complete for next time',
+          de: 'Halte das Bonusheft für das nächste Mal lückenlos',
+        },
+        priority: 'low',
+      },
+    ],
+    links: [],
   },
 ];

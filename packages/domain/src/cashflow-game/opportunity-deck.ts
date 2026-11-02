@@ -1,5 +1,5 @@
 import type { Localized } from './emergency-deck';
-import type { DiceBand } from './life-deck';
+import type { DiceBand, LifeRequirement } from './life-deck';
 
 /**
  * The Dreamfund Opportunity stack (JFK, 2026-10-26, temp_cards/dreamfund-opportunity-deck.md v1.0): the cards a player finds on an
@@ -72,6 +72,8 @@ export interface OpportunityRequirement {
   owns?: string;
   /** At least this much debt (minor units). */
   debtMinor?: number;
+  /** A life it fits (children, a partner, a study...): see `LifeRequirement`. */
+  life?: LifeRequirement;
 }
 
 /** What only the engine may know about a trap (never shown to a player). */

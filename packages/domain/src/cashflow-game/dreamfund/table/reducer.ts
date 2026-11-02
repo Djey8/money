@@ -215,6 +215,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'fund_dream',
   'repay_debt',
   'repay_bank_loan',
+  'set_insurance',
   'set_plan',
   'settle_payday',
   'sell_holding',
@@ -882,6 +883,12 @@ function doCommand(
       if (!p.repayBankLoan(command.amountMinor))
         return refuse('The Bank loan cannot be repaid like that.');
       emit('money_moved', id, { what: 'bank_loan', amountMinor: command.amountMinor });
+      return {};
+    }
+    case 'set_insurance': {
+      const known = p.state.insurance?.premiums ?? {};
+      if (!(command.kind in known)) return refuse('You have no such insurance on offer.');
+      p.setInsurance(command.kind, command.on);
       return {};
     }
     case 'settle_payday':

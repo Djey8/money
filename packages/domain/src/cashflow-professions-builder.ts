@@ -99,6 +99,10 @@ export interface ProfessionSpec {
   homeKey?: 'rent' | 'mortgageRent';
   homeTitle?: string;
   homeAmount: number;
+  /** Where the life starts (partner, children, car, home, study): see `CashflowProfession.lifeStart`. */
+  lifeStart?: CashflowProfession['lifeStart'];
+  /** What the insurances cost compared with the Dual Student's (default 1). */
+  insuranceFactor?: number;
   dream: DreamSpec;
   ladder: RungSpec[];
 }
@@ -136,11 +140,14 @@ const round = (value: number, step = 1) => Math.round(value / step) * step;
 const minor = (euros: number) => Math.round(euros * 100);
 
 /** Premiums of the two insurances of the Emergency pile: what they cost grows a little with the price level. */
-const insurancePremiums = (scale: number, easy: boolean) => {
+const insurancePremiums = (scale: number, easy: boolean, factor = 1) => {
   if (easy)
-    return { liability: round(10 * scale, 10) || 10, household: round(20 * scale, 10) || 20 };
+    return {
+      liability: round(10 * scale * factor, 10) || 10,
+      household: round(20 * scale * factor, 10) || 20,
+    };
   // whole euros together (24 for the Dual Student: 8.39 and 15.61), so that the groceries come out in whole euros
-  const total = Math.max(1, Math.round(24 * Math.sqrt(scale)));
+  const total = Math.max(1, Math.round(24 * Math.sqrt(scale) * factor));
   const liability = Math.round(total * 0.3496 * 100) / 100;
   return { liability, household: Math.round((total - liability) * 100) / 100 };
 };
@@ -163,7 +170,7 @@ function buildMonth(
   const health = round(pay.healthMonth, step);
   const care = round(pay.careMonth, step);
   const unemployment = round(pay.unemploymentMonth, step);
-  const insurance = insurancePremiums(spec.scale, easy);
+  const insurance = insurancePremiums(spec.scale, easy, spec.insuranceFactor);
   const lines: CashflowExpenseLine[] = [];
   const add = (
     key: string,
@@ -446,6 +453,8 @@ export function buildProfession(
       easy ? round(spec.savings * tuning.savings, 100) : round(spec.savings * tuning.savings, 10),
     ),
     priceFactor: spec.scale,
+    ...(spec.lifeStart ? { lifeStart: spec.lifeStart } : {}),
+    ...(spec.insuranceFactor ? { insuranceFactor: spec.insuranceFactor } : {}),
     ...(easy ? { roundNumbers: true } : {}),
     ...(difficulty === 'medium' ? {} : { variantOf: spec.id }),
     ...(spec.ladder.length > 0 ? { career: buildCareer(spec, tuning, easy) } : {}),

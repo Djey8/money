@@ -77,6 +77,125 @@ Harvest cards still roll their own dice when you draw them; the draw is your act
 
 **Undo.** The last action of a turn can be undone.
 
+## Your life: the attributes, the insurances and what they do
+
+Every character has a **life**, and the life is a handful of **attributes**. You see them as the badges on the game screen - tap one
+and a small card tells what it means and what it does in the game. They matter because **they decide which cards can happen to you**:
+a card that needs something you do not have is _lucky_ - it is told, put back, and the next one is drawn. A life with children meets the
+school trip and the braces; a life without a car never meets the flat tyre.
+
+| Attribute       | Values                                                      | What it does                                                                                                                                                                                                 | How it changes                                                                       |
+| --------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| ❤️ Relationship | single, in a relationship, living together, married         | Life cards about a partner (a proposal, moving in, a break-up) only happen when there is one; dreams for two are offered only with a partner; a partner can have bills (the dentist)                         | Life cards: falling in love, moving in, the proposal, a break-up                     |
+| 👶 Children     | a number                                                    | Every child costs a monthly sum (it depends on the living standard and the number of siblings); a job loss cuts the income less; the cards of a family (school trip, a sick child, braces) wait here         | The baby card (a die decides), then a few Paydays later                              |
+| 🏠 Home         | own flat, shared flat, with the parents, with the partner   | The rent or the mortgage; a flat of your own meets the washing machine, the fridge, the burglary, the fire - a room in a shared flat or the parents' home does not; the deposit is at risk when you move out | Life cards: a move, moving in together, a bad flatmate                               |
+| 📍 Place        | home city, another city, abroad (Europe), another continent | A move changes what you earn and what you pay, both as a share; a move ends the effects of the last one                                                                                                      | Life cards about a move                                                              |
+| 💼 Job          | employed, out of work, short-time work                      | The salary at every Payday; after a job loss a roll at a Payday may find a new one; only an employed player is promoted on the Career tile                                                                   | The job-loss card, the job search                                                    |
+| 🐱 Pet          | none, cat, dog                                              | A monthly cost and the vet emergencies of the Emergency pile                                                                                                                                                 | Life cards: a cat or a dog moves in                                                  |
+| 🚗 Car          | yes / no                                                    | A car meets the car emergencies (a speeding ticket, a dead battery, a clutch, a car insurance premium); the two **car insurances** are offered when you have one                                             | A vehicle dream that is lived, a company car at a career stage, a card that buys one |
+| 🎓 Education    | studying / not                                              | The cards for students (the semester fee, the laptop before the exams) find you only while you study                                                                                                         | **Ends at stage 2 of the career** (a dual student's first full-time contract)        |
+| 🛡️ Insurances   | how many you hold                                           | An insured emergency costs you the deductible, not the bill (see below)                                                                                                                                      | You hop in or out; at once before the first roll, with the next Payday later         |
+| 🎓 Career       | the stage on the ladder                                     | Salary, taxes, the living standard (and so what cards cost), a bonus every year                                                                                                                              | The Career tile promotes you when you have been long enough and the die allows it    |
+
+### Where the life starts
+
+Jonas starts as a **dual student**: a room in a **shared flat** (that is the rent line of his budget), **employed** half-time, **in
+education** - the study ends with his first full-time contract, at stage 2 of his career - and with the car he is still paying off.
+The other nine characters start where their story says: Lena alone with her daughter, Katrin and Frank married with children, Peter
+married with grown children. The first table below says it for everybody.
+
+### Insurances
+
+The insurances of a character are **expense lines**: the premium is paid at every Payday, and in return an insured emergency costs you
+only the **deductible** - at most 500 TT on Normal (300 on Easy, 750 on Hard), whatever the bill is. Every character starts with the
+private **liability** and the **household** insurance, and every character pays **its own price**: a surgeon's household is worth more
+than a bus driver's, a freelancer carries his own liability. Jonas pays 24 TT a month for the two together (8.39 + 15.61); the others
+are scaled to their life, and the last column of the first table shows what they pay.
+
+- **At the start** you are asked to choose: before your first roll you can hop in or out of every insurance, and it counts **at once**.
+- **Later** a change is made at the **next Payday** - the premium and the cover change together, so nobody can insure just before the fire.
+- **A car brings the car insurances.** As soon as you have a car (a vehicle dream, a company car, a card), the **partial cover**
+  (Teilkasko) and the **full cover** (Vollkasko) are on offer in the insurance list, with a premium that fits your character. They cost
+  nothing until you hop in; an uninsured car damage costs the whole bill.
+- The private **liability** also covers the lost building key. A stolen bike is not insured by anything on this list.
+
+<!-- attributes:start -->
+
+#### Where every character starts
+
+| Character | Relationship | Children | Home        | Car | Study | Insurances (a month) |
+| --------- | ------------ | -------- | ----------- | --- | ----- | -------------------- |
+| Jonas     | single       | 0        | shared flat | yes | yes   | 24 TT                |
+| Mehmet    | single       | 0        | own flat    | yes | no    | 34 TT                |
+| Lena      | single       | 1        | own flat    | yes | no    | 22 TT                |
+| Sophie    | single       | 0        | own flat    | yes | no    | 32 TT                |
+| Tobias    | single       | 0        | own flat    | no  | no    | 35 TT                |
+| Katrin    | married      | 2        | own flat    | yes | no    | 53 TT                |
+| Frank     | married      | 1        | own flat    | yes | no    | 57 TT                |
+| Dr. Jan   | married      | 2        | own flat    | yes | no    | 81 TT                |
+| Heike     | single       | 0        | own flat    | yes | no    | 42 TT                |
+| Peter     | married      | 0        | own flat    | yes | no    | 21 TT                |
+
+#### Which card needs which attribute
+
+| Pile        | Card                                   | Needs                                                         |
+| ----------- | -------------------------------------- | ------------------------------------------------------------- |
+| Emergency   | Flashed! (E05)                         | a car                                                         |
+| Emergency   | Car Battery Dead (E12)                 | a car                                                         |
+| Emergency   | Washing Machine Breaks (E14)           | Home: own flat or with the partner                            |
+| Emergency   | Parking Bump (E38)                     | a car                                                         |
+| Emergency   | Laptop Dies Before Exams (E17)         | Study: studying                                               |
+| Emergency   | Cracked Windscreen (E19)               | a car                                                         |
+| Emergency   | Deposit Deductions (E21)               | Home: own flat or shared flat                                 |
+| Emergency   | Vet Emergency (E23)                    | a pet                                                         |
+| Emergency   | Fridge Dies in Summer (E24)            | Home: own flat or with the partner                            |
+| Emergency   | Clutch Gone (E25)                      | a car                                                         |
+| Emergency   | Burglary (E26)                         | Home: own flat or shared flat or with the partner             |
+| Emergency   | Water Damage Downstairs (E27)          | Home: own flat or shared flat or with the partner             |
+| Emergency   | Kitchen Fire (E29)                     | Home: own flat or shared flat or with the partner             |
+| Emergency   | The Flat Burns Down (E30)              | Home: own flat or shared flat or with the partner             |
+| Emergency   | School Trip and Supplies (E46)         | Children: at least 1                                          |
+| Emergency   | Sick Child, No Daycare (E47)           | Children: at least 1                                          |
+| Emergency   | Braces for the Child (E48)             | Children: at least 1                                          |
+| Emergency   | Semester Fee and Textbooks (E49)       | Study: studying                                               |
+| Emergency   | Partner Needs a Dentist (E50)          | Relationship: a partner                                       |
+| Life        | Falling in Love (L01)                  | Relationship: single                                          |
+| Life        | Moving In Together (L02)               | Relationship: in a relationship                               |
+| Life        | The Proposal (L03)                     | Relationship: in a relationship or living together            |
+| Life        | Break-Up (L04)                         | Relationship: in a relationship or living together or married |
+| Life        | Thinking About a Baby (L05)            | Relationship: in a relationship or living together or married |
+| Life        | It's a Baby! (L06)                     | Relationship: in a relationship or living together or married |
+| Life        | A Cat Moves In (L09)                   | Pet: none                                                     |
+| Life        | A Dog Moves In (L10)                   | Pet: none                                                     |
+| Life        | Grandpa's Old Car (L11)                | Car: false                                                    |
+| Life        | Back to Your Childhood Room (L14)      | Relationship: single or in a relationship                     |
+| Life        | New Flatmate (L15)                     | Relationship: single or in a relationship; Home: own flat     |
+| Life        | The Company Goes Under (L19)           | Job: employed                                                 |
+| Life        | Laid Off With Severance (L27)          | Job: employed                                                 |
+| Life        | Short-Time Work (L20)                  | Job: employed                                                 |
+| Dream       | The Big Wedding Party (D38)            | Relationship: a partner                                       |
+| Dream       | An Education Fund for Your Child (D39) | Children: at least 1                                          |
+| Opportunity | Rent Out a Room (P17)                  | Home: own flat                                                |
+| Opportunity | Freelance Data Consulting (P18)        | Career stage 3+                                               |
+| Opportunity | Consolidate Your Debt (P28)            | Debt >= 1,000 TT                                              |
+| Opportunity | Take Over an IT Service Company (T13)  | Career stage 4+                                               |
+| Opportunity | Vending Machine Network (T29)          | Owns: P15                                                     |
+
+<!-- attributes:end -->
+
+### How the cards ask for the life
+
+Three kinds of cards ask for something:
+
+- **Emergency** cards: a car or a pet (as always), or a **life** like yours - children, a partner, a study, a flat of your own.
+  Fifty cards now; five of them (the school trip, a sick child, the braces, the semester fee, the partner's dentist) belong to a certain
+  life, and the flat's emergencies and the student's laptop are bound to the home and the study.
+- **Life** cards: the relationship, the pet, the move - what has to be true before the card is told.
+- **Dream** and **Opportunity** cards: a dream for two or for the child, renting out a room, an investment that needs a career stage, a
+  debt or another holding.
+
+The second table lists every card that asks, so you can see which attribute opens which cards.
+
 ## The cards
 
 ### 🌱 Opportunity - things to invest in (98 cards)
@@ -145,7 +264,7 @@ speaks of a given holding. So the **Sell** button of a project also sells **at a
 15% for a coin, a collection or a property (the mortgage comes off the proceeds), and a business or a hustle for a year of what it pays
 (half of what a buyer on a card pays). Nothing is sold below that, and savings and scams cannot be sold at all.
 
-### 🔥 Emergency (45 cards)
+### 🔥 Emergency (50 cards)
 
 Something breaks. Cards come in five tiers - **spark, flame, blaze, wildfire, inferno** - from a broken bike grip to a house fire. An
 insurance may cover the bill; the rest is paid from your cash, by a payment plan, or by the Bank loan. In the guided and strict modes an

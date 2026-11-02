@@ -29,6 +29,7 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
   fundDream: (d) => ({ type: 'fund_dream', amountMinor: d['amountMinor'] }),
   repayDebt: (d) => ({ type: 'repay_debt', tag: d['tag'] }),
   repayBank: (d) => ({ type: 'repay_bank_loan', amountMinor: d['amountMinor'] }),
+  setInsurance: (d) => ({ type: 'set_insurance', kind: d['kind'], on: d['on'] }),
   plan: (d) => ({ type: 'set_plan', kind: d['kind'], id: d['id'], perMinor: d['perMinor'] }),
   settle: () => ({ type: 'settle_payday' }),
   sellHolding: (d) => ({ type: 'sell_holding', holding: d['holding'] }),

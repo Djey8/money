@@ -1,4 +1,5 @@
 import { pickOne, type Rng, systemRng } from './rng';
+import { meetsRequirement, type LifeRequirement, type LifeState } from './life-deck';
 
 /**
  * The Dreamfund Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): what a card is, how one is drawn,
@@ -62,6 +63,8 @@ export interface EmergencyCard {
   payment: EmergencyPayment;
   /** The card only applies to a player who owns this: otherwise it is shuffled back. */
   requires?: 'car' | 'pet';
+  /** The card only applies to a life like this (children, a partner, a flat to pay for, a study): otherwise it is shuffled back, as for a car. */
+  needs?: LifeRequirement;
   /** The insurance that limits the cost to the deductible. */
   insurance?: InsuranceKind;
   /** The amounts are fixed by law or fees (an ID card, a fine): they do not grow with the character's price level. */
@@ -353,6 +356,7 @@ export function drawEmergencyCard(
   deck: EmergencyDeckState,
   possessions: readonly string[],
   rng: Rng = systemRng,
+  life?: LifeState,
 ): EmergencyDraw {
   const skipped: string[] = [];
   let seen = deck.seen;
@@ -363,7 +367,9 @@ export function drawEmergencyCard(
     seen = [];
     pile = open();
   }
-  const fits = (card: EmergencyCard) => !card.requires || possessions.includes(card.requires);
+  const fits = (card: EmergencyCard) =>
+    (!card.requires || possessions.includes(card.requires)) &&
+    (!card.needs || !life || meetsRequirement(card.needs, life));
   // a card that does not apply is lucky: told, put back, and the next one is drawn
   const rest = [...pile];
   let card: EmergencyCard | undefined;

@@ -80,6 +80,127 @@ Chancen-Karten (der Kauf wartet auf deinen Wurf, und Fertig wird verweigert, bis
 
 **Rückgängig.** Die letzte Handlung eines Zugs lässt sich rückgängig machen.
 
+## Dein Leben: die Merkmale, die Versicherungen und was sie bewirken
+
+Jeder Charakter hat ein **Leben**, und das Leben besteht aus ein paar **Merkmalen**. Du siehst sie als Abzeichen auf dem Spielbildschirm -
+tippe eines an, und eine kleine Karte sagt, was es bedeutet und was es im Spiel bewirkt. Sie sind wichtig, weil **sie entscheiden, welche
+Karten dir passieren können**: Eine Karte, die etwas braucht, was du nicht hast, hat _Glück_ - sie wird erzählt, zurückgelegt, und die
+nächste wird gezogen. Ein Leben mit Kindern trifft die Klassenfahrt und die Zahnspange; ein Leben ohne Auto trifft nie den Platten.
+
+| Merkmal           | Werte                                                          | Was es bewirkt                                                                                                                                                                                                | Wie es sich ändert                                                                               |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| ❤️ Beziehung      | Single, in einer Beziehung, zusammenlebend, verheiratet        | Lebenskarten über einen Partner (ein Antrag, Zusammenziehen, eine Trennung) passieren nur, wenn es einen gibt; Träume zu zweit werden nur mit Partner angeboten; ein Partner kann Rechnungen haben (Zahnarzt) | Lebenskarten: Verlieben, Zusammenziehen, der Antrag, eine Trennung                               |
+| 👶 Kinder         | eine Zahl                                                      | Jedes Kind kostet monatlich (abhängig vom Lebensstandard und den Geschwistern); ein Jobverlust kürzt das Einkommen weniger; die Karten einer Familie (Klassenfahrt, krankes Kind, Zahnspange) warten hier     | Die Babykarte (ein Würfel entscheidet), einige Zahltage später                                   |
+| 🏠 Wohnen         | eigene Wohnung, WG, bei den Eltern, beim Partner               | Die Miete oder Rate; eine eigene Wohnung trifft Waschmaschine, Kühlschrank, Einbruch, Brand - ein WG-Zimmer oder das Elternhaus nicht; die Kaution ist beim Auszug in Gefahr                                  | Lebenskarten: ein Umzug, Zusammenziehen, ein schlechter Mitbewohner                              |
+| 📍 Ort            | Heimatstadt, andere Stadt, Ausland (Europa), anderer Kontinent | Ein Umzug ändert, was du verdienst und zahlst, jeweils als Anteil; ein Umzug beendet die Wirkung des letzten                                                                                                  | Lebenskarten über einen Umzug                                                                    |
+| 💼 Job            | angestellt, ohne Arbeit, Kurzarbeit                            | Das Gehalt an jedem Zahltag; nach einem Jobverlust findet vielleicht ein Wurf an einem Zahltag einen neuen; nur wer angestellt ist, wird auf dem Karrierefeld befördert                                       | Die Jobverlust-Karte, die Jobsuche                                                               |
+| 🐱 Haustier       | keins, Katze, Hund                                             | Eine monatliche Ausgabe und die Tierarzt-Notfälle des Notfallstapels                                                                                                                                          | Lebenskarten: eine Katze oder ein Hund zieht ein                                                 |
+| 🚗 Auto           | ja / nein                                                      | Ein Auto trifft die Auto-Notfälle (ein Blitzer, eine leere Batterie, die Kupplung, ein Beitrag der Kfz-Versicherung); die zwei **Kfz-Versicherungen** werden angeboten, wenn du eins hast                     | Ein gelebter Fahrzeug-Traum, ein Dienstwagen auf einer Karrierestufe, eine Karte, die eins kauft |
+| 🎓 Studium        | im Studium / nicht                                             | Die Karten für Studierende (Semesterbeitrag, der Laptop vor den Prüfungen) treffen dich nur, solange du studierst                                                                                             | **Endet auf Stufe 2 der Karriere** (der erste Vollzeitvertrag eines dualen Studenten)            |
+| 🛡️ Versicherungen | wie viele du hast                                              | Ein versicherter Notfall kostet dich die Selbstbeteiligung, nicht die Rechnung (siehe unten)                                                                                                                  | Du steigst ein oder aus; vor dem ersten Wurf sofort, später mit dem nächsten Zahltag             |
+| 🎓 Karriere       | die Stufe auf der Leiter                                       | Gehalt, Steuern, der Lebensstandard (und damit, was Karten kosten), ein Bonus im Jahr                                                                                                                         | Das Karrierefeld befördert dich, wenn du lange genug dabei bist und der Würfel es erlaubt        |
+
+### Wo das Leben beginnt
+
+Jonas startet als **dualer Student**: ein Zimmer in einer **WG** (das ist die Mietzeile seines Budgets), **angestellt** in Teilzeit,
+**in Ausbildung** - das Studium endet mit seinem ersten Vollzeitvertrag, auf Stufe 2 seiner Karriere - und mit dem Auto, das er noch
+abbezahlt. Die anderen neun Charaktere starten dort, wo ihre Geschichte sie hinstellt: Lena allein mit ihrer Tochter, Katrin und Frank
+verheiratet mit Kindern, Peter verheiratet mit erwachsenen Kindern. Die erste Tabelle unten sagt es für alle.
+
+### Versicherungen
+
+Die Versicherungen eines Charakters sind **Ausgabenzeilen**: Die Prämie wird an jedem Zahltag gezahlt, und dafür kostet dich ein
+versicherter Notfall nur die **Selbstbeteiligung** - höchstens 500 TT auf Normal (300 auf Leicht, 750 auf Schwer), egal wie hoch die
+Rechnung ist. Jeder Charakter startet mit der privaten **Haftpflicht** und der **Hausratversicherung**, und jeder zahlt **seinen eigenen
+Preis**: Der Hausrat eines Chirurgen ist mehr wert als der eines Busfahrers, ein Freiberufler trägt seine Haftpflicht selbst. Jonas zahlt
+zusammen 24 TT im Monat (8,39 + 15,61); die anderen sind auf ihr Leben skaliert, die letzte Spalte der ersten Tabelle zeigt, was sie zahlen.
+
+- **Am Anfang** wirst du gefragt: Vor deinem ersten Wurf kannst du bei jeder Versicherung ein- oder aussteigen, und es gilt **sofort**.
+- **Später** wird eine Änderung mit dem **nächsten Zahltag** wirksam - Prämie und Schutz ändern sich zusammen, so kann niemand kurz vor dem
+  Brand noch eine Versicherung abschließen.
+- **Ein Auto bringt die Kfz-Versicherungen.** Sobald du ein Auto hast (ein Fahrzeug-Traum, ein Dienstwagen, eine Karte), werden die
+  **Teilkasko** und die **Vollkasko** in der Versicherungsliste angeboten, mit einer Prämie, die zu deinem Charakter passt. Sie kosten
+  nichts, bis du einsteigst; ein unversicherter Autoschaden kostet die ganze Rechnung.
+- Die private **Haftpflicht** deckt auch den verlorenen Haustürschlüssel. Ein gestohlenes Fahrrad ist von nichts in dieser Liste versichert.
+
+<!-- attributes:start -->
+
+#### Wo jeder Charakter startet
+
+| Charakter | Beziehung   | Kinder | Wohnen         | Auto | Studium | Versicherungen (im Monat) |
+| --------- | ----------- | ------ | -------------- | ---- | ------- | ------------------------- |
+| Jonas     | Single      | 0      | WG             | ja   | ja      | 24 TT                     |
+| Mehmet    | Single      | 0      | eigene Wohnung | ja   | nein    | 34 TT                     |
+| Lena      | Single      | 1      | eigene Wohnung | ja   | nein    | 22 TT                     |
+| Sophie    | Single      | 0      | eigene Wohnung | ja   | nein    | 32 TT                     |
+| Tobias    | Single      | 0      | eigene Wohnung | nein | nein    | 35 TT                     |
+| Katrin    | verheiratet | 2      | eigene Wohnung | ja   | nein    | 53 TT                     |
+| Frank     | verheiratet | 1      | eigene Wohnung | ja   | nein    | 57 TT                     |
+| Dr. Jan   | verheiratet | 2      | eigene Wohnung | ja   | nein    | 81 TT                     |
+| Heike     | Single      | 0      | eigene Wohnung | ja   | nein    | 42 TT                     |
+| Peter     | verheiratet | 0      | eigene Wohnung | ja   | nein    | 21 TT                     |
+
+#### Welche Karte welches Merkmal braucht
+
+| Stapel  | Karte                                 | Braucht                                                            |
+| ------- | ------------------------------------- | ------------------------------------------------------------------ |
+| Notfall | Geblitzt! (E05)                       | ein Auto                                                           |
+| Notfall | Autobatterie leer (E12)               | ein Auto                                                           |
+| Notfall | Waschmaschine kaputt (E14)            | Wohnen: eigene Wohnung oder beim Partner                           |
+| Notfall | Parkrempler (E38)                     | ein Auto                                                           |
+| Notfall | Laptop stirbt vor der Prüfung (E17)   | Studium: im Studium                                                |
+| Notfall | Steinschlag (E19)                     | ein Auto                                                           |
+| Notfall | Kaution einbehalten (E21)             | Wohnen: eigene Wohnung oder WG                                     |
+| Notfall | Tierarzt-Notfall (E23)                | ein Haustier                                                       |
+| Notfall | Kühlschrank stirbt im Sommer (E24)    | Wohnen: eigene Wohnung oder beim Partner                           |
+| Notfall | Kupplung hinüber (E25)                | ein Auto                                                           |
+| Notfall | Einbruch (E26)                        | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Wasserschaden beim Nachbarn (E27)     | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Küchenbrand (E29)                     | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Die Wohnung brennt ab (E30)           | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Klassenfahrt und Schulbedarf (E46)    | Kinder: mindestens 1                                               |
+| Notfall | Krankes Kind, keine Betreuung (E47)   | Kinder: mindestens 1                                               |
+| Notfall | Zahnspange fürs Kind (E48)            | Kinder: mindestens 1                                               |
+| Notfall | Semesterbeitrag und Fachbücher (E49)  | Studium: im Studium                                                |
+| Notfall | Partner braucht den Zahnarzt (E50)    | Beziehung: ein Partner                                             |
+| Leben   | Verliebt (L01)                        | Beziehung: Single                                                  |
+| Leben   | Zusammenziehen (L02)                  | Beziehung: in einer Beziehung                                      |
+| Leben   | Der Antrag (L03)                      | Beziehung: in einer Beziehung oder zusammenlebend                  |
+| Leben   | Trennung (L04)                        | Beziehung: in einer Beziehung oder zusammenlebend oder verheiratet |
+| Leben   | Kinderwunsch (L05)                    | Beziehung: in einer Beziehung oder zusammenlebend oder verheiratet |
+| Leben   | Es ist ein Baby! (L06)                | Beziehung: in einer Beziehung oder zusammenlebend oder verheiratet |
+| Leben   | Eine Katze zieht ein (L09)            | Haustier: keins                                                    |
+| Leben   | Ein Hund zieht ein (L10)              | Haustier: keins                                                    |
+| Leben   | Opas altes Auto (L11)                 | Auto: false                                                        |
+| Leben   | Zurück ins Kinderzimmer (L14)         | Beziehung: Single oder in einer Beziehung                          |
+| Leben   | Neuer Mitbewohner (L15)               | Beziehung: Single oder in einer Beziehung; Wohnen: eigene Wohnung  |
+| Leben   | Die Firma ist pleite — hard (L19)     | Job: angestellt                                                    |
+| Leben   | Gekündigt mit Abfindung — soft (L27)  | Job: angestellt                                                    |
+| Leben   | Kurzarbeit (L20)                      | Job: angestellt                                                    |
+| Traum   | Die große Hochzeitsfeier (D38)        | Beziehung: ein Partner                                             |
+| Traum   | Ein Bildungsfonds für dein Kind (D39) | Kinder: mindestens 1                                               |
+| Chance  | Ein Zimmer untervermieten (P17)       | Wohnen: eigene Wohnung                                             |
+| Chance  | Freelance-Datenberatung (P18)         | Karrierestufe 3+                                                   |
+| Chance  | Schulden umschulden (P28)             | Schulden >= 1.000 TT                                               |
+| Chance  | Ein IT-Dienstleister übernehmen (T13) | Karrierestufe 4+                                                   |
+| Chance  | Automaten-Netzwerk (T29)              | Besitzt: P15                                                       |
+
+<!-- attributes:end -->
+
+### Wie die Karten nach dem Leben fragen
+
+Drei Arten von Karten verlangen etwas:
+
+- **Notfall**-Karten: ein Auto oder ein Haustier (wie immer) oder ein **Leben** wie deins - Kinder, ein Partner, ein Studium, eine eigene
+  Wohnung. Es sind jetzt fünfzig Karten; fünf davon (die Klassenfahrt, ein krankes Kind, die Zahnspange, der Semesterbeitrag, der
+  Zahnarzt des Partners) gehören zu einem bestimmten Leben, und die Notfälle der Wohnung und der Laptop des Studenten sind an Wohnen und
+  Studium gebunden.
+- **Leben**-Karten: die Beziehung, das Haustier, der Umzug - was wahr sein muss, bevor die Karte erzählt wird.
+- **Traum**- und **Chance**-Karten: ein Traum zu zweit oder fürs Kind, ein Zimmer untervermieten, eine Anlage, die eine Karrierestufe,
+  Schulden oder ein anderes Investment braucht.
+
+Die zweite Tabelle listet jede Karte, die fragt - so siehst du, welches Merkmal welche Karten öffnet.
+
 ## Die Karten
 
 ### 🌱 Chance - Dinge zum Investieren (98 Karten)
@@ -152,7 +273,7 @@ Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer M�
 Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt).
 Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen.
 
-### 🔥 Notfall (45 Karten)
+### 🔥 Notfall (50 Karten)
 
 Etwas geht kaputt. Die Karten haben fünf Stufen - **Funke, Flamme, Brand, Lauffeuer, Inferno** - vom kaputten Lenkergriff bis zum
 Hausbrand. Eine Versicherung kann die Rechnung decken; den Rest zahlst du aus dem Bargeld, mit einem Zahlungsplan oder mit dem

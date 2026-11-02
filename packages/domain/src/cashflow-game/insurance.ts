@@ -1,3 +1,4 @@
+import type { BookSubscription } from './effects';
 import type { CashflowExpenseLine, CashflowGameState } from './types';
 
 /**
@@ -75,6 +76,8 @@ export interface InsuranceOffer {
   held: boolean;
   /** Held after the next Payday (a change is waiting). */
   heldNext: boolean;
+  /** Newly on offer (a car was bought) and not answered yet. */
+  fresh: boolean;
 }
 
 /** Everything the player can switch, with what is waiting for the next Payday. */
@@ -84,6 +87,112 @@ export function insuranceOffers(state: Pick<CashflowGameState, 'insurance'>): In
   return Object.entries(insurance.premiums).map(([kind, premiumTitle]) => {
     const held = insurance.active.includes(kind);
     const change = insurance.pending.find((candidate) => candidate.kind === kind);
-    return { kind, premiumTitle, held, heldNext: change ? change.on : held };
+    return {
+      kind,
+      premiumTitle,
+      held,
+      heldNext: change ? change.on : held,
+      fresh: insurance.fresh?.includes(kind) ?? false,
+    };
   });
+}
+
+// ── the car insurances (JFK, 2026-11-02) ──
+
+export type CarInsuranceKind = 'car_partial' | 'car_full';
+export const CAR_INSURANCES: readonly CarInsuranceKind[] = ['car_partial', 'car_full'];
+
+const CAR_PREMIUMS: Record<CarInsuranceKind, { base: number; key: string; title: string }> = {
+  car_partial: { base: 3000, key: 'carPartialInsurance', title: 'Teilkaskoversicherung' },
+  car_full: { base: 6000, key: 'carFullInsurance', title: 'Vollkaskoversicherung' },
+};
+
+/**
+ * What a car insurance costs a month, in minor units, whole euros: the base grows with the root of the character's price level (a dearer
+ * car, a dearer repair) and with how the character's insurances compare with the Dual Student's.
+ */
+export function carPremiumMinor(
+  kind: CarInsuranceKind,
+  priceFactor = 1,
+  insuranceFactor = 1,
+): number {
+  const euros = (CAR_PREMIUMS[kind].base / 100) * Math.sqrt(priceFactor) * insuranceFactor;
+  return Math.max(100, Math.round(euros) * 100);
+}
+
+interface BooksWithInsurance {
+  state: CashflowGameState;
+  subscriptions: BookSubscription[];
+}
+
+/**
+ * A character with a car is offered the two car insurances: a premium line for each, not held yet (so nothing is paid until the player
+ * hops in) and listed as `fresh` so that the screen can say so. Done again it changes nothing.
+ */
+export function offerCarInsurance<T extends BooksWithInsurance>(
+  books: T,
+  options: { priceFactor?: number; insuranceFactor?: number; date?: string },
+): T {
+  const { state } = books;
+  if (!state.life?.car) return books;
+  const known = state.insurance?.premiums ?? {};
+  const missing = CAR_INSURANCES.filter((kind) => !(kind in known));
+  if (missing.length === 0) return books;
+  const premiums = { ...known };
+  const titles = [...state.gameSubscriptionTitles];
+  const lineTitles = { ...(state.lineTitles ?? {}) };
+  const added: BookSubscription[] = [];
+  for (const kind of missing) {
+    const info = CAR_PREMIUMS[kind];
+    premiums[kind] = info.title;
+    lineTitles[info.key] = info.title;
+    if (!titles.includes(info.title)) titles.push(info.title);
+    added.push({
+      title: info.title,
+      account: 'Fire',
+      amountMinor: -carPremiumMinor(kind, options.priceFactor, options.insuranceFactor),
+      startDate: options.date ?? '',
+      endDate: '',
+      category: `@${info.title}`,
+      comment: '#dreamfund',
+      frequency: 'monthly',
+    });
+  }
+  return {
+    ...books,
+    subscriptions: [
+      ...books.subscriptions.filter((sub) => !added.some((line) => line.title === sub.title)),
+      ...added,
+    ],
+    state: {
+      ...state,
+      gameSubscriptionTitles: titles,
+      lineTitles,
+      insurance: {
+        active: state.insurance?.active ?? [],
+        premiums,
+        pending: state.insurance?.pending ?? [],
+        fresh: [...(state.insurance?.fresh ?? []), ...missing],
+      },
+    },
+  };
+}
+
+/**
+ * The player's choice of an insurance. Before the first roll (`immediate`) it counts at once - nobody can insure just before a fire
+ * when no game has been played yet; later it waits for the next Payday, as `queueInsuranceChange` says.
+ */
+export function chooseInsurance(
+  state: CashflowGameState,
+  kind: string,
+  on: boolean,
+  immediate: boolean,
+): CashflowGameState {
+  if (!state.insurance || !(kind in state.insurance.premiums)) return state;
+  const queued = queueInsuranceChange(state, kind, on);
+  const insurance = queued.insurance!;
+  const answered = { ...queued, insurance: { ...insurance, fresh: undefined } };
+  const next = immediate ? applyInsuranceChanges(answered) : answered;
+  if (next.insurance && next.insurance.fresh === undefined) delete next.insurance.fresh;
+  return next;
 }
