@@ -90,4 +90,31 @@ describe('dreamLifeToApp', () => {
     expect(shown.allSmileProjects).toHaveLength(1);
     expect(shown.allFireEmergencies).toHaveLength(1);
   });
+
+  it('lists an active payment plan as a subscription that counts as saving, and drops it when the plan is gone', () => {
+    const running = dreamLifeToApp(
+      life((p) => {
+        p.plans.push({ kind: 'mojo', id: 'mojo', perMinor: 25000, leftMinor: 100000 });
+      }),
+      'en',
+      NOW,
+    );
+    const state = {
+      allSubscriptions: [{ title: 'Rent', comment: '', amount: -800 }],
+      cashflowGame: { dreams: { open: [], lived: [] } },
+    } as never;
+    applyDreamExtrasToApp(state, running);
+    const shown = state as unknown as {
+      allSubscriptions: { title: string; amount: number; comment: string }[];
+      cashflowGame: { fundingSubscriptionTitles: string[] };
+    };
+    const plan = shown.allSubscriptions.find((sub) => sub.comment.includes('#tableplan'));
+    expect(plan?.amount).toBe(-250);
+    expect(shown.cashflowGame.fundingSubscriptionTitles).toContain(plan!.title);
+    expect(shown.allSubscriptions.some((sub) => sub.title === 'Rent')).toBe(true);
+    // paused or deleted: the table has no plan any more
+    applyDreamExtrasToApp(state, dreamLifeToApp(life(), 'en', NOW));
+    expect(shown.allSubscriptions.some((sub) => sub.comment.includes('#tableplan'))).toBe(false);
+    expect(shown.cashflowGame.fundingSubscriptionTitles).toEqual([]);
+  });
 });

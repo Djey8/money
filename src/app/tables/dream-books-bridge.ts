@@ -31,6 +31,19 @@ export function dreamLifeToApp(life: DreamPlayerData, lang: string, nowIso: stri
  * Puts the Dreamfund extras on screen after the books were (`applyBooksToApp` empties Smile, Fire and the Mojo, as the classic table
  * has none): the Mojo, the projects, and the open dreams under the titles of the viewer's language.
  */
+const TABLE_PLAN_MARK = '#tableplan';
+
+interface PlanLike {
+  title: string;
+  status: string;
+  account: string;
+  amount: number;
+  startDate: string;
+  endDate: string;
+  category: string;
+  frequency: string;
+}
+
 interface WithPlans {
   title: string;
   plannedSubscriptions?: { status: string }[];
@@ -54,6 +67,42 @@ export function applyDreamExtrasToApp(state: AppStateService, app: DreamApp): vo
   keepDrafts(state.allFireEmergencies as WithPlans[], app.fire as WithPlans[]);
   state.allSmileProjects = app.smile as typeof state.allSmileProjects;
   state.allFireEmergencies = app.fire as typeof state.allFireEmergencies;
+  // an active payment plan is an active subscription (as alone): it is listed with the others and counts as saving, not as an expense.
+  // The table charges it at every Payday; pausing or deleting the plan removes it.
+  const plans = [...app.smile, ...app.fire].flatMap(
+    (project) =>
+      (project as { plannedSubscriptions?: PlanLike[] }).plannedSubscriptions?.filter(
+        (plan) => plan.status === 'active',
+      ) ?? [],
+  );
+  const earlier = new Set(
+    (state.allSubscriptions ?? [])
+      .filter((sub) => (sub.comment ?? '').includes(TABLE_PLAN_MARK))
+      .map((sub) => sub.title),
+  );
+  state.allSubscriptions = [
+    ...(state.allSubscriptions ?? []).filter(
+      (sub) => !(sub.comment ?? '').includes(TABLE_PLAN_MARK),
+    ),
+    ...plans.map((plan) => ({
+      title: plan.title,
+      account: plan.account,
+      amount: -plan.amount,
+      startDate: plan.startDate,
+      endDate: plan.endDate,
+      category: plan.category,
+      comment: TABLE_PLAN_MARK,
+      frequency: plan.frequency,
+    })),
+  ] as typeof state.allSubscriptions;
+  const held = state.cashflowGame?.fundingSubscriptionTitles ?? [];
+  state.cashflowGame = {
+    ...state.cashflowGame,
+    fundingSubscriptionTitles: [
+      ...held.filter((title) => !earlier.has(title) && !plans.some((plan) => plan.title === title)),
+      ...plans.map((plan) => plan.title),
+    ],
+  };
   const game = state.cashflowGame as { dreams?: { open: DreamApp['openDreams'] } };
   if (game.dreams) game.dreams = { ...game.dreams, open: app.openDreams };
   // a dream taken this turn: the card shows the project it became (named in the viewer's language)
