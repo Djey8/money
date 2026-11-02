@@ -19,13 +19,19 @@ describe('the insurances of a Dreamfund character', () => {
   });
 
   it('offers the car insurances to a character with a car, held by nobody until the player hops in', () => {
-    const jonas = player('dual-student-informatik');
+    const jonas = player('mehmet-elektroniker');
     const offers = insuranceOffers(jonas.state);
     const partial = offers.find((offer) => offer.kind === 'car_partial');
     expect(partial).toMatchObject({ held: false, heldNext: false });
     expect(jonas.state.insurance?.fresh).toEqual(['car_partial', 'car_full']);
     const line = jonas.books.subscriptions.find((sub) => sub.title === partial!.premiumTitle);
-    expect(line?.amountMinor).toBe(-carPremiumMinor('car_partial'));
+    expect(line?.amountMinor).toBe(
+      -carPremiumMinor(
+        'car_partial',
+        jonas.profession.priceFactor,
+        jonas.profession.insuranceFactor,
+      ),
+    );
     // asking again changes nothing
     expect(offerCarInsurance(jonas.books, {})).toBe(jonas.books);
   });
@@ -40,7 +46,7 @@ describe('the insurances of a Dreamfund character', () => {
   });
 
   it('counts at once before the first roll, and waits for the Payday afterwards', () => {
-    const jonas = player('dual-student-informatik');
+    const jonas = player('mehmet-elektroniker');
     jonas.setInsurance('car_full', true);
     expect(jonas.state.insurance?.active).toContain('car_full');
     expect(jonas.state.insurance?.fresh).toBeUndefined();

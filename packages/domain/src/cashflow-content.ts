@@ -867,7 +867,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
       id: 'dual-student-informatik',
       career: DUAL_STUDENT_CAREER,
       // a dual student: a room in a shared flat, a job and the study that ends with the first full-time contract (stage 2)
-      lifeStart: { home: 'shared_flat', education: true, car: true },
+      lifeStart: { home: 'shared_flat', education: true },
       title: 'Dualer Student Informatik',
       // 34.000 € a year before tax, 2.833 € a month; the German deductions are expense lines (estimates for a single person)
       salaryMinor: 283300,
@@ -999,7 +999,7 @@ const JONAS_SPEC: ProfessionSpec = {
     },
   ],
   homeAmount: 800,
-  lifeStart: { home: 'shared_flat', education: true, car: true },
+  lifeStart: { home: 'shared_flat', education: true },
   extras: [],
   dream: { title: { en: '', de: '' }, sub: { en: '', de: '' }, buckets: [] },
   ladder: [],

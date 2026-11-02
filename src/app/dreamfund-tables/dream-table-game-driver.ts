@@ -54,6 +54,8 @@ export class DreamTableGameDriver extends TableGameDriver {
   override readonly dreamfund = true;
   /** The language of the words this driver gives the app's pages. */
   lang = 'en';
+  /** A debt as the screen names it, as the table knows it (the screen shows the words of its language). */
+  originalTag: (shown: string) => string = (shown) => shown;
 
   private static readonly NOT_HERE = 'This move is not part of the Dreamfund.';
   private notHere = (..._args: unknown[]): Promise<RemoteOutcome> =>
@@ -113,7 +115,7 @@ export class DreamTableGameDriver extends TableGameDriver {
 
   /** A debt of the balance sheet is paid off from the app's own page. */
   override payLiability(tag: string): Promise<RemoteOutcome> {
-    return this.dreamMove({ decision: 'repayDebt', tag });
+    return this.dreamMove({ decision: 'repayDebt', tag: this.originalTag(tag) });
   }
 
   /** The Bank loan is repaid in steps from the app's page; borrowing is the game's own (a thin month is covered by it). */

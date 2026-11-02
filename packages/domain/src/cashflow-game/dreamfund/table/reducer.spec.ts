@@ -3,6 +3,7 @@ import { DreamPlayer } from '../player';
 import { TableCommandError } from '../../table/types';
 import {
   applyDreamCommand,
+  briefAll,
   applyDreamTimeout,
   createDreamTable,
   dreamCharacterIds,
@@ -32,7 +33,7 @@ function started(settings: Record<string, unknown> = {}, seed = 7): DreamTable {
   t = run(t, 'bob', { type: 'join', name: 'Bob' });
   t = run(t, 'ann', { type: 'set_ready', ready: true });
   t = run(t, 'bob', { type: 'set_ready', ready: true });
-  return run(t, 'host', { type: 'start' });
+  return briefAll(run(t, 'host', { type: 'start' }), ctx);
 }
 
 /** Plays the turns of everybody the most passive way for some rounds. */
@@ -325,6 +326,42 @@ describe('the Dreamfund table: play', () => {
     });
     expect(life(paid).plans.some((p) => p.kind === 'emergency')).toBe(false);
     expect(() => run(paid, who, { type: 'end_turn' })).not.toThrow();
+  });
+
+  it('lets every player read their character first: no roll, the insurances at once, and the game begins when all have said so', () => {
+    let t = table({ professions: 'duplicates', turnOrder: 'seat' }, 9);
+    t = run(t, 'ann', { type: 'join', name: 'Ann' });
+    t = run(t, 'bob', { type: 'join', name: 'Bob' });
+    t = run(t, 'ann', { type: 'set_ready', ready: true });
+    t = run(t, 'bob', { type: 'set_ready', ready: true });
+    t = run(t, 'host', { type: 'start' });
+    for (const who of ['host', 'ann']) {
+      t = run(t, who, { type: 'pick_profession', professionId: 'dual-student-informatik' });
+    }
+    t = run(t, 'bob', { type: 'pick_profession', professionId: 'lena-pflege' });
+    expect(t.phase).toBe('playing');
+    expect(t.briefing).toBe(true);
+    expect(t.activePlayerId).toBeNull();
+    expect(() => run(t, 'host', { type: 'roll' })).toThrow(/reading their character/);
+    const insured = (current: DreamTable, who: string) =>
+      DreamPlayer.restore(current.players.find((seat) => seat.id === who)!.life!, () => 0.5, {
+        sharedMarkets: true,
+      }).state.insurance?.active;
+    t = run(t, 'bob', { type: 'set_insurance', kind: 'household', on: false });
+    expect(insured(t, 'bob')).not.toContain('household');
+    // back to the choice: the others keep theirs
+    t = run(t, 'bob', { type: 'reopen_pick' });
+    expect(t.phase).toBe('picking');
+    expect(t.players.find((seat) => seat.id === 'ann')!.pick).toBe('dual-student-informatik');
+    t = run(t, 'bob', { type: 'pick_profession', professionId: 'mehmet-elektroniker' });
+    expect(t.briefing).toBe(true);
+    t = run(t, 'host', { type: 'confirm_briefing' });
+    t = run(t, 'ann', { type: 'confirm_briefing' });
+    expect(t.briefing).toBe(true);
+    t = run(t, 'bob', { type: 'confirm_briefing' });
+    expect(t.briefing).toBe(false);
+    expect(t.activePlayerId).toBe('host');
+    expect(() => run(t, 'bob', { type: 'reopen_pick' })).toThrow(/begun/);
   });
 
   it('refuses a move that is not possible, and changes nothing', () => {

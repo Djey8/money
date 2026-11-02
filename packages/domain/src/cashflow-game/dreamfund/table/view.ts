@@ -160,6 +160,8 @@ export interface DreamPlayerView {
   color: string;
   initials?: string;
   ready: boolean;
+  /** Has read the character and is ready for the first roll. */
+  briefed: boolean;
   /** The character: the viewer's own pick, everybody's once it is revealed (or at a table of unique characters). */
   pick: string | null;
   professionId: string | null;
@@ -200,6 +202,8 @@ export interface DreamTableView {
   activeSeat: number | null;
   tableRound: number;
   turnRolled: boolean;
+  /** Everybody is reading their character; the first roll waits. */
+  briefing: boolean;
   finishers: { seat: number; outcome: 'won' | 'bankrupt' }[];
   result: {
     reason: string;
@@ -246,6 +250,7 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
     activeSeat: table.activePlayerId ? seatOf(table, table.activePlayerId) : null,
     tableRound: table.tableRound,
     turnRolled: table.turnRolled,
+    briefing: table.briefing === true,
     finishers: table.finishers.map((f) => ({
       seat: seatOf(table, f.playerId),
       outcome: f.outcome,
@@ -284,6 +289,7 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
         color: p.color,
         ...(p.initials ? { initials: p.initials } : {}),
         ready: p.ready,
+        briefed: p.briefed === true,
         pick: mine || revealed || open ? p.pick : null,
         professionId: p.professionId,
         status: p.status,

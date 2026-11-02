@@ -3284,7 +3284,7 @@
   "Location.kind.card": "Prepaid- / Geschenkkarte",
   "CashflowGame.life.badge.education": "Ausbildung",
   "CashflowGame.life.info.education": "Du bist noch in der Ausbildung - Dualer Student mit Job und Studium. Das Studium endet mit deinem ersten Vollzeitvertrag, auf Stufe 2 deiner Karriere. Bis dahin können dich Karten für Studierende treffen (Semesterbeitrag, ein Laptop vor den Prüfungen); danach bleiben sie weg.",
-  "CashflowGame.life.value.studying": "In Ausbildung",
+  "CashflowGame.life.value.studying": "Studium",
   "CashflowGame.life.tapHint": "Tippe auf ein Abzeichen: was es bedeutet und was es im Spiel bewirkt.",
   "CashflowGame.life.valueInfo.single": "Single: kein Partner. Lebenskarten über einen Partner (ein Antrag, Zusammenziehen) können dir nicht passieren, und Träume zu zweit werden dir nicht angeboten.",
   "CashflowGame.life.valueInfo.partner": "In einer Beziehung: Karten über den Partner können passieren - ein Antrag, Zusammenziehen, eine Trennung. Träume zu zweit werden angeboten, und beim Partner können Rechnungen anfallen, bei denen du hilfst.",
@@ -3305,7 +3305,8 @@
   "CashflowGame.life.valueInfo.dog": "Ein Hund: eine monatliche Ausgabe und die Tierarzt-Notfälle des Notfallstapels.",
   "CashflowGame.life.valueInfo.studying": "In Ausbildung: das Studium endet auf Stufe 2 deiner Karriere. Studenten-Notfälle (Semesterbeitrag, der Laptop vor den Prüfungen) können dich bis dahin treffen.",
   "CashflowGame.insurance.fresh": "Du hast jetzt ein Auto. Die Kfz-Versicherungen werden unten angeboten: steige ein, um geschützt zu sein - ein unversicherter Autoschaden kostet dich alles.",
-  "CashflowGame.insurance.ask": "Vor deinem ersten Wurf: welche Versicherungen willst du? Die Prämie wird an jedem Zahltag gezahlt; ein versicherter Notfall kostet nur die Selbstbeteiligung. Deine Wahl gilt sofort.",
-  "CashflowGame.insurance.askOpen": "Versicherungen wählen",
-  "CashflowGame.insurance.askKeep": "Alle behalten"
+  "CashflowGame.life.value.car": "Auto",
+  "CashflowGame.insurance.manage": "Versicherungen ein- oder aussteigen",
+  "CashflowGame.expenseLine.carPartialInsurance": "Teilkaskoversicherung",
+  "CashflowGame.expenseLine.carFullInsurance": "Vollkaskoversicherung"
 }

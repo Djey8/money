@@ -3284,7 +3284,7 @@
   "Location.kind.card": "Tarjeta prepago / de regalo",
   "CashflowGame.life.badge.education": "Formación",
   "CashflowGame.life.info.education": "Sigues en formación: estudiante dual con trabajo y estudios. El estudio termina con tu primer contrato a jornada completa, en la etapa 2 de tu carrera.",
-  "CashflowGame.life.value.studying": "En formación",
+  "CashflowGame.life.value.studying": "Estudios",
   "CashflowGame.life.tapHint": "Toca una insignia para ver qué significa y qué hace en el juego.",
   "CashflowGame.life.valueInfo.single": "Soltero: sin pareja. Las cartas de vida sobre una pareja no pueden pasarte.",
   "CashflowGame.life.valueInfo.partner": "En pareja: pueden ocurrir cartas sobre la pareja y se ofrecen sueños de dos.",
@@ -3305,7 +3305,8 @@
   "CashflowGame.life.valueInfo.dog": "Un perro: un coste mensual y las emergencias del veterinario.",
   "CashflowGame.life.valueInfo.studying": "En formación: el estudio termina en la etapa 2 de tu carrera.",
   "CashflowGame.insurance.fresh": "Ahora tienes coche. Los seguros del coche se ofrecen abajo: súmate para estar cubierto.",
-  "CashflowGame.insurance.ask": "Antes de tu primera tirada: ¿qué seguros quieres? La prima se paga en cada día de pago; una emergencia asegurada solo cuesta la franquicia. Tu elección cuenta de inmediato.",
-  "CashflowGame.insurance.askOpen": "Elegir seguros",
-  "CashflowGame.insurance.askKeep": "Mantenerlos todos"
+  "CashflowGame.life.value.car": "Coche",
+  "CashflowGame.insurance.manage": "Entrar o salir de seguros",
+  "CashflowGame.expenseLine.carPartialInsurance": "Seguro de coche a terceros ampliado",
+  "CashflowGame.expenseLine.carFullInsurance": "Seguro de coche a todo riesgo"
 }

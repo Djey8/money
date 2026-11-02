@@ -3284,7 +3284,7 @@
   "Location.kind.card": "预付卡 / 礼品卡",
   "CashflowGame.life.badge.education": "在读",
   "CashflowGame.life.info.education": "你还在学习——边工作边读书的双元制学生。学业在你的职业生涯第2阶段（第一份全职合同）结束。",
-  "CashflowGame.life.value.studying": "在读",
+  "CashflowGame.life.value.studying": "学习",
   "CashflowGame.life.tapHint": "点按徽章，查看它的含义以及它在游戏中的作用。",
   "CashflowGame.life.valueInfo.single": "单身：没有伴侣。与伴侣有关的生活卡不会发生。",
   "CashflowGame.life.valueInfo.partner": "恋爱中：可能发生与伴侣有关的卡，也会提供两个人的梦想。",
@@ -3305,7 +3305,8 @@
   "CashflowGame.life.valueInfo.dog": "一只狗：每月花费和兽医突发事件。",
   "CashflowGame.life.valueInfo.studying": "在读：学业在你职业生涯第2阶段结束。",
   "CashflowGame.insurance.fresh": "你现在有车了。下方提供车险：加入即可获得保障。",
-  "CashflowGame.insurance.ask": "第一次掷骰前：你想要哪些保险？每个发薪日缴纳保费；有保险的突发事件只需承担免赔额。你的选择立即生效。",
-  "CashflowGame.insurance.askOpen": "选择保险",
-  "CashflowGame.insurance.askKeep": "全部保留"
+  "CashflowGame.life.value.car": "汽车",
+  "CashflowGame.insurance.manage": "加入或退出保险",
+  "CashflowGame.expenseLine.carPartialInsurance": "车险（部分保障）",
+  "CashflowGame.expenseLine.carFullInsurance": "车险（全险）"
 }

@@ -893,6 +893,30 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     };
   }
 
+  /**
+   * A line of the budget in the language of the screen. The books carry the title the line was made with (German for the characters),
+   * and that title is also what its transactions are filed under, so it is only translated where it is shown (the lines of the game
+   * know their key).
+   */
+  private shownLineTitle(title: string): string {
+    const keys = this.appState.cashflowGame.lineTitles ?? {};
+    const key = Object.keys(keys).find((candidate) => keys[candidate] === title);
+    if (!key) return title;
+    const id = `CashflowGame.expenseLine.${key}`;
+    const text = this.translate.instant(id);
+    return text === id ? title : text;
+  }
+
+  /** A starting debt in the language of the screen, by the key the character's card gives it. */
+  private shownLiabilityTag(tag: string): string {
+    const kit = this.currentProfession?.starterKit.liabilities ?? [];
+    const key = kit.find((line) => line.tag === tag)?.key;
+    if (!key) return tag;
+    const id = `CashflowGame.liabilityTag.${key}`;
+    const text = this.translate.instant(id);
+    return text === id ? tag : text;
+  }
+
   private liveSheets(): ProfessionSheetNumbers {
     const passive = this.livePassiveIncome;
     return {
@@ -909,7 +933,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         ...this.liveOtherIncomeLines,
       ],
       revenueTotal: this.liveTotalIncome,
-      expenses: this.liveExpenseLines.map((line) => ({ name: line.title, amount: line.amount })),
+      expenses: this.liveExpenseLines.map((line) => ({
+        name: this.shownLineTitle(line.title),
+        amount: line.amount,
+      })),
       expensesTotal: -this.liveTotalExpenses,
       assets: [
         { name: this.translate.instant('CashflowGame.cashOnHand'), amount: this.cash },
@@ -917,7 +944,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       ],
       assetsTotal: this.liveTotalAssets,
       liabilities: this.liveLiabilities.map((liability, index) => ({
-        name: liability.tag,
+        name: this.shownLiabilityTag(liability.tag),
         amount: Number(liability.amount),
         index,
       })),
@@ -1154,29 +1181,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.insuranceCache.rows;
   }
 
-  /** The insurances are asked once at the start of a table game, before the first roll: they count at once then. */
-  insuranceAsked = false;
-
-  get askInsurance(): boolean {
-    const remote = RemoteGameHook.current;
-    return (
-      !!remote?.dreamfund &&
-      !this.insuranceAsked &&
-      (this.appState.cashflowGame.turn?.count ?? 1) === 0 &&
-      this.cashflowGameService.insurances.length > 0
-    );
-  }
-
-  /** Opens the insurance list of the character; the question is answered with it. */
-  chooseInsurance(): void {
-    this.insuranceAsked = true;
-    this.goToInsurance();
-  }
-
-  keepInsurance(): void {
-    this.insuranceAsked = true;
-  }
-
   toggleInsurance(change: { kind: string; on: boolean }): void {
     this.cashflowGameService.setInsurance(change.kind, change.on, {
       onSuccess: () => undefined,
@@ -1410,11 +1414,15 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   toggleTrait(key: string): void {
     this.openTrait = this.openTrait === key ? null : key;
-    if (key === 'insurance') this.goToInsurance();
+  }
+
+  closeTrait(): void {
+    this.openTrait = null;
   }
 
   /** The insurance chip leads to where the insurances are hopped in and out: the profession panel, at its insurance section. */
-  private goToInsurance(): void {
+  goToInsurance(): void {
+    this.openTrait = null;
     const profession = this.currentProfession;
     if (this.hasActiveGame && profession && !this.viewedProfession) {
       this.openProfessionCard(profession);
@@ -1454,6 +1462,21 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.traitChipsCache.chips;
   }
 
+  /** The insurances held, with what each costs a month, in one line. */
+  private insuranceSummary(): string {
+    const held = this.appState.cashflowGame.life
+      ? this.cashflowGameService.insurances.filter((offer) => offer.held)
+      : [];
+    return held
+      .map((offer) => {
+        const premium = this.toDisplayAmount(
+          Math.round(this.cashflowGameService.insurancePremium(offer) * 100),
+        );
+        return `${this.translate.instant('CashflowGame.insurance.kind.' + offer.kind)} ${premium.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${this.appState.currency}`;
+      })
+      .join(' · ');
+  }
+
   /** The small card of the open trait: what it is, what it is now and what it does in the game. */
   get traitInfo(): {
     icon: string;
@@ -1462,6 +1485,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     text: string;
     extra?: string;
     more?: string;
+    action?: 'insurance';
   } | null {
     const chip = this.traitChips.find((candidate) => candidate.key === this.openTrait);
     if (!chip) return null;
@@ -1491,6 +1515,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       value: chip.detail ?? chip.text,
       text: t(`CashflowGame.life.info.${chip.key}`),
       ...(more && more !== valueKey ? { more } : {}),
+      ...(chip.key === 'insurance'
+        ? { extra: this.insuranceSummary(), action: 'insurance' as const }
+        : {}),
       ...(extra ? { extra } : {}),
     };
   }
@@ -1548,7 +1575,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         text: v(life.pet),
         raw: life.pet,
       });
-    if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('yes') });
+    if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('car') });
     const held = this.insurancesHeld;
     if (held > 0) badges.push({ key: 'insurance', icon: '🛡️', text: `× ${held}` });
     return badges;

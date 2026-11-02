@@ -4,7 +4,7 @@ import { seededRng } from '../../rng';
 import { runDreamBots } from './bot';
 import { DREAM_BOT_LEVELS, dreamBotId, type DreamBotLevel } from './bot-levels';
 import { rateTable, DREAM_START_RATING, type RatedSeat } from './rating';
-import { applyDreamCommand, createDreamTable, dreamCharacterIds } from './reducer';
+import { applyDreamCommand, briefAll, createDreamTable, dreamCharacterIds } from './reducer';
 import type { DreamTable } from './types';
 
 /**
@@ -81,7 +81,7 @@ export function playBotTable(input: {
       ctx,
     ).table;
   }
-  table = applyDreamCommand(table, 'host', { type: 'start' }, ctx).table;
+  table = briefAll(applyDreamCommand(table, 'host', { type: 'start' }, ctx).table, ctx);
   // the bots have picked as they were seated; the host's own pick, repeated, lets the table reveal
   table = applyDreamCommand(
     table,

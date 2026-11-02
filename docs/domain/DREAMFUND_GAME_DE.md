@@ -65,6 +65,13 @@ Feldern hat:
 Dein **Totem** steht neben dem Feld, auf dem du bist, auf der Linie von der Mitte der Karte durch das Feld, und zeigt darauf. Vor dem
 ersten Wurf wartet es am START.
 
+## Vor dem ersten Wurf
+
+An einem Tisch liest zuerst jeder, **wer er ist**: die Geschichte, was ihm wichtig ist, die Ziele, das Einkommen, die Ausgaben und die
+Schulden - und wählt die **Versicherungen**, die sofort gelten. Solange du nicht bereit bist, kannst du zurückgehen und einen anderen
+Charakter wählen (außer die Charaktere werden gelost). Das Spiel ist im Hintergrund schon begonnen; der erste Zug startet, wenn alle
+bereit sind.
+
 ## Ein Zug
 
 1. **Würfle** (ein oder zwei Würfel; manche Karten sagen, welche).
@@ -108,8 +115,7 @@ nächste wird gezogen. Ein Leben mit Kindern trifft die Klassenfahrt und die Zah
 ### Wo das Leben beginnt
 
 Jonas startet als **dualer Student**: ein Zimmer in einer **WG** (das ist die Mietzeile seines Budgets), **angestellt** in Teilzeit,
-**in Ausbildung** - das Studium endet mit seinem ersten Vollzeitvertrag, auf Stufe 2 seiner Karriere - und mit dem Auto, das er noch
-abbezahlt. Die anderen neun Charaktere starten dort, wo ihre Geschichte sie hinstellt: Lena allein mit ihrer Tochter, Katrin und Frank
+**in Ausbildung** - das Studium endet mit seinem ersten Vollzeitvertrag, auf Stufe 2 seiner Karriere. Die anderen neun Charaktere starten dort, wo ihre Geschichte sie hinstellt: Lena allein mit ihrer Tochter, Katrin und Frank
 verheiratet mit Kindern, Peter verheiratet mit erwachsenen Kindern. Die erste Tabelle unten sagt es für alle.
 
 ### Versicherungen
@@ -134,7 +140,7 @@ zusammen 24 TT im Monat (8,39 + 15,61); die anderen sind auf ihr Leben skaliert,
 
 | Charakter | Beziehung   | Kinder | Wohnen         | Auto | Studium | Versicherungen (im Monat) |
 | --------- | ----------- | ------ | -------------- | ---- | ------- | ------------------------- |
-| Jonas     | Single      | 0      | WG             | ja   | ja      | 24 TT                     |
+| Jonas     | Single      | 0      | WG             | nein | ja      | 24 TT                     |
 | Mehmet    | Single      | 0      | eigene Wohnung | ja   | nein    | 34 TT                     |
 | Lena      | Single      | 1      | eigene Wohnung | ja   | nein    | 22 TT                     |
 | Sophie    | Single      | 0      | eigene Wohnung | ja   | nein    | 32 TT                     |

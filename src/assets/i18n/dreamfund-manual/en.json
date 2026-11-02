@@ -16,7 +16,8 @@
     "s12",
     "s13",
     "s14",
-    "s15"
+    "s15",
+    "s16"
   ],
   "sections": {
     "s1": {
@@ -133,6 +134,16 @@
       ]
     },
     "s5": {
+      "nav": "Before the first roll",
+      "title": "Before the first roll",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "At a table every player first reads **who they are**: the story, what matters to them, the goals, the income, the expenses and the debts - and chooses the **insurances**, which count at once. Until you say you are ready you can go back and choose another character (unless the characters are drawn). The game is begun in the background; the first turn starts when everybody is ready."
+        }
+      ]
+    },
+    "s6": {
       "nav": "A turn",
       "title": "A turn",
       "blocks": [
@@ -160,7 +171,7 @@
         }
       ]
     },
-    "s6": {
+    "s7": {
       "nav": "Your life: the attributes, the insurances and what they do",
       "title": "Your life: the attributes, the insurances and what they do",
       "blocks": [
@@ -240,7 +251,7 @@
         },
         {
           "type": "p",
-          "text": "Jonas starts as a **dual student**: a room in a **shared flat** (that is the rent line of his budget), **employed** half-time, **in education** - the study ends with his first full-time contract, at stage 2 of his career - and with the car he is still paying off. The other nine characters start where their story says: Lena alone with her daughter, Katrin and Frank married with children, Peter married with grown children. The first table below says it for everybody."
+          "text": "Jonas starts as a **dual student**: a room in a **shared flat** (that is the rent line of his budget), **employed** half-time, **in education** - the study ends with his first full-time contract, at stage 2 of his career. The other nine characters start where their story says: Lena alone with her daughter, Katrin and Frank married with children, Peter married with grown children. The first table below says it for everybody."
         },
         {
           "type": "h3",
@@ -276,7 +287,7 @@
             "Insurances (a month)"
           ],
           "rows": [
-            ["Jonas", "single", "0", "shared flat", "yes", "yes", "24 TT"],
+            ["Jonas", "single", "0", "shared flat", "no", "yes", "24 TT"],
             ["Mehmet", "single", "0", "own flat", "yes", "no", "34 TT"],
             ["Lena", "single", "1", "own flat", "yes", "no", "22 TT"],
             ["Sophie", "single", "0", "own flat", "yes", "no", "32 TT"],
@@ -393,7 +404,7 @@
         }
       ]
     },
-    "s7": {
+    "s8": {
       "nav": "The cards",
       "title": "The cards",
       "blocks": [
@@ -560,7 +571,7 @@
         }
       ]
     },
-    "s8": {
+    "s9": {
       "nav": "The notes of a project",
       "title": "The notes of a project",
       "blocks": [
@@ -570,7 +581,7 @@
         }
       ]
     },
-    "s9": {
+    "s10": {
       "nav": "What is running on your account",
       "title": "What is running on your account",
       "blocks": [
@@ -580,7 +591,7 @@
         }
       ]
     },
-    "s10": {
+    "s11": {
       "nav": "The goals and how a game is won",
       "title": "The goals and how a game is won",
       "blocks": [
@@ -617,7 +628,7 @@
         }
       ]
     },
-    "s11": {
+    "s12": {
       "nav": "Playing together: your ranking and your points",
       "title": "Playing together: your ranking and your points",
       "blocks": [
@@ -717,7 +728,7 @@
         }
       ]
     },
-    "s12": {
+    "s13": {
       "nav": "Rules and settings",
       "title": "Rules and settings",
       "blocks": [
@@ -757,7 +768,7 @@
         }
       ]
     },
-    "s13": {
+    "s14": {
       "nav": "Ways to win",
       "title": "Ways to win",
       "blocks": [
@@ -783,7 +794,7 @@
         }
       ]
     },
-    "s14": {
+    "s15": {
       "nav": "The statistics of the characters",
       "title": "The statistics of the characters",
       "blocks": [
@@ -1197,7 +1208,7 @@
         }
       ]
     },
-    "s15": {
+    "s16": {
       "nav": "The ten characters and the three difficulties",
       "title": "The ten characters and the three difficulties",
       "blocks": [

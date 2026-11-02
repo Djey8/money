@@ -3284,7 +3284,7 @@
   "Location.kind.card": "بطاقة مدفوعة مسبقًا / بطاقة هدايا",
   "CashflowGame.life.badge.education": "التعليم",
   "CashflowGame.life.info.education": "ما زلت في التدريب: طالب مزدوج مع وظيفة ودراسة. تنتهي الدراسة بأول عقد دوام كامل، في المرحلة 2 من مسيرتك.",
-  "CashflowGame.life.value.studying": "قيد الدراسة",
+  "CashflowGame.life.value.studying": "دراسة",
   "CashflowGame.life.tapHint": "اضغط على شارة لترى معناها وما تفعله في اللعبة.",
   "CashflowGame.life.valueInfo.single": "أعزب: لا شريك. بطاقات الحياة عن الشريك لا تحدث لك.",
   "CashflowGame.life.valueInfo.partner": "في علاقة: قد تحدث بطاقات عن الشريك وتُعرض أحلام لشخصين.",
@@ -3305,7 +3305,8 @@
   "CashflowGame.life.valueInfo.dog": "كلب: تكلفة شهرية وطوارئ الطبيب البيطري.",
   "CashflowGame.life.valueInfo.studying": "قيد الدراسة: تنتهي الدراسة في المرحلة 2 من مسيرتك.",
   "CashflowGame.insurance.fresh": "لديك سيارة الآن. تأمينات السيارة معروضة أدناه: اشترك لتكون مغطى.",
-  "CashflowGame.insurance.ask": "قبل أول رمية: ما التأمينات التي تريدها؟ يُدفع القسط في كل يوم دفع؛ وتكلّف الطوارئ المؤمَّنة الحد المقتطع فقط. اختيارك ساري فورًا.",
-  "CashflowGame.insurance.askOpen": "اختر التأمينات",
-  "CashflowGame.insurance.askKeep": "أبقِها كلها"
+  "CashflowGame.life.value.car": "سيارة",
+  "CashflowGame.insurance.manage": "الاشتراك في التأمينات أو الخروج منها",
+  "CashflowGame.expenseLine.carPartialInsurance": "تأمين سيارة جزئي",
+  "CashflowGame.expenseLine.carFullInsurance": "تأمين سيارة شامل"
 }

@@ -1,7 +1,7 @@
 import { seededRng } from '../../rng';
 import { DreamPlayer } from '../player';
 import { runDreamBots } from './bot';
-import { applyDreamCommand, createDreamTable } from './reducer';
+import { applyDreamCommand, briefAll, createDreamTable } from './reducer';
 import type { DreamCommand, DreamTable } from './types';
 
 const ctx = { clock: { nowIso: () => '2026-11-01T10:00:00.000Z' } };
@@ -24,7 +24,7 @@ function tableWithHolding(): { table: DreamTable; seller: string; buyer: string;
   t = run(t, 'bob', { type: 'join', name: 'Bob' }).table;
   t = run(t, 'ann', { type: 'set_ready', ready: true }).table;
   t = run(t, 'bob', { type: 'set_ready', ready: true }).table;
-  t = run(t, 'host', { type: 'start' }).table;
+  t = briefAll(run(t, 'host', { type: 'start' }).table, ctx);
   const seller = t.activePlayerId!;
   const [buyer, third] = t.order.filter((id) => id !== seller);
   const seat = t.players.find((p) => p.id === seller)!;
@@ -190,7 +190,7 @@ describe('trading an Opportunity card at a Dreamfund table', () => {
       ctx,
     ).table;
     t = run(t, 'host', { type: 'add_bot', name: 'Expert', policyId: 'expert' }).table;
-    t = run(t, 'host', { type: 'start' }).table;
+    t = briefAll(run(t, 'host', { type: 'start' }).table, ctx);
     const host = t.players.find((p) => p.id === 'host')!;
     const life = DreamPlayer.restore(host.life!, seededRng(1), { sharedMarkets: true });
     const card = life.opportunityCard('S29')!;

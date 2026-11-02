@@ -3284,7 +3284,7 @@
   "Location.kind.card": "Prepaid / gift card",
   "CashflowGame.life.badge.education": "Education",
   "CashflowGame.life.info.education": "You are still in training - a dual student with a job and a study. The study ends with your first full-time contract, at stage 2 of your career. Until then cards for students can find you (semester fee, a laptop before the exams); afterwards they stay away.",
-  "CashflowGame.life.value.studying": "In training",
+  "CashflowGame.life.value.studying": "Study",
   "CashflowGame.life.tapHint": "Tap a badge to see what it means and what it does in the game.",
   "CashflowGame.life.valueInfo.single": "Single: no partner. Life cards about a partner (a proposal, moving in) cannot happen to you, and dreams for two are not offered.",
   "CashflowGame.life.valueInfo.partner": "In a relationship: cards about a partner can happen - a proposal, moving in, a break-up. Dreams for two are offered, and your partner can have bills you help with.",
@@ -3305,7 +3305,8 @@
   "CashflowGame.life.valueInfo.dog": "A dog: a monthly cost and the vet emergencies of the Emergency stack.",
   "CashflowGame.life.valueInfo.studying": "In training: the study ends at stage 2 of your career. Student emergencies (semester fee, the laptop before the exams) can find you until then.",
   "CashflowGame.insurance.fresh": "You have a car now. The car insurances are on offer below: hop in to be covered - an uninsured car damage costs you all of it.",
-  "CashflowGame.insurance.ask": "Before your first roll: which insurances do you want? A premium is paid every Payday; an insured emergency costs only the deductible. Your choice counts at once.",
-  "CashflowGame.insurance.askOpen": "Choose insurances",
-  "CashflowGame.insurance.askKeep": "Keep them all"
+  "CashflowGame.life.value.car": "Car",
+  "CashflowGame.insurance.manage": "Hop in or out of insurances",
+  "CashflowGame.expenseLine.carPartialInsurance": "Partial cover car insurance",
+  "CashflowGame.expenseLine.carFullInsurance": "Fully comprehensive car insurance"
 }

@@ -1,4 +1,4 @@
-import { applyDreamCommand, createDreamTable, passiveCommands } from './reducer';
+import { applyDreamCommand, briefAll, createDreamTable, passiveCommands } from './reducer';
 import { reviewDreamTable } from './review';
 import type { DreamTable } from './types';
 
@@ -21,7 +21,7 @@ function played(rounds: number): DreamTable {
     { type: 'add_bot', name: 'Expert', policyId: 'expert' },
     ctx,
   ).table;
-  t = applyDreamCommand(t, 'host', { type: 'start' }, ctx).table;
+  t = briefAll(applyDreamCommand(t, 'host', { type: 'start' }, ctx).table, ctx);
   for (let guard = 0; guard < rounds * 30 && t.tableRound <= rounds; guard += 1) {
     const who = t.activePlayerId!;
     for (const command of passiveCommands(t, who)) {

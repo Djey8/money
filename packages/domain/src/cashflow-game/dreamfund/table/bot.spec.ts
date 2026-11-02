@@ -1,6 +1,12 @@
 import { TableCommandError } from '../../table/types';
 import { dreamBotCommands, runDreamBots } from './bot';
-import { applyDreamCommand, createDreamTable, passiveCommands, dreamStandings } from './reducer';
+import {
+  applyDreamCommand,
+  briefAll,
+  createDreamTable,
+  passiveCommands,
+  dreamStandings,
+} from './reducer';
 import type { DreamTable } from './types';
 
 const ctx = { clock: { nowIso: () => '2026-11-01T10:00:00.000Z' } };
@@ -34,7 +40,7 @@ function tableWithBots(settings: Record<string, unknown> = {}, seed = 5): DreamT
     { type: 'add_bot', name: 'Sapling', policyId: 'sapling' },
     ctx,
   ).table;
-  return applyDreamCommand(t, 'host', { type: 'start' }, ctx).table;
+  return briefAll(applyDreamCommand(t, 'host', { type: 'start' }, ctx).table, ctx);
 }
 
 /** The people at the table play passively, the bots with their strategies, until the game ends. */

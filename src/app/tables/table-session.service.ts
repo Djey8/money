@@ -35,11 +35,18 @@ export function mergeTableView(previous: TableView | null, incoming: TableView):
   if (!previous) return incoming;
   return {
     ...incoming,
-    players: incoming.players.map((player, seat) =>
-      Object.prototype.hasOwnProperty.call(player, 'books')
-        ? player
-        : { ...player, books: previous.players[seat] ? previous.players[seat].books : null },
-    ),
+    players: incoming.players.map((player, seat) => {
+      if (Object.prototype.hasOwnProperty.call(player, 'books')) return player;
+      const before = previous.players[seat] as (typeof previous.players)[number] & {
+        dreamLife?: unknown;
+      };
+      // a seat whose life did not change keeps what the screen has of it (a Dreamfund life rides along with its books)
+      return {
+        ...player,
+        books: before ? before.books : null,
+        ...(before && before.dreamLife !== undefined ? { dreamLife: before.dreamLife } : {}),
+      };
+    }),
   };
 }
 

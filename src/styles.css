@@ -972,7 +972,7 @@ body.table-mode
     app-info-smile,
     app-info-fire
   )
-  :is(#editbtn, #addbtn, #deletebtn),
+  :is(#editbtn:not(.payback-btn), #addbtn, #deletebtn),
 body.table-mode app-info-grow #deletebtn,
 body.table-mode
   :is(

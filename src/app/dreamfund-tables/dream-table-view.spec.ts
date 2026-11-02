@@ -1,5 +1,6 @@
 import {
   applyDreamCommand,
+  briefAll,
   createDreamTable,
 } from '@money/domain/dist/cashflow-game/dreamfund/table/reducer';
 import { projectDreamFor } from '@money/domain/dist/cashflow-game/dreamfund/table/view';
@@ -33,7 +34,7 @@ function startedTable() {
     },
     ctx,
   ).table;
-  table = applyDreamCommand(table, 'host', { type: 'start' }, ctx).table;
+  table = briefAll(applyDreamCommand(table, 'host', { type: 'start' }, ctx).table, ctx);
   table = applyDreamCommand(
     table,
     'host',

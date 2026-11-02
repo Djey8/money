@@ -192,8 +192,16 @@ describe('a Dreamfund room', () => {
     expect(started.status).toBe(200);
     expect(started.body.table.phase).toBe('playing');
     expect(started.body.table.players.every((p) => p.professionId && p.life)).toBe(true);
+    // everybody reads who they are first; the game begins when the person has said so (the bots have)
+    expect(started.body.table.briefing).toBe(true);
+    expect(started.body.table.activeSeat).toBeNull();
+    const briefed = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+      command: { type: 'confirm_briefing' },
+    });
+    expect(briefed.status).toBe(200);
+    expect(briefed.body.table.briefing).toBe(false);
 
-    let view = started.body;
+    let view = briefed.body;
     const deadline = Date.now() + 200000;
     let moves = 0;
     while (view.table.phase === 'playing' && Date.now() < deadline) {
@@ -348,7 +356,12 @@ describe('a Dreamfund room', () => {
         policyId: 'dream:saver',
         level: 'beginner',
       });
-      let view = (await call(host, 'post', `/game/rooms/${roomId}/start`, {})).body;
+      await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+      let view = (
+        await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+          command: { type: 'confirm_briefing' },
+        })
+      ).body;
       const deadline = Date.now() + 200000;
       while (view.table.phase === 'playing' && Date.now() < deadline) {
         const move = view.table.activeSeat === view.table.you ? passive(view.legalActions) : null;

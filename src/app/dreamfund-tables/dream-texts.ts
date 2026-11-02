@@ -30,6 +30,16 @@ export interface DreamTexts {
   howPoints: string;
   planPerPayday: string;
   takeCharacter: string;
+  briefingTitle: string;
+  briefingIntro: string;
+  briefingInsurance: string;
+  briefingInsuranceHint: string;
+  briefingHeld: string;
+  briefingNotHeld: string;
+  briefingStart: string;
+  briefingWaiting: string;
+  briefingWaitingFor: string;
+  briefingBack: string;
   characterTaken: string;
   modeFriendsHint: string;
   boardHint: string;
@@ -218,6 +228,18 @@ const EN: DreamTexts = {
   howPoints: 'How the points are worked out',
   planPerPayday: 'Set aside at every Payday',
   takeCharacter: 'Take this character',
+  briefingTitle: 'Who you are',
+  briefingIntro:
+    'Read your character before the game begins: the story, what matters to them, the goals, the income, the expenses and the debts. Choose your insurances - they count at once.',
+  briefingInsurance: 'Your insurances',
+  briefingInsuranceHint:
+    'A premium is paid every Payday; an insured emergency costs only the deductible.',
+  briefingHeld: 'Insured',
+  briefingNotHeld: 'Not insured',
+  briefingStart: 'I know who I am - start',
+  briefingWaiting: 'Ready - waiting for the others',
+  briefingWaitingFor: 'Still reading:',
+  briefingBack: 'Choose another character',
   characterTaken: 'This is your character',
   modeFriendsHint:
     'Guided helps you learn the game with friends. A ranked game is always played strict.',
@@ -413,6 +435,18 @@ const DE: Partial<DreamTexts> = {
   howPoints: 'So werden die Punkte berechnet',
   planPerPayday: 'Bei jedem Zahltag zurücklegen',
   takeCharacter: 'Diesen Charakter wählen',
+  briefingTitle: 'Wer du bist',
+  briefingIntro:
+    'Lies deinen Charakter, bevor das Spiel beginnt: die Geschichte, was ihm wichtig ist, die Ziele, das Einkommen, die Ausgaben und die Schulden. Wähle deine Versicherungen - sie gelten sofort.',
+  briefingInsurance: 'Deine Versicherungen',
+  briefingInsuranceHint:
+    'Die Prämie wird an jedem Zahltag gezahlt; ein versicherter Notfall kostet nur die Selbstbeteiligung.',
+  briefingHeld: 'Versichert',
+  briefingNotHeld: 'Nicht versichert',
+  briefingStart: 'Ich weiß, wer ich bin - los',
+  briefingWaiting: 'Bereit - wir warten auf die anderen',
+  briefingWaitingFor: 'Lesen noch:',
+  briefingBack: 'Anderen Charakter wählen',
   characterTaken: 'Das ist dein Charakter',
   modeFriendsHint:
     'Geführt hilft beim Lernen mit Freunden. Ein gewertetes Spiel wird immer streng gespielt.',

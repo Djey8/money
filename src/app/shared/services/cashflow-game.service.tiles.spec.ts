@@ -53,7 +53,7 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(game.life).toMatchObject({
       relationship: 'single',
       kids: 0,
-      car: true,
+      car: false,
       home: 'shared_flat',
       education: true,
     });

@@ -3284,7 +3284,7 @@
   "Location.kind.card": "Carte prépayée / cadeau",
   "CashflowGame.life.badge.education": "Formation",
   "CashflowGame.life.info.education": "Vous êtes encore en formation : étudiant en alternance avec un emploi et des études. Les études se terminent avec votre premier contrat à temps plein, à l'étape 2 de votre carrière.",
-  "CashflowGame.life.value.studying": "En formation",
+  "CashflowGame.life.value.studying": "Études",
   "CashflowGame.life.tapHint": "Touchez un badge pour voir ce qu'il signifie et ce qu'il fait dans le jeu.",
   "CashflowGame.life.valueInfo.single": "Célibataire : pas de partenaire. Les cartes de vie sur un partenaire ne peuvent pas vous arriver.",
   "CashflowGame.life.valueInfo.partner": "En couple : des cartes sur le partenaire peuvent arriver et des rêves à deux sont proposés.",
@@ -3305,7 +3305,8 @@
   "CashflowGame.life.valueInfo.dog": "Un chien : un coût mensuel et les urgences du vétérinaire.",
   "CashflowGame.life.valueInfo.studying": "En formation : les études se terminent à l'étape 2 de votre carrière.",
   "CashflowGame.insurance.fresh": "Vous avez maintenant une voiture. Les assurances auto sont proposées ci-dessous : souscrivez pour être couvert.",
-  "CashflowGame.insurance.ask": "Avant votre premier lancer : quelles assurances voulez-vous ? La prime est payée à chaque jour de paie ; une urgence assurée ne coûte que la franchise. Votre choix compte tout de suite.",
-  "CashflowGame.insurance.askOpen": "Choisir les assurances",
-  "CashflowGame.insurance.askKeep": "Tout garder"
+  "CashflowGame.life.value.car": "Voiture",
+  "CashflowGame.insurance.manage": "Souscrire ou résilier des assurances",
+  "CashflowGame.expenseLine.carPartialInsurance": "Assurance auto tiers étendu",
+  "CashflowGame.expenseLine.carFullInsurance": "Assurance auto tous risques"
 }

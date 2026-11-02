@@ -62,6 +62,12 @@ tiles**). The map is made once when the game starts and never changes. A medium 
 Your **totem** stands next to the tile you are on, on the line from the middle of the map through the tile, and points at it. Before
 the first roll it waits at START.
 
+## Before the first roll
+
+At a table every player first reads **who they are**: the story, what matters to them, the goals, the income, the expenses and the
+debts - and chooses the **insurances**, which count at once. Until you say you are ready you can go back and choose another character
+(unless the characters are drawn). The game is begun in the background; the first turn starts when everybody is ready.
+
 ## A turn
 
 1. **Roll** the dice (one or two; some cards say which).
@@ -104,7 +110,7 @@ school trip and the braces; a life without a car never meets the flat tyre.
 ### Where the life starts
 
 Jonas starts as a **dual student**: a room in a **shared flat** (that is the rent line of his budget), **employed** half-time, **in
-education** - the study ends with his first full-time contract, at stage 2 of his career - and with the car he is still paying off.
+education** - the study ends with his first full-time contract, at stage 2 of his career.
 The other nine characters start where their story says: Lena alone with her daughter, Katrin and Frank married with children, Peter
 married with grown children. The first table below says it for everybody.
 
@@ -129,7 +135,7 @@ are scaled to their life, and the last column of the first table shows what they
 
 | Character | Relationship | Children | Home        | Car | Study | Insurances (a month) |
 | --------- | ------------ | -------- | ----------- | --- | ----- | -------------------- |
-| Jonas     | single       | 0        | shared flat | yes | yes   | 24 TT                |
+| Jonas     | single       | 0        | shared flat | no  | yes   | 24 TT                |
 | Mehmet    | single       | 0        | own flat    | yes | no    | 34 TT                |
 | Lena      | single       | 1        | own flat    | yes | no    | 22 TT                |
 | Sophie    | single       | 0        | own flat    | yes | no    | 32 TT                |

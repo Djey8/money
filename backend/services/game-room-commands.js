@@ -132,6 +132,8 @@ const DREAMFUND_COMMANDS = {
     }),
   },
   skip: { ...none, build: () => ({ type: 'skip' }) },
+  confirm_briefing: { ...none, build: () => ({ type: 'confirm_briefing' }) },
+  reopen_pick: { ...none, build: () => ({ type: 'reopen_pick' }) },
   end_turn: { ...none, build: () => ({ type: 'end_turn' }) },
   settle_payday: { ...none, build: () => ({ type: 'settle_payday' }) },
   fund_reserve: {

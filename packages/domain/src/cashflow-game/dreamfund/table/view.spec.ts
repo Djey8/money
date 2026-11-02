@@ -1,4 +1,4 @@
-import { applyDreamCommand, createDreamTable } from './reducer';
+import { applyDreamCommand, briefAll, createDreamTable } from './reducer';
 import { dreamLegalActions, projectDreamFor } from './view';
 import type { DreamTable } from './types';
 
@@ -17,7 +17,7 @@ function started(): DreamTable {
   ).table;
   t = applyDreamCommand(t, 'ann', { type: 'join', name: 'Ann' }, ctx).table;
   t = applyDreamCommand(t, 'ann', { type: 'set_ready', ready: true }, ctx).table;
-  return applyDreamCommand(t, 'host', { type: 'start' }, ctx).table;
+  return briefAll(applyDreamCommand(t, 'host', { type: 'start' }, ctx).table, ctx);
 }
 
 describe('what a viewer of a Dreamfund table is shown', () => {

@@ -251,6 +251,8 @@ export function applyDreamCommand(
   let next: DreamTable;
   if (TRADE_COMMANDS.has(command.type)) {
     next = trade(table, playerId, command, ctx, emit);
+  } else if (table.briefing && command.type === 'set_insurance') {
+    next = briefingInsurance(table, playerId, command);
   } else if (PLAY_COMMANDS.has(command.type)) {
     next = play(table, playerId, command, ctx, emit, false);
   } else {
@@ -354,6 +356,10 @@ function lobbyCommand(
       return start(table, playerId, ctx, emit);
     case 'pick_profession':
       return pick(table, playerId, command.professionId, ctx, emit);
+    case 'confirm_briefing':
+      return confirmBriefing(table, playerId, ctx, emit);
+    case 'reopen_pick':
+      return reopenPick(table, playerId, emit);
     case 'close': {
       if (playerId !== table.hostId) fail('NOT_HOST', 'Only the host can close the table.');
       if (table.phase === 'finished' || table.phase === 'abandoned') {
@@ -511,7 +517,15 @@ function reveal(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
       rules: table.settings.customRules,
       sharedMarkets: true,
     }).snapshot();
-    return { ...seat, professionId, life, pending: null, harvest: null, reached: {} };
+    return {
+      ...seat,
+      professionId,
+      life,
+      pending: null,
+      harvest: null,
+      reached: {},
+      briefed: !!seat.bot,
+    };
   });
   const order =
     table.settings.turnOrder === 'random'
@@ -523,23 +537,102 @@ function reveal(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
   emit('professions_revealed', null, {
     professions: Object.fromEntries(players.map((p) => [p.id, p.professionId])),
   });
-  emit('play_started', null, { order });
-  let next: DreamTable = {
+  const next: DreamTable = {
     ...table,
     phase: 'playing',
     players,
     order,
-    activePlayerId: order[0],
+    activePlayerId: null,
     tableRound: 1,
     turnRolled: false,
+    briefing: true,
     markets: initialMarkets(),
     rngState: rng.state(),
   };
+  // everybody reads who they are first; a table of bots begins at once
+  return players.every((seat) => seat.briefed) ? beginPlay(next, ctx, emit) : next;
+}
+
+/** Everybody who has not yet read their character says so (a test, a simulation or a table of bots begins at once). */
+export function briefAll(table: DreamTable, ctx: DreamContext): DreamTable {
+  let current = table;
+  for (const seat of table.players) {
+    if (current.briefing && !seat.briefed) {
+      current = applyDreamCommand(current, seat.id, { type: 'confirm_briefing' }, ctx).table;
+    }
+  }
+  return current;
+}
+
+/** Every player knows their character: the game begins with the first turn. */
+function beginPlay(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
+  const first = table.order[0];
+  emit('play_started', null, { order: table.order });
+  let next: DreamTable = { ...table, briefing: false, activePlayerId: first };
   next = clockOf.init(next);
-  next = clockOf.start(next, order[0], nowOf(ctx));
+  next = clockOf.start(next, first, nowOf(ctx));
   emit('round_started', null, { round: 1 });
-  emit('turn_started', order[0]);
+  emit('turn_started', first);
   return next;
+}
+
+/** The player has read their character: the game begins when everybody has. */
+function confirmBriefing(
+  table: DreamTable,
+  playerId: string,
+  ctx: DreamContext,
+  emit: Emit,
+): DreamTable {
+  if (table.phase !== 'playing' || !table.briefing) {
+    fail('WRONG_PHASE', 'The game has begun already.');
+  }
+  const next = mapSeat(table, playerId, (seat) => ({ ...seat, briefed: true }));
+  return next.players.every((seat) => seat.briefed || seat.status === 'left')
+    ? beginPlay(next, ctx, emit)
+    : next;
+}
+
+/** Back to the choice of the character: the lives are dropped, the others keep their picks. */
+function reopenPick(table: DreamTable, playerId: string, emit: Emit): DreamTable {
+  if (table.phase !== 'playing' || !table.briefing) {
+    fail('WRONG_PHASE', 'The game has begun: the character cannot be changed now.');
+  }
+  if (table.settings.professions === 'random') {
+    fail('ILLEGAL_MOVE', 'At this table the characters are drawn.');
+  }
+  emit('picking_started', playerId);
+  return {
+    ...table,
+    phase: 'picking',
+    briefing: false,
+    activePlayerId: null,
+    players: table.players.map((seat) => ({
+      ...seat,
+      pick: seat.id === playerId ? null : (seat.professionId ?? seat.pick),
+      professionId: null,
+      life: null,
+      pending: null,
+      harvest: null,
+      briefed: false,
+    })),
+  };
+}
+
+/** Hopping in or out of an insurance while the characters are read (before the first roll): it counts at once. */
+function briefingInsurance(
+  table: DreamTable,
+  playerId: string,
+  command: Extract<DreamCommand, { type: 'set_insurance' }>,
+): DreamTable {
+  const seat = seatOf(table, playerId);
+  if (!seat.life) fail('ILLEGAL_MOVE', 'There is no life to insure yet.');
+  const rng = tableRng(table.rngState);
+  const player = wake(table, seat, rng.rng);
+  if (!(command.kind in (player.state.insurance?.premiums ?? {}))) {
+    fail('ILLEGAL_MOVE', 'You have no such insurance on offer.');
+  }
+  player.setInsurance(command.kind, command.on);
+  return sleep({ ...table, rngState: rng.state() }, playerId, player, {});
 }
 
 // ── Play ───────────────────────────────────────────────────────────────────────────────────────────
@@ -581,6 +674,7 @@ function play(
   internal: boolean,
 ): DreamTable {
   if (table.phase !== 'playing') fail('WRONG_PHASE', 'The game is not being played now.');
+  if (table.briefing) fail('WRONG_PHASE', 'Everybody is reading their character first.');
   const seat = seatOf(table, playerId);
   if (!alive(table, seat)) fail('ILLEGAL_MOVE', 'You are out of the game.');
   const now = nowOf(ctx);

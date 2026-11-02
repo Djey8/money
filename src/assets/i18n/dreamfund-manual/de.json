@@ -16,7 +16,8 @@
     "s12",
     "s13",
     "s14",
-    "s15"
+    "s15",
+    "s16"
   ],
   "sections": {
     "s1": {
@@ -138,6 +139,16 @@
       ]
     },
     "s5": {
+      "nav": "Vor dem ersten Wurf",
+      "title": "Vor dem ersten Wurf",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "An einem Tisch liest zuerst jeder, **wer er ist**: die Geschichte, was ihm wichtig ist, die Ziele, das Einkommen, die Ausgaben und die Schulden - und wählt die **Versicherungen**, die sofort gelten. Solange du nicht bereit bist, kannst du zurückgehen und einen anderen Charakter wählen (außer die Charaktere werden gelost). Das Spiel ist im Hintergrund schon begonnen; der erste Zug startet, wenn alle bereit sind."
+        }
+      ]
+    },
+    "s6": {
       "nav": "Ein Zug",
       "title": "Ein Zug",
       "blocks": [
@@ -165,7 +176,7 @@
         }
       ]
     },
-    "s6": {
+    "s7": {
       "nav": "Dein Leben: die Merkmale, die Versicherungen und was sie bewirken",
       "title": "Dein Leben: die Merkmale, die Versicherungen und was sie bewirken",
       "blocks": [
@@ -245,7 +256,7 @@
         },
         {
           "type": "p",
-          "text": "Jonas startet als **dualer Student**: ein Zimmer in einer **WG** (das ist die Mietzeile seines Budgets), **angestellt** in Teilzeit, **in Ausbildung** - das Studium endet mit seinem ersten Vollzeitvertrag, auf Stufe 2 seiner Karriere - und mit dem Auto, das er noch abbezahlt. Die anderen neun Charaktere starten dort, wo ihre Geschichte sie hinstellt: Lena allein mit ihrer Tochter, Katrin und Frank verheiratet mit Kindern, Peter verheiratet mit erwachsenen Kindern. Die erste Tabelle unten sagt es für alle."
+          "text": "Jonas startet als **dualer Student**: ein Zimmer in einer **WG** (das ist die Mietzeile seines Budgets), **angestellt** in Teilzeit, **in Ausbildung** - das Studium endet mit seinem ersten Vollzeitvertrag, auf Stufe 2 seiner Karriere. Die anderen neun Charaktere starten dort, wo ihre Geschichte sie hinstellt: Lena allein mit ihrer Tochter, Katrin und Frank verheiratet mit Kindern, Peter verheiratet mit erwachsenen Kindern. Die erste Tabelle unten sagt es für alle."
         },
         {
           "type": "h3",
@@ -281,7 +292,7 @@
             "Versicherungen (im Monat)"
           ],
           "rows": [
-            ["Jonas", "Single", "0", "WG", "ja", "ja", "24 TT"],
+            ["Jonas", "Single", "0", "WG", "nein", "ja", "24 TT"],
             ["Mehmet", "Single", "0", "eigene Wohnung", "ja", "nein", "34 TT"],
             ["Lena", "Single", "1", "eigene Wohnung", "ja", "nein", "22 TT"],
             ["Sophie", "Single", "0", "eigene Wohnung", "ja", "nein", "32 TT"],
@@ -394,7 +405,7 @@
         }
       ]
     },
-    "s7": {
+    "s8": {
       "nav": "Die Karten",
       "title": "Die Karten",
       "blocks": [
@@ -561,7 +572,7 @@
         }
       ]
     },
-    "s8": {
+    "s9": {
       "nav": "Die Notizen eines Projekts",
       "title": "Die Notizen eines Projekts",
       "blocks": [
@@ -571,7 +582,7 @@
         }
       ]
     },
-    "s9": {
+    "s10": {
       "nav": "Was auf deinem Konto läuft",
       "title": "Was auf deinem Konto läuft",
       "blocks": [
@@ -581,7 +592,7 @@
         }
       ]
     },
-    "s10": {
+    "s11": {
       "nav": "Die Ziele und wie man gewinnt",
       "title": "Die Ziele und wie man gewinnt",
       "blocks": [
@@ -618,7 +629,7 @@
         }
       ]
     },
-    "s11": {
+    "s12": {
       "nav": "Zusammen spielen: dein Ranking und deine Punkte",
       "title": "Zusammen spielen: dein Ranking und deine Punkte",
       "blocks": [
@@ -718,7 +729,7 @@
         }
       ]
     },
-    "s12": {
+    "s13": {
       "nav": "Regeln und Einstellungen",
       "title": "Regeln und Einstellungen",
       "blocks": [
@@ -758,7 +769,7 @@
         }
       ]
     },
-    "s13": {
+    "s14": {
       "nav": "Wege zum Sieg",
       "title": "Wege zum Sieg",
       "blocks": [
@@ -784,7 +795,7 @@
         }
       ]
     },
-    "s14": {
+    "s15": {
       "nav": "Die Statistiken der Charaktere",
       "title": "Die Statistiken der Charaktere",
       "blocks": [
@@ -1204,7 +1215,7 @@
         }
       ]
     },
-    "s15": {
+    "s16": {
       "nav": "Die zehn Charaktere und die drei Schwierigkeiten",
       "title": "Die zehn Charaktere und die drei Schwierigkeiten",
       "blocks": [

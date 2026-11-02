@@ -134,6 +134,8 @@ export interface DreamSeat {
   bot?: { policyId: string; professionId?: string };
   /** This player's life, set when play starts. */
   life: DreamPlayerData | null;
+  /** The player has read their character (and chosen the insurances) and is ready for the first roll. */
+  briefed?: boolean;
   /** What the player has to decide before the turn can end. */
   pending: DreamPending | null;
   /** The Harvest card's open options for this player. */
@@ -209,6 +211,8 @@ export interface DreamTable {
   tableRound: number;
   /** The active player has rolled this turn. */
   turnRolled: boolean;
+  /** The characters are settled and every life is begun, but nobody rolls before each player has read who they are (JFK, 2026-11-03). */
+  briefing?: boolean;
   /** Players who won or went bankrupt, in the order it happened. */
   finishers: { playerId: string; outcome: 'won' | 'bankrupt' }[];
   result: DreamResult | null;
@@ -235,6 +239,10 @@ export type DreamCommand =
   | { type: 'update_settings'; settings: DreamSettingsInput }
   | { type: 'start' }
   | { type: 'pick_profession'; professionId: string }
+  /** The player knows who they are: the game begins when everybody does. */
+  | { type: 'confirm_briefing' }
+  /** Back to the choice of the character (before the game has begun). */
+  | { type: 'reopen_pick' }
   | { type: 'close' }
   | { type: 'pause' }
   | { type: 'resume' }

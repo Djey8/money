@@ -2897,25 +2897,30 @@
         {{ chip.icon }} <span class="cf-trait-text">{{ chip.text }}</span>
       </button>
     </div>
-    <div class="cf-insurance-ask" *ngIf="askInsurance" role="status">
-      <p>🛡️ {{ 'CashflowGame.insurance.ask' | translate }}</p>
-      <div class="cf-insurance-ask-buttons">
-        <button type="button" class="btn btn--sm btn--primary" (click)="chooseInsurance()">
-          {{ 'CashflowGame.insurance.askOpen' | translate }}
-        </button>
-        <button type="button" class="btn btn--sm" (click)="keepInsurance()">
-          {{ 'CashflowGame.insurance.askKeep' | translate }}
-        </button>
-      </div>
-    </div>
     <small class="cf-traits-hint" *ngIf="!openTrait">{{
       'CashflowGame.life.tapHint' | translate
     }}</small>
     <article class="cf-trait-card" *ngIf="traitInfo as info" role="note">
+      <button
+        type="button"
+        class="cf-trait-close"
+        (click)="closeTrait()"
+        [attr.aria-label]="'CashflowGame.close' | translate"
+      >
+        ✕
+      </button>
       <h5>{{ info.icon }} {{ info.title }}: {{ info.value }}</h5>
       <p>{{ info.text }}</p>
       <p class="cf-trait-more" *ngIf="info.more">{{ info.more }}</p>
       <p class="cf-trait-extra" *ngIf="info.extra">{{ info.extra }}</p>
+      <button
+        type="button"
+        class="btn btn--sm"
+        *ngIf="info.action === 'insurance'"
+        (click)="goToInsurance()"
+      >
+        {{ 'CashflowGame.insurance.manage' | translate }} ›
+      </button>
     </article>
   </div>
 </ng-template>

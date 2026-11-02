@@ -19,6 +19,8 @@ import { TradeOfferComponent } from './trade-offer.component';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
 import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
+import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
+import { insuranceOffers } from '@money/domain';
 import { extrasOf, moneyOf } from '../dreamfund-tables/dream-table-view';
 import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
 
@@ -37,11 +39,27 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
     TableStageComponent,
     TradeOfferComponent,
     DreamMoneyComponent,
+    TableBriefingComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
   template: `
     <section class="tl-layer" *ngIf="view() as table" [attr.dir]="rtl ? 'rtl' : 'ltr'">
+      <!-- a Dreamfund game before the first roll: who you are, and the insurances -->
+      <app-table-briefing
+        *ngIf="briefing() as b"
+        [professionId]="b.professionId"
+        [difficulty]="b.difficulty"
+        [lang]="lang"
+        [insurances]="b.insurances"
+        [confirmed]="b.confirmed"
+        [canGoBack]="b.canGoBack"
+        [busy]="busy()"
+        [waitingFor]="b.waitingFor"
+        (insuranceChange)="move({ type: 'set_insurance', kind: $event.kind, on: $event.on })"
+        (confirm)="move({ type: 'confirm_briefing' })"
+        (back)="move({ type: 'reopen_pick' })"
+      ></app-table-briefing>
       <div class="tl-status" [class.tl-status--mine]="isMyTurn()">
         <strong class="tl-turn">{{ turnText() }}</strong>
         <span class="tl-meta">{{ t.round }} {{ table.tableRound }}</span>
@@ -608,6 +626,48 @@ export class TableLayerComponent implements OnDestroy {
         ?.legalActions()
         .map((entry) => entry.action as string) ?? [],
   );
+
+  /** At a Dreamfund table before the first roll: the player's own character to read, and the insurances to choose. */
+  readonly briefing = computed(() => {
+    const view = this.view() as unknown as {
+      kind?: string;
+      dreamBriefing?: boolean;
+      youSeat: number | null;
+      settings: { difficulty?: 'easy' | 'medium' | 'hard'; professions?: string };
+      players: {
+        name: string;
+        bot?: unknown;
+        professionId: string | null;
+        dreamBriefed?: boolean;
+        dreamLife?: {
+          books: { state: never; subscriptions: { title: string; amountMinor: number }[] };
+        };
+      }[];
+    } | null;
+    if (!view || view.kind !== 'dreamfund' || !view.dreamBriefing || view.youSeat === null) {
+      return null;
+    }
+    const me = view.players[view.youSeat];
+    if (!me?.professionId || !me.dreamLife) return null;
+    const { state, subscriptions } = me.dreamLife.books;
+    const insurances: BriefingInsurance[] = insuranceOffers(state).map((offer) => ({
+      kind: offer.kind,
+      held: offer.heldNext,
+      premiumMinor: Math.abs(
+        subscriptions.find((sub) => sub.title === offer.premiumTitle)?.amountMinor ?? 0,
+      ),
+    }));
+    return {
+      professionId: me.professionId,
+      difficulty: view.settings.difficulty,
+      insurances,
+      confirmed: me.dreamBriefed === true,
+      canGoBack: view.settings.professions !== 'random',
+      waitingFor: view.players
+        .filter((player, seat) => seat !== view.youSeat && !player.dreamBriefed)
+        .map((player) => player.name),
+    };
+  });
 
   /** At a Dreamfund table, the player's own money: shown while their own books are on screen. */
   readonly dreamMoney = computed(() => {

@@ -65,14 +65,18 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         bot: player.bot,
         pick: player.pick,
         professionId: player.professionId,
-        books: life ? life.books : null,
+        // a life that did not change is not sent again (the stream sends only the seats whose life changed): the screen keeps the one it
+        // has - without it a token would jump back to START whenever somebody else moves (JFK, 2026-11-03)
+        ...('life' in (player as object)
+          ? { books: life ? life.books : null, dreamLife: life }
+          : {}),
         // the Dreamfund's extras, for the bridge to the app
-        dreamLife: life,
         dreamPending: (player as unknown as { pending?: unknown }).pending ?? null,
         dreamInfo: (player as unknown as { pendingInfo?: unknown }).pendingInfo ?? null,
         dreamResolved: (player as unknown as { resolved?: unknown }).resolved ?? null,
         dreamHarvest: (player as unknown as { harvest?: unknown }).harvest ?? null,
         dreamSummary: (player as unknown as { summary?: unknown }).summary ?? null,
+        dreamBriefed: (player as unknown as { briefed?: boolean }).briefed === true,
         dreamPaydayDue: (player as unknown as { paydayDue?: boolean }).paydayDue === true,
       };
     }),
@@ -80,6 +84,8 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
     activeSeat: view.activeSeat,
     tableRound: view.tableRound,
     turnRolled: view.turnRolled,
+    // the characters are being read: nobody rolls before everybody has said they are ready
+    dreamBriefing: (view as unknown as { briefing?: boolean }).briefing === true,
     clock: {
       deadlineAt: view.clock.deadlineAt,
       pausedAt: view.clock.pausedAt,

@@ -30,6 +30,8 @@ import { TablePresenter } from './table-presenter';
 import { applyDreamExtrasToApp, dreamLifeToApp } from './dream-books-bridge';
 import { extrasOf, lifeOf, pendingOf } from '../dreamfund-tables/dream-table-view';
 import { withDreamPending } from '../dreamfund-tables/dream-pending';
+import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
+import { shownDebtTags, withShownLineTitles } from './table-line-titles';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { TableGameDriver } from './table-game-driver';
 import { DreamTableGameDriver } from '../dreamfund-tables/dream-table-game-driver';
@@ -202,7 +204,10 @@ export class TableModeService {
         runMenu: (id) => this.runTableMenu(id),
       },
     );
-    if (driver instanceof DreamTableGameDriver) driver.lang = lang;
+    if (driver instanceof DreamTableGameDriver) {
+      driver.lang = lang;
+      driver.originalTag = (shown) => this.debtNames.get(shown) ?? shown;
+    }
     RemoteGameHook.current = driver;
     RemoteGameHook.otherDice = () => this.presenter.dice();
     RemoteGameHook.leaveGame = () =>
@@ -286,7 +291,10 @@ export class TableModeService {
     const told = this.presenter.tokenAt();
     // the board is the table's: it shows where everybody stands, whoever's books are looked at. Only the player's own token walks
     // while their roll is animated (`mine`); looking at somebody else changes nothing on it.
-    const walking = RemoteGameHook.holdUpdates && this.looking() === null;
+    // (the screen's own token only counts in the player's own turn: while somebody else's move is told it stands wherever it is - at START
+    // when the player has not walked yet - and the player's token would jump back to START, JFK 2026-11-03)
+    const walking =
+      RemoteGameHook.holdUpdates && this.looking() === null && view.activeSeat === view.youSeat;
     return view.players.map((player) => {
       const books = player.books as unknown as GameBooks | null;
       return {
@@ -556,6 +564,20 @@ export class TableModeService {
     }
   }
 
+  /** The debts of a table character by the word they are shown with, and the tag of the server (to pay one off). */
+  private debtNames = new Map<string, string>();
+
+  /** The starting debts (tag and key) of a Dreamfund seat's character. */
+  private debtsOf(view: TableView, seat: number): { tag: string; key?: string }[] {
+    const id = (view.players[seat] as { professionId?: string | null }).professionId;
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    const profession = set?.professions.find((candidate) => candidate.id === id);
+    return (profession?.starterKit.liabilities ?? []).map((line) => ({
+      tag: line.tag,
+      key: line.key,
+    }));
+  }
+
   /**
    * Shows one player's books: the app's in-memory state becomes theirs. Called on every table update, so the panel always shows
    * the table as the server has it.
@@ -569,7 +591,28 @@ export class TableModeService {
     const shown = lifeOf(view, seat)
       ? withDreamPending(books, pendingOf(view, seat), { ...extrasOf(view, seat), lang: this.lang })
       : books;
-    applyBooksToApp(AppStateService.instance, shown, discardsOf(view), this.bankLocationNames());
+    // the lines of the budget in the language of the screen (the server's books keep the card's own titles)
+    let shownInLanguage = shown;
+    if (lifeOf(view, seat)) {
+      try {
+        const translate = this.injector.get(TranslateService);
+        const say = (key: string) => {
+          const text = translate.instant(key);
+          return text === key ? null : text;
+        };
+        const debts = this.debtsOf(view, seat);
+        shownInLanguage = withShownLineTitles(shown, say, debts);
+        this.debtNames = shownDebtTags(debts, say);
+      } catch {
+        // without the app's own translations (a bare test) the books are shown as they are
+      }
+    }
+    applyBooksToApp(
+      AppStateService.instance,
+      shownInLanguage,
+      discardsOf(view),
+      this.bankLocationNames(),
+    );
     // a Dreamfund seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen
     const life = lifeOf(view, seat);
     if (life) {
