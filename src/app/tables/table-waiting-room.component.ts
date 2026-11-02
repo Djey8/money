@@ -23,6 +23,7 @@ import {
   type TableSeat,
 } from './tables-api.service';
 import { AddTableComponent } from './add-table.component';
+import { CharacterPreviewComponent } from './character-preview.component';
 import { SeatAvatarComponent } from './seat-avatar.component';
 import { seatToPlayer } from './seat-stats';
 import { TablePlayerInfoComponent } from './table-player-info.component';
@@ -53,7 +54,13 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
 @Component({
   selector: 'app-table-waiting-room',
   standalone: true,
-  imports: [CommonModule, AddTableComponent, SeatAvatarComponent, TablePlayerInfoComponent],
+  imports: [
+    CommonModule,
+    AddTableComponent,
+    SeatAvatarComponent,
+    TablePlayerInfoComponent,
+    CharacterPreviewComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
@@ -219,8 +226,9 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             class="tx-btn"
             type="button"
             [class.tx-btn--primary]="me.pick === profession.id"
+            [class.wr-looking]="previewId === profession.id"
             [disabled]="session.busy()"
-            (click)="session.lobby('profession', { professionId: profession.id })"
+            (click)="previewId = profession.id"
           >
             {{ profession.title }}
           </button>
@@ -232,6 +240,23 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             (click)="session.lobby('profession', { professionId: 'random' })"
           >
             🎲 {{ t.random }}
+          </button>
+        </div>
+        <!-- a character is read before it is taken: who they are, the dream, the income, the debts -->
+        <div class="wr-preview" *ngIf="previewId">
+          <app-character-preview
+            [professionId]="previewId"
+            [difficulty]="dream ? dreamSettings().difficulty : undefined"
+            [gameSetId]="table.settings.gameSetId"
+            [lang]="lang"
+          ></app-character-preview>
+          <button
+            type="button"
+            class="tx-btn tx-btn--primary tx-btn--wide"
+            [disabled]="session.busy() || me.pick === previewId"
+            (click)="takePreview()"
+          >
+            {{ me.pick === previewId ? d.characterTaken : d.takeCharacter }}
           </button>
         </div>
         <p class="wr-hint">{{ t.waitingPicks }}</p>
@@ -545,6 +570,15 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
         line-height: 1;
         cursor: pointer;
       }
+      .wr-looking {
+        outline: 2px solid var(--color-primary, #2a7de1);
+      }
+      .wr-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
       .wr-actions,
       .wr-professions {
         display: flex;
@@ -708,6 +742,8 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   showRules = false;
   copied = false;
   botsOpen = false;
+  /** The character being read before it is taken. */
+  previewId: string | null = null;
   botLevel: BotLevel = 'master';
   botCatalog: BotInfo[] = [];
   private seatKey = '';
@@ -913,6 +949,11 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
 
   levelText(level: BotLevel | undefined): string {
     return level ? this.skillText(level) : this.t.botTag;
+  }
+
+  /** The character that was read is taken. */
+  takePreview(): void {
+    if (this.previewId) void this.session.lobby('profession', { professionId: this.previewId });
   }
 
   toggleReady(): void {

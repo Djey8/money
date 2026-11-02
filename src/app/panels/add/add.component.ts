@@ -502,12 +502,37 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
    * typed Grow parser) and sent as the matching move; the server books it with the card's and the offer's numbers. Anything else
    * a plain transaction would do is not a move of the game and is refused.
    */
+  /** What the dialog funds at a Dreamfund table: the reserve (a Fire project), or a dream (a Smile project); null for anything else. */
+  private dreamFunding(state: AppStateService): { decision: string; amountMinor: number } | null {
+    const title = String(AddComponent.categoryTextField ?? '')
+      .replace(/^@/, '')
+      .trim()
+      .toLowerCase();
+    const amountMinor = Math.round(
+      Math.abs(parseFloat(String(AddComponent.amountTextField))) * 100,
+    );
+    if (!title || !amountMinor) return null;
+    if (
+      state.allFireEmergencies.some((fire) => fire.reserve && fire.title.toLowerCase() === title)
+    ) {
+      return { decision: 'fundReserve', amountMinor };
+    }
+    if (state.allSmileProjects.some((smile) => smile.title.toLowerCase() === title)) {
+      return { decision: 'fundDream', amountMinor };
+    }
+    return null;
+  }
+
   private async addAtTable(remote: RemoteGame): Promise<void> {
     const comment = AddComponent.commentTextField;
     const state = AppStateService.instance;
     const statements = parseGrowComment(comment);
     let outcome: { ok: boolean; message?: string } | null = null;
-    if (/#doodad\b/.test(comment)) {
+    // a Dreamfund table: money put into the reserve or into a dream is the table's move (the table books it)
+    const funded = remote.dreamfund ? this.dreamFunding(state) : null;
+    if (funded && remote.dreamMove) {
+      outcome = await remote.dreamMove(funded);
+    } else if (/#doodad\b/.test(comment)) {
       const offered = state.cashflowGame.turn?.pending?.offered;
       if (offered) outcome = await remote.payDoodad(offered.cardId);
     } else if (/#market\b/.test(comment)) {

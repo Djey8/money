@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import type { DreamfundBoard, DreamfundTile } from '@money/domain';
+import type { BoardToken } from './rat-race-board.component';
 
 /** The colour of each kind of tile - the colours of the accounts where there is one (Smile green, Fire red), the same everywhere. */
 export const TILE_COLORS: Record<DreamfundTile, string> = {
@@ -181,16 +182,38 @@ const HEIGHT_TAKEN = 400;
         rx="16"
         [style.stroke]="color(here.kind)"
       />
-      <g class="db-token" [style.transform]="tokenTransform">
-        <polygon
-          *ngIf="tokenAngle !== null"
-          class="db-token-pointer"
-          points="19,-9 33,0 19,9"
-          [attr.transform]="'rotate(' + tokenAngle + ')'"
-        />
-        <circle r="21" class="db-token-body" />
-        <circle r="8" class="db-token-dot" />
-      </g>
+      <!-- at a table: everybody's token, in the colour and the two letters of its player, the one on the move highlighted -->
+      <ng-container *ngIf="tokens.length; else ownToken">
+        <g
+          *ngFor="let token of placed; trackBy: trackToken"
+          class="db-token db-token--player"
+          [class.db-token--active]="token.active"
+          [style.transform]="token.transform"
+        >
+          <polygon
+            *ngIf="token.angle !== null"
+            class="db-token-pointer"
+            points="19,-9 33,0 19,9"
+            [attr.transform]="'rotate(' + token.angle + ')'"
+            [style.fill]="token.color"
+          />
+          <circle *ngIf="token.active" r="29" class="db-token-glow" [style.stroke]="token.color" />
+          <circle r="21" class="db-token-body" [style.fill]="token.color" />
+          <text class="db-token-label">{{ token.label }}</text>
+        </g>
+      </ng-container>
+      <ng-template #ownToken>
+        <g class="db-token" [style.transform]="tokenTransform">
+          <polygon
+            *ngIf="tokenAngle !== null"
+            class="db-token-pointer"
+            points="19,-9 33,0 19,9"
+            [attr.transform]="'rotate(' + tokenAngle + ')'"
+          />
+          <circle r="21" class="db-token-body" />
+          <circle r="8" class="db-token-dot" />
+        </g>
+      </ng-template>
     </svg>
   `,
   styles: [
@@ -278,6 +301,24 @@ const HEIGHT_TAKEN = 400;
       .db-token-dot {
         fill: var(--color-surface, #fff);
       }
+      .db-token-label {
+        fill: #fff;
+        font-size: 17px;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: central;
+        paint-order: stroke;
+        stroke: rgba(0, 0, 0, 0.35);
+        stroke-width: 2px;
+      }
+      .db-token-glow {
+        fill: none;
+        stroke-width: 6;
+        opacity: 0.55;
+      }
+      .db-token--active .db-token-body {
+        stroke-width: 7;
+      }
       @media (prefers-reduced-motion: reduce) {
         .db-token {
           transition: none;
@@ -293,6 +334,8 @@ export class DreamBoardComponent {
   @Input({ required: true }) map!: DreamfundBoard;
   /** The tile the token stands on; null at START. */
   @Input() position: number | null = null;
+  /** At a table: every player's token (the position of each, its colour and letters). Empty: the one token of a solo game. */
+  @Input() tokens: BoardToken[] = [];
   readonly tileSize = TILE;
   readonly START_HEIGHT = START_HEIGHT;
   readonly icons = TILE_ICONS;
@@ -348,6 +391,51 @@ export class DreamBoardComponent {
     };
     this.cache = { key, value };
     return value;
+  }
+
+  /** The tokens of a table, each beside its tile; several on one tile stand apart, and at START side by side. */
+  get placed(): {
+    id: string;
+    label: string;
+    color: string;
+    active: boolean;
+    transform: string;
+    angle: number | null;
+  }[] {
+    const sameAt = new Map<number | null, number>();
+    return this.tokens.map((token) => {
+      const count = sameAt.get(token.position) ?? 0;
+      sameAt.set(token.position, count + 1);
+      const shift =
+        count * 26 - 13 * (this.tokens.filter((t) => t.position === token.position).length - 1);
+      if (token.position === null) {
+        const at = this.layout.start;
+        return {
+          id: token.id,
+          label: token.label,
+          color: token.color,
+          active: !!token.active,
+          transform: `translate(${at.x + shift * 1.6}px, ${at.y + 8}px)`,
+          angle: null,
+        };
+      }
+      const at = this.layout.spots[token.position] ?? this.layout.tiles[token.position];
+      // tokens on one tile are spread along the track, at right angles to the way they face
+      const angle = this.layout.spots[token.position]?.angle ?? 0;
+      const rad = ((angle + 90) * Math.PI) / 180;
+      return {
+        id: token.id,
+        label: token.label,
+        color: token.color,
+        active: !!token.active,
+        transform: `translate(${at.x + Math.cos(rad) * shift}px, ${at.y + Math.sin(rad) * shift}px)`,
+        angle: this.layout.spots[token.position]?.angle ?? null,
+      };
+    });
+  }
+
+  trackToken(_: number, token: { id: string }): string {
+    return token.id;
   }
 
   get hereTile(): DrawnTile | null {

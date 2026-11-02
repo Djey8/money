@@ -1,4 +1,5 @@
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { RemoteGameHook } from 'src/app/shared/services/remote-game';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -81,6 +82,25 @@ setTimeout(() =>
   ],
 })
 export class InfoSmileComponent extends BaseInfoComponent {
+  /** At a table of another game a project can be given a plan per Payday: asked of the game at the table, so these pages know none of it. */
+  get tablePlan(): { label: string; button: string; perMinor: number } | null {
+    const remote = RemoteGameHook.current;
+    const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
+    if (!remote?.projectPlan || !project || remote.viewOnly()) return null;
+    return remote.projectPlan({ kind: 'smile', title: project.title });
+  }
+
+  tablePlanTyped: number | null = null;
+
+  setTablePlan(): void {
+    const remote = RemoteGameHook.current;
+    const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
+    const plan = this.tablePlan;
+    if (!remote?.setProjectPlan || !project || !plan) return;
+    const perMinor = Math.round((this.tablePlanTyped ?? plan.perMinor / 100) * 100);
+    void remote.setProjectPlan({ kind: 'smile', title: project.title }, perMinor);
+  }
+
   static index = 1;
 
   static title = 'Driver Licence';

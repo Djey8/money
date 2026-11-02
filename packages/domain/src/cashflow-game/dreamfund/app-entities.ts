@@ -35,11 +35,14 @@ interface AppProjectBase {
 
 export interface AppSmile extends AppProjectBase {
   dream?: boolean;
+  /** What the table sets aside for it at every Payday (a plan of the player), minor units. */
+  dreamPlanMinor?: number;
   dreamCardId?: string;
 }
 
 export interface AppFire extends AppProjectBase {
   reserve?: boolean;
+  dreamPlanMinor?: number;
   emergencyCardId?: string;
 }
 
@@ -115,10 +118,16 @@ export function dreamAppEntities(
 
   const smile: AppSmile[] = [];
   const fire: AppFire[] = [];
+  const planned = (kind: string, id: string) =>
+    p.plans.find((plan) => plan.kind === kind && plan.id === id)?.perMinor ?? 0;
 
   // the character's own dream: a Smile project from the first day
   if (text?.dream.project) {
-    const project: AppSmile = { ...projectOf(text.dream.project, nowIso), dream: true };
+    const project: AppSmile = {
+      ...projectOf(text.dream.project, nowIso),
+      dream: true,
+      dreamPlanMinor: planned('life', 'life'),
+    };
     scaleTargets(project.buckets, p.dreamTargetMinor);
     fill(project.buckets, p.dreamLived ? p.dreamTargetMinor : p.dreamSavedMinor);
     smile.push(project);
@@ -136,6 +145,7 @@ export function dreamAppEntities(
       title: card.title[l],
       sub: `${card.tier} · ${card.category} · ${card.points}`,
       dreamCardId: card.id,
+      dreamPlanMinor: planned('smile', card.id),
       phase: 'planning',
       description: card.story[l],
       buckets: card.buckets.map((bucket) => ({
@@ -161,7 +171,11 @@ export function dreamAppEntities(
 
   // the emergency reserve of three monthly expenses, a Fire project
   if (text?.reserve?.project) {
-    const project: AppFire = { ...projectOf(text.reserve.project, nowIso), reserve: true };
+    const project: AppFire = {
+      ...projectOf(text.reserve.project, nowIso),
+      reserve: true,
+      dreamPlanMinor: planned('mojo', 'mojo'),
+    };
     for (const bucket of project.buckets) bucket.target = fromMinorUnits(monthly);
     fill(project.buckets, p.reserveMinor);
     fire.push(project);

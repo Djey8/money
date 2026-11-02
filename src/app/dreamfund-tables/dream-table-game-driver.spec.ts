@@ -10,6 +10,8 @@ describe('DreamTableGameDriver', () => {
         return { events: [{ type: 'rolled', seat: 0, data: { dice: [4] } }], appliedVersion: 5 };
       }),
       untilVersion: jest.fn(async () => undefined),
+      view: () => ({ version: 1000 }),
+      resync: jest.fn(async () => undefined),
       problem: () => null,
     } as unknown as TableSessionService;
     return { driver: new DreamTableGameDriver(session, () => refusal), played };

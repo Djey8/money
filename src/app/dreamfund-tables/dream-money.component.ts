@@ -4,14 +4,6 @@ import { FormsModule } from '@angular/forms';
 import type { DreamHarvestOpen, DreamLifeSummary, DreamTableView } from './dream-session.service';
 import { dreamMoney, dreamTexts, type DreamTexts } from './dream-texts';
 
-interface Goal {
-  key: string;
-  kind: 'mojo' | 'life' | 'smile';
-  id: string;
-  label: string;
-  perMinor: number;
-}
-
 /**
  * The player's own money at a Dreamfund table (todo/dreamfund-tables-solo-ui.md, R4f): what the month leaves is put into the reserve
  * and the dream, debts are repaid, a plan says how much goes to a goal at every Payday, and the month is settled. These are the table's
@@ -25,18 +17,11 @@ interface Goal {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../tables/tables.css',
   template: `
-    <details class="dm" [open]="paydayDue && canAct">
+    <details class="dm" *ngIf="anything" [open]="true">
       <summary class="dm-head">
-        <strong>💰 {{ t.money }}</strong>
-        <span class="dm-nums">{{ t.cash }} {{ m(summary.cashMinor) }}</span>
+        <strong>🎲 {{ t.money }}</strong>
       </summary>
       <div class="dm-body">
-        <p class="dm-line">
-          {{ t.reserve }} {{ m(summary.reserveMinor) }} / {{ m(summary.reserveTargetMinor) }} ·
-          {{ t.dream }} {{ m(summary.dreamSavedMinor) }} / {{ m(summary.dreamTargetMinor) }} ·
-          {{ t.cashflow }} {{ m(summary.cashflowMinor) }}
-        </p>
-
         <div class="dm-settle" *ngIf="paydayDue && canAct">
           <span>{{ t.payDay }}</span>
           <button
@@ -50,55 +35,6 @@ interface Goal {
         </div>
 
         <ng-container *ngIf="canAct">
-          <div class="dm-row">
-            <input
-              type="number"
-              min="0"
-              class="dm-amount"
-              [(ngModel)]="amount"
-              [placeholder]="t.amount"
-              [attr.aria-label]="t.amount"
-            />
-            <button
-              type="button"
-              class="tx-btn tx-btn--small"
-              [disabled]="busy || !minor(amount)"
-              (click)="move.emit({ type: 'fund_reserve', amountMinor: minor(amount) })"
-            >
-              {{ t.putInReserve }}
-            </button>
-            <button
-              type="button"
-              class="tx-btn tx-btn--small"
-              [disabled]="busy || !minor(amount)"
-              (click)="move.emit({ type: 'fund_dream', amountMinor: minor(amount) })"
-            >
-              {{ t.putInDream }}
-            </button>
-            <button
-              type="button"
-              class="tx-btn tx-btn--small"
-              *ngIf="summary.bankLoanMinor"
-              [disabled]="busy || !minor(amount)"
-              (click)="move.emit({ type: 'repay_bank_loan', amountMinor: minor(amount) })"
-            >
-              {{ t.repayBank }} ({{ m(summary.bankLoanMinor) }})
-            </button>
-          </div>
-
-          <div class="dm-row" *ngIf="summary.debts.length">
-            <small>{{ t.debts }}:</small>
-            <button
-              type="button"
-              class="tx-btn tx-btn--small"
-              *ngFor="let debt of summary.debts"
-              [disabled]="busy"
-              (click)="move.emit({ type: 'repay_debt', tag: debt.tag })"
-            >
-              {{ t.repay }} {{ debt.tag }} ({{ m(debt.amountMinor) }})
-            </button>
-          </div>
-
           <!-- what the player owns: sold at the market, or offered to the others -->
           <div class="dm-plans" *ngIf="summary.holdings.length">
             <small>{{ t.holdings }}:</small>
@@ -106,14 +42,6 @@ interface Goal {
               <span class="dm-goal"
                 >{{ holding.title }} · {{ m(holding.monthlyMinor) }} {{ t.perMonth }}</span
               >
-              <button
-                type="button"
-                class="tx-btn tx-btn--small"
-                [disabled]="busy"
-                (click)="move.emit({ type: 'sell_holding', holding: holding.title })"
-              >
-                {{ t.sell }}
-              </button>
               <ng-container *ngIf="!trade && can('offer_trade')">
                 <input
                   type="number"
@@ -138,30 +66,6 @@ interface Goal {
                   {{ t.offerTrade }}
                 </button>
               </ng-container>
-            </div>
-          </div>
-
-          <!-- how much goes to a goal at every Payday -->
-          <div class="dm-plans">
-            <small>{{ t.plans }}:</small>
-            <div class="dm-row" *ngFor="let goal of goals(); trackBy: trackGoal">
-              <span class="dm-goal">{{ goal.label }}</span>
-              <input
-                type="number"
-                min="0"
-                class="dm-amount"
-                [ngModel]="goal.perMinor / 100"
-                (ngModelChange)="plans[goal.key] = $event"
-                [attr.aria-label]="goal.label"
-              />
-              <button
-                type="button"
-                class="tx-btn tx-btn--small"
-                [disabled]="busy"
-                (click)="setPlan(goal)"
-              >
-                {{ t.payPlan }}
-              </button>
             </div>
           </div>
         </ng-container>
@@ -343,7 +247,6 @@ export class DreamMoneyComponent {
   /** The Harvest card's open options for the player. */
   @Input() harvest: DreamHarvestOpen | null = null;
 
-  amount: number | null = null;
   tradePrice: number | null = null;
   counterPrice: number | null = null;
 
@@ -352,9 +255,6 @@ export class DreamMoneyComponent {
   }
 
   trackHolding = (_: number, holding: { title: string }): string => holding.title;
-  /** What the player typed for each plan (by key), until it is set. */
-  plans: Record<string, number> = {};
-
   get t(): DreamTexts {
     return dreamTexts(this.lang);
   }
@@ -367,40 +267,14 @@ export class DreamMoneyComponent {
     return Math.round((Number(units) || 0) * 100);
   }
 
-  trackGoal = (_: number, goal: { key: string }): string => goal.key;
-
-  /** The goals money can be planned for: the reserve, the dream of the character, and every dream taken. */
-  goals(): Goal[] {
-    const planned = (kind: string, id: string) =>
-      this.summary.plans.find((plan) => plan.kind === kind && plan.id === id)?.perMinor ?? 0;
-    return [
-      {
-        key: 'mojo',
-        kind: 'mojo',
-        id: 'mojo',
-        label: this.t.reserve,
-        perMinor: planned('mojo', 'mojo'),
-      },
-      {
-        key: 'life',
-        kind: 'life',
-        id: 'life',
-        label: this.t.dream,
-        perMinor: planned('life', 'life'),
-      },
-      ...this.summary.smile.map((dream) => ({
-        key: `smile:${dream.cardId}`,
-        kind: 'smile' as const,
-        id: dream.cardId,
-        label: dream.cardId,
-        perMinor: planned('smile', dream.cardId),
-      })),
-    ];
-  }
-
-  setPlan(goal: Goal): void {
-    const typed = this.plans[goal.key];
-    const perMinor = typed === undefined ? goal.perMinor : this.minor(typed);
-    this.move.emit({ type: 'set_plan', kind: goal.kind, id: goal.id, perMinor });
+  /** The strip is there only while the table has something for the player that the app's own pages cannot do. */
+  get anything(): boolean {
+    const harvest = this.harvest;
+    return !!(
+      (this.paydayDue && this.canAct) ||
+      this.trade ||
+      (this.canAct && this.summary.holdings.length && this.can('offer_trade')) ||
+      (harvest && (harvest.sellable.length || harvest.sales.length || harvest.ladders.length))
+    );
   }
 }

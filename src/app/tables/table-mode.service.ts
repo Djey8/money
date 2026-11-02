@@ -184,7 +184,7 @@ export class TableModeService {
       (session.view() as { kind?: string } | null)?.kind === 'dreamfund'
         ? DreamTableGameDriver
         : TableGameDriver;
-    RemoteGameHook.current = new Driver(
+    const driver = new Driver(
       session,
       () => this.refusal(),
       () => this.history(),
@@ -202,6 +202,8 @@ export class TableModeService {
         runMenu: (id) => this.runTableMenu(id),
       },
     );
+    if (driver instanceof DreamTableGameDriver) driver.lang = lang;
+    RemoteGameHook.current = driver;
     RemoteGameHook.otherDice = () => this.presenter.dice();
     RemoteGameHook.leaveGame = () =>
       this.leave(() => {
@@ -518,6 +520,14 @@ export class TableModeService {
   gate(): RemoteGate | null {
     const view = this.view();
     const words = tableLayerTexts(this.lang);
+    // a Dreamfund turn ends when the player says so: after the roll, and once every card of the tile is dealt with
+    if ((view as { kind?: string } | null)?.kind === 'dreamfund') {
+      if (!view || view.youSeat === null || view.phase !== 'playing') return null;
+      if (view.activeSeat !== view.youSeat || !view.turnRolled || this.looking() !== null)
+        return null;
+      if (pendingOf(view, view.youSeat) || RemoteGameHook.holdUpdates) return null;
+      return { label: words.endTurn, disabled: this.presenter.busy() };
+    }
     if (!view || view.youSeat === null || !view.holdSeats.includes(view.youSeat)) return null;
     if (this.looking() !== null) return null;
     // not while the player's own roll is still being shown

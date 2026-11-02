@@ -47,53 +47,23 @@ describe('DreamMoneyComponent', () => {
 
   beforeEach(() => TestBed.configureTestingModule({ imports: [DreamMoneyComponent] }));
 
-  it('puts the typed amount into the reserve or the dream, in minor units', () => {
-    render({ canAct: true });
-    const input = fixture.nativeElement.querySelector('input.dm-amount') as HTMLInputElement;
-    input.value = '12.5';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    click('Into the reserve');
-    click('Into the dream');
-    expect(moves).toEqual([
-      { type: 'fund_reserve', amountMinor: 1250 },
-      { type: 'fund_dream', amountMinor: 1250 },
-    ]);
-  });
-
-  it('repays a debt and sets a plan, which the table keeps for every Payday', () => {
-    render({ canAct: true });
-    click('Student loan');
-    fixture.componentInstance.plans['life'] = 40;
-    fixture.componentInstance.setPlan(
-      fixture.componentInstance.goals().find((g) => g.key === 'life')!,
-    );
-    expect(moves[0]).toEqual({ type: 'repay_debt', tag: 'Student loan' });
-    expect(moves[1]).toEqual({ type: 'set_plan', kind: 'life', id: 'life', perMinor: 4000 });
-  });
-
   it('settles the month when a Payday waits, and offers no moves out of turn', () => {
     render({ canAct: true, paydayDue: true });
     click('Done with the month');
     expect(moves).toEqual([{ type: 'settle_payday' }]);
     render({ canAct: false });
-    expect(fixture.nativeElement.textContent).not.toContain('Student loan');
+    expect(fixture.nativeElement.querySelector('details')).toBeNull();
   });
 
-  it('sells a holding at the market, or offers it to the others for a price', () => {
+  it('offers a holding to the others for a price (the money moves live in the app pages)', () => {
     render({ canAct: true, allowed: ['offer_trade'] });
-    const input = fixture.nativeElement.querySelectorAll('input.dm-amount');
-    // the amount of the month is the first field; the price of the offer is the next
-    const price = (input as NodeListOf<HTMLInputElement>)[1];
+    const price = fixture.nativeElement.querySelector('input.dm-amount') as HTMLInputElement;
     price.value = '30';
     price.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    click('Sell');
     click('Offer');
-    expect(moves).toEqual([
-      { type: 'sell_holding', holding: 'Dividend ETF' },
-      { type: 'offer_trade', holding: 'Dividend ETF', priceMinor: 3000 },
-    ]);
+    expect(moves).toEqual([{ type: 'offer_trade', holding: 'Dividend ETF', priceMinor: 3000 }]);
+    expect(fixture.nativeElement.textContent).not.toContain('Into the reserve');
   });
 
   it('answers an offer of somebody else, off turn, and lets the seller take a counter offer', () => {

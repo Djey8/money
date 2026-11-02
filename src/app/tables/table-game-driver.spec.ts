@@ -9,6 +9,8 @@ function fakeSession(answer: unknown, problem: string | null = null) {
       return answer;
     }),
     untilVersion: jest.fn(async () => undefined),
+    view: () => ({ version: 1000 }),
+    resync: jest.fn(async () => undefined),
     problem: () => problem,
   } as unknown as TableSessionService;
   return { session, calls };

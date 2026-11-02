@@ -12,8 +12,10 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import type { Subscription } from 'rxjs';
 import type {
   AssetKind,
+  EmergencyCard,
   HarvestCard,
   HarvestFactorBand,
   HarvestHolderEffect,
@@ -121,6 +123,31 @@ interface OpportunityBandLike extends OpportunityRollLike {
               }}</small>
             </h4>
             <p>{{ e.card.story[lang] }}</p>
+
+            <!-- what each number of the die means, and what was rolled (it stays on the card) -->
+            <section
+              class="tc-dice-table"
+              *ngFor="let table of emergencyDiceTables(e); trackBy: trackTable"
+            >
+              <h5>
+                {{ 'CashflowGame.dice.title' | translate
+                }}<ng-container *ngIf="table.title"> · {{ table.title }}</ng-container>
+              </h5>
+              <div
+                class="tc-dice-row"
+                *ngFor="let row of table.rows"
+                [attr.data-tone]="row.tone"
+                [class.tc-dice-row--hit]="row.hit"
+              >
+                <strong class="tc-dice-range">{{ row.range }}</strong>
+                <span>
+                  <span *ngFor="let line of row.lines; trackBy: trackValue" class="tc-dice-line">{{
+                    line
+                  }}</span>
+                </span>
+              </div>
+              <p class="tc-note" *ngIf="table.rolled !== null">🎲 {{ table.rolled }}</p>
+            </section>
 
             <div class="tc-choices" *ngIf="e.card.type === 'choice' && !e.projectTitle">
               <button
@@ -1786,6 +1813,10 @@ interface OpportunityBandLike extends OpportunityRollLike {
       .tc-dice-line {
         display: block;
       }
+      .tc-dice-row--hit {
+        outline: 2px solid currentColor;
+        font-weight: 700;
+      }
       .tc-dice-row[data-tone='good'] {
         border-inline-start-color: #2e9e5b;
         background: #e7f6ea;
@@ -1974,9 +2005,17 @@ export class TileCardComponent implements OnInit, OnDestroy {
     void this.dreamMove({ decision: 'pay', pay: how });
   }
 
+  private booksShown?: Subscription;
+
   ngOnInit(): void {
-    // the table has drawn the card already: nothing is opened from here
-    if (this.dreamTable) return;
+    // the table has drawn the card already: nothing is opened from here. What it brings to the screen (the books of a table update)
+    // is drawn again, as this card is not told otherwise.
+    if (this.dreamTable) {
+      this.booksShown = AppStateService.instance.transactionsUpdated$.subscribe(() =>
+        this.cdr.markForCheck(),
+      );
+      return;
+    }
     // an Opportunity tile starts with the choice of a pile, not with a card
     if (!this.autoOpen || this.tile === 'opportunity') return;
     const shown =
@@ -1993,6 +2032,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.booksShown?.unsubscribe();
     clearInterval(this.timer);
   }
 
@@ -2795,8 +2835,13 @@ export class TileCardComponent implements OnInit, OnDestroy {
       // the table rolls the die; it is seen tumbling and coming to rest on what it rolled
       void this.roll(async () => {
         await this.dreamMove({ decision: 'rollDie', key });
-        const rolled = this.dreamEmergency?.['rolls'] as Record<string, number> | undefined;
-        return rolled?.[key] ? [rolled[key]] : [];
+        // the table's books reach the screen a moment after the answer: wait for the die
+        for (let i = 0; i < 25; i += 1) {
+          const rolled = this.dreamEmergency?.['rolls'] as Record<string, number> | undefined;
+          if (rolled?.[key]) return [rolled[key]];
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        return [];
       });
       return;
     }
@@ -2804,6 +2849,61 @@ export class TileCardComponent implements OnInit, OnDestroy {
       this.service.rollEmergencyDie(key, this.callbacks);
       return Object.values(this.service.emergencyView?.selection.rolls ?? {});
     });
+  }
+
+  /**
+   * The dice of an Emergency card, band by band (what each number costs), and the number rolled once it was - so a player knows the
+   * stakes before throwing and what fell afterwards.
+   */
+  emergencyDiceTables(e: {
+    card: EmergencyCard;
+    selection: { rolls?: Record<string, number> };
+    quote: { insured: boolean };
+  }): {
+    key: string;
+    title: string;
+    rows: (DiceRowView & { hit?: boolean })[];
+    rolled: number | null;
+  }[] {
+    const lang = this.lang;
+    const factor = e.card.fixedPrice ? 1 : this.service.emergencyPriceFactor;
+    const rolls = e.selection.rolls ?? {};
+    const tableOf = (
+      key: string,
+      title: string,
+      bands: { from: number; to: number; amountMinor: number }[],
+    ) => {
+      const rolled = rolls[key] ?? null;
+      return {
+        key,
+        title,
+        rolled,
+        rows: bands.map((band): DiceRowView & { hit: boolean } => ({
+          range: band.from === band.to ? `${band.from}` : `${band.from}–${band.to}`,
+          lines: [
+            band.amountMinor === 0
+              ? this.translate.instant('CashflowGame.dice.nothing')
+              : `${this.amount(Math.round(band.amountMinor * factor))} ${this.currency}`,
+          ],
+          tone: band.amountMinor === 0 ? 'good' : 'bad',
+          hit: rolled !== null && rolled >= band.from && rolled <= band.to,
+        })),
+      };
+    };
+    const tables: {
+      key: string;
+      title: string;
+      rows: (DiceRowView & { hit?: boolean })[];
+      rolled: number | null;
+    }[] = [];
+    if (e.card.dice) tables.push(tableOf('main', '', e.card.dice));
+    for (const bucket of e.card.buckets ?? []) {
+      if (bucket.dice) tables.push(tableOf(`bucket:${bucket.id}`, bucket.title[lang], bucket.dice));
+    }
+    if (e.card.insuredExtra && e.quote.insured) {
+      tables.push(tableOf('extra', e.card.insuredExtra.label[lang], e.card.insuredExtra.dice));
+    }
+    return tables;
   }
 
   rerollEmergency(): void {

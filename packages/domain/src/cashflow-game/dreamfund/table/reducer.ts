@@ -651,6 +651,7 @@ function doCommand(
     case 'roll': {
       if (table.turnRolled) refuse('You have rolled already.');
       if (pending) refuse('Decide about the card first.');
+      const roundBefore = p.state.round;
       const rolled = p.roll();
       // what the solo screen needs to show the roll: the dice, and the way the token walked
       emit('rolled', id, {
@@ -665,7 +666,11 @@ function doCommand(
       for (let i = 0; i < rolled.paydays; i += 1) {
         p.trim();
         p.payInstallments();
-        emit('payday', id, { round: p.state.round });
+        // the first roll of a game pays the opening Payday as well as the one it lands on: told apart, each with its month
+        emit('payday', id, {
+          round: roundBefore + i + 1,
+          ...(i === 0 && rolled.openingPayday ? { opening: true } : {}),
+        });
       }
       const tile = p.pendingTile();
       if (!tile) return { pending: null, resolved: null, paydayDue: rolled.paydays > 0 };

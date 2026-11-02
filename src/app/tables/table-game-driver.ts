@@ -188,7 +188,10 @@ export class TableGameDriver implements RemoteGame {
     if (!done) {
       return { ok: false, message: this.session.problem() ?? undefined, events: [] };
     }
-    await this.session.untilVersion(done.appliedVersion ?? done.version ?? 0);
+    const target = done.appliedVersion ?? done.version ?? 0;
+    await this.session.untilVersion(target);
+    // the stream did not bring it in time (a slow or a dropped line): the table is read again, so the screen never shows a stale card
+    if ((this.session.view()?.version ?? 0) < target) await this.session.resync();
     return {
       ok: true,
       events: (done.events ?? []).map((event) => ({

@@ -407,7 +407,7 @@ export class TablePresenter {
         return;
       default: {
         // the Dreamfund's own events: a headline, and the card or the amount when there is one
-        const headline = dreamEventTitle(line.type, this.lang());
+        const headline = dreamEventTitle(line.type, this.lang(), line.data);
         if (!headline) return;
         const detail = dreamEventDetail(line.type, line.data, this.lang());
         this.stage.set({

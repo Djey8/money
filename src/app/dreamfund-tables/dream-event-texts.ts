@@ -8,6 +8,7 @@ import { cardText, dreamMoney } from './dream-texts';
 
 const EN: Record<string, string> = {
   payday: 'got paid on a Payday',
+  payday_opening: 'got the opening Payday',
   emergency: 'landed on an Emergency',
   life: 'landed on a Life card',
   career: 'tried for a promotion',
@@ -25,6 +26,7 @@ const EN: Record<string, string> = {
 
 const DE: Record<string, string> = {
   payday: 'hat Zahltag gehabt',
+  payday_opening: 'hat den Start-Zahltag bekommen',
   emergency: 'ist auf einem Notfall gelandet',
   life: 'ist auf einer Lebenskarte gelandet',
   career: 'hat es mit einer Beförderung versucht',
@@ -41,8 +43,13 @@ const DE: Record<string, string> = {
 };
 
 /** The headline of a Dreamfund event (empty for an event that is not the Dreamfund's own). */
-export function dreamEventTitle(type: string, lang: string): string {
-  return (lang === 'de' ? DE : EN)[type] ?? '';
+export function dreamEventTitle(
+  type: string,
+  lang: string,
+  data?: Record<string, unknown>,
+): string {
+  const words = lang === 'de' ? DE : EN;
+  return (type === 'payday' && data?.['opening'] ? words['payday_opening'] : words[type]) ?? '';
 }
 
 const GOALS: Record<string, { en: string; de: string }> = {
@@ -97,7 +104,7 @@ export function dreamEventDetail(
       return [what, amount].filter(Boolean).join(' · ');
     }
     case 'payday':
-      return d['round'] === undefined ? '' : `${d['round']}`;
+      return d['round'] === undefined ? '' : `${l === 'de' ? 'Monat' : 'Month'} ${d['round']}`;
     default:
       return '';
   }

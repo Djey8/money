@@ -1079,6 +1079,7 @@
                 *ngIf="boardMap as map; else classicBoard"
                 [map]="map"
                 [position]="tokenPosition"
+                [tokens]="boardTokens"
               ></app-dream-board>
               <ng-template #classicBoard>
                 <app-rat-race-board

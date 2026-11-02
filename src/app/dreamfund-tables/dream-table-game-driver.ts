@@ -1,5 +1,7 @@
 import { TableGameDriver } from '../tables/table-game-driver';
 import type { RemoteOutcome } from '../shared/services/remote-game';
+import { AppStateService } from '../shared/services/app-state.service';
+import { dreamTexts } from './dream-texts';
 
 type Rest = Record<string, unknown>;
 
@@ -22,6 +24,22 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
   sellInWindow: (d) => ({ type: 'harvest_sell', holding: d['holding'] }),
   acceptBuyer: (d) => ({ type: 'harvest_accept', holding: d['holding'] }),
   ladder: (d) => ({ type: 'harvest_ladder', holding: d['holding'], action: d['action'] }),
+  // the app's own pages: funding the reserve and the dream, repaying, the plans, selling and offering what is owned
+  fundReserve: (d) => ({ type: 'fund_reserve', amountMinor: d['amountMinor'] }),
+  fundDream: (d) => ({ type: 'fund_dream', amountMinor: d['amountMinor'] }),
+  repayDebt: (d) => ({ type: 'repay_debt', tag: d['tag'] }),
+  repayBank: (d) => ({ type: 'repay_bank_loan', amountMinor: d['amountMinor'] }),
+  plan: (d) => ({ type: 'set_plan', kind: d['kind'], id: d['id'], perMinor: d['perMinor'] }),
+  settle: () => ({ type: 'settle_payday' }),
+  sellHolding: (d) => ({ type: 'sell_holding', holding: d['holding'] }),
+  offerTrade: (d) => ({ type: 'offer_trade', holding: d['holding'], priceMinor: d['priceMinor'] }),
+  withdrawTrade: () => ({ type: 'withdraw_trade' }),
+  counterTrade: (d) => ({ type: 'counter_trade', priceMinor: d['priceMinor'] }),
+  declineTrade: () => ({ type: 'decline_trade' }),
+  acceptTrade: (d) => ({
+    type: 'accept_trade',
+    ...(d['fromSeat'] !== undefined ? { fromSeat: d['fromSeat'] } : {}),
+  }),
 };
 
 /**
@@ -31,6 +49,8 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
  */
 export class DreamTableGameDriver extends TableGameDriver {
   override readonly dreamfund = true;
+  /** The language of the words this driver gives the app's pages. */
+  lang = 'en';
 
   private static readonly NOT_HERE = 'This move is not part of the Dreamfund.';
   private notHere = (..._args: unknown[]): Promise<RemoteOutcome> =>
@@ -42,6 +62,67 @@ export class DreamTableGameDriver extends TableGameDriver {
     const command = DECISIONS[name]?.(rest);
     if (!command) return this.notHere();
     return this.move(command);
+  }
+
+  /** The plan of a project of the app: the reserve (a Fire project), the character's dream, or a dream taken (Smile projects). */
+  projectPlan(project: {
+    kind: 'smile' | 'fire';
+    title: string;
+  }): { label: string; button: string; perMinor: number } | null {
+    const goal = this.goalOf(project);
+    if (!goal) return null;
+    const t = dreamTexts(this.lang);
+    return { label: t.planPerPayday, button: t.payPlan, perMinor: goal.perMinor };
+  }
+
+  setProjectPlan(
+    project: { kind: 'smile' | 'fire'; title: string },
+    perMinor: number,
+  ): Promise<RemoteOutcome> {
+    const goal = this.goalOf(project);
+    return goal
+      ? this.dreamMove({ decision: 'plan', kind: goal.kind, id: goal.id, perMinor })
+      : this.notHere();
+  }
+
+  /** What the table plans for: the reserve, the character's dream, a dream taken - found from the project's own marks. */
+  private goalOf(project: {
+    kind: 'smile' | 'fire';
+    title: string;
+  }): { kind: 'mojo' | 'life' | 'smile'; id: string; perMinor: number } | null {
+    const state = AppStateService.instance;
+    if (project.kind === 'fire') {
+      const fire = state.allFireEmergencies.find((candidate) => candidate.title === project.title);
+      return fire?.reserve
+        ? {
+            kind: 'mojo',
+            id: 'mojo',
+            perMinor: Number((fire as { dreamPlanMinor?: number }).dreamPlanMinor ?? 0),
+          }
+        : null;
+    }
+    const smile = state.allSmileProjects.find((candidate) => candidate.title === project.title);
+    if (!smile) return null;
+    const perMinor = Number((smile as { dreamPlanMinor?: number }).dreamPlanMinor ?? 0);
+    if (smile.dream) return { kind: 'life', id: 'life', perMinor };
+    return smile.dreamCardId ? { kind: 'smile', id: smile.dreamCardId, perMinor } : null;
+  }
+
+  /** A debt of the balance sheet is paid off from the app's own page. */
+  override payLiability(tag: string): Promise<RemoteOutcome> {
+    return this.dreamMove({ decision: 'repayDebt', tag });
+  }
+
+  /** The Bank loan is repaid in steps from the app's page; borrowing is the game's own (a thin month is covered by it). */
+  override bankLoan(amountMinor: number): Promise<RemoteOutcome> {
+    return amountMinor < 0
+      ? this.dreamMove({ decision: 'repayBank', amountMinor: -amountMinor })
+      : this.notHere();
+  }
+
+  /** What is owned is sold at the market price from the Grow page. */
+  override sellPosition(title: string): Promise<RemoteOutcome> {
+    return this.dreamMove({ decision: 'sellHolding', holding: title });
   }
 
   override roll(): Promise<RemoteOutcome> {

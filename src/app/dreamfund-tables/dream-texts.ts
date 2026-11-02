@@ -28,6 +28,10 @@ export interface DreamTexts {
   medium: string;
   hard: string;
   howPoints: string;
+  planPerPayday: string;
+  takeCharacter: string;
+  characterTaken: string;
+  modeFriendsHint: string;
   boardHint: string;
   easyHint: string;
   mediumHint: string;
@@ -212,6 +216,11 @@ const EN: DreamTexts = {
   medium: 'Normal',
   hard: 'Hard',
   howPoints: 'How the points are worked out',
+  planPerPayday: 'Set aside at every Payday',
+  takeCharacter: 'Take this character',
+  characterTaken: 'This is your character',
+  modeFriendsHint:
+    'Guided helps you learn the game with friends. A ranked game is always played strict.',
   boardHint:
     'Only ranked games count: finished, with a person at the table and at least 8 rounds (or a winner). Beating strong players earns more; a win on Hard earns 1.5 x the points, on Easy 0.7 x.',
   easyHint:
@@ -303,7 +312,7 @@ const EN: DreamTexts = {
   goals: 'Goals',
   score: 'Score',
   month: 'Month',
-  money: 'Your money',
+  money: 'At the table',
   putInReserve: 'Into the reserve',
   putInDream: 'Into the dream',
   repay: 'Pay off',
@@ -402,6 +411,11 @@ const DE: Partial<DreamTexts> = {
   medium: 'Normal',
   hard: 'Schwer',
   howPoints: 'So werden die Punkte berechnet',
+  planPerPayday: 'Bei jedem Zahltag zurücklegen',
+  takeCharacter: 'Diesen Charakter wählen',
+  characterTaken: 'Das ist dein Charakter',
+  modeFriendsHint:
+    'Geführt hilft beim Lernen mit Freunden. Ein gewertetes Spiel wird immer streng gespielt.',
   boardHint:
     'Nur gewertete Spiele zählen: beendet, mit einem Menschen am Tisch und mindestens 8 Runden (oder einem Sieger). Starke Gegner zu schlagen bringt mehr; ein Sieg auf Schwer das 1,5-fache der Punkte, auf Leicht das 0,7-fache.',
   easyHint:
@@ -493,7 +507,7 @@ const DE: Partial<DreamTexts> = {
   goals: 'Ziele',
   score: 'Punktzahl',
   month: 'Monat',
-  money: 'Dein Geld',
+  money: 'Am Tisch',
   putInReserve: 'In den Notgroschen',
   putInDream: 'In den Traum',
   repay: 'Abbezahlen',

@@ -130,7 +130,8 @@ export function historyLines(
     .map((event, index): RemoteHistoryLine => {
       const player = event.seat === null ? undefined : view.players[event.seat];
       let title =
-        words[event.type] ?? (dreamEventTitle(event.type, lang) || event.type.replace(/_/g, ' '));
+        words[event.type] ??
+        (dreamEventTitle(event.type, lang, event.data) || event.type.replace(/_/g, ' '));
       let detail = detailOf(event) || dreamEventDetail(event.type, event.data, lang);
       let cardId: string | undefined;
       if (event.type === 'card_drawn' && event.seat !== null) {

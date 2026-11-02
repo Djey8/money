@@ -240,9 +240,11 @@ function accountName(): string {
                   </button>
                 </div>
               </div>
-              <div class="at-row at-row--stack">
+              <!-- a ranked game is always played under the strict rules; the choice is for a game with friends -->
+              <div class="at-row at-row--stack" *ngIf="!form.ranked">
                 <div class="at-label">
                   <strong>{{ d.mode }}</strong>
+                  <small>{{ d.modeFriendsHint }}</small>
                 </div>
                 <div class="at-seg" role="radiogroup" [attr.aria-label]="d.mode">
                   <button
@@ -988,7 +990,7 @@ export class AddTableComponent implements OnInit {
         difficulty: f.difficulty,
         shape: f.shape,
         size: f.size,
-        mode: f.mode,
+        mode: f.ranked ? 'strict' : f.mode,
       };
     }
     return {

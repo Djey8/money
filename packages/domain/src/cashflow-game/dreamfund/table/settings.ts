@@ -55,7 +55,8 @@ export function normalizeDreamSettings(
   if (!SHAPES.includes(shape)) invalid(`shape must be one of ${SHAPES.join(', ')}.`);
   const size = input.size ?? 'medium';
   if (!SIZES.includes(size)) invalid(`size must be one of ${SIZES.join(', ')}.`);
-  const mode = input.mode ?? 'guided';
+  // a ranked game is played under the strict rules: the same for everybody (JFK, 2026-11-02); guided is for learning with friends
+  const mode = input.ranked === true ? 'strict' : (input.mode ?? 'guided');
   if (!CUSTOM_RULE_PRESETS[mode]) invalid("mode must be 'free', 'guided' or 'strict'.");
   // a shared table cannot run in the open mode: any card of a stack could be picked
   if (mode === 'free') invalid("A table is played in 'guided' or 'strict' mode: the cards decide.");

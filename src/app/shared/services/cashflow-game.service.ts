@@ -1866,6 +1866,13 @@ export class CashflowGameService {
     ).length;
   }
 
+  /** What things cost this character, and the level of the game: the factor the amounts of an Emergency card are worked out with. */
+  get emergencyPriceFactor(): number {
+    return (
+      (this.currentProfession()?.priceFactor ?? 1) * this.levelSettings.emergencyCostMultiplier
+    );
+  }
+
   private get emergencyContext(): EmergencyContext {
     const game = AppStateService.instance.cashflowGame;
     return {
