@@ -50,6 +50,7 @@ const SHOWN = new Set([
   'opportunity',
   'opportunity_taken',
   'opportunity_offers',
+  'job_search',
   'opportunity_planned',
   'opportunity_passed',
   'life_answered',

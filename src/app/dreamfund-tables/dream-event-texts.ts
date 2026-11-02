@@ -25,6 +25,7 @@ const EN: Record<string, string> = {
   harvest_sold: 'sold into the Harvest',
   holding_sold: 'sold a holding',
   money_moved: 'moved money',
+  job_search: 'looked for a job',
   goal_reached: 'reached a goal',
   player_won: 'reached all the goals',
   turn_started: 'is on the move',
@@ -49,6 +50,7 @@ const DE: Record<string, string> = {
   harvest_sold: 'hat in die Ernte verkauft',
   holding_sold: 'hat eine Beteiligung verkauft',
   money_moved: 'hat Geld bewegt',
+  job_search: 'hat nach einem Job gesucht',
   goal_reached: 'hat ein Ziel erreicht',
   player_won: 'hat alle Ziele erreicht',
   turn_started: 'ist am Zug',
@@ -139,6 +141,8 @@ export function dreamEventDetail(
       const gross = typeof d['grossMinor'] === 'number' ? dreamMoney(d['grossMinor'], lang) : '';
       return [String(d['holding'] ?? ''), gross].filter(Boolean).join(' · ');
     }
+    case 'job_search':
+      return `🎲 ${d['roll']} (${l === 'de' ? 'nötig' : 'needed'} ${d['rollFrom']}+) · ${d['result'] === 'found' ? (l === 'de' ? 'gefunden' : 'found') : l === 'de' ? 'verpasst' : 'missed'}`;
     case 'emergency':
       return d['cardId'] ? cardText('emergency', String(d['cardId']), lang).title : '';
     case 'life':

@@ -137,8 +137,9 @@ export function summarizeLife(life: DreamPlayerData): LifeSummary {
     debts: p.books.liabilities
       .filter((l) => p.debtTags.includes(l.tag) && l.amountMinor > 0)
       .map((l) => ({ tag: l.tag, amountMinor: l.amountMinor })),
+    // what can be offered to the others: a saving (a cheaper provider) or a trap is not something to sell
     holdings: (p.state.holdings ?? [])
-      .filter((h) => !h.ended)
+      .filter((h) => !h.ended && p.sellable(h.title))
       .map((h) => ({
         title: h.title,
         cardId: h.cardId,
@@ -180,6 +181,15 @@ export interface DreamPlayerView {
   /** The card dealt with this turn and what came of it (the viewer's own; the others only its kind). */
   resolved: DreamSeat['resolved'] | { kind: string } | null;
   paydayDue: boolean;
+  /** The job search of the last Payday: the chances and, once thrown, what the die said. */
+  jobSearch: {
+    title: Record<string, string>;
+    rollFrom: number;
+    paydaysLeft: number;
+    thrown: boolean;
+    roll: number | null;
+    result: 'found' | 'missed' | 'fallback' | null;
+  } | null;
   reached: DreamTable['players'][number]['reached'];
   you: boolean;
 }
@@ -302,6 +312,18 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
         harvest: mine ? p.harvest : null,
         resolved: p.resolved ? (mine ? p.resolved : { kind: p.resolved.kind }) : null,
         paydayDue: p.paydayDue === true,
+        // the die is known to the server only until the player throws it
+        jobSearch:
+          mine && p.jobSearch
+            ? {
+                title: p.jobSearch.title,
+                rollFrom: p.jobSearch.rollFrom,
+                paydaysLeft: p.jobSearch.paydaysLeft,
+                thrown: p.jobSearch.thrown,
+                roll: p.jobSearch.thrown ? p.jobSearch.roll : null,
+                result: p.jobSearch.thrown ? p.jobSearch.result : null,
+              }
+            : null,
         reached: p.reached,
         you: mine,
       };
@@ -394,6 +416,9 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
         add('take_dream', { offers: p.offers });
         add('skip');
         break;
+      case 'debug_pick':
+        add('debug_pick', { tile: p.tile });
+        break;
       case 'opportunity_pile':
         add('choose_pile', { piles: ['seed', 'sapling', 'tree'] });
         add('skip');
@@ -402,7 +427,7 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
         add('take_opportunity', { pile: p.pile, offers: p.offers });
         add('plan_opportunity', { offers: p.offers });
         if (p.rolling) add('roll_opportunity', { cardId: p.rolling.cardId });
-        if (p.planned) {
+        if (p.planned && !p.rolling) {
           add('buy_planned', { title: p.planned.title });
           add('end_turn');
         }
@@ -421,5 +446,6 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
   add('sell_holding');
   if (!trade) add('offer_trade');
   if (me.paydayDue) add('settle_payday');
+  if (me.jobSearch && !me.jobSearch.thrown) add('throw_job_search');
   return actions;
 }

@@ -92,23 +92,9 @@ setTimeout(() =>
   ],
 })
 export class InfoFireComponent extends BaseInfoComponent {
-  /** At a table of another game a project can be given a plan per Payday: asked of the game at the table, so these pages know none of it. */
-  get tablePlan(): { label: string; button: string; perMinor: number } | null {
-    const remote = RemoteGameHook.current;
-    const project = AppStateService.instance.allFireEmergencies[InfoFireComponent.index];
-    if (!remote?.projectPlan || !project || remote.viewOnly()) return null;
-    return remote.projectPlan({ kind: 'fire', title: project.title });
-  }
-
-  tablePlanTyped: number | null = null;
-
-  setTablePlan(): void {
-    const remote = RemoteGameHook.current;
-    const project = AppStateService.instance.allFireEmergencies[InfoFireComponent.index];
-    const plan = this.tablePlan;
-    if (!remote?.setProjectPlan || !project || !plan) return;
-    const perMinor = Math.round((this.tablePlanTyped ?? plan.perMinor / 100) * 100);
-    void remote.setProjectPlan({ kind: 'fire', title: project.title }, perMinor);
+  /** At a table of a game played with others (the payment plans of a project are the table's: activated and stopped there). */
+  get atTable(): boolean {
+    return !!RemoteGameHook.current?.dreamfund;
   }
 
   static index = 1;

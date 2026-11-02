@@ -507,6 +507,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The Emergency, Life or Dream card of the History that is being read again. */
   historyTileCard: { deck: string; title: string; story: string; facts: string[] } | null = null;
 
+  /** The name of a deck for the card that is read again (a deck without its own word is named as it is). */
+  private deckWord(deck: string): string {
+    const key = `CashflowGame.history.deck.${deck}`;
+    const text = this.translate.instant(key);
+    return text === key ? deck.charAt(0).toUpperCase() + deck.slice(1) : text;
+  }
+
   private tileCardOfHistory(cardId: string) {
     const decks = this.currentGameSet?.decks;
     const lang = this.language.current === 'de' ? 'de' : 'en';
@@ -518,19 +525,25 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       type?: string;
       category?: string;
       totalMinor?: number;
+      costMinor?: number;
+      pile?: string;
       points?: number;
     }
     const lists: [string, Card[]][] = [
       ['emergency', (decks?.emergency ?? []) as never],
       ['life', (decks?.life ?? []) as never],
       ['dream', (decks?.dream ?? []) as never],
+      ['opportunity', (decks?.opportunity ?? []) as never],
+      ['harvest', (decks?.harvest ?? []) as never],
     ];
     for (const [deck, cards] of lists) {
       const card = cards.find((candidate) => candidate.id === cardId);
       if (!card) continue;
       // what the card is, in a few words, besides its story
       const facts = [
-        this.translate.instant(`CashflowGame.history.deck.${deck}`),
+        this.deckWord(deck),
+        card.pile ? this.translate.instant(`CashflowGame.opportunity.pile.${card.pile}`) : '',
+        card.costMinor ? `${this.cardAmount(card.costMinor)} ${this.appState.currency}` : '',
         card.tier
           ? this.translate.instant(
               `CashflowGame.${deck === 'dream' ? 'dream' : 'emergency'}.tier.${card.tier}`,

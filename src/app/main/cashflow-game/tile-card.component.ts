@@ -113,7 +113,15 @@ interface OpportunityBandLike extends OpportunityRollLike {
         </span>
       </div>
 
-      <ng-container [ngSwitch]="tile">
+      <!-- at a table the card was drawn for the player: the pile is still shuffled for a moment, as alone -->
+      <div class="tc-shuffle" *ngIf="tableShuffling" aria-live="polite">
+        <span class="tc-back tc-back--1"></span>
+        <span class="tc-back tc-back--2"></span>
+        <span class="tc-back tc-back--3"></span>
+        <p>{{ 'CashflowGame.tile.shuffling' | translate }}</p>
+      </div>
+
+      <ng-container *ngIf="!tableShuffling" [ngSwitch]="tile">
         <!-- ───────────── EMERGENCY ───────────── -->
         <ng-container *ngSwitchCase="'emergency'">
           <ng-container *ngIf="emergency as e; else emergencyClosed">
@@ -211,37 +219,15 @@ interface OpportunityBandLike extends OpportunityRollLike {
                   </p>
                 </ng-container>
                 <ng-template #dreamToPay>
+                  <!-- the emergency becomes a Fire project, as alone: paid from its page with the Add dialog or a payment plan -->
                   <button
                     type="button"
                     class="tc-btn tc-btn--primary tc-btn--wide"
-                    [disabled]="busy"
-                    (click)="payEmergency('now')"
-                  >
-                    {{ 'CashflowGame.emergency.payNow' | translate }} {{ amount(e.quote.payMinor) }}
-                    {{ currency }}
-                  </button>
-                  <button
-                    *ngIf="!dreamMustPayNow"
-                    type="button"
-                    class="tc-btn tc-btn--wide"
                     [disabled]="busy"
                     (click)="payEmergency('later')"
                   >
                     {{ 'CashflowGame.emergency.createProject' | translate }}
                   </button>
-                  <ng-container *ngIf="!dreamMustPayNow">
-                    <button
-                      *ngFor="let plan of dreamPlans; trackBy: trackIndex"
-                      type="button"
-                      class="tc-btn tc-btn--wide"
-                      [disabled]="busy"
-                      (click)="payEmergency(plan.months)"
-                    >
-                      {{ plan.months }} × {{ amount(plan.perMinor) }} {{ currency }} ({{
-                        amount(plan.totalMinor)
-                      }})
-                    </button>
-                  </ng-container>
                 </ng-template>
               </ng-container>
               <ng-container *ngIf="!e.projectTitle && !dreamTable">
@@ -1950,6 +1936,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
   busy = false;
   opening = false;
   shuffling = false;
+  /** At a table: the pile is shuffled for a moment before the card dealt for the tile is shown. */
+  tableShuffling = false;
   filter: string | null = null;
   query = '';
   selectedOffer: string | null = null;
@@ -2011,6 +1999,12 @@ export class TileCardComponent implements OnInit, OnDestroy {
       this.booksShown = AppStateService.instance.transactionsUpdated$.subscribe(() =>
         this.cdr.markForCheck(),
       );
+      // a card that was just dealt is shuffled for a moment first
+      this.tableShuffling = true;
+      setTimeout(() => {
+        this.tableShuffling = false;
+        this.cdr.markForCheck();
+      }, SHUFFLE_MS);
       return;
     }
     // an Opportunity tile starts with the choice of a pile, not with a card

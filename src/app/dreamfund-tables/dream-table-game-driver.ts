@@ -95,10 +95,18 @@ export class DreamTableGameDriver extends TableGameDriver {
   private goalOf(project: {
     kind: 'smile' | 'fire';
     title: string;
-  }): { kind: 'mojo' | 'life' | 'smile'; id: string; perMinor: number } | null {
+  }): { kind: 'mojo' | 'life' | 'smile' | 'emergency'; id: string; perMinor: number } | null {
     const state = AppStateService.instance;
     if (project.kind === 'fire') {
       const fire = state.allFireEmergencies.find((candidate) => candidate.title === project.title);
+      const emergencyId = (fire as { emergencyCardId?: string } | undefined)?.emergencyCardId;
+      if (emergencyId) {
+        return {
+          kind: 'emergency',
+          id: emergencyId,
+          perMinor: Number((fire as { dreamPlanMinor?: number }).dreamPlanMinor ?? 0),
+        };
+      }
       return fire?.reserve
         ? {
             kind: 'mojo',

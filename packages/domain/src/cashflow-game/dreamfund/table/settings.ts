@@ -111,7 +111,9 @@ export function normalizeDreamSettings(
     turnGate: input.turnGate ?? false,
     pace,
     showProgress: input.showProgress ?? true,
-    ranked: input.ranked ?? false,
+    // a game for debugging the cards is never ranked
+    ranked: input.debug === true ? false : (input.ranked ?? false),
+    ...(input.debug === true ? { debug: true } : {}),
     leaveFreeRounds: whole(input.leaveFreeRounds ?? 0, 'leaveFreeRounds', 0, 1000),
   };
 }

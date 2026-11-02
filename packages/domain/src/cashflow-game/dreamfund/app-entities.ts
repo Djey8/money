@@ -29,6 +29,29 @@ interface AppProjectBase {
   links: { label: string; url: string }[];
   actionItems: { text: string; done: boolean; priority: 'low' | 'medium' | 'high' }[];
   notes: { text: string; createdAt: string }[];
+  /** The payment plan the table runs for the project: a plan of the app, active (the table pays it at every Payday). */
+  plannedSubscriptions?: AppPaymentPlan[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppPaymentPlan {
+  id: string;
+  title: string;
+  status: 'active';
+  projectType: 'smile' | 'fire';
+  projectTitle: string;
+  account: string;
+  amount: number;
+  startDate: string;
+  endDate: string;
+  category: string;
+  comment: string;
+  frequency: 'monthly';
+  targetDate: string;
+  targetBucketIds: string[];
+  originalCalculatedAmount: number;
+  manuallyAdjusted: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -105,6 +128,40 @@ function scaleTargets(buckets: AppBucket[], totalMinor: number): void {
   });
 }
 
+/** The plan a table runs for a project, as a payment plan of the app (nothing when none runs). */
+function planOf(
+  perMinor: number,
+  projectType: 'smile' | 'fire',
+  title: string,
+  key: string,
+  nowIso: string,
+): AppPaymentPlan[] {
+  if (perMinor <= 0) return [];
+  const amount = fromMinorUnits(perMinor);
+  return [
+    {
+      id: `table-plan-${key}`,
+      title,
+      status: 'active',
+      projectType,
+      projectTitle: title,
+      account: 'Daily',
+      amount,
+      startDate: nowIso.slice(0, 10),
+      endDate: '',
+      category: `@${title}`,
+      comment: '',
+      frequency: 'monthly',
+      targetDate: '',
+      targetBucketIds: [],
+      originalCalculatedAmount: amount,
+      manuallyAdjusted: true,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+  ];
+}
+
 export function dreamAppEntities(
   life: DreamPlayerData,
   lang: string,
@@ -128,6 +185,13 @@ export function dreamAppEntities(
       dream: true,
       dreamPlanMinor: planned('life', 'life'),
     };
+    project.plannedSubscriptions = planOf(
+      planned('life', 'life'),
+      'smile',
+      project.title,
+      'life',
+      nowIso,
+    );
     scaleTargets(project.buckets, p.dreamTargetMinor);
     fill(project.buckets, p.dreamLived ? p.dreamTargetMinor : p.dreamSavedMinor);
     smile.push(project);
@@ -146,6 +210,13 @@ export function dreamAppEntities(
       sub: `${card.tier} · ${card.category} · ${card.points}`,
       dreamCardId: card.id,
       dreamPlanMinor: planned('smile', card.id),
+      plannedSubscriptions: planOf(
+        planned('smile', card.id),
+        'smile',
+        card.title[l],
+        card.id,
+        nowIso,
+      ),
       phase: 'planning',
       description: card.story[l],
       buckets: card.buckets.map((bucket) => ({
@@ -176,6 +247,13 @@ export function dreamAppEntities(
       reserve: true,
       dreamPlanMinor: planned('mojo', 'mojo'),
     };
+    project.plannedSubscriptions = planOf(
+      planned('mojo', 'mojo'),
+      'fire',
+      project.title,
+      'mojo',
+      nowIso,
+    );
     for (const bucket of project.buckets) bucket.target = fromMinorUnits(monthly);
     fill(project.buckets, p.reserveMinor);
     fire.push(project);
@@ -204,6 +282,8 @@ export function dreamAppEntities(
       actionItems: [],
       notes: [],
       emergencyCardId: card.id,
+      dreamPlanMinor: plan.perMinor,
+      plannedSubscriptions: planOf(plan.perMinor, 'fire', card.title[l], card.id, nowIso),
       createdAt: nowIso,
       updatedAt: nowIso,
     });

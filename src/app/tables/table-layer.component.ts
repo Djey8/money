@@ -21,7 +21,11 @@ import { TablesApiService } from './tables-api.service';
 import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
 import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
 import { insuranceOffers } from '@money/domain';
-import { extrasOf, moneyOf } from '../dreamfund-tables/dream-table-view';
+import { dreamTexts } from '../dreamfund-tables/dream-texts';
+import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
+import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
+import { extrasOf, moneyOf, pendingOf } from '../dreamfund-tables/dream-table-view';
+import { DebugPickerComponent } from './debug-picker.component';
 import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
 
 /**
@@ -40,14 +44,24 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
     TradeOfferComponent,
     DreamMoneyComponent,
     TableBriefingComponent,
+    DebugPickerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
   template: `
     <section class="tl-layer" *ngIf="view() as table" [attr.dir]="rtl ? 'rtl' : 'ltr'">
       <!-- a Dreamfund game before the first roll: who you are, and the insurances -->
+      <button
+        type="button"
+        class="btn btn--primary tl-brief-back"
+        *ngIf="briefing() && briefingPeek()"
+        (click)="briefingPeek.set(false)"
+      >
+        {{ d.briefingTitle }} ›
+      </button>
       <app-table-briefing
         *ngIf="briefing() as b"
+        [hidden]="briefingPeek()"
         [professionId]="b.professionId"
         [difficulty]="b.difficulty"
         [lang]="lang"
@@ -57,6 +71,8 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         [busy]="busy()"
         [waitingFor]="b.waitingFor"
         (insuranceChange)="move({ type: 'set_insurance', kind: $event.kind, on: $event.on })"
+        (dreamOpen)="openProject('dream')"
+        (reserveOpen)="openProject('reserve')"
         (confirm)="move({ type: 'confirm_briefing' })"
         (back)="move({ type: 'reopen_pick' })"
       ></app-table-briefing>
@@ -70,6 +86,31 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
           [attr.aria-label]="t.time"
           >⏱ {{ clock }}</span
         >
+      </div>
+
+      <!-- a debug game: the host chooses the card of the tile they stand on -->
+      <app-debug-picker
+        *ngIf="debugTile() as tile"
+        [tile]="tile"
+        [lang]="lang"
+        [busy]="busy()"
+        (pick)="debugPick($event)"
+      ></app-debug-picker>
+
+      <!-- the job search of the Payday: the chances, then the player's own throw -->
+      <div class="tl-job" *ngIf="jobSearch() as job" role="status">
+        <strong>🎲 {{ d.jobTitle }}: {{ job.title }}</strong>
+        <p>{{ job.chances }}</p>
+        <button
+          type="button"
+          class="tx-btn tx-btn--primary"
+          *ngIf="!job.thrown"
+          [disabled]="busy()"
+          (click)="move({ type: 'throw_job_search' })"
+        >
+          {{ d.jobThrow }}
+        </button>
+        <p class="tl-job-result" *ngIf="job.thrown">🎲 {{ job.roll }} - {{ job.outcome }}</p>
       </div>
 
       <div class="tl-away" *ngIf="iAmAway()" role="status">
@@ -666,6 +707,77 @@ export class TableLayerComponent implements OnDestroy {
       waitingFor: view.players
         .filter((player, seat) => seat !== view.youSeat && !player.dreamBriefed)
         .map((player) => player.name),
+    };
+  });
+
+  get d() {
+    return dreamTexts(this.lang);
+  }
+
+  /** The tile the host of a debug game has to choose a card for, or null. */
+  readonly debugTile = computed(() => {
+    const view = this.view();
+    if (!view || (view as { kind?: string }).kind !== 'dreamfund' || view.youSeat === null) {
+      return null;
+    }
+    const open = pendingOf(view, view.youSeat) as { kind?: string; tile?: string } | null;
+    return open?.kind === 'debug_pick' && open.tile ? open.tile : null;
+  });
+
+  /** The card the host of a debug game chose for the tile (none: chance decides). */
+  debugPick(cardId: string | null): void {
+    void this.move(cardId ? { type: 'debug_pick', cardId } : { type: 'debug_pick' });
+  }
+
+  /** The briefing steps aside while one of the character's projects is looked at on its own page. */
+  readonly briefingPeek = signal(false);
+
+  /** The dream or the reserve of the character, opened as the project it is (the game has begun in the background). */
+  async openProject(which: 'dream' | 'reserve'): Promise<void> {
+    const professionId = this.briefing()?.professionId;
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    const profession = set?.professions.find((candidate) => candidate.id === professionId);
+    const game = CashflowGameComponent.instance;
+    if (!profession || !game) return;
+    this.briefingPeek.set(true);
+    if (which === 'dream') await game.openDream(profession);
+    else await game.openReserve(profession);
+  }
+
+  /** The job search of the Payday that has passed (the player's own): the chances, and what the die said once it is thrown. */
+  readonly jobSearch = computed(() => {
+    const view = this.view() as unknown as {
+      kind?: string;
+      youSeat: number | null;
+      players: {
+        dreamJobSearch?: {
+          title: Record<string, string>;
+          rollFrom: number;
+          paydaysLeft: number;
+          thrown: boolean;
+          roll: number | null;
+          result: 'found' | 'missed' | 'fallback' | null;
+        } | null;
+      }[];
+    } | null;
+    if (!view || view.kind !== 'dreamfund' || view.youSeat === null) return null;
+    const job = view.players[view.youSeat]?.dreamJobSearch;
+    if (!job) return null;
+    const t = dreamTexts(this.lang);
+    const l = this.lang === 'de' ? 'de' : 'en';
+    return {
+      title: job.title[l] ?? job.title['en'] ?? '',
+      chances: t.jobChances
+        .replace('{from}', String(job.rollFrom))
+        .replace('{left}', String(job.paydaysLeft)),
+      thrown: job.thrown,
+      roll: job.roll,
+      outcome:
+        job.result === 'found'
+          ? t.jobFound
+          : job.result === 'fallback'
+            ? t.jobFallback
+            : t.jobMissed,
     };
   });
 

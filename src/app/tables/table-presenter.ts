@@ -8,7 +8,11 @@ import {
   type RatRaceBoard,
   type TableView,
 } from '@money/domain';
-import { dreamEventDetail, dreamEventTitle } from '../dreamfund-tables/dream-event-texts';
+import {
+  dreamEventCard,
+  dreamEventDetail,
+  dreamEventTitle,
+} from '../dreamfund-tables/dream-event-texts';
 import type { TableEventLine } from './table-session.service';
 import { tableLayerTexts, type TableLayerTexts } from './table-layer.texts';
 
@@ -410,11 +414,17 @@ export class TablePresenter {
         const headline = dreamEventTitle(line.type, this.lang(), line.data);
         if (!headline) return;
         const detail = dreamEventDetail(line.type, line.data, this.lang());
+        // a card of a Dreamfund pile: shown by its name, and it can be opened to be read in full
+        const cardId = dreamEventCard(line.type, line.data);
         this.stage.set({
           ...this.base(line, view, headline),
-          ...(detail ? { patch: { text: detail, tone: 'neutral' as const } } : {}),
+          ...(cardId && detail
+            ? { card: { id: cardId, title: detail, deck: '', tone: 'deal' as const, lines: [] } }
+            : detail
+              ? { patch: { text: detail, tone: 'neutral' as const } }
+              : {}),
         });
-        await this.pause((line.type === 'player_won' ? 2000 : 1300) * this.beat);
+        await this.pause((line.type === 'player_won' ? 2000 : cardId ? 2600 : 1500) * this.beat);
         return;
       }
     }

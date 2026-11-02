@@ -31,8 +31,27 @@ export function dreamLifeToApp(life: DreamPlayerData, lang: string, nowIso: stri
  * Puts the Dreamfund extras on screen after the books were (`applyBooksToApp` empties Smile, Fire and the Mojo, as the classic table
  * has none): the Mojo, the projects, and the open dreams under the titles of the viewer's language.
  */
+interface WithPlans {
+  title: string;
+  plannedSubscriptions?: { status: string }[];
+}
+
+/** The plans that are only drafted (not running yet) stay with their project while the table's updates come in. */
+function keepDrafts(before: WithPlans[], after: WithPlans[]): void {
+  for (const project of after) {
+    const drafts = (
+      (before ?? []).find((held) => held.title === project.title)?.plannedSubscriptions ?? []
+    ).filter((plan) => plan.status !== 'active');
+    if (drafts.length > 0) {
+      project.plannedSubscriptions = [...(project.plannedSubscriptions ?? []), ...drafts];
+    }
+  }
+}
+
 export function applyDreamExtrasToApp(state: AppStateService, app: DreamApp): void {
   state.mojo = app.mojo as typeof state.mojo;
+  keepDrafts(state.allSmileProjects as WithPlans[], app.smile as WithPlans[]);
+  keepDrafts(state.allFireEmergencies as WithPlans[], app.fire as WithPlans[]);
   state.allSmileProjects = app.smile as typeof state.allSmileProjects;
   state.allFireEmergencies = app.fire as typeof state.allFireEmergencies;
   const game = state.cashflowGame as { dreams?: { open: DreamApp['openDreams'] } };

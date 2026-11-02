@@ -76,6 +76,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         dreamResolved: (player as unknown as { resolved?: unknown }).resolved ?? null,
         dreamHarvest: (player as unknown as { harvest?: unknown }).harvest ?? null,
         dreamSummary: (player as unknown as { summary?: unknown }).summary ?? null,
+        dreamJobSearch: (player as unknown as { jobSearch?: unknown }).jobSearch ?? null,
         dreamBriefed: (player as unknown as { briefed?: boolean }).briefed === true,
         dreamPaydayDue: (player as unknown as { paydayDue?: boolean }).paydayDue === true,
       };

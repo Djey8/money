@@ -31,6 +31,24 @@ export interface DreamTexts {
   planPerPayday: string;
   takeCharacter: string;
   briefingTitle: string;
+  debugTitle: string;
+  debugHint: string;
+  debugRandom: string;
+  debugSearch: string;
+  debugGame: string;
+  debugGameHint: string;
+  bankStep: string;
+  bankStepHint: string;
+  bankStepStandard: string;
+  bankStepFree: string;
+  bankInterest: string;
+  bankInterestHint: string;
+  jobTitle: string;
+  jobChances: string;
+  jobThrow: string;
+  jobFound: string;
+  jobMissed: string;
+  jobFallback: string;
   briefingIntro: string;
   briefingInsurance: string;
   briefingInsuranceHint: string;
@@ -229,6 +247,27 @@ const EN: DreamTexts = {
   planPerPayday: 'Set aside at every Payday',
   takeCharacter: 'Take this character',
   briefingTitle: 'Who you are',
+  debugTitle: 'Debug: choose the card',
+  debugHint: 'You landed on this tile. Choose the card it deals, or let chance decide.',
+  debugRandom: 'A random card',
+  debugSearch: 'Search a card',
+  debugGame: 'Debug game',
+  debugGameHint:
+    'For finding what is wrong with the cards: the host chooses the card of every tile they land on. Everybody else plays as usual. Never ranked.',
+  bankStep: 'Bank loan: step',
+  bankStepHint:
+    'You borrow and repay in steps of this size. Standard is the own step of the character; Free is any amount.',
+  bankStepStandard: 'Standard',
+  bankStepFree: 'Free',
+  bankInterest: 'Bank loan: interest a month',
+  bankInterestHint: 'What the loan costs every month, as a share of what is borrowed.',
+  jobTitle: 'Looking for a job',
+  jobChances:
+    'At this Payday you look for a new job. Throw {from} or more and you find one; if not you keep looking - {left} more Paydays, then the next offer pays less.',
+  jobThrow: 'Throw the die',
+  jobFound: 'You found a job again.',
+  jobMissed: 'Missed - you are still without a job.',
+  jobFallback: 'The search is over: you take a job that pays less.',
   briefingIntro:
     'Read your character before the game begins: the story, what matters to them, the goals, the income, the expenses and the debts. Choose your insurances - they count at once.',
   briefingInsurance: 'Your insurances',
@@ -436,6 +475,28 @@ const DE: Partial<DreamTexts> = {
   planPerPayday: 'Bei jedem Zahltag zurücklegen',
   takeCharacter: 'Diesen Charakter wählen',
   briefingTitle: 'Wer du bist',
+  debugTitle: 'Debug: Karte wählen',
+  debugHint:
+    'Du bist auf diesem Feld gelandet. Wähle die Karte, die es austeilt, oder lass den Zufall entscheiden.',
+  debugRandom: 'Eine zufällige Karte',
+  debugSearch: 'Karte suchen',
+  debugGame: 'Debug-Spiel',
+  debugGameHint:
+    'Um herauszufinden, was an den Karten nicht stimmt: Der Host wählt die Karte jedes Feldes, auf dem er landet. Alle anderen spielen wie gewohnt. Nie gewertet.',
+  bankStep: 'Bankkredit: Schrittweite',
+  bankStepHint:
+    'Du leihst und zahlst in Schritten dieser Größe. Standard ist die Schrittweite des Charakters; Frei ist jeder Betrag.',
+  bankStepStandard: 'Standard',
+  bankStepFree: 'Frei',
+  bankInterest: 'Bankkredit: Zinsen im Monat',
+  bankInterestHint: 'Was der Kredit jeden Monat kostet, als Anteil des geliehenen Betrags.',
+  jobTitle: 'Jobsuche',
+  jobChances:
+    'Am Zahltag suchst du eine neue Stelle. Wirf {from} oder mehr und du findest eine; sonst suchst du weiter - noch {left} Zahltage, dann zahlt das nächste Angebot weniger.',
+  jobThrow: 'Würfeln',
+  jobFound: 'Du hast wieder einen Job.',
+  jobMissed: 'Verpasst - du bist weiter ohne Job.',
+  jobFallback: 'Die Suche ist vorbei: Du nimmst eine Stelle, die weniger zahlt.',
   briefingIntro:
     'Lies deinen Charakter, bevor das Spiel beginnt: die Geschichte, was ihm wichtig ist, die Ziele, das Einkommen, die Ausgaben und die Schulden. Wähle deine Versicherungen - sie gelten sofort.',
   briefingInsurance: 'Deine Versicherungen',

@@ -255,6 +255,57 @@ function accountName(): string {
                   </button>
                 </div>
               </div>
+              <div class="at-row">
+                <div class="at-label">
+                  <strong>{{ d.debugGame }}</strong>
+                  <small>{{ d.debugGameHint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    name="debug"
+                    [(ngModel)]="form.debug"
+                    [attr.aria-label]="d.debugGame"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.bankStep }}</strong>
+                  <small>{{ d.bankStepHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankStep">
+                  <button
+                    *ngFor="let step of bankSteps"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.bankStep === step"
+                    [attr.aria-checked]="form.bankStep === step"
+                    (click)="form.bankStep = step"
+                  >
+                    {{ bankStepLabel(step) }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.bankInterest }}</strong>
+                  <small>{{ d.bankInterestHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankInterest">
+                  <button
+                    *ngFor="let percent of bankInterests"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.bankInterest === percent"
+                    [attr.aria-checked]="form.bankInterest === percent"
+                    (click)="form.bankInterest = percent"
+                  >
+                    {{ percent }} %
+                  </button>
+                </div>
+              </div>
               <!-- a ranked game is always played under the strict rules; the choice is for a game with friends -->
               <div class="at-row at-row--stack" *ngIf="!form.ranked">
                 <div class="at-label">
@@ -813,6 +864,9 @@ export class AddTableComponent implements OnInit {
     shape: 'ring' as 'ring' | 'infinity' | 'rectangle' | 'square' | 'mountain',
     size: 'medium' as 'small' | 'medium' | 'large',
     mode: 'guided' as 'guided' | 'strict',
+    bankStep: 0,
+    bankInterest: 10,
+    debug: false,
   };
 
   constructor(
@@ -821,6 +875,16 @@ export class AddTableComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private languageService: LanguageService,
   ) {}
+
+  /** The steps the Bank loan moves in, in minor units: the character's own (0), any amount (1), 50, 100, 200, 500, 1000. */
+  readonly bankSteps = [0, 1, 5000, 10000, 20000, 50000, 100000];
+  readonly bankInterests = [5, 8, 10, 12, 15];
+
+  bankStepLabel(step: number): string {
+    if (step === 0) return this.d.bankStepStandard;
+    if (step === 1) return this.d.bankStepFree;
+    return String(step / 100);
+  }
 
   get defaultLetters(): string {
     return defaultInitials(this.nickname);
@@ -986,11 +1050,13 @@ export class AddTableComponent implements OnInit {
         turnGate: f.turnGate,
         pace: f.pace,
         showProgress: f.showProgress,
-        ranked: f.ranked,
+        ranked: f.debug ? false : f.ranked,
+        ...(f.debug ? { debug: true } : {}),
         difficulty: f.difficulty,
         shape: f.shape,
         size: f.size,
         mode: f.ranked ? 'strict' : f.mode,
+        customRules: { bankLoanStepMinor: f.bankStep, bankInterestPercent: f.bankInterest },
       };
     }
     return {
@@ -1036,6 +1102,14 @@ export class AddTableComponent implements OnInit {
     if (dreamSettings.shape) f.shape = dreamSettings.shape;
     if (dreamSettings.size) f.size = dreamSettings.size;
     if (dreamSettings.mode) f.mode = dreamSettings.mode;
+    const rules = (
+      current as unknown as {
+        customRules?: { bankLoanStepMinor?: number; bankInterestPercent?: number };
+      }
+    ).customRules;
+    f.debug = (current as unknown as { debug?: boolean }).debug === true;
+    if (rules?.bankLoanStepMinor !== undefined) f.bankStep = rules.bankLoanStepMinor;
+    if (rules?.bankInterestPercent !== undefined) f.bankInterest = rules.bankInterestPercent;
     f.offerRolls = current.rules.sellOfferRolls;
     if (current.clock.mode === 'per-move') {
       f.clock = 'per-move';

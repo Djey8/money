@@ -30,6 +30,8 @@ export interface BriefingInsurance {
           [professionId]="professionId"
           [difficulty]="difficulty"
           [lang]="lang"
+          (dreamOpen)="dreamOpen.emit()"
+          (reserveOpen)="reserveOpen.emit()"
         ></app-character-preview>
 
         <section class="tb-insurance" *ngIf="insurances.length">
@@ -43,8 +45,8 @@ export interface BriefingInsurance {
               </span>
               <button
                 type="button"
-                class="tx-btn tx-btn--small"
-                [class.tx-btn--primary]="row.held"
+                class="btn btn--sm"
+                [class.btn--primary]="row.held"
                 [disabled]="busy || confirmed"
                 (click)="insuranceChange.emit({ kind: row.kind, on: !row.held })"
               >
@@ -57,7 +59,7 @@ export interface BriefingInsurance {
         <div class="tb-actions">
           <button
             type="button"
-            class="tx-btn tx-btn--primary tx-btn--wide"
+            class="btn btn--primary tb-wide"
             [disabled]="busy || confirmed"
             (click)="confirm.emit()"
           >
@@ -65,7 +67,7 @@ export interface BriefingInsurance {
           </button>
           <button
             type="button"
-            class="tx-btn tx-btn--wide"
+            class="btn btn--action tb-wide"
             *ngIf="canGoBack"
             [disabled]="busy"
             (click)="back.emit()"
@@ -137,6 +139,9 @@ export interface BriefingInsurance {
         padding: 8px 0;
         background: var(--color-background);
       }
+      .tb-wide {
+        width: 100%;
+      }
       .tb-waiting {
         font-size: 0.85rem;
         opacity: 0.8;
@@ -154,6 +159,8 @@ export class TableBriefingComponent {
   @Input() busy = false;
   /** The names of the players who have not said they are ready. */
   @Input() waitingFor: string[] = [];
+  @Output() dreamOpen = new EventEmitter<void>();
+  @Output() reserveOpen = new EventEmitter<void>();
   @Output() confirm = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
   @Output() insuranceChange = new EventEmitter<{ kind: string; on: boolean }>();

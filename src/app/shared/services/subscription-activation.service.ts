@@ -8,6 +8,7 @@ import { AppStateService } from './app-state.service';
 import { PersistenceService } from './persistence.service';
 import { addMonthsToIsoDate } from '@money/domain';
 import { plannedRemaining } from '../payment-plan-sync';
+import { RemoteGameHook } from './remote-game';
 
 /**
  * Service for activating and deactivating planned subscriptions
@@ -28,7 +29,29 @@ export class SubscriptionActivationService {
    * @param project - Parent Smile or Fire project
    * @returns true if successful, false otherwise
    */
+  /**
+   * At a table the plan is the table's: it is paid at every Payday from the books of the game on the server, so activating, pausing and
+   * deleting a plan of a project are moves of the game (the amount per Payday; nothing for no plan). Returns whether it was handed over.
+   */
+  private atTable(plan: PlannedSubscription, perMinor: number, then: () => void): boolean {
+    const remote = RemoteGameHook.current;
+    if (!remote?.dreamfund || !remote.setProjectPlan) return false;
+    void remote
+      .setProjectPlan({ kind: plan.projectType, title: plan.projectTitle }, perMinor)
+      .then((outcome) => {
+        if (outcome.ok) then();
+      });
+    return true;
+  }
+
   activatePlannedSubscription(plan: PlannedSubscription, project: Smile | Fire): boolean {
+    if (
+      this.atTable(plan, Math.round(plan.amount * 100), () => undefined) ||
+      RemoteGameHook.current?.dreamfund
+    ) {
+      plan.status = 'active';
+      return true;
+    }
     try {
       // Validate plan is in 'planned' or 'inactive' status
       if (plan.status === 'active') {
@@ -144,6 +167,10 @@ export class SubscriptionActivationService {
    * @returns true if successful, false otherwise
    */
   deactivatePlannedSubscription(plan: PlannedSubscription, project: Smile | Fire): boolean {
+    if (this.atTable(plan, 0, () => undefined)) {
+      plan.status = 'inactive';
+      return true;
+    }
     try {
       // Validate plan is active
       if (plan.status !== 'active') {
@@ -211,6 +238,10 @@ export class SubscriptionActivationService {
    * @returns true if successful, false otherwise
    */
   reactivatePlannedSubscription(plan: PlannedSubscription, project: Smile | Fire): boolean {
+    if (this.atTable(plan, Math.round(plan.amount * 100), () => undefined)) {
+      plan.status = 'active';
+      return true;
+    }
     try {
       // Validate plan is inactive
       if (plan.status === 'active') {
@@ -307,6 +338,14 @@ export class SubscriptionActivationService {
    * @returns true if successful, false otherwise
    */
   deletePlannedSubscription(planId: string, project: Smile | Fire): boolean {
+    const held = (project.plannedSubscriptions ?? []).find((entry) => entry.id === planId);
+    if (held && RemoteGameHook.current?.dreamfund) {
+      if (held.status === 'active') this.atTable(held, 0, () => undefined);
+      project.plannedSubscriptions = (project.plannedSubscriptions ?? []).filter(
+        (entry) => entry.id !== planId,
+      );
+      return true;
+    }
     try {
       if (!project.plannedSubscriptions) {
         return false;

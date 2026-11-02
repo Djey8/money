@@ -39,21 +39,6 @@
       </button>
     </div>
 
-    <!-- at a table: what is set aside for this project at every Payday -->
-    <div class="table-plan" *ngIf="tablePlan as plan">
-      <label>
-        <span>{{ plan.label }}</span>
-        <input
-          type="number"
-          min="0"
-          [ngModel]="plan.perMinor / 100"
-          (ngModelChange)="tablePlanTyped = $event"
-          [attr.aria-label]="plan.label"
-        />
-      </label>
-      <button class="btn btn--sm btn--primary" (click)="setTablePlan()">{{ plan.button }}</button>
-    </div>
-
     <!-- Tabs -->
     <div class="detail-tabs">
       <button
@@ -112,7 +97,7 @@
       </div>
 
       <!-- the reserve of a game is the Mojo: this project follows it (JFK, 2026-10-26) -->
-      <div class="info-section reserve-note" *ngIf="isReserve">
+      <div class="info-section reserve-note" *ngIf="isReserve && !atTable">
         <h5 class="section-label">{{ 'Fire.reserveMojoTitle' | translate }}</h5>
         <p class="section-text">{{ 'Fire.reserveMojo' | translate }}</p>
         <button type="button" class="btn btn--fire" (click)="payIntoMojo()">

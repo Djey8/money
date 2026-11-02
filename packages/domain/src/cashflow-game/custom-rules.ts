@@ -48,6 +48,11 @@ export interface CustomRules {
   difficulty: Difficulty;
   /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
   bankInterestPercent: number;
+  /**
+   * The steps the Bank loan moves in, in minor units (JFK, 2026-11-03): 0 is the character's own step (it grows with the price level), 1 is
+   * any amount at all, else 50, 100, 200, 500 or 1000 units.
+   */
+  bankLoanStepMinor: number;
 }
 
 export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
@@ -62,6 +67,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'never',
     ownProjects: true,
     bankInterestPercent: 10,
+    bankLoanStepMinor: 0,
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
@@ -79,6 +85,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'payNow',
     ownProjects: true,
     bankInterestPercent: 10,
+    bankLoanStepMinor: 0,
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
@@ -97,6 +104,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'all',
     ownProjects: false,
     bankInterestPercent: 10,
+    bankLoanStepMinor: 0,
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
@@ -132,6 +140,7 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
         : base.emergencySettle,
     ownProjects: typeof raw?.ownProjects === 'boolean' ? raw.ownProjects : base.ownProjects,
     bankInterestPercent: clamp(raw?.bankInterestPercent, 1, 30, base.bankInterestPercent),
+    bankLoanStepMinor: clamp(raw?.bankLoanStepMinor, 0, 10000000, base.bankLoanStepMinor),
     opportunityOffers: clamp(raw?.opportunityOffers, 1, 3, base.opportunityOffers),
     maxSideHustles: clamp(raw?.maxSideHustles, 1, 5, base.maxSideHustles),
     savingsCardCopies: clamp(raw?.savingsCardCopies, 1, 3, base.savingsCardCopies),

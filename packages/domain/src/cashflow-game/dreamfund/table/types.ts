@@ -53,6 +53,8 @@ export interface DreamTableSettings {
   showProgress: boolean;
   /** Whether the game may count for the leaderboard (decided by the ranked rules when it ends). */
   ranked: boolean;
+  /** A game for finding what is wrong with the cards (JFK, 2026-11-03): the host picks the card of every tile they land on. Never ranked. */
+  debug?: boolean;
   leaveFreeRounds: number;
 }
 
@@ -70,6 +72,8 @@ export type DreamPending =
   | { kind: 'career_branch'; options: string[]; roll?: number }
   | { kind: 'dream'; offers: string[] }
   | { kind: 'opportunity_pile' }
+  /** A debug game: the host chooses which card the tile deals (or lets chance do it). */
+  | { kind: 'debug_pick'; tile: string }
   | {
       kind: 'opportunity';
       pile: OpportunityPile;
@@ -148,6 +152,15 @@ export interface DreamSeat {
   resolved?: DreamResolved | null;
   /** A Payday was passed in this turn and the player has not yet said what to do with the month's money (`settle_payday`). */
   paydayDue?: boolean;
+  /** The job search of the Payday just passed: the chances, the die (shown when the player throws it) and what it came to. */
+  jobSearch?: {
+    title: Record<string, string>;
+    rollFrom: number;
+    roll: number;
+    paydaysLeft: number;
+    result: 'found' | 'missed' | 'fallback';
+    thrown: boolean;
+  } | null;
   /** The round of the table in which each goal was first reached. */
   reached: {
     reserve?: number;
@@ -245,6 +258,10 @@ export type DreamCommand =
   | { type: 'pick_profession'; professionId: string }
   /** The player knows who they are: the game begins when everybody does. */
   | { type: 'confirm_briefing' }
+  /** The player throws the die of the job search of the Payday that has passed. */
+  | { type: 'throw_job_search' }
+  /** A debug game: the card of the tile the host stands on (no card: at random, as in every other game). */
+  | { type: 'debug_pick'; cardId?: string }
   /** Back to the choice of the character (before the game has begun). */
   | { type: 'reopen_pick' }
   | { type: 'close' }
@@ -296,7 +313,12 @@ export type DreamCommand =
   | { type: 'repay_bank_loan'; amountMinor: number }
   /** Hops in or out of an insurance: at once before the first roll, else with the next Payday. */
   | { type: 'set_insurance'; kind: string; on: boolean }
-  | { type: 'set_plan'; kind: 'mojo' | 'life' | 'smile'; id: string; perMinor: number }
+  | {
+      type: 'set_plan';
+      kind: 'mojo' | 'life' | 'smile' | 'emergency';
+      id: string;
+      perMinor: number;
+    }
   // Selling and trading what the player owns.
   /** The way out that is always there: a holding sold at the market price less a discount. */
   | { type: 'sell_holding'; holding: string }
@@ -332,6 +354,7 @@ export interface DreamSettingsInput {
   pace?: TablePace;
   showProgress?: boolean;
   ranked?: boolean;
+  debug?: boolean;
   leaveFreeRounds?: number;
 }
 
@@ -375,6 +398,7 @@ export type DreamEventType =
   | 'trade_expired'
   | 'holding_sold'
   | 'money_moved'
+  | 'job_search'
   | 'goal_reached'
   | 'player_won'
   | 'player_bankrupt'

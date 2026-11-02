@@ -132,6 +132,12 @@ const DREAMFUND_COMMANDS = {
     }),
   },
   skip: { ...none, build: () => ({ type: 'skip' }) },
+  debug_pick: {
+    fields: ['cardId'],
+    check: (c) => (c.cardId === undefined ? null : text(c.cardId, 'cardId')),
+    build: (c) => ({ type: 'debug_pick', ...(c.cardId !== undefined ? { cardId: c.cardId } : {}) }),
+  },
+  throw_job_search: { ...none, build: () => ({ type: 'throw_job_search' }) },
   roll_opportunity: { ...none, build: () => ({ type: 'roll_opportunity' }) },
   confirm_briefing: { ...none, build: () => ({ type: 'confirm_briefing' }) },
   reopen_pick: { ...none, build: () => ({ type: 'reopen_pick' }) },
@@ -171,8 +177,8 @@ const DREAMFUND_COMMANDS = {
   set_plan: {
     fields: ['kind', 'id', 'perMinor'],
     check: (c) =>
-      !['mojo', 'life', 'smile'].includes(c.kind)
-        ? 'kind must be mojo, life or smile.'
+      !['mojo', 'life', 'smile', 'emergency'].includes(c.kind)
+        ? 'kind must be mojo, life, smile or emergency.'
         : text(c.id, 'id') ||
           (Number.isSafeInteger(c.perMinor) && c.perMinor >= 0
             ? null

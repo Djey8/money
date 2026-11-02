@@ -573,6 +573,20 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     }
     // a payment of the card in hand goes on in the game screen; a Grow trade stays where it was made (maybe there is another to sell)
     if (/#(doodad|market)/.test(comment)) RemoteGameHook.reopen?.();
+    // a card with a die that was bought from Grow waits for the player's throw: the card opens at once
+    if (
+      remote.dreamfund &&
+      outcome?.ok &&
+      statements.some(
+        (entry) =>
+          entry.kind === 'buyShare' || entry.kind === 'buyInvestment' || entry.kind === 'buyAsset',
+      )
+    ) {
+      setTimeout(() => {
+        const open = AppStateService.instance.cashflowGame.turn?.pending?.opportunity;
+        if (open?.rollFor) RemoteGameHook.reopen?.();
+      }, 600);
+    }
   }
 
   addTransaction() {

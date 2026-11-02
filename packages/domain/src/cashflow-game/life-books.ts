@@ -250,7 +250,7 @@ export interface LifePaydayEvent {
  */
 export function tickLife(
   books: LifeBooks,
-  options: { date: string; lang: EmergencyLang; rng?: Rng },
+  options: { date: string; lang: EmergencyLang; rng?: Rng; jobRoll?: number },
 ): { effects: GameEffects; events: LifePaydayEvent[] } | null {
   const { state } = books;
   if (!state.life) return null;
@@ -316,7 +316,8 @@ export function tickLife(
   // 3. the job search
   let jobSearch = state.jobSearch;
   if (jobSearch) {
-    const roll = rollDie(rng);
+    // at a table the die of the job search is the player's: thrown before, shown to them after the Payday
+    const roll = options.jobRoll ?? rollDie(rng);
     if (roll >= jobSearch.rollFrom) {
       for (const line of lines.filter((candidate) => candidate.group === 'employment'))
         dropLine(line);

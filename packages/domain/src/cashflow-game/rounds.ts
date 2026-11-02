@@ -72,6 +72,8 @@ export interface RoundDeps {
   difficulty?: Difficulty;
   /** At a table the markets are everybody's: they drift once a table round, not at every player's Payday. */
   sharedMarkets?: boolean;
+  /** The throw of the job search of this Payday, when the player's own die is used. */
+  jobRoll?: number;
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -223,6 +225,7 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
           date: appendedTransactions[0]?.date ?? today,
           lang: deps.lang ?? 'en',
           rng: deps.rng,
+          jobRoll: deps.jobRoll,
         },
       )
     : null;

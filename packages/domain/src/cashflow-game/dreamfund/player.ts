@@ -103,6 +103,8 @@ export interface DreamPlan {
   leftMinor: number;
   /** What the project cost in all (an emergency): what is paid is the total less what is left. */
   totalMinor?: number;
+  /** An emergency's plan has taken its surcharge (once, when the plan was first set). */
+  surcharged?: boolean;
 }
 
 export interface DreamProject {
@@ -191,7 +193,14 @@ export class DreamPlayer {
     if (!gameSet || !profession) throw new Error(`Unknown character ${professionId}`);
     // the cards are as big as the character's price level makes them
     const scaled = gameSetFor(gameSet, profession.priceFactor, { round: profession.roundNumbers });
-    this.gameSet = scaled;
+    // what the Bank loan costs and the steps it moves in are the table's settings (a step of 0 is the character's own)
+    this.gameSet = {
+      ...scaled,
+      loanRule: {
+        monthlyInterestPercent: this.rules.bankInterestPercent,
+        incrementMinor: this.rules.bankLoanStepMinor || scaled.loanRule.incrementMinor,
+      },
+    };
     this.cards = scaled.decks?.opportunity ?? [];
     this.harvestCards = scaled.decks?.harvest ?? [];
     this.profession = profession;
@@ -230,7 +239,7 @@ export class DreamPlayer {
         dreams: EMPTY_DREAM_LOG,
       },
       allocation: { daily: 60, splurge: 10, smile: 10, fire: 20 },
-      gameSet: scaled,
+      gameSet: this.gameSet,
       subscriptions,
       transactions: pick.startingTransactions,
       liabilities: (kit.liabilities ?? []).map((liability) => ({
@@ -441,21 +450,48 @@ export class DreamPlayer {
     from: number | null;
     to: number;
     openingPayday: boolean;
+    /** The job search of this Payday: the die and what it came to. */
+    jobSearch?: {
+      title: Record<string, string>;
+      rollFrom: number;
+      roll: number;
+      paydaysLeft: number;
+      result: 'found' | 'missed' | 'fallback';
+    };
   } {
     const before = this.state.round;
     const from = this.state.boardPosition;
+    // a job being looked for is rolled for at a Payday: the die is thrown now and shown to the player once the Payday has passed
+    const search = this.state.jobSearch;
+    const jobRoll = search ? rollDie(this.rng) : undefined;
     const result = playTurn(this.books, {
       ...this.deps,
       board: this.board,
       profession: this.profession,
+      ...(jobRoll !== undefined ? { jobRoll } : {}),
     });
     let books = this.books;
     for (const effects of result.effects) books = applyEffectsToBooks(books, effects);
     this.books = books;
     this.turns += 1;
+    const paydays = this.state.round - before;
+    const after = this.state.jobSearch;
+    const searched =
+      search && jobRoll !== undefined && paydays > 0
+        ? {
+            title: search.title,
+            rollFrom: search.rollFrom,
+            roll: jobRoll,
+            paydaysLeft: search.paydaysLeft,
+            // found a job, or the search ran out and the next offer pays less, or still looking
+            result: (jobRoll >= search.rollFrom ? 'found' : after ? 'missed' : 'fallback') as
+              'found' | 'missed' | 'fallback',
+          }
+        : undefined;
     return {
+      ...(searched ? { jobSearch: searched } : {}),
       landed: result.move.landed.kind,
-      paydays: this.state.round - before,
+      paydays,
       dice: result.roll.dice,
       total: result.roll.total,
       from,
@@ -514,7 +550,16 @@ export class DreamPlayer {
     for (const plan of [...this.plans]) {
       const pay = Math.min(plan.perMinor, plan.leftMinor);
       if (pay <= 0) continue;
-      this.spend(pay, `@${plan.kind}`, plan.kind !== 'mojo');
+      // booked under the project the plan is for, so the account shows what each payment was
+      const name =
+        plan.kind === 'mojo'
+          ? 'Mojo'
+          : plan.kind === 'life'
+            ? (this.profession.profile?.texts.en.dream.project?.title ?? 'Dream')
+            : plan.kind === 'smile'
+              ? (this.dreamCard(plan.id)?.title.en ?? 'Dream')
+              : (this.emergencyCard(plan.id)?.title.en ?? 'Emergency');
+      this.spend(pay, `@${name}`, plan.kind !== 'mojo');
       plan.leftMinor -= pay;
       if (plan.kind === 'mojo') this.reserveMinor += pay;
       else if (plan.kind === 'life') this.dreamSavedMinor += pay;
@@ -585,13 +630,14 @@ export class DreamPlayer {
   }
 
   /** Pays back some of the Bank loan (a multiple of its step); false when the rules refuse it. */
-  repayBankLoan(repayMinor: number): boolean {
-    if (repayMinor <= 0) return false;
+  repayBankLoan(repayMinor: number): true | string {
+    if (repayMinor <= 0) return 'Enter an amount to repay.';
     try {
       this.apply(playBankLoan(this.books, -repayMinor, this.deps));
       return true;
-    } catch {
-      return false; // the rules refuse it: it stays
+    } catch (error) {
+      // the rules refuse it: it stays, and the player is told why (the step, the cash, the loan)
+      return error instanceof Error ? error.message : 'The Bank loan cannot be repaid like that.';
     }
   }
 
@@ -725,6 +771,29 @@ export class DreamPlayer {
       leftMinor: payMinor,
       totalMinor: payMinor,
     });
+  }
+
+  /** An open emergency is paid over Paydays (as the app's payment plan says): so much at every Payday, with the plan's surcharge once. */
+  planOpenEmergency(id: string, perMinor: number): boolean {
+    const plan = this.plans.find(
+      (candidate) => candidate.kind === 'emergency' && candidate.id === id,
+    );
+    if (!plan) return false;
+    if (perMinor <= 0) {
+      plan.perMinor = 0;
+      return true;
+    }
+    if (!plan.surcharged) {
+      const percents = difficultySettings(this.rules.difficulty).planSurchargePercents;
+      const months = Math.ceil(plan.leftMinor / perMinor);
+      const percent = months <= 3 ? percents[0] : months <= 6 ? percents[1] : percents[2];
+      const extra = Math.round((plan.leftMinor * percent) / 100);
+      plan.leftMinor += extra;
+      plan.totalMinor = (plan.totalMinor ?? plan.leftMinor) + extra;
+      plan.surcharged = true;
+    }
+    plan.perMinor = Math.min(perMinor, plan.leftMinor);
+    return true;
   }
 
   /** Emergencies that wait for a payment and have no plan: the turn is not over before they are dealt with. */

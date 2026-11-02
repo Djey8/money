@@ -119,6 +119,8 @@ function pendingCommand(
 ): DreamCommand {
   const pending = seat.pending!;
   switch (pending.kind) {
+    case 'debug_pick':
+      return { type: 'debug_pick' };
     case 'emergency': {
       const card = p.emergencyCard(pending.cardId);
       const pay = card ? p.autoEmergencySelection(card, p.emergencyContext()) : null;

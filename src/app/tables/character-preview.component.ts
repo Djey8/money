@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import {
@@ -31,6 +38,8 @@ import type { ProfessionSheetNumbers } from '../main/cashflow-game/profession-sh
       [story]="story"
       [sheets]="sheets"
       [currency]="currency"
+      (dreamOpen)="dreamOpen.emit()"
+      (reserveOpen)="reserveOpen.emit()"
     ></app-character-sheet>
   `,
 })
@@ -43,6 +52,9 @@ export class CharacterPreviewComponent {
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;
   @Input() lang = 'en';
   @Input() currency = 'DT';
+  /** The dream and the reserve of the character open as the projects they are (in a game that has begun). */
+  @Output() dreamOpen = new EventEmitter<void>();
+  @Output() reserveOpen = new EventEmitter<void>();
 
   private get set() {
     return CASHFLOW_GAME_SETS.find((candidate) => candidate.id === this.gameSetId);

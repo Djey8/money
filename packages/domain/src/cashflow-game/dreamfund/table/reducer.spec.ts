@@ -394,6 +394,48 @@ describe('the Dreamfund table: play', () => {
     expect(project.details?.actionItems?.length).toBeGreaterThan(0);
   });
 
+  it('a debug game: the host chooses the card of the tile they land on, nobody else does, and it is never ranked', () => {
+    let t = started({ debug: true, ranked: true }, 8);
+    expect(t.settings.debug).toBe(true);
+    expect(t.settings.ranked).toBe(false);
+    let landed: DreamTable | null = null;
+    for (let guard = 0; guard < 300 && !landed; guard += 1) {
+      const who = t.activePlayerId!;
+      const seat = t.players.find((s) => s.id === who)!;
+      if (who === 'host' && seat.pending?.kind === 'debug_pick') {
+        landed = t;
+        break;
+      }
+      const options =
+        who === 'host' && !seat.pending && !t.turnRolled
+          ? [{ type: 'roll' } as DreamCommand]
+          : passiveCommands(t, who);
+      for (const command of options) {
+        try {
+          t = run(t, who, command);
+          break;
+        } catch (error) {
+          if (!(error instanceof TableCommandError)) throw error;
+        }
+      }
+    }
+    expect(landed).not.toBeNull();
+    const tile = (landed!.players.find((s) => s.id === 'host')!.pending as { tile: string }).tile;
+    const card: Record<string, string> = {
+      emergency: 'E01',
+      life: 'L07',
+      dream: 'D01',
+      opportunity: 'S01',
+      harvest: 'H01',
+    };
+    expect(() => run(landed!, 'ann', { type: 'debug_pick', cardId: card[tile] })).toThrow();
+    expect(() => run(landed!, 'host', { type: 'debug_pick', cardId: 'NOPE' })).toThrow(/pile/);
+    const chosen = run(landed!, 'host', { type: 'debug_pick', cardId: card[tile] });
+    const seat = chosen.players.find((s) => s.id === 'host')!;
+    if (tile === 'harvest') expect(seat.harvest?.cardId).toBe('H01');
+    else expect(JSON.stringify(seat.pending ?? seat.resolved)).toContain(card[tile]);
+  });
+
   it('refuses a move that is not possible, and changes nothing', () => {
     const t = started();
     const who = t.activePlayerId!;

@@ -87,4 +87,30 @@ describe('the simulation on the engine', () => {
     expect(a.outcome).not.toBe('error');
     expect(a.turns).toBeGreaterThan(50);
   });
+
+  it('shows the die of the job search of a Payday and what it came to', () => {
+    const player = DreamPlayer.fromSeed({ seed: 4, professionId: 'dual-student-informatik' });
+    const search = {
+      title: { en: 'Laid off', de: 'Entlassen' },
+      rollFrom: 7,
+      paydaysLeft: 5,
+      fallbackPercent: 20,
+    };
+    player.setState({ ...player.state, jobSearch: search });
+    let seen: ReturnType<DreamPlayer['roll']>['jobSearch'];
+    for (let i = 0; i < 12 && !seen; i += 1) {
+      seen = player.roll().jobSearch;
+      if (player.state.jobSearch === undefined) break;
+    }
+    expect(seen).toMatchObject({ rollFrom: 7, result: 'missed', paydaysLeft: 5 });
+    expect(seen!.roll).toBeGreaterThanOrEqual(1);
+    expect(player.state.jobSearch?.paydaysLeft).toBeLessThan(5);
+    // a die that finds the job
+    const lucky = DreamPlayer.fromSeed({ seed: 4, professionId: 'dual-student-informatik' });
+    lucky.setState({ ...lucky.state, jobSearch: { ...search, rollFrom: 1 } });
+    let found: ReturnType<DreamPlayer['roll']>['jobSearch'];
+    for (let i = 0; i < 12 && !found; i += 1) found = lucky.roll().jobSearch;
+    expect(found?.result).toBe('found');
+    expect(lucky.state.jobSearch).toBeUndefined();
+  });
 });

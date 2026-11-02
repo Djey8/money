@@ -153,6 +153,10 @@ export interface CreateTableInput {
     shape?: string;
     size?: string;
     mode?: 'guided' | 'strict';
+    /** A Dreamfund table: the Bank loan's step and interest. */
+    customRules?: { bankLoanStepMinor?: number; bankInterestPercent?: number };
+    /** A game for debugging the cards: the host chooses the card of every tile. */
+    debug?: boolean;
     /** How fast the bots play and how long each move is told. */
     pace?: 'fast' | 'normal' | 'slow';
     /** Whether everybody's progress towards escaping (a percentage) is shown. */
