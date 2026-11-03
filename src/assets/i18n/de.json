@@ -3327,7 +3327,7 @@
   "CashflowGame.life.valueInfo.studying": "In Ausbildung: das Studium endet auf Stufe 2 deiner Karriere. Studenten-Notfälle (Semesterbeitrag, der Laptop vor den Prüfungen) können dich bis dahin treffen.",
   "CashflowGame.insurance.fresh": "Du hast jetzt ein Auto. Die Kfz-Versicherungen werden unten angeboten: steige ein, um geschützt zu sein - ein unversicherter Autoschaden kostet dich alles.",
   "CashflowGame.life.value.car": "Auto",
-  "CashflowGame.insurance.manage": "Versicherungen ein- oder aussteigen",
+  "CashflowGame.insurance.manage": "Versicherungen",
   "CashflowGame.expenseLine.carPartialInsurance": "Teilkaskoversicherung",
   "CashflowGame.expenseLine.carFullInsurance": "Vollkaskoversicherung"
 }

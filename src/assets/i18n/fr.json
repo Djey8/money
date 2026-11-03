@@ -3327,7 +3327,7 @@
   "CashflowGame.life.valueInfo.studying": "En formation : les études se terminent à l'étape 2 de votre carrière.",
   "CashflowGame.insurance.fresh": "Vous avez maintenant une voiture. Les assurances auto sont proposées ci-dessous : souscrivez pour être couvert.",
   "CashflowGame.life.value.car": "Voiture",
-  "CashflowGame.insurance.manage": "Souscrire ou résilier des assurances",
+  "CashflowGame.insurance.manage": "Assurances",
   "CashflowGame.expenseLine.carPartialInsurance": "Assurance auto tiers étendu",
   "CashflowGame.expenseLine.carFullInsurance": "Assurance auto tous risques"
 }

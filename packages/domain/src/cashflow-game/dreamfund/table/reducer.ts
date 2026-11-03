@@ -1141,7 +1141,15 @@ function doCommand(
       if (landing.resolved?.kind === 'life') {
         emit('life_answered', id, { cardId: landing.resolved.cardId, decision: 'fate' });
       }
-      return { resolved: null, pending: null, ...landing };
+      // everything of the card before is cancelled: the player stands on this tile with exactly this card
+      return {
+        resolved: null,
+        pending: null,
+        harvest: null,
+        jobSearch: null,
+        paydayDue: false,
+        ...landing,
+      };
     }
     case 'debug_payday': {
       if (!table.settings.debug || id !== table.hostId) {

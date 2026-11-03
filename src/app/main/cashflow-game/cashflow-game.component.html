@@ -2895,14 +2895,6 @@
         {{ chip.icon }} <span class="cf-trait-text">{{ chip.text }}</span>
       </button>
     </div>
-    <button
-      type="button"
-      class="btn btn--primary btn--sm cf-insurance-button"
-      *ngIf="hasActiveGame && insuranceRows.length > 0"
-      (click)="openInsurances()"
-    >
-      🛡️ {{ insuranceWords.button }}
-    </button>
     <small class="cf-traits-hint" *ngIf="!openTrait">{{
       'CashflowGame.life.tapHint' | translate
     }}</small>

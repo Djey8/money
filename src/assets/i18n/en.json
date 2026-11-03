@@ -3327,7 +3327,7 @@
   "CashflowGame.life.valueInfo.studying": "In training: the study ends at stage 2 of your career. Student emergencies (semester fee, the laptop before the exams) can find you until then.",
   "CashflowGame.insurance.fresh": "You have a car now. The car insurances are on offer below: hop in to be covered - an uninsured car damage costs you all of it.",
   "CashflowGame.life.value.car": "Car",
-  "CashflowGame.insurance.manage": "Hop in or out of insurances",
+  "CashflowGame.insurance.manage": "Insurances",
   "CashflowGame.expenseLine.carPartialInsurance": "Partial cover car insurance",
   "CashflowGame.expenseLine.carFullInsurance": "Fully comprehensive car insurance"
 }

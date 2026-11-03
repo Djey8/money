@@ -5,7 +5,7 @@ import {
   carPremiumMinor,
   chooseInsurance,
   insuranceOffers,
-  offerCarInsurance,
+  offerInsurances,
   withoutDroppedPremiums,
 } from './insurance';
 import { insuranceCoverage } from './insurance-coverage';
@@ -26,12 +26,11 @@ describe('the insurances of a Dreamfund character', () => {
     expect(premium('jan-oberarzt')).toBeGreaterThan(premium('lena-pflege'));
   });
 
-  it('offers the car insurances to a character with a car, held by nobody until the player hops in', () => {
+  it('offers the car insurances to everybody, held by nobody until the player hops in', () => {
     const jonas = player('mehmet-elektroniker');
     const offers = insuranceOffers(jonas.state);
     const partial = offers.find((offer) => offer.kind === 'car_partial');
     expect(partial).toMatchObject({ held: false, heldNext: false });
-    expect(jonas.state.insurance?.fresh).toEqual(['car_partial', 'car_full']);
     const line = jonas.books.subscriptions.find((sub) => sub.title === partial!.premiumTitle);
     expect(line?.amountMinor).toBe(
       -carPremiumMinor(
@@ -41,13 +40,10 @@ describe('the insurances of a Dreamfund character', () => {
       ),
     );
     // asking again changes nothing
-    expect(offerCarInsurance(jonas.books, {})).toBe(jonas.books);
-  });
-
-  it('a character without a car is offered none, and one that gets a car is offered them then', () => {
+    expect(offerInsurances(jonas.books, {})).toBe(jonas.books);
+    // a character without a car has the option as well
     const tobias = player('tobias-designer');
-    expect(insuranceOffers(tobias.state).some((offer) => offer.kind.startsWith('car'))).toBe(false);
-    tobias.setState({ ...tobias.state, life: { ...tobias.state.life!, car: true } });
+    expect(tobias.state.life?.car).toBe(false);
     expect(insuranceOffers(tobias.state).map((offer) => offer.kind)).toEqual(
       expect.arrayContaining(['car_partial', 'car_full']),
     );
@@ -72,12 +68,13 @@ describe('the insurances of a Dreamfund character', () => {
     expect(player('lena-pflege').state.life).toMatchObject({ kids: 1, car: true });
   });
 
-  it('offers every insurance of the catalogue, none held, and the pet ones only to a pet owner', () => {
+  it('offers the insurances of the catalogue, none held', () => {
     const tobias = player('tobias-designer');
     const kinds = insuranceOffers(tobias.state).map((offer) => offer.kind);
-    expect(kinds).toEqual(expect.arrayContaining(['legal', 'disability', 'accident', 'travel']));
-    expect(kinds).not.toContain('car_full');
-    expect(kinds).not.toContain('pet_health');
+    expect(kinds).toEqual(
+      expect.arrayContaining(['liability', 'household', 'legal', 'dental', 'car_partial']),
+    );
+    expect(kinds).not.toContain('disability');
     const legal = insuranceOffers(tobias.state).find((offer) => offer.kind === 'legal')!;
     expect(legal).toMatchObject({ held: false, heldNext: false });
   });
@@ -112,5 +109,6 @@ describe('the insurances of a Dreamfund character', () => {
       insuranceCoverage('car_partial').length,
     );
     expect(insuranceCoverage('legal')).toEqual([]);
+    expect(insuranceCoverage('dental')).toEqual([]);
   });
 });

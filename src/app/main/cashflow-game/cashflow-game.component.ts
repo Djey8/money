@@ -91,7 +91,6 @@ import { type ProfessionSheetNumbers } from './profession-sheets.component';
 import { ActiveEffectsComponent } from './active-effects.component';
 import { CharacterSheetComponent } from './character-sheet.component';
 import { InsuranceDecisionComponent } from './insurance-decision.component';
-import { insuranceTexts } from './insurance-decision.texts';
 import {
   DreamBoardComponent,
   TILE_COLORS,
@@ -1441,10 +1440,6 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The insurances are decided in their own component (JFK, 2026-11-03): from the chip and from the button next to the chips. */
   insuranceOpen = false;
-  get insuranceWords() {
-    return insuranceTexts(this.language.current);
-  }
-
   get languageCode(): string {
     return this.language.current;
   }

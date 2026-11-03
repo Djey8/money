@@ -3327,7 +3327,7 @@
   "CashflowGame.life.valueInfo.studying": "En formación: el estudio termina en la etapa 2 de tu carrera.",
   "CashflowGame.insurance.fresh": "Ahora tienes coche. Los seguros del coche se ofrecen abajo: súmate para estar cubierto.",
   "CashflowGame.life.value.car": "Coche",
-  "CashflowGame.insurance.manage": "Entrar o salir de seguros",
+  "CashflowGame.insurance.manage": "Seguros",
   "CashflowGame.expenseLine.carPartialInsurance": "Seguro de coche a terceros ampliado",
   "CashflowGame.expenseLine.carFullInsurance": "Seguro de coche a todo riesgo"
 }

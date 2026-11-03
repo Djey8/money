@@ -104,6 +104,9 @@ export type BriefingInsurance = InsuranceRow;
         opacity: 0.8;
         font-size: 0.9rem;
       }
+      .tb-actions .btn {
+        margin: 0;
+      }
       .tb-actions {
         display: flex;
         flex-direction: column;
@@ -116,6 +119,7 @@ export type BriefingInsurance = InsuranceRow;
 
       .tb-wide {
         width: 100%;
+        margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
