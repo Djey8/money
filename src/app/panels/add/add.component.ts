@@ -525,8 +525,12 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     if (emergency?.emergencyCardId) {
       return { decision: 'fundEmergency', amountMinor, id: emergency.emergencyCardId } as never;
     }
-    if (state.allSmileProjects.some((smile) => smile.title.toLowerCase() === title)) {
-      return { decision: 'fundDream', amountMinor };
+    const dream = state.allSmileProjects.find((smile) => smile.title.toLowerCase() === title) as
+      { dream?: boolean; dreamCardId?: string } | undefined;
+    if (dream) {
+      // the character's own dream is `life`, a dream taken is its card: the money goes to the project that was asked for
+      const id = dream.dream ? 'life' : dream.dreamCardId;
+      return { decision: 'fundDream', amountMinor, ...(id ? { id } : {}) } as never;
     }
     return null;
   }

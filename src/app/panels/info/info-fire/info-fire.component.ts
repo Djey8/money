@@ -560,9 +560,8 @@ export class InfoFireComponent extends BaseInfoComponent {
     AddComponent.url = '/fireemergencies';
     const remaining = this.getTotalTarget() - this.getTotalAmount();
     // in a game the amount that finishes the project is already filled in
-    if (this.inGame && remaining > 0) {
-      AddComponent.amountTextField = (Math.round(remaining * 100) / -100).toString();
-    }
+    AddComponent.amountTextField =
+      this.inGame && remaining > 0 ? (Math.round(remaining * 100) / -100).toString() : '';
     AddComponent.commentTextField = `${InfoFireComponent.title} ${remaining} `;
     InfoFireComponent.isInfo = false;
     AddComponent.isAdd = true;

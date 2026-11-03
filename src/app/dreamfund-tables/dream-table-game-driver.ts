@@ -28,7 +28,11 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
   ladder: (d) => ({ type: 'harvest_ladder', holding: d['holding'], action: d['action'] }),
   // the app's own pages: funding the reserve and the dream, repaying, the plans, selling and offering what is owned
   fundReserve: (d) => ({ type: 'fund_reserve', amountMinor: d['amountMinor'] }),
-  fundDream: (d) => ({ type: 'fund_dream', amountMinor: d['amountMinor'] }),
+  fundDream: (d) => ({
+    type: 'fund_dream',
+    amountMinor: d['amountMinor'],
+    ...(d['id'] ? { id: d['id'] } : {}),
+  }),
   fundEmergency: (d) => ({ type: 'fund_emergency', id: d['id'], amountMinor: d['amountMinor'] }),
   repayDebt: (d) => ({ type: 'repay_debt', tag: d['tag'] }),
   repayBank: (d) => ({ type: 'repay_bank_loan', amountMinor: d['amountMinor'] }),

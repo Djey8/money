@@ -565,9 +565,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     AddComponent.categoryTextField = `@${InfoSmileComponent.title}`;
     AddComponent.selectedOption = 'Smile';
     AddComponent.commentTextField = `${InfoSmileComponent.title} ${totalRemaining}`;
-    if (this.inGame && totalRemaining > 0) {
-      AddComponent.amountTextField = (Math.round(totalRemaining * 100) / -100).toString();
-    }
+    // what finishes the project is filled in; with nothing left the field is empty, never the amount of the last payment
+    AddComponent.amountTextField =
+      this.inGame && totalRemaining > 0 ? (Math.round(totalRemaining * 100) / -100).toString() : '';
 
     AddComponent.url = '/smileprojects';
     AddComponent.isAdd = true;

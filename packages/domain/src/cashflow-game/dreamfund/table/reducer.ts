@@ -1083,16 +1083,19 @@ function doCommand(
       return {};
     }
     case 'fund_reserve': {
-      const put = Math.min(command.amountMinor, p.cash());
-      if (put <= 0) return refuse('There is no cash to put in the reserve.');
+      const put = Math.floor(command.amountMinor);
+      if (put <= 0) return refuse('Enter an amount to put in the reserve.');
       p.fundReserve(put);
       emit('money_moved', id, { what: 'reserve', amountMinor: put });
       return {};
     }
     case 'fund_dream': {
-      const put = Math.min(command.amountMinor, p.cash());
-      if (put <= 0) return refuse('There is no cash for the dream.');
-      p.fundDreams(put);
+      if (command.id && command.id !== 'life' && !p.smile.some((d) => d.cardId === command.id)) {
+        return refuse('That dream is not open.');
+      }
+      if (command.amountMinor <= 0) return refuse('Enter an amount for the dream.');
+      const put = p.fundDreams(command.amountMinor, command.id);
+      if (put <= 0) return refuse('There is nothing left to save for there.');
       p.checkDreams();
       emit('money_moved', id, { what: 'dream', amountMinor: put });
       return {};

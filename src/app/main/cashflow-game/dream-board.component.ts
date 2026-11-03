@@ -111,12 +111,17 @@ const HEIGHT_TAKEN = 400;
               [attr.r]="tileSize * 0.34"
               class="db-disc"
             />
+            <clipPath [attr.id]="clipId(tile)">
+              <circle [attr.cx]="tile.x" [attr.cy]="tile.y" [attr.r]="tileSize * 0.34" />
+            </clipPath>
             <image
               [attr.href]="icons[tile.kind].image"
-              [attr.x]="tile.x - tileSize * 0.3"
-              [attr.y]="tile.y - tileSize * 0.3"
-              [attr.width]="tileSize * 0.6"
-              [attr.height]="tileSize * 0.6"
+              [attr.x]="tile.x - tileSize * 0.34"
+              [attr.y]="tile.y - tileSize * 0.34"
+              [attr.width]="tileSize * 0.68"
+              [attr.height]="tileSize * 0.68"
+              preserveAspectRatio="xMidYMid slice"
+              [attr.clip-path]="'url(#' + clipId(tile) + ')'"
             />
           </ng-container>
           <ng-container *ngSwitchCase="'sprout'">
@@ -339,6 +344,11 @@ export class DreamBoardComponent {
   readonly tileSize = TILE;
   readonly START_HEIGHT = START_HEIGHT;
   readonly icons = TILE_ICONS;
+
+  /** The id of the circle a tile's picture is cut to (a map has many tiles, and a page may hold more than one map). */
+  clipId(tile: { x: number; y: number }): string {
+    return `db-clip-${Math.round(tile.x)}-${Math.round(tile.y)}-${this.map.setup.seed}`;
+  }
   readonly sprout = SPROUT_PATH;
 
   private cache: { key: string; value: Layout } | null = null;

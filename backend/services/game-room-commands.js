@@ -155,9 +155,14 @@ const DREAMFUND_COMMANDS = {
     build: (c) => ({ type: 'fund_reserve', amountMinor: c.amountMinor }),
   },
   fund_dream: {
-    fields: ['amountMinor'],
-    check: (c) => amount(c.amountMinor, 'amountMinor'),
-    build: (c) => ({ type: 'fund_dream', amountMinor: c.amountMinor }),
+    fields: ['amountMinor', 'id'],
+    check: (c) =>
+      amount(c.amountMinor, 'amountMinor') || (c.id === undefined ? null : text(c.id, 'id')),
+    build: (c) => ({
+      type: 'fund_dream',
+      amountMinor: c.amountMinor,
+      ...(c.id !== undefined ? { id: c.id } : {}),
+    }),
   },
   fund_emergency: {
     fields: ['id', 'amountMinor'],

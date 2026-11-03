@@ -108,6 +108,15 @@ export interface DreamPlan {
   surcharged?: boolean;
 }
 
+/** A project that is paid in full is kept as completed (JFK, 2026-11-03): a dream that was lived, an emergency that was paid. */
+export interface DreamDone {
+  kind: 'smile' | 'emergency';
+  /** The dream card, or the emergency card. */
+  id: string;
+  totalMinor: number;
+  round: number;
+}
+
 export interface DreamProject {
   cardId: string;
   totalMinor: number;
@@ -146,6 +155,8 @@ export interface DreamPlayerData {
   dreamPoints: number;
   bonusPoints: number;
   plans: DreamPlan[];
+  /** The projects that are paid in full: they stay, as completed. */
+  done?: DreamDone[];
   turns: number;
 }
 
@@ -171,6 +182,7 @@ export class DreamPlayer {
   dreamLived = false;
   smile: DreamProject[] = [];
   dreamPoints = 0;
+  done: DreamDone[] = [];
   bonusPoints = 0;
   /** What the Smile and Fire projects are paid by: a plan pays an installment at every Payday (the payment plans of the app). */
   plans: DreamPlan[] = [];
@@ -300,6 +312,7 @@ export class DreamPlayer {
         dreamPoints: this.dreamPoints,
         bonusPoints: this.bonusPoints,
         plans: this.plans,
+        done: this.done,
         turns: this.turns,
       }),
     ) as DreamPlayerData;
@@ -331,6 +344,7 @@ export class DreamPlayer {
     player.dreamPoints = data.dreamPoints;
     player.bonusPoints = data.bonusPoints;
     player.plans = JSON.parse(JSON.stringify(data.plans));
+    player.done = JSON.parse(JSON.stringify(data.done ?? []));
     player.turns = data.turns;
     return player;
   }
@@ -568,7 +582,7 @@ export class DreamPlayer {
         const dream = this.smile.find((candidate) => candidate.cardId === plan.id);
         if (dream) dream.savedMinor += pay;
       }
-      if (plan.leftMinor <= 0) this.plans = this.plans.filter((candidate) => candidate !== plan);
+      if (plan.leftMinor <= 0) this.finishPlan(plan);
     }
     this.checkDreams();
   }
@@ -586,6 +600,12 @@ export class DreamPlayer {
     for (const dream of [...this.smile]) {
       if (dream.savedMinor < dream.totalMinor) continue;
       this.dreamPoints += dream.points;
+      this.keepDone({
+        kind: 'smile',
+        id: dream.cardId,
+        totalMinor: dream.totalMinor,
+        round: this.state.round,
+      });
       this.smile = this.smile.filter((candidate) => candidate !== dream);
       this.plans = this.plans.filter(
         (plan) => !(plan.kind === 'smile' && plan.id === dream.cardId),
@@ -605,28 +625,57 @@ export class DreamPlayer {
     }
   }
 
-  /** Money into the reserve (a lump sum). */
+  /** Money into the reserve (a lump sum); a short account takes the Bank loan first. */
   fundReserve(putMinor: number): void {
     if (putMinor <= 0) return;
-    this.add('Daily', -putMinor, '@Mojo');
+    this.spend(putMinor, '@Mojo', false);
     this.reserveMinor += putMinor;
   }
 
-  /** Extra money for dreams: the life dream first, then the dreams taken from the Dream tiles. */
-  fundDreams(money: number): void {
+  /**
+   * Money for a dream (JFK, 2026-11-03): the dream asked for - the character's own (`life`) or a dream taken, by its card - or, with
+   * none asked for, the life dream first and then the dreams taken. It is booked under the project's name, and a short account takes
+   * the Bank loan first (`spend`). Returns what was put in.
+   */
+  fundDreams(money: number, id?: string): number {
     let left = Math.floor(money);
-    if (!this.dreamLived && this.dreamTargetMinor > 0 && left > 0) {
+    const start = left;
+    const lifeTitle = this.profession.profile?.texts.en.dream.project?.title ?? 'Dream';
+    if ((!id || id === 'life') && !this.dreamLived && this.dreamTargetMinor > 0 && left > 0) {
       const put = Math.min(left, this.dreamTargetMinor - this.dreamSavedMinor);
-      this.spend(put, '@Dream', false);
+      this.spend(put, `@${lifeTitle}`, false);
       this.dreamSavedMinor += put;
       left -= put;
     }
     for (const dream of this.smile) {
       if (left <= 0) break;
+      if (id && id !== dream.cardId) continue;
       const put = Math.min(left, dream.totalMinor - dream.savedMinor);
-      this.spend(put, '@Dream', false);
+      this.spend(put, `@${this.dreamCard(dream.cardId)?.title.en ?? 'Dream'}`, false);
       dream.savedMinor += put;
       left -= put;
+    }
+    return start - left;
+  }
+
+  /** A project that is paid in full is kept as completed; asking again for the same card keeps only the latest. */
+  keepDone(entry: DreamDone): void {
+    this.done = [
+      ...this.done.filter((other) => !(other.kind === entry.kind && other.id === entry.id)),
+      entry,
+    ];
+  }
+
+  /** A plan that has paid what it was for is over; an emergency stays as a completed project. */
+  finishPlan(plan: DreamPlan): void {
+    this.plans = this.plans.filter((candidate) => candidate !== plan);
+    if (plan.kind === 'emergency') {
+      this.keepDone({
+        kind: 'emergency',
+        id: plan.id,
+        totalMinor: plan.totalMinor ?? 0,
+        round: this.state.round,
+      });
     }
   }
 
@@ -810,11 +859,12 @@ export class DreamPlayer {
       (candidate) => candidate.kind === 'emergency' && candidate.id === id,
     );
     if (!plan) return 0;
-    const put = Math.min(amountMinor, plan.leftMinor, this.cash());
+    const put = Math.min(amountMinor, plan.leftMinor);
     if (put <= 0) return 0;
-    this.add('Daily', -put, `@${this.emergencyCard(id)?.title.en ?? 'Emergency'}`);
+    // a short account takes the Bank loan first, as every other payment does
+    this.spend(put, `@${this.emergencyCard(id)?.title.en ?? 'Emergency'}`, false);
     plan.leftMinor -= put;
-    if (plan.leftMinor <= 0) this.plans = this.plans.filter((candidate) => candidate !== plan);
+    if (plan.leftMinor <= 0) this.finishPlan(plan);
     return put;
   }
 

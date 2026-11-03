@@ -315,7 +315,8 @@ export type DreamCommand =
   /** Says the month's money is dealt with (plans set, lump sums paid): a bot sends it after its money moves. */
   | { type: 'settle_payday' }
   | { type: 'fund_reserve'; amountMinor: number }
-  | { type: 'fund_dream'; amountMinor: number }
+  /** Money for a dream: the character's own (`life`) or a dream taken (its card); none asked for: the life dream first. */
+  | { type: 'fund_dream'; amountMinor: number; id?: string }
   | { type: 'repay_debt'; tag: string }
   | { type: 'repay_bank_loan'; amountMinor: number }
   /** Hops in or out of an insurance: at once before the first roll, else with the next Payday. */

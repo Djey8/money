@@ -31,6 +31,8 @@ interface AppProjectBase {
   notes: { text: string; createdAt: string }[];
   /** The payment plan the table runs for the project: a plan of the app, active (the table pays it at every Payday). */
   plannedSubscriptions?: AppPaymentPlan[];
+  /** The day the project was paid in full (completed projects only). */
+  completionDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,6 +103,15 @@ function projectOf(project: CashflowDreamProject, nowIso: string): AppProjectBas
     createdAt: nowIso,
     updatedAt: nowIso,
   };
+}
+
+/**
+ * Where a project stands (JFK, 2026-11-03): nothing paid and no plan is planning; money in or a payment plan running is saving (the
+ * phase "execute"); paid in full is completed - and stays, so it is transparent later what happened.
+ */
+function phaseOf(funded: boolean, paid: number, planned: number): string {
+  if (funded) return 'completed';
+  return paid > 0 || planned > 0 ? 'saving' : 'planning';
 }
 
 /** Puts `minor` into the buckets one after the other, each up to its target (the money goes where the project asks for it first). */
@@ -193,7 +204,10 @@ export function dreamAppEntities(
       nowIso,
     );
     scaleTargets(project.buckets, p.dreamTargetMinor);
-    fill(project.buckets, p.dreamLived ? p.dreamTargetMinor : p.dreamSavedMinor);
+    const paid = p.dreamLived ? p.dreamTargetMinor : p.dreamSavedMinor;
+    fill(project.buckets, paid);
+    project.phase = phaseOf(p.dreamLived, paid, planned('life', 'life'));
+    if (p.dreamLived) project.completionDate = nowIso.slice(0, 10);
     smile.push(project);
   }
 
@@ -202,7 +216,16 @@ export function dreamAppEntities(
     const card = p.dreamCard(open.cardId);
     return { ...open, projectTitle: card ? card.title[l] : open.projectTitle };
   });
-  for (const entry of p.smile) {
+  const taken = [
+    ...p.smile.map((entry) => ({ entry, complete: false })),
+    ...p.done
+      .filter((entry) => entry.kind === 'smile')
+      .map((entry) => ({
+        entry: { cardId: entry.id, totalMinor: entry.totalMinor, savedMinor: entry.totalMinor },
+        complete: true,
+      })),
+  ];
+  for (const { entry, complete } of taken) {
     const card = p.dreamCard(entry.cardId);
     if (!card) continue;
     const project: AppSmile = {
@@ -211,7 +234,7 @@ export function dreamAppEntities(
       dreamCardId: card.id,
       dreamPlanMinor: planned('smile', card.id),
       plannedSubscriptions: planOf(
-        planned('smile', card.id),
+        complete ? 0 : planned('smile', card.id),
         'smile',
         card.title[l],
         card.id,
@@ -237,6 +260,8 @@ export function dreamAppEntities(
       updatedAt: nowIso,
     };
     fill(project.buckets, entry.savedMinor);
+    project.phase = phaseOf(complete, entry.savedMinor, planned('smile', card.id));
+    if (complete) project.completionDate = nowIso.slice(0, 10);
     smile.push(project);
   }
 
@@ -256,18 +281,45 @@ export function dreamAppEntities(
     );
     for (const bucket of project.buckets) bucket.target = fromMinorUnits(monthly);
     fill(project.buckets, p.reserveMinor);
+    project.phase = phaseOf(
+      p.reserveMinor >= monthly * 3 && monthly > 0,
+      p.reserveMinor,
+      planned('mojo', 'mojo'),
+    );
     fire.push(project);
   }
 
   // the emergencies being paid on a plan: what is left is the project's target
-  for (const plan of p.plans) {
-    if (plan.kind !== 'emergency') continue;
+  const emergencies = [
+    ...p.plans
+      .filter((plan) => plan.kind === 'emergency')
+      .map((plan) => ({ plan, complete: false })),
+    ...p.done
+      .filter(
+        (entry) =>
+          entry.kind === 'emergency' &&
+          !p.plans.some((plan) => plan.kind === 'emergency' && plan.id === entry.id),
+      )
+      .map((entry) => ({
+        plan: {
+          kind: 'emergency' as const,
+          id: entry.id,
+          perMinor: 0,
+          leftMinor: 0,
+          totalMinor: entry.totalMinor,
+        },
+        complete: true,
+      })),
+  ];
+  for (const { plan, complete } of emergencies) {
     const card = p.emergencyCard(plan.id);
     if (!card) continue;
+    const paid = (plan.totalMinor ?? plan.leftMinor) - plan.leftMinor;
     fire.push({
       title: card.title[l],
       sub: card.category,
-      phase: 'saving',
+      phase: phaseOf(complete, paid, plan.perMinor),
+      ...(complete ? { completionDate: nowIso.slice(0, 10) } : {}),
       description: card.story[l],
       buckets: [
         {
