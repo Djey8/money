@@ -1129,6 +1129,7 @@ function doCommand(
         return refuse('Only the host of a debug game loads cards.');
       }
       const tile = command.tile;
+      p.debugLand(tile);
       const landing = enterTileWith(tile, command.cardId, p, id);
       if (!landing) return refuse('That card is not in the pile of this tile.');
       const dealt = landing.pending ?? landing.resolved;
@@ -1170,6 +1171,7 @@ function doCommand(
         return refuse('Only the host of a debug game moves the career.');
       }
       if (!p.debugCareer(command.stage)) return refuse('That stage cannot be put before.');
+      p.debugLand('career');
       return { resolved: null, ...enterTile('career', p, rng, emit, id) };
     }
     case 'throw_job_search': {

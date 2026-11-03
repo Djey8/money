@@ -417,6 +417,10 @@ describe('the Dreamfund table: play', () => {
       const seat = chosen.players.find((s) => s.id === 'host')!;
       if (tile === 'harvest') expect(seat.harvest?.cardId).toBe('H01');
       else expect(JSON.stringify(seat.pending ?? seat.resolved)).toContain(card[tile]);
+      // the screen stands at the card of that tile, as after a roll that landed there - not at the dice
+      const turn = seat.life!.books.state.turn;
+      expect(turn?.phase).toBe('decide');
+      expect(turn?.pending).toMatchObject({ kind: 'story', tile });
       const again = run(chosen, 'host', { type: 'debug_load', tile: 'emergency', cardId: 'E02' });
       expect(JSON.stringify(again.players.find((s) => s.id === 'host')!.pending)).toContain('E02');
     }

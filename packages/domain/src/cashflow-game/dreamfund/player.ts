@@ -885,6 +885,40 @@ export class DreamPlayer {
   // ── a debug game (JFK, 2026-11-03) ──
 
   /**
+   * The token stands on a space of the tile (the next one ahead, or where it is when the map has none) and the turn is at the card of
+   * that tile, as after a roll that landed there: the screen shows the card and not the dice.
+   */
+  debugLand(tile: string): void {
+    const state = this.state;
+    const spaces = this.board as unknown as { kind: string }[];
+    const from = state.boardPosition ?? -1;
+    let position = state.boardPosition ?? 0;
+    for (let step = 1; step <= spaces.length; step += 1) {
+      const index = (from + step + spaces.length) % spaces.length;
+      if (spaces[index]?.kind === tile) {
+        position = index;
+        break;
+      }
+    }
+    const turn = currentTurn(state);
+    this.setState({
+      ...state,
+      boardPosition: position,
+      turn: {
+        phase: 'decide',
+        count: turn.count,
+        ...(turn.lastRoll ? { lastRoll: turn.lastRoll } : {}),
+        pending: {
+          kind: 'story',
+          tile: tile as never,
+          storyCardId: `${tile}-filler`,
+          spaceIndex: position,
+        },
+      },
+    });
+  }
+
+  /**
    * A Payday at once, as if the token had passed it: the salary and the lines are posted, the life, the career and the world go on.
    * Returns the job search of it (the die is thrown now and shown when the player throws it), as `roll` does.
    */
