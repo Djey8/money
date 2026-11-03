@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnInit,
   Output,
   signal,
 } from '@angular/core';
@@ -36,7 +37,7 @@ export type BriefingInsurance = InsuranceRow;
       [currency]="currency"
       [busy]="busy"
       (insuranceChange)="insuranceChange.emit($event)"
-      (goBack)="step.set('who')"
+      (goBack)="canGoBack ? back.emit() : step.set('who')"
       (finish)="confirm.emit(); step.set('who')"
     ></app-insurance-decision>
     <div class="tb-overlay" role="dialog" [attr.aria-label]="t.briefingTitle">
@@ -133,7 +134,7 @@ export type BriefingInsurance = InsuranceRow;
     `,
   ],
 })
-export class TableBriefingComponent {
+export class TableBriefingComponent implements OnInit {
   @Input({ required: true }) professionId = '';
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;
   @Input() lang = 'en';
@@ -154,6 +155,14 @@ export class TableBriefingComponent {
 
   get t(): DreamTexts {
     return dreamTexts(this.lang);
+  }
+
+  /**
+   * A character the player chose was read before it was taken: the first decision here is the insurances. Only a character that was
+   * drawn at random is read here first ("I know who I am - start").
+   */
+  ngOnInit(): void {
+    if (this.canGoBack && this.insurances.length > 0) this.step.set('insurance');
   }
 
   /** "I know who I am - start": on to the insurances (nobody is ready before they are chosen). */

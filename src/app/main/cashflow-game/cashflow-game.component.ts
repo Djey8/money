@@ -1477,7 +1477,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The insurances held, with what each costs a month, in one line. */
   private insuranceSummary(): string {
     const held = this.appState.cashflowGame.life
-      ? this.cashflowGameService.insurances.filter((offer) => offer.held)
+      ? this.cashflowGameService.insurances.filter((offer) => offer.heldNext)
       : [];
     return held
       .map((offer) => {
@@ -1562,7 +1562,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The insurances held: those of the running game, or those chosen for the start. */
   private get insurancesHeld(): number {
     if (this.appState.cashflowGame.life) {
-      return this.cashflowGameService.insurances.filter((offer) => offer.held).length;
+      return this.cashflowGameService.insurances.filter((offer) => offer.heldNext).length;
     }
     return this.setupInsuranceRows.filter((row) => row.held).length;
   }

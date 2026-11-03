@@ -1229,6 +1229,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
   styles: [
     `
       .tc {
+        position: relative;
         display: block;
         font-size: 0.92rem;
         line-height: 1.4;
@@ -1237,10 +1238,9 @@ interface OpportunityBandLike extends OpportunityRollLike {
         margin: 6px 0;
       }
       .tc-debug {
-        display: flex;
-        justify-content: flex-end;
-        height: 0;
-        position: relative;
+        position: absolute;
+        top: -40px;
+        right: 0;
         z-index: 2;
       }
       .tc-debug-btn {
