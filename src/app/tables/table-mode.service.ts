@@ -568,6 +568,17 @@ export class TableModeService {
       }
       if (view.activeSeat !== view.youSeat || !view.turnRolled || this.looking() !== null)
         return null;
+      // a Life, Fire or Harvest card cannot be left without opening it: no End turn before that
+      const turn = AppStateService.instance.cashflowGame.turn;
+      const key = RemoteGameHook.openedKey(turn);
+      const tile = turn?.pending?.kind === 'story' ? turn.pending.tile : '';
+      if (
+        key &&
+        (tile === 'life' || tile === 'emergency' || tile === 'harvest') &&
+        RemoteGameHook.opened() !== key
+      ) {
+        return null;
+      }
       const open = pendingOf(view, view.youSeat) as {
         kind?: string;
         planned?: unknown;

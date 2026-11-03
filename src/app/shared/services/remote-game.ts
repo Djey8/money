@@ -145,6 +145,17 @@ export interface RemoteGame {
 export class RemoteGameHook {
   static current: RemoteGame | null = null;
   /**
+   * The card of the tile the player stands on that has been opened (JFK, 2026-11-04): a Life, Fire or Harvest card cannot be left
+   * without opening it, so Done and End turn wait for this. The key is the turn and the tile (`openedKey`).
+   */
+  static readonly opened = signal('');
+  /** The key of the card at hand: the turn count and the tile, or '' when no tile card is open. */
+  static openedKey(
+    turn: { count: number; pending?: { kind: string; tile?: string } } | undefined,
+  ): string {
+    return turn?.pending?.kind === 'story' ? `${turn.count}:${turn.pending.tile ?? ''}` : '';
+  }
+  /**
    * A debug game (JFK, 2026-11-03): whether the debug buttons are shown - on a card and on the screen - and how the debug panel is
    * opened, on a pile (the button of a card) or on all of them.
    */

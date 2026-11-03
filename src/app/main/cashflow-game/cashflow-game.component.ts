@@ -1320,6 +1320,19 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   openStackTile(): void {
     this.dashboardView = 'tile';
+    RemoteGameHook.opened.set(RemoteGameHook.openedKey(this.appState.cashflowGame.turn));
+  }
+
+  /**
+   * At a table a Life, Fire or Harvest card cannot be left without opening it (JFK, 2026-11-04): Done waits until it was opened and
+   * dealt with. A dream and an Opportunity may be passed, and every other game is as it was.
+   */
+  get stackOpened(): boolean {
+    const story = this.stackTile;
+    if (!story || !this.remote?.dreamfund) return true;
+    if (story.tile === 'dream' || story.tile === 'opportunity') return true;
+    const key = RemoteGameHook.openedKey(this.appState.cashflowGame.turn);
+    return this.dashboardView === 'tile' || (!!key && RemoteGameHook.opened() === key);
   }
 
   /** The tile is left without a card (a dream refused, or a free game's choice). */

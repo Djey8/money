@@ -772,6 +772,8 @@ export class TableLayerComponent implements OnDestroy {
   /** A debug move; the panel closes when it was made (a refusal is told by the table's own message). */
   async debugRun(command: Record<string, unknown>): Promise<void> {
     await this.move(command as never);
+    // the card that was loaded is a fresh one: it has to be opened again
+    RemoteGameHook.opened.set('');
     this.debugStart.set(null);
   }
 

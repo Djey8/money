@@ -1391,7 +1391,7 @@
                 >
                   <button
                     class="btn btn--primary"
-                    *ngIf="!stackPlayed"
+                    *ngIf="!stackPlayed || !stackOpened"
                     [disabled]="isBusy || appState.isSaving"
                     (click)="openStackTile()"
                   >
@@ -1400,7 +1400,7 @@
                   <!-- at a Dreamfund table the card was drawn for the player: it can be read once more -->
                   <button
                     class="btn btn--sm cf-btn-outlined"
-                    *ngIf="stackPlayed && remote?.dreamfund"
+                    *ngIf="stackPlayed && stackOpened && remote?.dreamfund"
                     [disabled]="isBusy"
                     (click)="openStackTile()"
                   >
@@ -1408,7 +1408,7 @@
                   </button>
                   <button
                     class="btn btn--primary"
-                    *ngIf="stackPlayed"
+                    *ngIf="stackPlayed && stackOpened"
                     [disabled]="isBusy"
                     (click)="finishSoloDecision('done')"
                   >
