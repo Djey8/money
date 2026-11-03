@@ -174,3 +174,11 @@ Each component can be individually skipped with the flags above.
 | `--dev` | `--no-cache`              | Development: fresh build, logging enabled for debugging |
 
 No preset skips backups — both CronJobs always deploy unless explicitly excluded.
+
+## Game database: staying fast with many games
+
+The `gamerooms` database must stay fast however many tables are stored (see `backend/tests/integration/game-rooms-scale.test.js`):
+
+- Every Mango query of `backend/repositories/game-room-store.js` is answered from an index (`backend/config/db.js`); a query that would read every document fails the scale test. Add the index with the query.
+- Housekeeping (closing idle tables, deleting old ones, compacting finished ones) runs on its own timer in small batches (`GAME_ROOMS_SWEEP_BATCH`, default 25 every 5 minutes), never inside a request.
+- The move-by-move history of a finished table goes after `GAME_ROOMS_HISTORY_MS` (default 30 days; a saved game keeps it); the table and its result stay for `GAME_ROOMS_RETENTION_MS` (default 90 days).

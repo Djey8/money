@@ -1318,6 +1318,17 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     await this.openPlannedInGrow(title, card?.share ? 'share' : 'asset');
   }
 
+  /** A debug game (the host's): the symbol that loads another card of the pile of the tile. */
+  get debugOn(): boolean {
+    return !!this.remote?.dreamfund && RemoteGameHook.debug?.on() === true;
+  }
+
+  openDebug(tile: string): void {
+    const pile =
+      tile === 'opportunity' ? this.cashflowGameService.opportunityView?.pile : undefined;
+    RemoteGameHook.debug?.open({ tile, ...(pile ? { pile } : {}) });
+  }
+
   openStackTile(): void {
     this.dashboardView = 'tile';
     RemoteGameHook.opened.set(RemoteGameHook.openedKey(this.appState.cashflowGame.turn));

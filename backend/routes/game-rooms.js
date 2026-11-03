@@ -818,3 +818,5 @@ module.exports.clocks = clocks;
 module.exports.bots = bots;
 /** After a restart: arm the clock of every table being played. */
 module.exports.startClocks = () => rooms().rearmAll();
+/** The housekeeping of the tables runs on its own timer, not in a request. */
+module.exports.startSweeper = () => rooms().startSweeper();

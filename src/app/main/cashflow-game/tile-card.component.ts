@@ -96,18 +96,6 @@ interface OpportunityBandLike extends OpportunityRollLike {
   encapsulation: ViewEncapsulation.None,
   template: `
     <div class="tc" [attr.data-tile]="tile">
-      <!-- a debug game: another card of this pile, loaded as if it had just been dealt -->
-      <div class="tc-debug" *ngIf="debugOn && !tableShuffling">
-        <button
-          type="button"
-          class="tc-debug-btn"
-          title="Debug"
-          aria-label="Debug"
-          (click)="openDebug()"
-        >
-          🛠
-        </button>
-      </div>
       <!-- the dice of this tile, tumbling and then at rest -->
       <div class="tc-dice" *ngIf="faces.length" aria-live="polite">
         <span
@@ -1236,25 +1224,6 @@ interface OpportunityBandLike extends OpportunityRollLike {
       }
       .tc p {
         margin: 6px 0;
-      }
-      .tc-debug {
-        position: absolute;
-        top: -40px;
-        right: 0;
-        z-index: 2;
-      }
-      .tc-debug-btn {
-        width: 26px;
-        height: 26px;
-        padding: 0;
-        border: 1px solid var(--color-border-light);
-        border-radius: 50%;
-        background: var(--color-surface);
-        color: inherit;
-        font-size: 0.8rem;
-        line-height: 1;
-        cursor: pointer;
-        opacity: 0.8;
       }
       .tc-title {
         display: flex;

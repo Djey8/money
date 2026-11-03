@@ -96,10 +96,23 @@ async function getRooms(db, ids) {
 }
 
 /** Rooms nobody has touched since `cutoffIso`. */
-async function findIdleRooms(db, cutoffIso, limit = 200) {
+async function findIdleRooms(db, cutoffIso, limit = 200, afterIso = '') {
   const found = await db.find({
-    selector: { kind: 'room', updatedAt: { $lt: cutoffIso } },
+    selector: {
+      kind: 'room',
+      updatedAt: afterIso ? { $gt: afterIso, $lt: cutoffIso } : { $lt: cutoffIso },
+    },
     limit,
+  });
+  return found.docs;
+}
+
+/** The open rooms (lobby, picking, playing) as light entries - id, phase, last change - so the sweep reads few and big documents only when needed. */
+async function listOpenRoomEntries(db) {
+  const found = await db.find({
+    selector: { kind: 'room', phase: { $in: ['lobby', 'picking', 'playing'] } },
+    fields: ['_id', 'roomId', 'phase', 'updatedAt'],
+    limit: 100000,
   });
   return found.docs;
 }
@@ -259,6 +272,34 @@ async function syncMarkers(db, id, desired) {
   for (const userId of have) if (!desired.has(userId)) await dropMarker(db, userId, id);
 }
 
+/** Finished rooms whose history is due to go (`compactAfter` has passed); a few at a time. */
+async function findCompactable(db, nowIso, limit = 25) {
+  const found = await db.find({
+    selector: { kind: 'room', compactAfter: { $lt: nowIso } },
+    limit,
+  });
+  return found.docs;
+}
+
+/** Deletes the moves and the turn snapshots of a room - what is only needed to replay or rewind a game. The room stays. */
+async function compactRoom(db, id) {
+  const docs = [];
+  for (let after = 0; ;) {
+    const events = await readEvents(db, id, after, 500);
+    if (events.length === 0) break;
+    docs.push(...events.map((event) => ({ _id: event._id, _rev: event._rev, _deleted: true })));
+    after = events[events.length - 1].seq;
+    if (events.length < 500) break;
+  }
+  const snapshots = await db.list({
+    startkey: `${SNAPSHOT_PREFIX}${id}:`,
+    endkey: `${SNAPSHOT_PREFIX}${id}:${HIGH}`,
+  });
+  for (const row of snapshots.rows) docs.push({ _id: row.id, _rev: row.value.rev, _deleted: true });
+  for (let at = 0; at < docs.length; at += 500) await db.bulk({ docs: docs.slice(at, at + 500) });
+  return docs.length;
+}
+
 /** Deletes a room with its events and markers. */
 async function deleteRoom(db, id) {
   const room = await getRoom(db, id);
@@ -294,6 +335,9 @@ module.exports = {
   findByInviteCode,
   listPublicRooms,
   findIdleRooms,
+  listOpenRoomEntries,
+  findCompactable,
+  compactRoom,
   countOpenRooms,
   appendEvents,
   readEvents,

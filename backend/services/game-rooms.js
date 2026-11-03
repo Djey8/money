@@ -59,6 +59,10 @@ function limits() {
     playingIdleMs: number('GAME_ROOMS_PLAYING_IDLE_MS', 7 * DAY_MS),
     // a finished table stays readable for the people who played it, and from the leaderboard, for three months
     retentionMs: number('GAME_ROOMS_RETENTION_MS', 90 * DAY_MS),
+    // the move-by-move history of a finished table (replay, rewind) goes after this; the table and its result stay
+    historyMs: number('GAME_ROOMS_HISTORY_MS', 30 * DAY_MS),
+    // how many tables one sweep touches: it is bounded work, never a burst
+    sweepBatch: number('GAME_ROOMS_SWEEP_BATCH', 25),
   };
 }
 
@@ -218,7 +222,6 @@ function createGameRoomService({
   bots = null,
   filer = null,
 }) {
-  let lastSweep = -Infinity;
   /** Everything that changes a table waits in this line, in the order it arrived (services/room-queue.js). */
   const queue = createRoomQueue();
 
@@ -257,6 +260,10 @@ function createGameRoomService({
     const saved = await store.saveRoom(db, {
       ...doc,
       ...listingFields(table),
+      // a table that is over keeps its history for a while, then the sweep removes it (a saved game keeps it for good)
+      ...(['finished', 'abandoned'].includes(table.phase) && !doc.compactAfter && !doc.compacted
+        ? { compactAfter: new Date(nowMs() + limits().historyMs).toISOString() }
+        : {}),
       table,
       turnSeq,
       eventSeq: firstSeq - 1 + events.length,
@@ -342,19 +349,30 @@ function createGameRoomService({
     return markers;
   }
 
-  async function maybeSweep() {
-    if (nowMs() - lastSweep < SWEEP_EVERY_MS) return;
-    lastSweep = nowMs();
-    try {
-      await sweep();
-    } catch (error) {
-      log('game_room_sweep_failed', { message: error.message });
-    }
+  /**
+   * The housekeeping runs on its own timer, never inside a request (JFK, 2026-11-04: no other table, list or sweep may slow down
+   * somebody who is playing): a bounded batch every few minutes, one at a time.
+   */
+  let sweeper = null;
+  let sweeping = false;
+  function startSweeper() {
+    if (sweeper) return;
+    sweeper = setInterval(async () => {
+      if (sweeping) return;
+      sweeping = true;
+      try {
+        await sweep();
+      } catch (error) {
+        log('game_room_sweep_failed', { message: error.message });
+      } finally {
+        sweeping = false;
+      }
+    }, SWEEP_EVERY_MS);
+    if (sweeper.unref) sweeper.unref();
   }
 
   /** A new table with `userId` as host. */
   async function createRoom(userId, input) {
-    await maybeSweep();
     if (!input || typeof input !== 'object') {
       throw new RoomError('validation_invalid', 400, 'A table needs a nickname and settings.');
     }
@@ -732,7 +750,6 @@ function createGameRoomService({
 
   /** Takes a seat at a public table by id, or at any table by invite code. */
   async function joinRoom(userId, input) {
-    await maybeSweep();
     if (!input || typeof input !== 'object' || (!input.code && !input.roomId)) {
       throw new RoomError('validation_invalid', 400, 'Give the invite code or the table id.');
     }
@@ -817,7 +834,6 @@ function createGameRoomService({
 
   /** The public tables with a free seat, or the tables `userId` sits at. */
   async function listRooms(userId, { scope = 'open', limit = 50, kind = 'classic' } = {}) {
-    await maybeSweep();
     // the two games are worlds of their own: a list shows one (the classic by default) or, asked for, both
     const ofKind = (doc) =>
       kind === 'all' || (doc.table.kind === 'dreamfund') === (kind === 'dreamfund');
@@ -1124,37 +1140,69 @@ function createGameRoomService({
   }
 
   /** Closes tables nobody has touched for too long and deletes old finished ones. Returns what it did. */
+  let retentionCursor = '';
+
   async function sweep() {
     const cap = limits();
     const now = nowMs();
-    const smallest = Math.min(cap.lobbyIdleMs, cap.playingIdleMs, cap.retentionMs);
-    const idle = await store.findIdleRooms(db, new Date(now - smallest).toISOString());
-    const done = { closed: 0, deleted: 0 };
-    for (const doc of idle) {
-      const age = now - Date.parse(doc.updatedAt);
-      if (OPEN_PHASES.includes(doc.phase)) {
-        const limit = doc.phase === 'playing' ? cap.playingIdleMs : cap.lobbyIdleMs;
-        if (age <= limit) continue;
-        const version = doc.table.version + 1;
-        const closed = { ...doc.table, version, phase: 'abandoned', activePlayerId: null };
-        try {
-          await persist(doc, closed, [
-            {
-              version,
-              at: nowIso(),
-              type: 'table_closed',
-              playerId: null,
-              data: { reason: 'idle' },
-            },
-          ]);
-          done.closed += 1;
-        } catch (error) {
-          if (!(error instanceof store.RoomConflictError)) throw error;
+    const done = { closed: 0, deleted: 0, compacted: 0 };
+    // open tables nobody touched for too long are closed: the few open tables are read as light entries, the big document only when due
+    const entries = await store.listOpenRoomEntries(db);
+    const due = entries
+      .filter(
+        (entry) =>
+          now - Date.parse(entry.updatedAt) >
+          (entry.phase === 'playing' ? cap.playingIdleMs : cap.lobbyIdleMs),
+      )
+      .slice(0, cap.sweepBatch);
+    for (const entry of due) {
+      const doc = await store.getRoom(db, entry.roomId);
+      if (!doc || !OPEN_PHASES.includes(doc.phase)) continue;
+      const version = doc.table.version + 1;
+      const closed = { ...doc.table, version, phase: 'abandoned', activePlayerId: null };
+      try {
+        await persist(doc, closed, [
+          { version, at: nowIso(), type: 'table_closed', playerId: null, data: { reason: 'idle' } },
+        ]);
+        done.closed += 1;
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
+      }
+    }
+    // tables that are long over (the oldest first) are deleted, unless somebody saved them
+    const old = await store.findIdleRooms(
+      db,
+      new Date(now - cap.retentionMs).toISOString(),
+      cap.sweepBatch,
+      retentionCursor,
+    );
+    // tables somebody saved stay where they are: the next sweep goes on after them, and starts again at the oldest when it is through
+    retentionCursor = old.length < cap.sweepBatch ? '' : old[old.length - 1].updatedAt;
+    for (const doc of old) {
+      if (OPEN_PHASES.includes(doc.phase) || isKept(doc)) continue;
+      if (clocks) clocks.disarm(doc.roomId);
+      await store.deleteRoom(db, doc.roomId);
+      done.deleted += 1;
+    }
+    // the history of tables that are long over goes, a few at a time (a saved game keeps its history for good)
+    for (const doc of await store.findCompactable(
+      db,
+      new Date(now).toISOString(),
+      cap.sweepBatch,
+    )) {
+      const { compactAfter: _due, ...rest } = doc;
+      void _due;
+      try {
+        if (!isKept(doc)) {
+          if (clocks) clocks.disarm(doc.roomId);
+          await store.compactRoom(db, doc.roomId);
+          await store.saveRoom(db, { ...rest, compacted: true });
+          done.compacted += 1;
+        } else {
+          await store.saveRoom(db, rest);
         }
-      } else if (age > cap.retentionMs && !isKept(doc)) {
-        if (clocks) clocks.disarm(doc.roomId);
-        await store.deleteRoom(db, doc.roomId);
-        done.deleted += 1;
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
       }
     }
     return done;
@@ -1180,6 +1228,7 @@ function createGameRoomService({
     listRooms,
     openStream,
     sweep,
+    startSweeper,
   };
 }
 

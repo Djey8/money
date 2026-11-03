@@ -137,6 +137,10 @@ if (require.main === module) {
       // A failure here must not stop the server: the clocks arm again as soon as anyone touches a table.
       require('./routes/game-rooms')
         .startClocks()
+        .then((count) => {
+          require('./routes/game-rooms').startSweeper();
+          return count;
+        })
         .then((count) => logger.info('Table clocks armed', { tables: count }))
         .catch((err) => logger.logError(err, { context: 'game_room_clocks' }))
         // The leaderboard: a profile for every bot (idempotent) and the applications a crash left half done.

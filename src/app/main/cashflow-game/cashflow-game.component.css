@@ -3534,3 +3534,25 @@
   max-width: 100%;
   overflow-x: clip;
 }
+
+.cf-tile-view {
+  position: relative;
+}
+
+/* the debug symbol of a card: top right, at the height of the back button */
+.cf-tile-debug {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.85;
+}

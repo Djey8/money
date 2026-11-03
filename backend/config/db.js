@@ -179,6 +179,11 @@ async function createIndexes() {
       index: { fields: ['kind', 'phase'] },
       name: 'gamerooms-phase-index',
     });
+    // The finished tables whose move-by-move history is due to go (the sweep reads them a few at a time).
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'compactAfter'] },
+      name: 'gamerooms-compact-index',
+    });
     await gameRoomsDb.createIndex({
       index: { fields: ['inviteCode'] },
       name: 'gamerooms-invite-index',

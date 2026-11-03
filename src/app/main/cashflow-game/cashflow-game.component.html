@@ -2200,6 +2200,17 @@
         <button class="cf-back-btn" (click)="backToMain()">
           <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.tile.showMap' | translate }}
         </button>
+        <!-- a debug game: another card of this pile, at the height of the back button -->
+        <button
+          type="button"
+          class="cf-tile-debug"
+          *ngIf="debugOn"
+          title="Debug"
+          aria-label="Debug"
+          (click)="openDebug(story.tile)"
+        >
+          🛠
+        </button>
         <h3 class="cf-heading-with-tile">
           <span>{{ tileLabelKey(story.tile) | translate }}</span>
           <span class="cf-story-icon" aria-hidden="true">
