@@ -270,42 +270,6 @@ function accountName(): string {
                   <span class="at-switch-track"></span>
                 </label>
               </div>
-              <div class="at-row at-row--stack">
-                <div class="at-label">
-                  <strong>{{ d.bankStep }}</strong>
-                  <small>{{ d.bankStepHint }}</small>
-                </div>
-                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankStep">
-                  <button
-                    *ngFor="let step of bankSteps"
-                    type="button"
-                    role="radio"
-                    [class.at-seg--on]="form.bankStep === step"
-                    [attr.aria-checked]="form.bankStep === step"
-                    (click)="form.bankStep = step"
-                  >
-                    {{ bankStepLabel(step) }}
-                  </button>
-                </div>
-              </div>
-              <div class="at-row at-row--stack">
-                <div class="at-label">
-                  <strong>{{ d.bankInterest }}</strong>
-                  <small>{{ d.bankInterestHint }}</small>
-                </div>
-                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankInterest">
-                  <button
-                    *ngFor="let percent of bankInterests"
-                    type="button"
-                    role="radio"
-                    [class.at-seg--on]="form.bankInterest === percent"
-                    [attr.aria-checked]="form.bankInterest === percent"
-                    (click)="form.bankInterest = percent"
-                  >
-                    {{ percent }} %
-                  </button>
-                </div>
-              </div>
               <!-- a ranked game is always played under the strict rules; the choice is for a game with friends -->
               <div class="at-row at-row--stack" *ngIf="!form.ranked">
                 <div class="at-label">
@@ -386,77 +350,6 @@ function accountName(): string {
             </div>
           </section>
 
-          <!-- time -->
-          <section class="at-group">
-            <h3>{{ a.groupTime }}</h3>
-            <div class="at-row at-row--stack">
-              <div class="at-label">
-                <strong>{{ a.clock }}</strong>
-                <small>{{ clockHint() }}</small>
-              </div>
-              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.clock">
-                <button
-                  *ngFor="let option of clockOptions(); trackBy: trackValue"
-                  type="button"
-                  role="radio"
-                  [class.at-seg--on]="form.clock === option.value"
-                  [attr.aria-checked]="form.clock === option.value"
-                  (click)="form.clock = option.value"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
-            </div>
-            <div class="at-row" *ngIf="form.clock === 'per-move'">
-              <div class="at-label">
-                <strong>{{ a.seconds }}</strong>
-              </div>
-              <app-wheel-picker
-                [options]="moveSecondOptions"
-                [(value)]="form.seconds"
-                [min]="10"
-                [max]="3600"
-                [unit]="a.unitSeconds"
-                [label]="a.seconds"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-            <div class="at-row" *ngIf="form.clock === 'bank'">
-              <div class="at-label">
-                <strong>{{ a.seconds }}</strong>
-              </div>
-              <app-wheel-picker
-                [options]="bankSecondOptions"
-                [(value)]="form.bankSeconds"
-                [min]="60"
-                [max]="14400"
-                [unit]="a.unitSeconds"
-                [label]="a.seconds"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-            <div class="at-row at-row--stack">
-              <div class="at-label">
-                <strong>{{ a.pace }}</strong>
-                <small>{{ a.paceHint }}</small>
-              </div>
-              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.pace">
-                <button
-                  *ngFor="let option of paceOptions(); trackBy: trackValue"
-                  type="button"
-                  role="radio"
-                  [class.at-seg--on]="form.pace === option.value"
-                  [attr.aria-checked]="form.pace === option.value"
-                  (click)="form.pace = option.value"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
-            </div>
-          </section>
-
           <!-- the rules of play: only on demand, so the panel stays short -->
           <button
             type="button"
@@ -467,55 +360,166 @@ function accountName(): string {
             <span>{{ showAdvanced ? '▾' : '▸' }} {{ a.advanced }}</span>
             <small>{{ a.advancedHint }}</small>
           </button>
-          <section class="at-group" *ngIf="showAdvanced">
-            <h3>{{ a.groupRules }}</h3>
-            <div class="at-row" *ngFor="let rule of switches(); trackBy: trackRule">
-              <div class="at-label">
-                <strong>{{ rule.title }}</strong>
-                <small>{{ rule.hint }}</small>
+          <ng-container *ngIf="showAdvanced">
+            <!-- time -->
+            <section class="at-group">
+              <h3>{{ a.groupTime }}</h3>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ a.clock }}</strong>
+                  <small>{{ clockHint() }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="a.clock">
+                  <button
+                    *ngFor="let option of clockOptions(); trackBy: trackValue"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.clock === option.value"
+                    [attr.aria-checked]="form.clock === option.value"
+                    (click)="form.clock = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
               </div>
-              <label class="at-switch">
-                <input
-                  type="checkbox"
-                  [name]="rule.key"
-                  [checked]="rule.on"
-                  (change)="toggle(rule.key)"
-                  [attr.aria-label]="rule.title"
-                />
-                <span class="at-switch-track"></span>
-              </label>
-            </div>
-            <div class="at-row" *ngIf="form.ranked && !dream">
-              <div class="at-label">
-                <strong>{{ a.leaveFree }}</strong>
-                <small>{{ a.leaveFreeHint }}</small>
+              <div class="at-row" *ngIf="form.clock === 'per-move'">
+                <div class="at-label">
+                  <strong>{{ a.seconds }}</strong>
+                </div>
+                <app-wheel-picker
+                  [options]="moveSecondOptions"
+                  [(value)]="form.seconds"
+                  [min]="10"
+                  [max]="3600"
+                  [unit]="a.unitSeconds"
+                  [label]="a.seconds"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
               </div>
-              <app-wheel-picker
-                [options]="leaveOptions"
-                [(value)]="form.leaveFreeRounds"
-                [min]="0"
-                [max]="3"
-                [label]="a.leaveFree"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-            <div class="at-row" *ngIf="!dream">
-              <div class="at-label">
-                <strong>{{ a.offerRolls }}</strong>
-                <small>{{ a.offerRollsHint }}</small>
+              <div class="at-row" *ngIf="form.clock === 'bank'">
+                <div class="at-label">
+                  <strong>{{ a.seconds }}</strong>
+                </div>
+                <app-wheel-picker
+                  [options]="bankSecondOptions"
+                  [(value)]="form.bankSeconds"
+                  [min]="60"
+                  [max]="14400"
+                  [unit]="a.unitSeconds"
+                  [label]="a.seconds"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
               </div>
-              <app-wheel-picker
-                [options]="offerOptions"
-                [(value)]="form.offerRolls"
-                [min]="1"
-                [max]="12"
-                [label]="a.offerRolls"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-          </section>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ a.pace }}</strong>
+                  <small>{{ a.paceHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="a.pace">
+                  <button
+                    *ngFor="let option of paceOptions(); trackBy: trackValue"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.pace === option.value"
+                    [attr.aria-checked]="form.pace === option.value"
+                    (click)="form.pace = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="at-group">
+              <h3>{{ a.groupRules }}</h3>
+              <ng-container *ngIf="dream">
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
+                    <strong>{{ d.bankStep }}</strong>
+                    <small>{{ d.bankStepHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankStep">
+                    <button
+                      *ngFor="let step of bankSteps"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.bankStep === step"
+                      [attr.aria-checked]="form.bankStep === step"
+                      (click)="form.bankStep = step"
+                    >
+                      {{ bankStepLabel(step) }}
+                    </button>
+                  </div>
+                </div>
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
+                    <strong>{{ d.bankInterest }}</strong>
+                    <small>{{ d.bankInterestHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankInterest">
+                    <button
+                      *ngFor="let percent of bankInterests"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.bankInterest === percent"
+                      [attr.aria-checked]="form.bankInterest === percent"
+                      (click)="form.bankInterest = percent"
+                    >
+                      {{ percent }} %
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+              <div class="at-row" *ngFor="let rule of switches(); trackBy: trackRule">
+                <div class="at-label">
+                  <strong>{{ rule.title }}</strong>
+                  <small>{{ rule.hint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    [name]="rule.key"
+                    [checked]="rule.on"
+                    (change)="toggle(rule.key)"
+                    [attr.aria-label]="rule.title"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
+              </div>
+              <div class="at-row" *ngIf="form.ranked && !dream">
+                <div class="at-label">
+                  <strong>{{ a.leaveFree }}</strong>
+                  <small>{{ a.leaveFreeHint }}</small>
+                </div>
+                <app-wheel-picker
+                  [options]="leaveOptions"
+                  [(value)]="form.leaveFreeRounds"
+                  [min]="0"
+                  [max]="3"
+                  [label]="a.leaveFree"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
+              </div>
+              <div class="at-row" *ngIf="!dream">
+                <div class="at-label">
+                  <strong>{{ a.offerRolls }}</strong>
+                  <small>{{ a.offerRollsHint }}</small>
+                </div>
+                <app-wheel-picker
+                  [options]="offerOptions"
+                  [(value)]="form.offerRolls"
+                  [min]="1"
+                  [max]="12"
+                  [label]="a.offerRolls"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
+              </div>
+            </section>
+          </ng-container>
 
           <button class="tx-btn tx-btn--primary at-open" type="submit" [disabled]="busy">
             {{ existing ? h.settingsSave : a.open }}
@@ -859,7 +863,7 @@ export class AddTableComponent implements OnInit {
     ranked: true,
     language: 'en',
     offerRolls: 3,
-    pace: 'normal' as 'fast' | 'normal' | 'slow',
+    pace: 'fast' as 'fast' | 'normal' | 'slow',
     difficulty: 'medium' as 'easy' | 'medium' | 'hard',
     shape: 'ring' as 'ring' | 'infinity' | 'rectangle' | 'square' | 'mountain',
     size: 'medium' as 'small' | 'medium' | 'large',

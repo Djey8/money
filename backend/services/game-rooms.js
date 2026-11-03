@@ -269,10 +269,17 @@ function createGameRoomService({
         firstSeq,
         events.map((event) => ({ ...event, seat: eventSeat(previous, table, event) })),
       );
-      await store.syncMarkers(db, doc.roomId, desiredMarkers(table));
-      if (startsTurn && options.turnSeq === undefined) {
-        await store.putSnapshot(db, doc.roomId, turnSeq, table);
-      }
+      // the markers say who sits at the table: they only change when somebody sits down, leaves or the table ends - not with a move
+      const changedSeats =
+        !previous ||
+        JSON.stringify([...desiredMarkers(previous)]) !==
+          JSON.stringify([...desiredMarkers(table)]);
+      await Promise.all([
+        changedSeats ? store.syncMarkers(db, doc.roomId, desiredMarkers(table)) : null,
+        startsTurn && options.turnSeq === undefined
+          ? store.putSnapshot(db, doc.roomId, turnSeq, table)
+          : null,
+      ]);
     } catch (error) {
       // The table is saved - it is the truth; a missing event, marker or snapshot is repaired by the next change.
       log('game_room_side_write_failed', { roomId: doc.roomId, message: error.message });

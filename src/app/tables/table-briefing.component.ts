@@ -43,15 +43,15 @@ export interface BriefingInsurance {
                 <strong>{{ 'CashflowGame.insurance.kind.' + row.kind | translate }}</strong>
                 <small>{{ money(row.premiumMinor) }} {{ t.perMonth }}</small>
               </span>
-              <button
-                type="button"
-                class="btn btn--sm"
-                [class.btn--primary]="row.held"
-                [disabled]="busy || confirmed"
-                (click)="insuranceChange.emit({ kind: row.kind, on: !row.held })"
-              >
-                {{ row.held ? t.briefingHeld : t.briefingNotHeld }}
-              </button>
+              <label class="sw" [attr.aria-label]="row.held ? t.briefingHeld : t.briefingNotHeld">
+                <input
+                  type="checkbox"
+                  [checked]="row.held"
+                  [disabled]="busy || confirmed"
+                  (change)="insuranceChange.emit({ kind: row.kind, on: !row.held })"
+                />
+                <span></span>
+              </label>
             </li>
           </ul>
         </section>
@@ -138,6 +138,51 @@ export interface BriefingInsurance {
         bottom: 0;
         padding: 8px 0;
         background: var(--color-background);
+      }
+
+      .sw {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+        flex: none;
+      }
+      .sw input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        cursor: pointer;
+      }
+      .sw span {
+        position: absolute;
+        inset: 0;
+        border-radius: 22px;
+        background: var(--color-toggle-track, #ccc);
+        transition: background 0.15s;
+        pointer-events: none;
+      }
+      .sw span::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.15s;
+      }
+      .sw input:checked + span {
+        background: var(--color-primary, #1976d2);
+      }
+      .sw input:checked + span::after {
+        transform: translateX(18px);
+      }
+      .sw input:focus-visible + span {
+        outline: 2px solid var(--color-focus, #ffd600);
       }
       .tb-wide {
         width: 100%;

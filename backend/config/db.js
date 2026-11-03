@@ -182,6 +182,16 @@ async function createIndexes() {
       index: { fields: ['kind', 'updatedAt'] },
       name: 'gamerooms-updated-index',
     });
+    // The seat markers: of a room (kept in step with who sits at it, after every move) and of an account (the limits, the lists).
+    // Without these every move of a table scanned the whole database - seconds, growing with every event ever written.
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'roomId'] },
+      name: 'gamerooms-markers-room-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'userId'] },
+      name: 'gamerooms-markers-user-index',
+    });
     await gameRoomsDb.createIndex({
       index: { fields: ['roomId', 'seq'] },
       name: 'gamerooms-events-index',

@@ -338,7 +338,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
                     🎲 {{ 'CashflowGame.life.rollForIt' | translate }}
                   </button>
                   <button
-                    *ngIf="l.card.optional && lifeCanDecline"
+                    *ngIf="l.card.optional && lifeCanDecline && !dreamTable"
                     type="button"
                     class="tc-btn"
                     [disabled]="busy"
@@ -366,6 +366,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
                     {{ 'CashflowGame.life.lend' | translate }}
                   </button>
                   <button
+                    *ngIf="!dreamTable"
                     type="button"
                     class="tc-btn"
                     [disabled]="busy"
@@ -1938,6 +1939,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
   shuffling = false;
   /** At a table: the pile is shuffled for a moment before the card dealt for the tile is shown. */
   tableShuffling = false;
+  /** The tile and the turn whose card was shuffled last. */
+  private static shuffled = '';
   filter: string | null = null;
   query = '';
   selectedOffer: string | null = null;
@@ -1963,7 +1966,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
     this.busy = false;
     if (!outcome.ok) this.toast.show(outcome.message ?? 'The move did not go through.', 'error');
     // the table's books reach the screen a moment after the answer: let them
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
     this.cdr.markForCheck();
     return outcome.ok;
   }
@@ -1999,12 +2002,16 @@ export class TileCardComponent implements OnInit, OnDestroy {
       this.booksShown = AppStateService.instance.transactionsUpdated$.subscribe(() =>
         this.cdr.markForCheck(),
       );
-      // a card that was just dealt is shuffled for a moment first
-      this.tableShuffling = true;
-      setTimeout(() => {
-        this.tableShuffling = false;
-        this.cdr.markForCheck();
-      }, SHUFFLE_MS);
+      // a card that was just dealt is shuffled for a moment first - once: reading it again later is at once
+      const dealt = `${this.tile}:${AppStateService.instance.cashflowGame.turn?.count ?? 0}`;
+      if (TileCardComponent.shuffled !== dealt) {
+        TileCardComponent.shuffled = dealt;
+        this.tableShuffling = true;
+        setTimeout(() => {
+          this.tableShuffling = false;
+          this.cdr.markForCheck();
+        }, SHUFFLE_MS);
+      }
       return;
     }
     // an Opportunity tile starts with the choice of a pile, not with a card

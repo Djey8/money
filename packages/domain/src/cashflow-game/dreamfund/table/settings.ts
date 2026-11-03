@@ -87,7 +87,7 @@ export function normalizeDreamSettings(
   } else if (input.roundLimit !== undefined) {
     invalid("roundLimit only goes with endCondition 'round-limit'.");
   }
-  const pace = input.pace ?? 'normal';
+  const pace = input.pace ?? 'fast';
   if (pace !== 'fast' && pace !== 'normal' && pace !== 'slow') {
     invalid("pace must be 'fast', 'normal' or 'slow'.");
   }

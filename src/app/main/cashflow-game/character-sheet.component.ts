@@ -147,16 +147,20 @@ type SheetId = 'cashflow' | 'income' | 'balance';
               }}</small
             >
           </span>
-          <button
-            type="button"
-            class="cs-insurance-btn"
-            (click)="insuranceToggle.emit({ kind: row.kind, on: !row.heldNext })"
-          >
-            {{
+          <label
+            class="cs-switch"
+            [attr.aria-label]="
               (row.heldNext ? 'CashflowGame.insurance.hopOut' : 'CashflowGame.insurance.hopIn')
                 | translate
-            }}
-          </button>
+            "
+          >
+            <input
+              type="checkbox"
+              [checked]="row.heldNext"
+              (change)="insuranceToggle.emit({ kind: row.kind, on: !row.heldNext })"
+            />
+            <span></span>
+          </label>
         </li>
       </ul>
     </section>
@@ -294,6 +298,51 @@ type SheetId = 'cashflow' | 'income' | 'balance';
         list-style: none;
         display: grid;
         gap: 8px;
+      }
+
+      .cs-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+        flex: none;
+      }
+      .cs-switch input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        cursor: pointer;
+      }
+      .cs-switch span {
+        position: absolute;
+        inset: 0;
+        border-radius: 22px;
+        background: var(--color-toggle-track, #ccc);
+        transition: background 0.15s;
+        pointer-events: none;
+      }
+      .cs-switch span::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.15s;
+      }
+      .cs-switch input:checked + span {
+        background: var(--color-primary, #1976d2);
+      }
+      .cs-switch input:checked + span::after {
+        transform: translateX(18px);
+      }
+      .cs-switch input:focus-visible + span {
+        outline: 2px solid var(--color-focus, #ffd600);
       }
       .cs-insurance li {
         display: flex;

@@ -228,6 +228,7 @@ export class TableModeService {
     RemoteGameHook.tokens = (mine) => this.tokens(mine);
     session.onEvents = (lines, view) => this.presenter.push(lines, view);
     this.active.set(true);
+    preloadTablePages();
     // the small confirmations (saved, done ...) can be switched off while playing: they sit over the buttons on a phone
     ToastService.quiet = () => !this.presenter.toasts();
     document.body.classList.add('table-mode');
@@ -769,4 +770,43 @@ export function applyBooksToApp(
   state.tier3GrowLoaded = true;
   state.tier3BalanceLoaded = true;
   state.tier3CashflowGameLoaded = true;
+}
+
+let preloaded = false;
+
+/**
+ * The pages and panels a player opens while playing are loaded in the background as soon as a table is open (JFK, 2026-11-03: no
+ * waiting for a page, a project or the Add dialog to be fetched at the click). One after the other, when the browser has nothing to do.
+ */
+function preloadTablePages(): void {
+  if (preloaded) return;
+  preloaded = true;
+  const loads: (() => Promise<unknown>)[] = [
+    () => import('../main/home/home.component'),
+    () => import('../main/grow/grow.component'),
+    () => import('../main/smile/smile-projects/smile-projects.component'),
+    () => import('../main/fire/fire-emergencies/fire-emergencies.component'),
+    () => import('../panels/info/info-grow/info-grow.component'),
+    () => import('../panels/info/info-smile/info-smile.component'),
+    () => import('../panels/info/info-fire/info-fire.component'),
+    () => import('../panels/info/info-liabilitie/info-liabilitie.component'),
+    () => import('../main/cashflow/balance/balance.component'),
+    () => import('../main/accounting/accounting.component'),
+    () => import('../main/subscription/subscription.component'),
+    () => import('../main/cashflow/cashflow.component'),
+  ];
+  const idle: (run: () => void) => void =
+    typeof requestIdleCallback === 'function'
+      ? (run) => requestIdleCallback(run)
+      : (run) => setTimeout(run, 200);
+  const next = (): void => {
+    const load = loads.shift();
+    if (!load) return;
+    idle(() => {
+      load()
+        .catch(() => undefined)
+        .then(next);
+    });
+  };
+  next();
 }

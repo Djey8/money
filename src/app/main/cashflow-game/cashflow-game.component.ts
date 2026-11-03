@@ -1250,6 +1250,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (this.stackPlayed) return false;
     // an opportunity may always be passed: nobody has to take a card
     if (story.tile === 'opportunity') return true;
+    // at a table only dreams and Opportunities may be left: a Harvest, Life or Emergency card is dealt with
+    if (this.remote?.dreamfund)
+      return story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
     if (rules?.mode === 'free') return true;
     return !this.stackPlayed && story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
   }
