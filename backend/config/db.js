@@ -174,6 +174,11 @@ async function createIndexes() {
       index: { fields: ['kind', 'phase', 'visibility'] },
       name: 'gamerooms-lobby-index',
     });
+    // The rooms that are playing (the clocks and bots look at them again and again) and the count of open rooms (a new table asks).
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'phase'] },
+      name: 'gamerooms-phase-index',
+    });
     await gameRoomsDb.createIndex({
       index: { fields: ['inviteCode'] },
       name: 'gamerooms-invite-index',
