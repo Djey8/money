@@ -132,10 +132,16 @@ const DREAMFUND_COMMANDS = {
     }),
   },
   skip: { ...none, build: () => ({ type: 'skip' }) },
-  debug_pick: {
-    fields: ['cardId'],
-    check: (c) => (c.cardId === undefined ? null : text(c.cardId, 'cardId')),
-    build: (c) => ({ type: 'debug_pick', ...(c.cardId !== undefined ? { cardId: c.cardId } : {}) }),
+  debug_load: {
+    fields: ['tile', 'cardId'],
+    check: (c) => text(c.tile, 'tile') || text(c.cardId, 'cardId'),
+    build: (c) => ({ type: 'debug_load', tile: c.tile, cardId: c.cardId }),
+  },
+  debug_payday: { ...none, build: () => ({ type: 'debug_payday' }) },
+  debug_career: {
+    fields: ['stage'],
+    check: (c) => text(c.stage, 'stage'),
+    build: (c) => ({ type: 'debug_career', stage: c.stage }),
   },
   throw_job_search: { ...none, build: () => ({ type: 'throw_job_search' }) },
   roll_opportunity: { ...none, build: () => ({ type: 'roll_opportunity' }) },
@@ -190,6 +196,7 @@ const DREAMFUND_COMMANDS = {
     check: (c) => text(c.holding, 'holding'),
     build: (c) => ({ type: 'sell_holding', holding: c.holding }),
   },
+  harvest_continue: { ...none, build: () => ({ type: 'harvest_continue' }) },
   harvest_sell: {
     fields: ['holding'],
     check: (c) => text(c.holding, 'holding'),

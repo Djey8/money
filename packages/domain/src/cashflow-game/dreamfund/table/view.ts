@@ -2,6 +2,7 @@ import { quoteEmergency } from '../../emergency-deck';
 import { expectedMonthlyMinor } from '../../dreamfund-sim/policies';
 import { DreamPlayer, type DreamPlayerData } from '../player';
 import { goalsOf } from './scoring';
+import { harvestWaiting, needsHarvestAck } from './harvest-ack';
 import type { DreamCommand, DreamHarvestOpen, DreamPending, DreamSeat, DreamTable } from './types';
 
 /**
@@ -207,6 +208,8 @@ export interface DreamTableView {
   youSeat: number | null;
   /** Seats the table waits for (classic: the turn hold); none at a Dreamfund table. */
   holdSeats: number[];
+  /** Seats a Harvest card of this turn affects who have not said Continue: the turn of the player on the move ends when they have. */
+  harvestWaiting: number[];
   /** Turn order as seats. */
   order: number[];
   activeSeat: number | null;
@@ -256,6 +259,7 @@ export function projectDreamFor(table: DreamTable, viewerId: string | null): Dre
     you: you >= 0 ? you : null,
     youSeat: you >= 0 ? you : null,
     holdSeats: [],
+    harvestWaiting: harvestWaiting(table).map((id) => seatOf(table, id)),
     order: table.order.map((id) => seatOf(table, id)),
     activeSeat: table.activePlayerId ? seatOf(table, table.activePlayerId) : null,
     tableRound: table.tableRound,
@@ -378,6 +382,7 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
   if (finished) return actions;
   const mine = table.activePlayerId === me.id;
   if (me.harvest) {
+    if (needsHarvestAck(me)) add('harvest_continue');
     if (me.harvest.sellable.length) add('harvest_sell', { holdings: me.harvest.sellable });
     if (me.harvest.sales.length) add('harvest_accept', { sales: me.harvest.sales });
     if (me.harvest.ladders.length) {
@@ -416,9 +421,6 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
         add('take_dream', { offers: p.offers });
         add('skip');
         break;
-      case 'debug_pick':
-        add('debug_pick', { tile: p.tile });
-        break;
       case 'opportunity_pile':
         add('choose_pile', { piles: ['seed', 'sapling', 'tree'] });
         add('skip');
@@ -447,5 +449,11 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
   if (!trade) add('offer_trade');
   if (me.paydayDue) add('settle_payday');
   if (me.jobSearch && !me.jobSearch.thrown) add('throw_job_search');
+  // a debug game: the host loads any card and mocks a Payday or a career step, whenever it is their turn
+  if (table.settings.debug && me.id === table.hostId && table.phase === 'playing') {
+    add('debug_load');
+    add('debug_payday');
+    add('debug_career');
+  }
   return actions;
 }

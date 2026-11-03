@@ -10,6 +10,7 @@ import {
   snapshotFromBooks,
   type GameBooks,
   type TableView,
+  withoutDroppedPremiums,
 } from '@money/domain';
 import { TranslateService } from '@ngx-translate/core';
 import { AppStateService } from '../shared/services/app-state.service';
@@ -209,6 +210,10 @@ export class TableModeService {
       driver.originalTag = (shown) => this.debtNames.get(shown) ?? shown;
     }
     RemoteGameHook.current = driver;
+    RemoteGameHook.debug = {
+      on: () => this.debugOn(),
+      open: (start) => this.debugPanel.set(start ?? {}),
+    };
     RemoteGameHook.otherDice = () => this.presenter.dice();
     RemoteGameHook.leaveGame = () =>
       this.leave(() => {
@@ -246,6 +251,8 @@ export class TableModeService {
     }
     LocalService.shadow = null;
     RemoteGameHook.current = null;
+    RemoteGameHook.debug = null;
+    this.debugPanel.set(null);
     RemoteGameHook.layer = null;
     RemoteGameHook.banner = null;
     RemoteGameHook.onMenuEntry = null;
@@ -381,11 +388,33 @@ export class TableModeService {
     return { title: words.settingsTitle, items };
   }
 
+  /** The debug panel of a debug game (the host's): open on a pile, on all of them, or closed (null). */
+  readonly debugPanel = signal<{ tile?: string; pile?: string } | null>(null);
+
+  /** A debug game, and the player is its host: the cards can be loaded at will. */
+  debugOn(): boolean {
+    const view = this.view() as unknown as {
+      kind?: string;
+      phase?: string;
+      youSeat: number | null;
+      hostSeat?: number;
+      settings?: { debug?: boolean };
+    } | null;
+    return (
+      view?.kind === 'dreamfund' &&
+      view.settings?.debug === true &&
+      view.phase === 'playing' &&
+      view.youSeat !== null &&
+      view.youSeat === view.hostSeat
+    );
+  }
+
   /** The small switches kept on the game screen itself, so they need no trip into the settings. */
   quickToggles(): { id: string; icon: string; title: string; on: boolean }[] {
     const words = tableLayerTexts(this.lang);
     const on = this.presenter.messages();
     return [
+      ...(this.debugOn() ? [{ id: 'debug', icon: '🛠', title: 'Debug', on: true }] : []),
       {
         id: 'messages',
         icon: on ? '🔔' : '🔕',
@@ -403,7 +432,8 @@ export class TableModeService {
 
   async runTableMenu(id: string): Promise<void> {
     const view = this.view();
-    if (id === 'messages') this.presenter.setMessages(!this.presenter.messages());
+    if (id === 'debug') this.debugPanel.set({});
+    else if (id === 'messages') this.presenter.setMessages(!this.presenter.messages());
     else if (id === 'toasts') this.presenter.setToasts(!this.presenter.toasts());
     else if (id === 'autoplay') {
       const away = !!view?.players[view.youSeat ?? -1]?.away;
@@ -532,6 +562,10 @@ export class TableModeService {
     // a Dreamfund turn ends when the player says so: after the roll, and once every card of the tile is dealt with
     if ((view as { kind?: string } | null)?.kind === 'dreamfund') {
       if (!view || view.youSeat === null || view.phase !== 'playing') return null;
+      // a Harvest card of this turn affects the player: they say Continue when they have read it and sold what they wanted
+      if (this.harvestWaitsFor(view.youSeat) && this.looking() === null) {
+        return { label: words.continueLabel, disabled: this.presenter.busy() };
+      }
       if (view.activeSeat !== view.youSeat || !view.turnRolled || this.looking() !== null)
         return null;
       const open = pendingOf(view, view.youSeat) as {
@@ -555,6 +589,15 @@ export class TableModeService {
       label: view.activeSeat === view.youSeat ? words.endTurn : words.continueLabel,
       disabled: this.presenter.busy(),
     };
+  }
+
+  /** The seats a Harvest card of this turn affects who have not yet said Continue. */
+  harvestWaiting(): number[] {
+    return (this.view() as unknown as { harvestWaiting?: number[] } | null)?.harvestWaiting ?? [];
+  }
+
+  harvestWaitsFor(seat: number): boolean {
+    return this.harvestWaiting().includes(seat);
   }
 
   /** The default location's name and sub name, in the language of the app. */
@@ -621,6 +664,8 @@ export class TableModeService {
         // without the app's own translations (a bare test) the books are shown as they are
       }
     }
+    // the subscriptions are the bill of the next Payday: the premium of an insurance that is dropped is not on it
+    if (lifeOf(view, seat)) shownInLanguage = withoutDroppedPremiums(shownInLanguage);
     applyBooksToApp(
       AppStateService.instance,
       shownInLanguage,

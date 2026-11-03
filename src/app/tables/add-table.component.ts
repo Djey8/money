@@ -255,21 +255,6 @@ function accountName(): string {
                   </button>
                 </div>
               </div>
-              <div class="at-row">
-                <div class="at-label">
-                  <strong>{{ d.debugGame }}</strong>
-                  <small>{{ d.debugGameHint }}</small>
-                </div>
-                <label class="at-switch">
-                  <input
-                    type="checkbox"
-                    name="debug"
-                    [(ngModel)]="form.debug"
-                    [attr.aria-label]="d.debugGame"
-                  />
-                  <span class="at-switch-track"></span>
-                </label>
-              </div>
               <!-- a ranked game is always played under the strict rules; the choice is for a game with friends -->
               <div class="at-row at-row--stack" *ngIf="!form.ranked">
                 <div class="at-label">
@@ -517,6 +502,21 @@ function accountName(): string {
                   [otherLabel]="a.otherNumber"
                   [ownLabel]="a.ownNumber"
                 ></app-wheel-picker>
+              </div>
+              <div class="at-row" *ngIf="dream">
+                <div class="at-label">
+                  <strong>{{ d.debugGame }}</strong>
+                  <small>{{ d.debugGameHint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    name="debug"
+                    [(ngModel)]="form.debug"
+                    [attr.aria-label]="d.debugGame"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
               </div>
             </section>
           </ng-container>
@@ -868,7 +868,7 @@ export class AddTableComponent implements OnInit {
     shape: 'ring' as 'ring' | 'infinity' | 'rectangle' | 'square' | 'mountain',
     size: 'medium' as 'small' | 'medium' | 'large',
     mode: 'guided' as 'guided' | 'strict',
-    bankStep: 0,
+    bankStep: 100000,
     bankInterest: 10,
     debug: false,
   };
@@ -880,12 +880,11 @@ export class AddTableComponent implements OnInit {
     private languageService: LanguageService,
   ) {}
 
-  /** The steps the Bank loan moves in, in minor units: the character's own (0), any amount (1), 50, 100, 200, 500, 1000. */
-  readonly bankSteps = [0, 1, 5000, 10000, 20000, 50000, 100000];
+  /** The steps the Bank loan moves in, in minor units: any amount (1), 50, 100, 200, 500, 1000. */
+  readonly bankSteps = [1, 5000, 10000, 20000, 50000, 100000];
   readonly bankInterests = [5, 8, 10, 12, 15];
 
   bankStepLabel(step: number): string {
-    if (step === 0) return this.d.bankStepStandard;
     if (step === 1) return this.d.bankStepFree;
     return String(step / 100);
   }
@@ -1011,8 +1010,12 @@ export class AddTableComponent implements OnInit {
         hint: this.a.repayOffTurnHint,
       },
     ];
+    // a Dreamfund table has no turn gate: everybody is only asked to continue by a card that is time-sensitive (a Harvest card)
     return this.dream
-      ? all.filter((rule) => rule.key !== 'allowUndo' && rule.key !== 'repayOffTurn')
+      ? all.filter(
+          (rule) =>
+            rule.key !== 'allowUndo' && rule.key !== 'repayOffTurn' && rule.key !== 'turnGate',
+        )
       : all;
   }
   toggle(key: 'turnGate' | 'spectators' | 'showProgress' | 'allowUndo' | 'repayOffTurn'): void {
@@ -1051,7 +1054,7 @@ export class AddTableComponent implements OnInit {
         endCondition: f.endCondition === 'first-escape' ? 'first-win' : f.endCondition,
         ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
         spectators: f.spectators,
-        turnGate: f.turnGate,
+        turnGate: false,
         pace: f.pace,
         showProgress: f.showProgress,
         ranked: f.debug ? false : f.ranked,
@@ -1112,7 +1115,7 @@ export class AddTableComponent implements OnInit {
       }
     ).customRules;
     f.debug = (current as unknown as { debug?: boolean }).debug === true;
-    if (rules?.bankLoanStepMinor !== undefined) f.bankStep = rules.bankLoanStepMinor;
+    if (rules?.bankLoanStepMinor) f.bankStep = rules.bankLoanStepMinor;
     if (rules?.bankInterestPercent !== undefined) f.bankInterest = rules.bankInterestPercent;
     f.offerRolls = current.rules.sellOfferRolls;
     if (current.clock.mode === 'per-move') {

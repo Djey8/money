@@ -97,6 +97,10 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
     trade: null,
     dreamTrade: view.trade,
     holdSeats: [],
+    // the players a Harvest card of this turn affects who have not said Continue (the turn of the one on the move waits for them)
+    ...({
+      harvestWaiting: (view as unknown as { harvestWaiting?: number[] }).harvestWaiting ?? [],
+    } as object),
     undo: null,
     result: view.result
       ? {

@@ -1,6 +1,14 @@
 import { CASHFLOW_GAME_SETS } from '../cashflow-content';
 import { DreamPlayer } from './dreamfund/player';
-import { carPremiumMinor, chooseInsurance, insuranceOffers, offerCarInsurance } from './insurance';
+import {
+  INSURANCE_CATALOG,
+  carPremiumMinor,
+  chooseInsurance,
+  insuranceOffers,
+  offerCarInsurance,
+  withoutDroppedPremiums,
+} from './insurance';
+import { insuranceCoverage } from './insurance-coverage';
 
 const player = (professionId: string) =>
   DreamPlayer.fromSeed({ seed: 5, professionId, rules: { mode: 'free' } as never });
@@ -62,5 +70,47 @@ describe('the insurances of a Dreamfund character', () => {
     const lena = set.professions.find((p) => p.id === 'lena-pflege')!;
     expect(lena.lifeStart).toEqual({ kids: 1, car: true });
     expect(player('lena-pflege').state.life).toMatchObject({ kids: 1, car: true });
+  });
+
+  it('offers every insurance of the catalogue, none held, and the pet ones only to a pet owner', () => {
+    const tobias = player('tobias-designer');
+    const kinds = insuranceOffers(tobias.state).map((offer) => offer.kind);
+    expect(kinds).toEqual(expect.arrayContaining(['legal', 'disability', 'accident', 'travel']));
+    expect(kinds).not.toContain('car_full');
+    expect(kinds).not.toContain('pet_health');
+    const legal = insuranceOffers(tobias.state).find((offer) => offer.kind === 'legal')!;
+    expect(legal).toMatchObject({ held: false, heldNext: false });
+  });
+
+  it('holds only one of the two car insurances', () => {
+    const jonas = player('mehmet-elektroniker');
+    jonas.setInsurance('car_partial', true);
+    expect(jonas.state.insurance?.active).toContain('car_partial');
+    jonas.setInsurance('car_full', true);
+    expect(jonas.state.insurance?.active).toContain('car_full');
+    expect(jonas.state.insurance?.active).not.toContain('car_partial');
+  });
+
+  it('lists as subscriptions only what the next Payday posts', () => {
+    const tobias = player('tobias-designer');
+    const title = INSURANCE_CATALOG.find((info) => info.kind === 'legal')!.lineTitle;
+    const listed = (books: typeof tobias.books) =>
+      withoutDroppedPremiums(books).subscriptions.some((sub) => sub.title === title);
+    expect(listed(tobias.books)).toBe(false);
+    tobias.turns = 3;
+    tobias.setInsurance('legal', true);
+    // hopped in: on the bill at once, the cover comes with the Payday
+    expect(listed(tobias.books)).toBe(true);
+    expect(tobias.state.insurance?.active).not.toContain('legal');
+    tobias.setInsurance('legal', false);
+    expect(listed(tobias.books)).toBe(false);
+  });
+
+  it('knows which cards each insurance works on, the full cover also on those of the partial cover', () => {
+    expect(insuranceCoverage('liability').length).toBeGreaterThan(0);
+    expect(insuranceCoverage('car_full').length).toBeGreaterThanOrEqual(
+      insuranceCoverage('car_partial').length,
+    );
+    expect(insuranceCoverage('legal')).toEqual([]);
   });
 });

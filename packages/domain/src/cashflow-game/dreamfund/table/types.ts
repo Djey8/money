@@ -72,8 +72,6 @@ export type DreamPending =
   | { kind: 'career_branch'; options: string[]; roll?: number }
   | { kind: 'dream'; offers: string[] }
   | { kind: 'opportunity_pile' }
-  /** A debug game: the host chooses which card the tile deals (or lets chance do it). */
-  | { kind: 'debug_pick'; tile: string }
   | {
       kind: 'opportunity';
       pile: OpportunityPile;
@@ -123,6 +121,8 @@ export interface DreamHarvestOpen {
   sales: { holding: string; grossMinor: number; costsMinor: number; owedMinor: number }[];
   /** Hype offers (the ladder): the holding. */
   ladders: HarvestLadderOffer[];
+  /** The player has said Continue: they know the card affects them (the turn of the one who drew it waits for that). */
+  acknowledged?: boolean;
 }
 
 export interface DreamSeat {
@@ -260,8 +260,15 @@ export type DreamCommand =
   | { type: 'confirm_briefing' }
   /** The player throws the die of the job search of the Payday that has passed. */
   | { type: 'throw_job_search' }
-  /** A debug game: the card of the tile the host stands on (no card: at random, as in every other game). */
-  | { type: 'debug_pick'; cardId?: string }
+  /**
+   * A debug game (JFK, 2026-11-03): the card of a pile is loaded as if chance had just dealt it - in place of the one that is open, on
+   * any tile, whenever it is the host's turn. `tile` is the pile: emergency, life, dream, opportunity or harvest.
+   */
+  | { type: 'debug_load'; tile: string; cardId: string }
+  /** A debug game: a Payday now, as if the token had passed it (the job search and the career count it). */
+  | { type: 'debug_payday' }
+  /** A debug game: the character stands one stage before this one of the career ladder, due for the promotion, and the Career tile is played. */
+  | { type: 'debug_career'; stage: string }
   /** Back to the choice of the character (before the game has begun). */
   | { type: 'reopen_pick' }
   | { type: 'close' }
@@ -329,6 +336,8 @@ export type DreamCommand =
   | { type: 'decline_trade' }
   | { type: 'accept_trade'; from?: string }
   // The Harvest card's options (any player, until the turn of its drawer is over).
+  /** The player says the Harvest card that affects them is read and dealt with. */
+  | { type: 'harvest_continue' }
   | { type: 'harvest_sell'; holding: string }
   | { type: 'harvest_accept'; holding: string }
   | { type: 'harvest_ladder'; holding: string; action: 'ride' | 'cash' | 'skip' };

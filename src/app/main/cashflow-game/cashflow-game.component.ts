@@ -90,6 +90,8 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { type ProfessionSheetNumbers } from './profession-sheets.component';
 import { ActiveEffectsComponent } from './active-effects.component';
 import { CharacterSheetComponent } from './character-sheet.component';
+import { InsuranceDecisionComponent } from './insurance-decision.component';
+import { insuranceTexts } from './insurance-decision.texts';
 import {
   DreamBoardComponent,
   TILE_COLORS,
@@ -167,6 +169,7 @@ const DICE_DECISION_REST_MS = 900;
   selector: 'app-cashflow-game',
   standalone: true,
   imports: [
+    InsuranceDecisionComponent,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -1436,21 +1439,19 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.openTrait = null;
   }
 
-  /** The insurance chip leads to where the insurances are hopped in and out: the profession panel, at its insurance section. */
-  goToInsurance(): void {
+  /** The insurances are decided in their own component (JFK, 2026-11-03): from the chip and from the button next to the chips. */
+  insuranceOpen = false;
+  get insuranceWords() {
+    return insuranceTexts(this.language.current);
+  }
+
+  get languageCode(): string {
+    return this.language.current;
+  }
+
+  openInsurances(): void {
     this.openTrait = null;
-    const profession = this.currentProfession;
-    if (this.hasActiveGame && profession && !this.viewedProfession) {
-      this.openProfessionCard(profession);
-    }
-    // the panel is drawn by the next check
-    setTimeout(
-      () =>
-        document
-          .querySelector('.cs-group--insurance')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
-      80,
-    );
+    this.insuranceOpen = true;
   }
 
   private traitChipsCache: {

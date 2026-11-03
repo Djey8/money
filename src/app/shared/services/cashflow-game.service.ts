@@ -123,7 +123,7 @@ import {
   emptyEmergencyDeck,
   insuranceOffers,
   planQuote,
-  queueInsuranceChange,
+  chooseInsurance,
   quoteEmergency,
   type EmergencyCard,
   type EmergencyContext,
@@ -2037,7 +2037,7 @@ export class CashflowGameService {
       return;
     }
     const state = AppStateService.instance;
-    const next = queueInsuranceChange(state.cashflowGame, kind, on);
+    const next = chooseInsurance(state.cashflowGame, kind, on, false);
     if (next === state.cashflowGame) {
       callbacks.onSuccess();
       return;

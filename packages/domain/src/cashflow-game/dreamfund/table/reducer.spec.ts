@@ -394,33 +394,12 @@ describe('the Dreamfund table: play', () => {
     expect(project.details?.actionItems?.length).toBeGreaterThan(0);
   });
 
-  it('a debug game: the host chooses the card of the tile they land on, nobody else does, and it is never ranked', () => {
-    let t = started({ debug: true, ranked: true }, 8);
+  it('a debug game: the host loads any card at any time, a Payday too; nobody else does, and it is never ranked', () => {
+    const t = started({ debug: true, ranked: true }, 8);
     expect(t.settings.debug).toBe(true);
     expect(t.settings.ranked).toBe(false);
-    let landed: DreamTable | null = null;
-    for (let guard = 0; guard < 300 && !landed; guard += 1) {
-      const who = t.activePlayerId!;
-      const seat = t.players.find((s) => s.id === who)!;
-      if (who === 'host' && seat.pending?.kind === 'debug_pick') {
-        landed = t;
-        break;
-      }
-      const options =
-        who === 'host' && !seat.pending && !t.turnRolled
-          ? [{ type: 'roll' } as DreamCommand]
-          : passiveCommands(t, who);
-      for (const command of options) {
-        try {
-          t = run(t, who, command);
-          break;
-        } catch (error) {
-          if (!(error instanceof TableCommandError)) throw error;
-        }
-      }
-    }
-    expect(landed).not.toBeNull();
-    const tile = (landed!.players.find((s) => s.id === 'host')!.pending as { tile: string }).tile;
+    const who = t.activePlayerId!;
+    expect(who).toBe('host');
     const card: Record<string, string> = {
       emergency: 'E01',
       life: 'L07',
@@ -428,12 +407,51 @@ describe('the Dreamfund table: play', () => {
       opportunity: 'S01',
       harvest: 'H01',
     };
-    expect(() => run(landed!, 'ann', { type: 'debug_pick', cardId: card[tile] })).toThrow();
-    expect(() => run(landed!, 'host', { type: 'debug_pick', cardId: 'NOPE' })).toThrow(/pile/);
-    const chosen = run(landed!, 'host', { type: 'debug_pick', cardId: card[tile] });
-    const seat = chosen.players.find((s) => s.id === 'host')!;
-    if (tile === 'harvest') expect(seat.harvest?.cardId).toBe('H01');
-    else expect(JSON.stringify(seat.pending ?? seat.resolved)).toContain(card[tile]);
+    expect(() => run(t, 'ann', { type: 'debug_load', tile: 'life', cardId: 'L07' })).toThrow();
+    expect(() => run(t, 'host', { type: 'debug_load', tile: 'life', cardId: 'NOPE' })).toThrow(
+      /pile/,
+    );
+    for (const tile of Object.keys(card)) {
+      // without a roll, and again over a card that is open: each is loaded as if just dealt
+      const chosen = run(t, 'host', { type: 'debug_load', tile, cardId: card[tile] });
+      const seat = chosen.players.find((s) => s.id === 'host')!;
+      if (tile === 'harvest') expect(seat.harvest?.cardId).toBe('H01');
+      else expect(JSON.stringify(seat.pending ?? seat.resolved)).toContain(card[tile]);
+      const again = run(chosen, 'host', { type: 'debug_load', tile: 'emergency', cardId: 'E02' });
+      expect(JSON.stringify(again.players.find((s) => s.id === 'host')!.pending)).toContain('E02');
+    }
+    const paid = run(t, 'host', { type: 'debug_payday' });
+    const before = t.players.find((s) => s.id === 'host')!.life!;
+    const after = paid.players.find((s) => s.id === 'host')!;
+    expect(after.paydayDue).toBe(true);
+    expect(after.life!.books.state.round).toBe(before.books.state.round + 1);
+    // a game that is not a debug game has none of it
+    const plain = started({}, 8);
+    expect(() => run(plain, 'host', { type: 'debug_payday' })).toThrow();
+  });
+
+  it('a Harvest card that affects others holds the end of the turn until each has said Continue', () => {
+    let t = started({ debug: true }, 8);
+    t = run(t, 'host', { type: 'debug_load', tile: 'emergency', cardId: 'E01' });
+    t = run(t, 'host', { type: 'pay_emergency', pay: 'now' });
+    const open = {
+      cardId: 'H01',
+      told: [],
+      window: 'ALL' as const,
+      sellable: ['X'],
+      sales: [],
+      ladders: [],
+    };
+    const affected = (table: DreamTable, id: string, harvest: typeof open | null) => ({
+      ...table,
+      players: table.players.map((seat) => (seat.id === id ? { ...seat, harvest } : seat)),
+    });
+    t = affected(t, 'ann', open);
+    // nothing to sell for Bob: he is not waited for
+    t = affected(t, 'bob', { ...open, sellable: [] });
+    expect(() => run(t, 'host', { type: 'end_turn' })).toThrow(/Waiting for Ann/);
+    const told = run(t, 'ann', { type: 'harvest_continue' });
+    expect(() => run(told, 'host', { type: 'end_turn' })).not.toThrow();
   });
 
   it('refuses a move that is not possible, and changes nothing', () => {

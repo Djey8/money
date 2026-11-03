@@ -21,11 +21,12 @@ import { TablesApiService } from './tables-api.service';
 import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
 import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
 import { insuranceOffers } from '@money/domain';
+import { AppStateService } from '../shared/services/app-state.service';
 import { dreamTexts } from '../dreamfund-tables/dream-texts';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { extrasOf, moneyOf, pendingOf } from '../dreamfund-tables/dream-table-view';
-import { DebugPickerComponent } from './debug-picker.component';
+import { DebugPanelComponent } from './debug-panel.component';
 import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
 
 /**
@@ -44,7 +45,7 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
     TradeOfferComponent,
     DreamMoneyComponent,
     TableBriefingComponent,
-    DebugPickerComponent,
+    DebugPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
@@ -66,6 +67,7 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         [difficulty]="b.difficulty"
         [lang]="lang"
         [insurances]="b.insurances"
+        [currency]="currency"
         [confirmed]="b.confirmed"
         [canGoBack]="b.canGoBack"
         [busy]="busy()"
@@ -88,14 +90,32 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         >
       </div>
 
-      <!-- a debug game: the host chooses the card of the tile they stand on -->
-      <app-debug-picker
-        *ngIf="debugTile() as tile"
-        [tile]="tile"
+      <!-- a debug game: any card of any pile is loaded as if it had just been dealt, a Payday and a career step are mocked -->
+      <app-debug-panel
+        *ngIf="debugStart() as start"
+        [start]="start"
         [lang]="lang"
         [busy]="busy()"
-        (pick)="debugPick($event)"
-      ></app-debug-picker>
+        [professionId]="debugProfession()"
+        (cardLoad)="debugLoad($event)"
+        (payday)="debugRun({ type: 'debug_payday' })"
+        (career)="debugRun({ type: 'debug_career', stage: $event })"
+        (dismiss)="debugStart.set(null)"
+      ></app-debug-panel>
+
+      <!-- a Harvest card of this turn affects the player: they are told, and say Continue when they have dealt with it -->
+      <div class="tl-job" *ngIf="harvestNotice() as note" role="alert">
+        <strong>🌾 {{ note.title }}</strong>
+        <p>{{ d.harvestAffected }}</p>
+        <button
+          type="button"
+          class="tx-btn tx-btn--primary"
+          [disabled]="busy()"
+          (click)="move({ type: 'harvest_continue' })"
+        >
+          {{ t.continueLabel }}
+        </button>
+      </div>
 
       <!-- the job search of the Payday: the chances, then the player's own throw -->
       <div class="tl-job" *ngIf="jobSearch() as job" role="status">
@@ -693,10 +713,12 @@ export class TableLayerComponent implements OnDestroy {
     const { state, subscriptions } = me.dreamLife.books;
     const insurances: BriefingInsurance[] = insuranceOffers(state).map((offer) => ({
       kind: offer.kind,
-      held: offer.heldNext,
-      premiumMinor: Math.abs(
-        subscriptions.find((sub) => sub.title === offer.premiumTitle)?.amountMinor ?? 0,
-      ),
+      held: offer.held,
+      heldNext: offer.heldNext,
+      fresh: offer.fresh,
+      premium:
+        Math.abs(subscriptions.find((sub) => sub.title === offer.premiumTitle)?.amountMinor ?? 0) /
+        100,
     }));
     return {
       professionId: me.professionId,
@@ -714,19 +736,43 @@ export class TableLayerComponent implements OnDestroy {
     return dreamTexts(this.lang);
   }
 
-  /** The tile the host of a debug game has to choose a card for, or null. */
-  readonly debugTile = computed(() => {
+  get currency(): string {
+    return AppStateService.instance.currency ?? '€';
+  }
+
+  /** A Harvest card of this turn affects me and I have not said Continue: its title. */
+  readonly harvestNotice = computed(() => {
     const view = this.view();
-    if (!view || (view as { kind?: string }).kind !== 'dreamfund' || view.youSeat === null) {
-      return null;
-    }
-    const open = pendingOf(view, view.youSeat) as { kind?: string; tile?: string } | null;
-    return open?.kind === 'debug_pick' && open.tile ? open.tile : null;
+    if (!view || view.youSeat === null || !this.mode.harvestWaitsFor(view.youSeat)) return null;
+    const open = extrasOf(view, view.youSeat).harvest as { cardId?: string } | null | undefined;
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    const card = (
+      set?.decks.harvest as { id: string; title: Record<string, string> }[] | undefined
+    )?.find((entry) => entry.id === open?.cardId);
+    const lang = this.lang.slice(0, 2) === 'de' ? 'de' : 'en';
+    return { title: card?.title?.[lang] ?? card?.title?.['en'] ?? open?.cardId ?? '' };
   });
 
-  /** The card the host of a debug game chose for the tile (none: chance decides). */
-  debugPick(cardId: string | null): void {
-    void this.move(cardId ? { type: 'debug_pick', cardId } : { type: 'debug_pick' });
+  /** The debug panel: where it is open (a pile, or all of them), or null. */
+  readonly debugStart = this.mode.debugPanel;
+
+  /** The character of the host: the career ladder the panel lists is theirs. */
+  readonly debugProfession = computed(() => {
+    const view = this.view();
+    return view && view.youSeat !== null
+      ? (view.players[view.youSeat]?.professionId ?? null)
+      : null;
+  });
+
+  /** A card of a pile is loaded as if it had just been dealt. */
+  async debugLoad(card: { tile: string; cardId: string }): Promise<void> {
+    await this.debugRun({ type: 'debug_load', tile: card.tile, cardId: card.cardId });
+  }
+
+  /** A debug move; the panel closes when it was made (a refusal is told by the table's own message). */
+  async debugRun(command: Record<string, unknown>): Promise<void> {
+    await this.move(command as never);
+    this.debugStart.set(null);
   }
 
   /** The briefing steps aside while one of the character's projects is looked at on its own page. */
@@ -864,6 +910,16 @@ export class TableLayerComponent implements OnDestroy {
 
   readonly holdText = computed(() => {
     const table = this.view();
+    // a Harvest card of this turn: the others wait until everybody it affects has said Continue
+    const harvestSeats = this.mode.harvestWaiting();
+    if (
+      table &&
+      harvestSeats.length > 0 &&
+      !(table.youSeat !== null && harvestSeats.includes(table.youSeat))
+    ) {
+      const names = harvestSeats.map((seat) => table.players[seat]?.name ?? '').join(', ');
+      return this.t.waitingFor.replace('{names}', names);
+    }
     if (!table || table.holdSeats.length === 0) return '';
     const mine = table.youSeat !== null && table.holdSeats.includes(table.youSeat);
     // a seller is told what they can do; the one who only ends their turn needs no text, the button says it

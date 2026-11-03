@@ -129,11 +129,9 @@
         [tagline]="profileOf(profession)?.tagline ?? professionTitle(profession)"
         [story]="profileOf(profession)"
         [checks]="professionCardView === 'live' && hasActiveGame ? goalChecks : null"
-        [insurances]="professionCardView === 'live' && hasActiveGame ? insuranceRows : []"
         [reserveStatus]="professionCardView === 'live' && hasActiveGame ? reserveStatus : null"
         [effects]="professionCardView === 'live' && hasActiveGame ? activeEffects : []"
         (effectProject)="openEffectProject($event)"
-        (insuranceToggle)="toggleInsurance($event)"
         [sheets]="professionSheets"
         [currency]="appState.currency"
         (liabilityOpen)="openLiability($event)"
@@ -661,8 +659,6 @@
           [name]="profileOf(profession)?.name ?? professionTitle(profession)"
           [tagline]="profileOf(profession)?.tagline ?? professionTitle(profession)"
           [story]="profileOf(profession)"
-          [insurances]="setupInsuranceRows"
-          (insuranceToggle)="toggleSetupInsurance($event)"
           [sheets]="setupSheets"
           [currency]="setupCurrency"
           (dreamOpen)="openDream(profession)"
@@ -2899,6 +2895,14 @@
         {{ chip.icon }} <span class="cf-trait-text">{{ chip.text }}</span>
       </button>
     </div>
+    <button
+      type="button"
+      class="btn btn--primary btn--sm cf-insurance-button"
+      *ngIf="hasActiveGame && insuranceRows.length > 0"
+      (click)="openInsurances()"
+    >
+      🛡️ {{ insuranceWords.button }}
+    </button>
     <small class="cf-traits-hint" *ngIf="!openTrait">{{
       'CashflowGame.life.tapHint' | translate
     }}</small>
@@ -2919,10 +2923,23 @@
         type="button"
         class="btn btn--sm"
         *ngIf="info.action === 'insurance'"
-        (click)="goToInsurance()"
+        (click)="openInsurances()"
       >
         {{ 'CashflowGame.insurance.manage' | translate }} ›
       </button>
     </article>
   </div>
 </ng-template>
+
+<!-- the decision about the insurances, opened again whenever the player wants to hop in or out -->
+<app-insurance-decision
+  *ngIf="insuranceOpen"
+  mode="later"
+  [rows]="insuranceRows"
+  [lang]="languageCode"
+  [currency]="appState.currency"
+  [busy]="isBusy"
+  (insuranceChange)="toggleInsurance($event)"
+  (finish)="insuranceOpen = false"
+  (dismiss)="insuranceOpen = false"
+></app-insurance-decision>

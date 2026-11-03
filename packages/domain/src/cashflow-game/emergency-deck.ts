@@ -15,7 +15,22 @@ export type EmergencyCardType = 'fixed' | 'dice' | 'choice' | 'multi';
 /** `pay_now`: fines and fees that cannot be spread; `plan_ok`: pay now or on a plan. */
 export type EmergencyPayment = 'pay_now' | 'plan_ok';
 export type InsuranceKind =
-  'liability' | 'liability_keyloss' | 'household' | 'household_bike' | 'car_partial' | 'car_full';
+  | 'liability'
+  | 'liability_keyloss'
+  | 'household'
+  | 'household_bike'
+  | 'car_partial'
+  | 'car_full'
+  | 'disability'
+  | 'legal'
+  | 'accident'
+  | 'life_risk'
+  | 'dental'
+  | 'travel'
+  | 'pet_liability'
+  | 'pet_health'
+  | 'phone'
+  | 'debt';
 
 /** One roll band of a die: 1-3, 4-5, 6. */
 export interface EmergencyDiceBand {
@@ -113,6 +128,8 @@ export function bandAmount(bands: EmergencyDiceBand[], roll: number): number {
 export function isInsuredAgainst(card: EmergencyCard, insurances: readonly string[]): boolean {
   if (!card.insurance) return false;
   if (insurances.includes(card.insurance)) return true;
+  // the full cover pays what the partial cover pays
+  if (card.insurance === 'car_partial' && insurances.includes('car_full')) return true;
   return card.insurance === 'liability_keyloss' && insurances.includes('liability');
 }
 

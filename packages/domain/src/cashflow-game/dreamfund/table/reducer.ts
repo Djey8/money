@@ -1,3 +1,4 @@
+import { harvestWaiting } from './harvest-ack';
 import { rollDie } from '../../rng';
 import { quoteEmergency } from '../../emergency-deck';
 import { CASHFLOW_GAME_SETS } from '../../../cashflow-content';
@@ -213,7 +214,9 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'buy_planned',
   'roll_opportunity',
   'throw_job_search',
-  'debug_pick',
+  'debug_load',
+  'debug_payday',
+  'debug_career',
   'skip',
   'end_turn',
   'fund_reserve',
@@ -225,6 +228,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'set_plan',
   'settle_payday',
   'sell_holding',
+  'harvest_continue',
   'harvest_sell',
   'harvest_accept',
   'harvest_ladder',
@@ -682,6 +686,7 @@ function play(
   if (!alive(table, seat)) fail('ILLEGAL_MOVE', 'You are out of the game.');
   const now = nowOf(ctx);
   const harvestOption =
+    command.type === 'harvest_continue' ||
     command.type === 'harvest_sell' ||
     command.type === 'harvest_accept' ||
     command.type === 'harvest_ladder';
@@ -708,7 +713,9 @@ function play(
     );
   }
   let current = sleep({ ...table, rngState: rng.state() }, playerId, player, patch);
-  if (command.type === 'roll') current = { ...current, turnRolled: true };
+  if (command.type === 'roll' || command.type === 'debug_load' || command.type === 'debug_career') {
+    current = { ...current, turnRolled: true };
+  }
   // a landing on a Harvest tile moves the markets of the whole table
   if ((patch as { __harvest?: boolean }).__harvest) {
     current = broadcastHarvest(
@@ -784,15 +791,6 @@ function doCommand(
       const jobSearch = rolled.jobSearch ? { ...rolled.jobSearch, thrown: false } : null;
       if (!tile) {
         return { pending: null, resolved: null, paydayDue: rolled.paydays > 0, jobSearch };
-      }
-      // a debug game: the host chooses the card of the tile
-      if (table.settings.debug && id === table.hostId && tile !== 'career') {
-        return {
-          resolved: null,
-          pending: { kind: 'debug_pick', tile },
-          paydayDue: rolled.paydays > 0,
-          jobSearch,
-        };
       }
       // the landing is told with the card the tile dealt, so everybody at the table can read what was drawn
       const landing = enterTile(tile, p, rng, emit, id);
@@ -1049,6 +1047,14 @@ function doCommand(
       if (!table.turnRolled) return refuse('Roll first.');
       if (seat.jobSearch && !seat.jobSearch.thrown)
         return refuse('Throw the die of your job search first.');
+      // the Harvest card of this turn affects others: the turn ends when each of them has said Continue
+      if (!internal) {
+        const waiting = harvestWaiting(table).map(
+          (other) => table.players.find((player) => player.id === other)?.name ?? '',
+        );
+        if (waiting.length > 0)
+          return refuse(`Waiting for ${waiting.join(', ')} to press Continue.`);
+      }
       // an investment planned in Grow and not bought is left with the turn: the chance is missed
       if (pending?.kind === 'opportunity' && pending.rolling) {
         return refuse('Throw the die of the card you bought first.');
@@ -1118,15 +1124,12 @@ function doCommand(
       p.setInsurance(command.kind, command.on);
       return {};
     }
-    case 'debug_pick': {
+    case 'debug_load': {
       if (!table.settings.debug || id !== table.hostId) {
-        return refuse('Only the host of a debug game chooses the cards.');
+        return refuse('Only the host of a debug game loads cards.');
       }
-      if (pending?.kind !== 'debug_pick') return refuse('There is no tile to choose a card for.');
-      const tile = pending.tile;
-      const landing = command.cardId
-        ? enterTileWith(tile, command.cardId, p, id)
-        : enterTile(tile, p, rng, emit, id);
+      const tile = command.tile;
+      const landing = enterTileWith(tile, command.cardId, p, id);
       if (!landing) return refuse('That card is not in the pile of this tile.');
       const dealt = landing.pending ?? landing.resolved;
       const dealtData = dealt as unknown as Record<string, unknown> | null | undefined;
@@ -1138,7 +1141,28 @@ function doCommand(
       if (landing.resolved?.kind === 'life') {
         emit('life_answered', id, { cardId: landing.resolved.cardId, decision: 'fate' });
       }
-      return { resolved: null, ...landing };
+      return { resolved: null, pending: null, ...landing };
+    }
+    case 'debug_payday': {
+      if (!table.settings.debug || id !== table.hostId) {
+        return refuse('Only the host of a debug game mocks a Payday.');
+      }
+      const round = p.state.round;
+      const searched = p.debugPayday();
+      p.trim();
+      p.payInstallments();
+      emit('payday', id, { round: round + 1 });
+      return {
+        paydayDue: true,
+        jobSearch: searched ? { ...searched, thrown: false } : null,
+      };
+    }
+    case 'debug_career': {
+      if (!table.settings.debug || id !== table.hostId) {
+        return refuse('Only the host of a debug game moves the career.');
+      }
+      if (!p.debugCareer(command.stage)) return refuse('That stage cannot be put before.');
+      return { resolved: null, ...enterTile('career', p, rng, emit, id) };
     }
     case 'throw_job_search': {
       if (!seat.jobSearch || seat.jobSearch.thrown) return refuse('There is no die to throw.');
@@ -1180,6 +1204,9 @@ function doCommand(
       }
       return {};
     }
+    case 'harvest_continue':
+      if (!seat.harvest) return refuse('There is no Harvest card to continue from.');
+      return { harvest: { ...seat.harvest, acknowledged: true } };
     case 'harvest_sell':
     case 'harvest_accept':
     case 'harvest_ladder':
@@ -1709,8 +1736,6 @@ export function passiveCommands(table: DreamTable, playerId: string): DreamComma
       return [{ type: 'choose_career_branch', index: 0 }];
     case 'opportunity':
       return pending.rolling ? [{ type: 'roll_opportunity' }] : [{ type: 'skip' }];
-    case 'debug_pick':
-      return [{ type: 'debug_pick' }];
     default:
       return [{ type: 'skip' }];
   }

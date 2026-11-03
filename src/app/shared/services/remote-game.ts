@@ -144,6 +144,12 @@ export interface RemoteGame {
 /** The one game being played remotely, or null for a normal (solo) game. */
 export class RemoteGameHook {
   static current: RemoteGame | null = null;
+  /**
+   * A debug game (JFK, 2026-11-03): whether the debug buttons are shown - on a card and on the screen - and how the debug panel is
+   * opened, on a pile (the button of a card) or on all of them.
+   */
+  static debug: { on(): boolean; open(start?: { tile?: string; pile?: string }): void } | null =
+    null;
   /** A component the game screen shows on top while a remote game is played: who is on the move, the others, the clock. */
   static layer: Type<unknown> | null = null;
   private static readonly hold = signal(false);

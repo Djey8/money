@@ -35,6 +35,7 @@ export interface DreamTexts {
   debugHint: string;
   debugRandom: string;
   debugSearch: string;
+  harvestAffected: string;
   debugGame: string;
   debugGameHint: string;
   bankStep: string;
@@ -251,6 +252,8 @@ const EN: DreamTexts = {
   debugHint: 'You landed on this tile. Choose the card it deals, or let chance decide.',
   debugRandom: 'A random card',
   debugSearch: 'Search a card',
+  harvestAffected:
+    'This Harvest card affects you this turn: the markets are open to sell into, or a buyer has made an offer (see the money panel). It is only valid until this turn ends - press Continue when you have dealt with it.',
   debugGame: 'Debug game',
   debugGameHint:
     'For finding what is wrong with the cards: the host chooses the card of every tile they land on. Everybody else plays as usual. Never ranked.',
@@ -480,6 +483,8 @@ const DE: Partial<DreamTexts> = {
     'Du bist auf diesem Feld gelandet. Wähle die Karte, die es austeilt, oder lass den Zufall entscheiden.',
   debugRandom: 'Eine zufällige Karte',
   debugSearch: 'Karte suchen',
+  harvestAffected:
+    'Diese Ernte-Karte betrifft dich in diesem Zug: die Märkte sind offen zum Verkaufen, oder ein Käufer hat ein Angebot gemacht (siehe Geld-Panel). Sie gilt nur bis zum Ende dieses Zuges - drücke Weiter, wenn du damit fertig bist.',
   debugGame: 'Debug-Spiel',
   debugGameHint:
     'Um herauszufinden, was an den Karten nicht stimmt: Der Host wählt die Karte jedes Feldes, auf dem er landet. Alle anderen spielen wie gewohnt. Nie gewertet.',

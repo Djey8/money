@@ -1,14 +1,21 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { CharacterPreviewComponent } from './character-preview.component';
+import {
+  InsuranceDecisionComponent,
+  type InsuranceRow,
+} from '../main/cashflow-game/insurance-decision.component';
 import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 
-export interface BriefingInsurance {
-  kind: string;
-  premiumMinor: number;
-  held: boolean;
-}
+export type BriefingInsurance = InsuranceRow;
 
 /**
  * Before the first roll of a Dreamfund game (JFK, 2026-11-03): every player reads who they are - the story, what matters, the goals, the
@@ -18,9 +25,20 @@ export interface BriefingInsurance {
 @Component({
   selector: 'app-table-briefing',
   standalone: true,
-  imports: [CommonModule, TranslateModule, CharacterPreviewComponent],
+  imports: [CommonModule, TranslateModule, CharacterPreviewComponent, InsuranceDecisionComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-insurance-decision
+      *ngIf="step() === 'insurance' && !confirmed"
+      mode="start"
+      [rows]="insurances"
+      [lang]="lang"
+      [currency]="currency"
+      [busy]="busy"
+      (insuranceChange)="insuranceChange.emit($event)"
+      (goBack)="step.set('who')"
+      (finish)="confirm.emit(); step.set('who')"
+    ></app-insurance-decision>
     <div class="tb-overlay" role="dialog" [attr.aria-label]="t.briefingTitle">
       <div class="tb-sheet">
         <h2>{{ t.briefingTitle }}</h2>
@@ -34,34 +52,12 @@ export interface BriefingInsurance {
           (reserveOpen)="reserveOpen.emit()"
         ></app-character-preview>
 
-        <section class="tb-insurance" *ngIf="insurances.length">
-          <h3>🛡️ {{ t.briefingInsurance }}</h3>
-          <p>{{ t.briefingInsuranceHint }}</p>
-          <ul>
-            <li *ngFor="let row of insurances; trackBy: trackKind">
-              <span>
-                <strong>{{ 'CashflowGame.insurance.kind.' + row.kind | translate }}</strong>
-                <small>{{ money(row.premiumMinor) }} {{ t.perMonth }}</small>
-              </span>
-              <label class="sw" [attr.aria-label]="row.held ? t.briefingHeld : t.briefingNotHeld">
-                <input
-                  type="checkbox"
-                  [checked]="row.held"
-                  [disabled]="busy || confirmed"
-                  (change)="insuranceChange.emit({ kind: row.kind, on: !row.held })"
-                />
-                <span></span>
-              </label>
-            </li>
-          </ul>
-        </section>
-
         <div class="tb-actions">
           <button
             type="button"
             class="btn btn--primary tb-wide"
             [disabled]="busy || confirmed"
-            (click)="confirm.emit()"
+            (click)="start()"
           >
             {{ confirmed ? t.briefingWaiting : t.briefingStart }}
           </button>
@@ -108,28 +104,6 @@ export interface BriefingInsurance {
         opacity: 0.8;
         font-size: 0.9rem;
       }
-      .tb-insurance ul {
-        list-style: none;
-        margin: 8px 0 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      .tb-insurance li {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border: 1px solid var(--color-border-light);
-        border-radius: 10px;
-        background: var(--color-surface);
-      }
-      .tb-insurance small {
-        display: block;
-        opacity: 0.75;
-      }
       .tb-actions {
         display: flex;
         flex-direction: column;
@@ -140,52 +114,13 @@ export interface BriefingInsurance {
         background: var(--color-background);
       }
 
-      .sw {
-        position: relative;
-        display: inline-block;
-        width: 40px;
-        height: 22px;
-        flex: none;
-      }
-      .sw input {
-        position: absolute;
-        opacity: 0;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        cursor: pointer;
-      }
-      .sw span {
-        position: absolute;
-        inset: 0;
-        border-radius: 22px;
-        background: var(--color-toggle-track, #ccc);
-        transition: background 0.15s;
-        pointer-events: none;
-      }
-      .sw span::after {
-        content: '';
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #fff;
-        transition: transform 0.15s;
-      }
-      .sw input:checked + span {
-        background: var(--color-primary, #1976d2);
-      }
-      .sw input:checked + span::after {
-        transform: translateX(18px);
-      }
-      .sw input:focus-visible + span {
-        outline: 2px solid var(--color-focus, #ffd600);
-      }
       .tb-wide {
         width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-sizing: border-box;
       }
       .tb-waiting {
         font-size: 0.85rem;
@@ -199,6 +134,9 @@ export class TableBriefingComponent {
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;
   @Input() lang = 'en';
   @Input() insurances: BriefingInsurance[] = [];
+  @Input() currency = '€';
+  /** The first decision is who you are; the second the insurances; then the player is ready. */
+  readonly step = signal<'who' | 'insurance'>('who');
   @Input() confirmed = false;
   @Input() canGoBack = true;
   @Input() busy = false;
@@ -214,12 +152,12 @@ export class TableBriefingComponent {
     return dreamTexts(this.lang);
   }
 
-  money(minor: number): string {
-    return (minor / 100).toLocaleString(this.lang === 'de' ? 'de-DE' : 'en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+  /** "I know who I am - start": on to the insurances (nobody is ready before they are chosen). */
+  start(): void {
+    if (this.insurances.length === 0) {
+      this.confirm.emit();
+      return;
+    }
+    this.step.set('insurance');
   }
-
-  trackKind = (_: number, row: BriefingInsurance): string => row.kind;
 }

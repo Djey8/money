@@ -148,6 +148,15 @@ export class DreamTableGameDriver extends TableGameDriver {
     return this.move({ type: 'end_turn' });
   }
 
+  /** The gate button: "End turn" for the player on the move, "Continue" for one a Harvest card of this turn affects. */
+  override proceed(): Promise<RemoteOutcome> {
+    const view = this.session.view();
+    if (view && view.youSeat !== null && view.activeSeat !== view.youSeat) {
+      return this.move({ type: 'harvest_continue' }, false);
+    }
+    return this.done();
+  }
+
   override done(): Promise<RemoteOutcome> {
     return this.move({ type: 'end_turn' }, false);
   }

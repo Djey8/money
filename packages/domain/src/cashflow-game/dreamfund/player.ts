@@ -49,7 +49,7 @@ import {
   valueOf,
   type HarvestLadderOffer,
 } from '../harvest';
-import { activeInsurances, chooseInsurance, offerCarInsurance } from '../insurance';
+import { activeInsurances, chooseInsurance, offerInsurances } from '../insurance';
 import {
   drawLifeCard,
   endableLines,
@@ -79,6 +79,7 @@ import {
 } from '../opportunity';
 import { payOffLiability } from '../liability-payoff';
 import { rollDie, seededRng, type Rng } from '../rng';
+import { playPayday } from '../rounds';
 import { summarizeGameFinances } from '../saved-games';
 import { currentTurn, playTurn, settleDecision } from '../turn';
 import type { CashflowGameSet, CashflowGameState, CashflowProfession } from '../types';
@@ -352,9 +353,9 @@ export class DreamPlayer {
     this.books = this.withCarOffer(applyEffectsToBooks(this.books, effects));
   }
 
-  /** A player with a car is offered the car insurances (the start, a card, a company car): the lines wait, unheld, until the player hops in. */
+  /** Every insurance the character can have is on offer (the start, a card, a company car): the lines wait, unheld, until the player hops in. */
   private withCarOffer(books: GameBooks): GameBooks {
-    return offerCarInsurance(books, {
+    return offerInsurances(books, {
       priceFactor: this.profession.priceFactor,
       insuranceFactor: this.profession.insuranceFactor,
       date: TODAY,
@@ -879,6 +880,82 @@ export class DreamPlayer {
       impact: probe.lines.reduce((sum, line) => sum + line.amountMinor, 0),
       payNow: Math.max(0, -probe.oneTimeMinor),
     };
+  }
+
+  // ── a debug game (JFK, 2026-11-03) ──
+
+  /**
+   * A Payday at once, as if the token had passed it: the salary and the lines are posted, the life, the career and the world go on.
+   * Returns the job search of it (the die is thrown now and shown when the player throws it), as `roll` does.
+   */
+  debugPayday():
+    | {
+        title: Record<string, string>;
+        rollFrom: number;
+        roll: number;
+        paydaysLeft: number;
+        result: 'found' | 'missed' | 'fallback';
+      }
+    | undefined {
+    const search = this.state.jobSearch;
+    const jobRoll = search ? rollDie(this.rng) : undefined;
+    const books = this.books;
+    const effects = playPayday(
+      {
+        state: books.state,
+        subscriptions: books.subscriptions,
+        transactions: books.transactions,
+        growNotes: books.growProjects.map((project) => ({
+          title: project.title,
+          notes: project.notes,
+        })),
+      },
+      { ...this.deps, ...(jobRoll !== undefined ? { jobRoll } : {}) },
+    );
+    this.apply(effects);
+    this.payDues();
+    if (!search || jobRoll === undefined) return undefined;
+    return {
+      title: search.title,
+      rollFrom: search.rollFrom,
+      roll: jobRoll,
+      paydaysLeft: search.paydaysLeft,
+      result: jobRoll >= search.rollFrom ? 'found' : this.state.jobSearch ? 'missed' : 'fallback',
+    };
+  }
+
+  /**
+   * The character stands one stage before `stageId` of the career ladder, due for the promotion: every stage on the way is taken (the
+   * salary and the lines are those of the stage before), and the Paydays the promotion asks for are counted. False when the profession
+   * has no ladder or the stage has no stage before it.
+   */
+  debugCareer(stageId: string): boolean {
+    const track = this.profession.career;
+    if (!track || !this.state.career) return false;
+    const parentOf = (id: string) => track.stages.find((stage) => stage.next?.stages.includes(id));
+    const chain: typeof track.stages = [];
+    let parent = parentOf(stageId);
+    if (!parent) return false;
+    const target = parent;
+    while (parent) {
+      chain.unshift(parent);
+      parent = parentOf(parent.id);
+    }
+    for (const stage of chain) {
+      if (stage.id === track.start) continue;
+      const books = { state: this.state, subscriptions: this.books.subscriptions };
+      this.apply(applyCareerStage(books, stage, { date: TODAY, lang: 'en' }));
+      this.payDues();
+    }
+    this.setState({
+      ...this.state,
+      career: {
+        ...(this.state.career ?? { stage: target.id, paydaysInStage: 0 }),
+        stage: target.id,
+        paydaysInStage: target.next?.minPaydays ?? 0,
+      },
+    });
+    return true;
   }
 
   // ── Career ──

@@ -96,6 +96,10 @@ interface OpportunityBandLike extends OpportunityRollLike {
   encapsulation: ViewEncapsulation.None,
   template: `
     <div class="tc" [attr.data-tile]="tile">
+      <!-- a debug game: another card of this pile, loaded as if it had just been dealt -->
+      <div class="tc-debug" *ngIf="debugOn">
+        <button type="button" class="btn btn--sm" (click)="openDebug()">🛠 Debug</button>
+      </div>
       <!-- the dice of this tile, tumbling and then at rest -->
       <div class="tc-dice" *ngIf="faces.length" aria-live="polite">
         <span
@@ -1224,6 +1228,11 @@ interface OpportunityBandLike extends OpportunityRollLike {
       .tc p {
         margin: 6px 0;
       }
+      .tc-debug {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 4px;
+      }
       .tc-title {
         display: flex;
         flex-wrap: wrap;
@@ -1952,6 +1961,16 @@ export class TileCardComponent implements OnInit, OnDestroy {
   get dreamTable(): RemoteGame | null {
     const remote = RemoteGameHook.current;
     return remote?.dreamfund ? remote : null;
+  }
+
+  /** A debug game (the host's): the button that loads another card of this pile. */
+  get debugOn(): boolean {
+    return !!this.dreamTable && RemoteGameHook.debug?.on() === true;
+  }
+
+  openDebug(): void {
+    const pile = this.tile === 'opportunity' ? this.opportunity?.pile : undefined;
+    RemoteGameHook.debug?.open({ tile: this.tile, ...(pile ? { pile } : {}) });
   }
 
   /** A decision of this tile, sent to the table; false when it was refused (the toast says why). */

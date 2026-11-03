@@ -47,6 +47,7 @@ export * from './cashflow-game/books';
 export * from './cashflow-game/rounds';
 export * from './cashflow-game/emergency-deck';
 export * from './cashflow-game/insurance';
+export * from './cashflow-game/insurance-coverage';
 export * from './cashflow-game/life-deck';
 export * from './cashflow-game/life-books';
 export * from './cashflow-game/career';
