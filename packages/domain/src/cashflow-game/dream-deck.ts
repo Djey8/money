@@ -213,7 +213,7 @@ export function drawDreamLanding(
 
 /** The offers are to be kept as they are: whether another dream can be taken now (the open dreams are fewer than the limit). */
 export function canTakeDream(log: DreamLog, settings: DreamSettings): boolean {
-  return log.open.length < settings.maxOpenDreams;
+  return settings.maxOpenDreams <= 0 || log.open.length < settings.maxOpenDreams;
 }
 
 // ── the moments ──

@@ -160,6 +160,8 @@ export interface CreateTableInput {
       bankLoanStepMinor?: number;
       bankInterestPercent?: number;
       dreamOffers?: number;
+      /** How many dreams a player can have open at once (0: no limit). */
+      maxOpenDreams?: number;
     };
     /** A game for debugging the cards: the host chooses the card of every tile. */
     debug?: boolean;

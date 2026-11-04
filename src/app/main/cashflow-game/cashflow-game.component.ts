@@ -2125,7 +2125,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     },
     {
       key: 'maxOpenDreams',
-      options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+      options: [0, 1, 2, 3, 4, 5].map((n) => ({ value: n, label: n === 0 ? '∞' : String(n) })),
     },
     { key: 'dreamMayDecline', options: this.yesNo() },
     { key: 'lifeMayDecline', options: this.yesNo() },

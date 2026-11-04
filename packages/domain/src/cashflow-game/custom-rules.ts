@@ -126,7 +126,8 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
       raw?.cardChoice === 'free' || raw?.cardChoice === 'random' ? raw.cardChoice : base.cardChoice,
     // 0: one or two dreams at each landing, by chance
     dreamOffers: clamp(raw?.dreamOffers, 0, 3, base.dreamOffers),
-    maxOpenDreams: clamp(raw?.maxOpenDreams, 1, 5, base.maxOpenDreams),
+    // 0: no limit, a player may have as many dreams open as they like
+    maxOpenDreams: clamp(raw?.maxOpenDreams, 0, 20, base.maxOpenDreams),
     dreamMayDecline:
       typeof raw?.dreamMayDecline === 'boolean' ? raw.dreamMayDecline : base.dreamMayDecline,
     lifeMayDecline:

@@ -70,6 +70,10 @@ export interface DreamTexts {
   dreamOffersTitle: string;
   dreamOffersHint: string;
   dreamOffersChance: string;
+  groupDreams: string;
+  maxOpenTitle: string;
+  maxOpenHint: string;
+  maxOpenNoLimit: string;
   characterChoose: string;
   characterCashflow: string;
   characterKeep: string;
@@ -309,6 +313,11 @@ const EN: DreamTexts = {
   dreamOffersTitle: 'Dreams at a Smile tile',
   dreamOffersHint: 'How many dreams a landing offers: one, two, or one or two by chance.',
   dreamOffersChance: '1 or 2',
+  groupDreams: 'Dreams',
+  maxOpenTitle: 'Dreams open at once',
+  maxOpenHint:
+    'How many dreams a player can have open in parallel; no limit lets everybody take as many as they like.',
+  maxOpenNoLimit: 'No limit',
   characterChoose: 'Who do you want to be?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Keep the character I was dealt',
@@ -556,6 +565,11 @@ const DE: Partial<DreamTexts> = {
   dreamOffersTitle: 'Träume auf einem Smile-Feld',
   dreamOffersHint: 'Wie viele Träume ein Feld anbietet: einen, zwei oder zufällig einen oder zwei.',
   dreamOffersChance: '1 oder 2',
+  groupDreams: 'Träume',
+  maxOpenTitle: 'Gleichzeitig offene Träume',
+  maxOpenHint:
+    'Wie viele Träume ein Spieler gleichzeitig offen haben kann; ohne Limit darf jeder so viele nehmen, wie er will.',
+  maxOpenNoLimit: 'Kein Limit',
   characterChoose: 'Wer willst du sein?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Den zugeteilten Charakter behalten',

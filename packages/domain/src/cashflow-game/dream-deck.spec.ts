@@ -133,6 +133,11 @@ describe('the Dream stack (temp_cards v0.2)', () => {
   it('at most as many dreams can be open as the setting allows', () => {
     expect(canTakeDream(log(['D01', 'D02']), DEFAULT_DREAM_SETTINGS)).toBe(true);
     expect(canTakeDream(log(['D01', 'D02', 'D04']), DEFAULT_DREAM_SETTINGS)).toBe(false);
+    const many = log(['D01', 'D02', 'D04', 'D05', 'D06', 'D07']);
+    expect(canTakeDream(many, { ...DEFAULT_DREAM_SETTINGS, maxOpenDreams: 6 })).toBe(false);
+    expect(canTakeDream(many, { ...DEFAULT_DREAM_SETTINGS, maxOpenDreams: 7 })).toBe(true);
+    // 0: no limit
+    expect(canTakeDream(many, { ...DEFAULT_DREAM_SETTINGS, maxOpenDreams: 0 })).toBe(true);
   });
 
   it('points: lived dreams, the set of the seven wonders, patience - and half for fully funded buckets of the rest', () => {

@@ -237,24 +237,6 @@ function accountName(): string {
                   </button>
                 </div>
               </div>
-              <div class="at-row at-row--stack" *ngIf="form.pointsOn">
-                <div class="at-label">
-                  <strong>{{ d.dreamOffersTitle }}</strong>
-                  <small>{{ d.dreamOffersHint }}</small>
-                </div>
-                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.dreamOffersTitle">
-                  <button
-                    *ngFor="let offers of dreamOfferChoices"
-                    type="button"
-                    role="radio"
-                    [class.at-seg--on]="form.dreamOffers === offers"
-                    [attr.aria-checked]="form.dreamOffers === offers"
-                    (click)="form.dreamOffers = offers"
-                  >
-                    {{ offers === 0 ? d.dreamOffersChance : offers }}
-                  </button>
-                </div>
-              </div>
               <div class="at-row at-row--stack">
                 <div class="at-label">
                   <strong>{{ d.difficulty }}</strong>
@@ -464,6 +446,46 @@ function accountName(): string {
                     (click)="form.pace = option.value"
                   >
                     {{ option.label }}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="at-group" *ngIf="dream && form.pointsOn">
+              <h3>{{ d.groupDreams }}</h3>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.dreamOffersTitle }}</strong>
+                  <small>{{ d.dreamOffersHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.dreamOffersTitle">
+                  <button
+                    *ngFor="let offers of dreamOfferChoices"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.dreamOffers === offers"
+                    [attr.aria-checked]="form.dreamOffers === offers"
+                    (click)="form.dreamOffers = offers"
+                  >
+                    {{ offers === 0 ? d.dreamOffersChance : offers }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.maxOpenTitle }}</strong>
+                  <small>{{ d.maxOpenHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.maxOpenTitle">
+                  <button
+                    *ngFor="let open of maxOpenChoices"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.maxOpen === open"
+                    [attr.aria-checked]="form.maxOpen === open"
+                    (click)="form.maxOpen = open"
+                  >
+                    {{ open === 0 ? d.maxOpenNoLimit : open }}
                   </button>
                 </div>
               </div>
@@ -926,6 +948,7 @@ export class AddTableComponent implements OnInit {
     pointsOn: true,
     points: 10,
     dreamOffers: 0,
+    maxOpen: 3,
     debug: false,
   };
 
@@ -942,6 +965,8 @@ export class AddTableComponent implements OnInit {
   readonly pointGoals = [5, 8, 10, 15, 20, 30];
   /** How many dreams a landing on a Smile tile offers: 0 is one or two, by chance. */
   readonly dreamOfferChoices = [0, 1, 2];
+  /** How many dreams a player can have open at once: 0 is no limit. */
+  readonly maxOpenChoices = [0, 1, 2, 3, 4, 5, 6, 8, 10];
 
   bankStepLabel(step: number): string {
     if (step === 1) return this.d.bankStepFree;
@@ -1127,6 +1152,7 @@ export class AddTableComponent implements OnInit {
           bankLoanStepMinor: f.bankStep,
           bankInterestPercent: f.bankInterest,
           dreamOffers: f.dreamOffers,
+          maxOpenDreams: f.maxOpen,
         },
       };
     }
@@ -1187,6 +1213,9 @@ export class AddTableComponent implements OnInit {
     if (rules?.bankLoanStepMinor) f.bankStep = rules.bankLoanStepMinor;
     if ((rules as { dreamOffers?: number } | undefined)?.dreamOffers !== undefined) {
       f.dreamOffers = (rules as { dreamOffers: number }).dreamOffers;
+    }
+    if ((rules as { maxOpenDreams?: number } | undefined)?.maxOpenDreams !== undefined) {
+      f.maxOpen = (rules as { maxOpenDreams: number }).maxOpenDreams;
     }
     if (rules?.bankInterestPercent !== undefined) f.bankInterest = rules.bankInterestPercent;
     f.offerRolls = current.rules.sellOfferRolls;

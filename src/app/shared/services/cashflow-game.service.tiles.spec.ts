@@ -61,7 +61,7 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(game.dreams).toEqual({ open: [], lived: [], bonusPoints: 0 });
     expect(game.lineTitles?.['incomeTax']).toBeTruthy();
     expect(service.lifeCards).toHaveLength(27);
-    expect(service.dreamCards).toHaveLength(48);
+    expect(service.dreamCards).toHaveLength(96);
   });
 
   it('a Life card is drawn, decided, and its lines become subscriptions of the game', () => {
