@@ -1873,7 +1873,7 @@ export class CashflowGameService {
     );
   }
 
-  private get emergencyContext(): EmergencyContext {
+  get emergencyContext(): EmergencyContext {
     const game = AppStateService.instance.cashflowGame;
     return {
       insurances: activeInsurances(game),

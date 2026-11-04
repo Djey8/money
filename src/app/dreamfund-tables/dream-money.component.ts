@@ -22,18 +22,6 @@ import { dreamMoney, dreamTexts, type DreamTexts } from './dream-texts';
         <strong>🎲 {{ t.money }}</strong>
       </summary>
       <div class="dm-body">
-        <div class="dm-settle" *ngIf="paydayDue && canAct">
-          <span>{{ t.payDay }}</span>
-          <button
-            type="button"
-            class="tx-btn tx-btn--primary tx-btn--small"
-            [disabled]="busy"
-            (click)="move.emit({ type: 'settle_payday' })"
-          >
-            {{ t.settleMonth }}
-          </button>
-        </div>
-
         <ng-container *ngIf="canAct">
           <!-- what the player owns: sold at the market, or offered to the others -->
           <div class="dm-plans" *ngIf="summary.holdings.length">
@@ -232,8 +220,6 @@ export class DreamMoneyComponent {
   @Input() lang = 'en';
   /** The money moves are the player's own, in their own turn. */
   @Input() canAct = false;
-  /** A Payday was passed in this turn: the month's money is still to be dealt with. */
-  @Input() paydayDue = false;
   @Input() busy = false;
   @Output() move = new EventEmitter<Record<string, unknown>>();
 
@@ -271,7 +257,6 @@ export class DreamMoneyComponent {
   get anything(): boolean {
     const harvest = this.harvest;
     return !!(
-      (this.paydayDue && this.canAct) ||
       this.trade ||
       (this.canAct && this.summary.holdings.length && this.can('offer_trade')) ||
       (harvest && (harvest.sellable.length || harvest.sales.length || harvest.ladders.length))

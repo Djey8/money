@@ -2181,14 +2181,16 @@
       </div>
 
       <!-- a card of the Dreamfund stacks, read again from the History -->
-      <div class="cf-card" *ngIf="dashboardView === 'historyTile' && historyTileCard as card">
-        <button class="cf-back-btn" (click)="dashboardView = 'history'">
+      <div
+        class="cf-card"
+        *ngIf="dashboardView === 'historyTile' && historyTileCard as card"
+        [style.--tc]="tileColor($any(card.deck))"
+      >
+        <button class="cf-back-btn" (click)="dashboardView = historyTileBack">
           <span class="cf-back-arrow">‹</span> {{ 'CashflowGame.back' | translate }}
         </button>
-        <h3>{{ card.title }}</h3>
         <p class="cf-solo-hint">{{ 'CashflowGame.cardFromHistory' | translate }}</p>
-        <p class="cf-history-facts">{{ card.facts.join(' · ') }}</p>
-        <p>{{ card.story }}</p>
+        <app-card-preview [cardId]="card.id" [lang]="languageCode"></app-card-preview>
       </div>
 
       <!-- The card of a tile with a stack: its own view, one box that keeps its place, with the way back to the map (JFK, 2026-10-26) -->

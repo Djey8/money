@@ -228,7 +228,6 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
       <app-dream-money
         *ngIf="dreamMoney() as money"
         [summary]="money.summary"
-        [paydayDue]="money.paydayDue"
         [canAct]="money.canAct"
         [trade]="money.trade"
         [youSeat]="money.youSeat"
@@ -373,7 +372,8 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         gap: 6px;
         overflow-x: auto;
         overscroll-behavior-x: contain;
-        padding-bottom: 6px;
+        /* room for the frame, the glow and the outline of a player: the scrolling row would cut them off */
+        padding: 6px 6px 10px;
         scrollbar-width: thin;
       }
       /* a player: the colour on the left, the name above, who they are and how close to escaping below */

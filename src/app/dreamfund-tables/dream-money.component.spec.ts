@@ -47,10 +47,9 @@ describe('DreamMoneyComponent', () => {
 
   beforeEach(() => TestBed.configureTestingModule({ imports: [DreamMoneyComponent] }));
 
-  it('settles the month when a Payday waits, and offers no moves out of turn', () => {
-    render({ canAct: true, paydayDue: true });
-    click('Done with the month');
-    expect(moves).toEqual([{ type: 'settle_payday' }]);
+  it('has no strip for the month: a Payday needs no button, and nothing is offered out of turn', () => {
+    render({ canAct: true });
+    expect(fixture.nativeElement.textContent).not.toContain('Done with the month');
     render({ canAct: false });
     expect(fixture.nativeElement.querySelector('details')).toBeNull();
   });

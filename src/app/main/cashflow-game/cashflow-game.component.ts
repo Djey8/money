@@ -91,6 +91,7 @@ import { type ProfessionSheetNumbers } from './profession-sheets.component';
 import { ActiveEffectsComponent } from './active-effects.component';
 import { CharacterSheetComponent } from './character-sheet.component';
 import { InsuranceDecisionComponent } from './insurance-decision.component';
+import { CardPreviewComponent } from './card-preview.component';
 import {
   DreamBoardComponent,
   TILE_COLORS,
@@ -168,6 +169,7 @@ const DICE_DECISION_REST_MS = 900;
   selector: 'app-cashflow-game',
   standalone: true,
   imports: [
+    CardPreviewComponent,
     InsuranceDecisionComponent,
     TrapFocusDirective,
     CommonModule,
@@ -301,6 +303,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     RemoteGameHook.openCard = (cardId) => {
       CashflowGameComponent.open();
       this.showHistoryCard(cardId);
+      // opened from a popup or a message, not from the History: back leads to the dashboard
+      this.historyTileBack = 'main';
     };
     // Paying a dice card (gold coins) brings the player here, to the decision.
     this.cashflowGameService.decisionNeeded$?.subscribe(() => this.showOpenDecision());
@@ -484,6 +488,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * the id of each one): the card as it was dealt, with none of its buttons.
    */
   showHistoryCard(cardId: string): void {
+    this.historyTileBack = 'history';
     const decks = this.currentGameSet?.decks;
     if (!decks) return;
     // a card of the Dreamfund stacks is read as text: its title and its story
@@ -506,8 +511,17 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
   }
 
+  /** Where the card that is read again leads back to: the History it came from, or the dashboard. */
+  historyTileBack: 'history' | 'main' = 'history';
+
   /** The Emergency, Life or Dream card of the History that is being read again. */
-  historyTileCard: { deck: string; title: string; story: string; facts: string[] } | null = null;
+  historyTileCard: {
+    id: string;
+    deck: string;
+    title: string;
+    story: string;
+    facts: string[];
+  } | null = null;
 
   /** The name of a deck for the card that is read again (a deck without its own word is named as it is). */
   private deckWord(deck: string): string {
@@ -555,7 +569,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         card.totalMinor ? `${this.cardAmount(card.totalMinor)} ${this.appState.currency}` : '',
         card.points ? `${card.points} ${this.translate.instant('CashflowGame.dream.points')}` : '',
       ].filter(Boolean);
-      return { deck, title: card.title[lang], story: card.story[lang], facts };
+      return { id: card.id, deck, title: card.title[lang], story: card.story[lang], facts };
     }
     return null;
   }

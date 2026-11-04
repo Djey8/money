@@ -8,6 +8,7 @@ import {
   type RatRaceBoard,
   type TableView,
 } from '@money/domain';
+import { cardFacts, findDreamCard } from '../dreamfund-tables/dream-card-facts';
 import {
   dreamEventCard,
   dreamEventDetail,
@@ -416,13 +417,28 @@ export class TablePresenter {
         const detail = dreamEventDetail(line.type, line.data, this.lang());
         // a card of a Dreamfund pile: shown by its name, and it can be opened to be read in full
         const cardId = dreamEventCard(line.type, line.data);
+        // the card as a small version of itself: its pile, the numbers that matter and the first sentence of its story
+        const found = cardId ? findDreamCard(cardId) : null;
+        const facts = found ? cardFacts(found.pile, found.card, this.lang()) : null;
+        const german = this.lang() === 'de';
         this.stage.set({
           ...this.base(line, view, headline),
-          ...(cardId && detail
-            ? { card: { id: cardId, title: detail, deck: '', tone: 'deal' as const, lines: [] } }
-            : detail
-              ? { patch: { text: detail, tone: 'neutral' as const } }
-              : {}),
+          ...(cardId && found && facts
+            ? {
+                card: {
+                  id: cardId,
+                  title: found.card.title[german ? 'de' : 'en'],
+                  deck: facts.deck,
+                  tone: 'deal' as const,
+                  lines: facts.lines,
+                  text: firstSentence(facts.text),
+                },
+              }
+            : cardId && detail
+              ? { card: { id: cardId, title: detail, deck: '', tone: 'deal' as const, lines: [] } }
+              : detail
+                ? { patch: { text: detail, tone: 'neutral' as const } }
+                : {}),
         });
         await this.pause((line.type === 'player_won' ? 2000 : cardId ? 2600 : 1500) * this.beat);
         return;
@@ -466,4 +482,11 @@ export class TablePresenter {
       text: card.printed?.description ? String(card.printed.description) : undefined,
     };
   }
+}
+
+/** The first sentence of a text (at most about a line): the popup tells, the card opened from it reads. */
+function firstSentence(text: string): string {
+  const end = text.search(/[.!?](\s|$)/);
+  const sentence = end > 0 ? text.slice(0, end + 1) : text;
+  return sentence.length > 140 ? `${sentence.slice(0, 137)}…` : sentence;
 }
