@@ -566,22 +566,50 @@ const MOJO_BOOK = 'https://www.barefootinvestor.com/';
 function reserveProject(lang: 'en' | 'de', monthlyExpensesMinor: number): CashflowDreamProject {
   const en = lang === 'en';
   const t = (english: string, german: string) => (en ? english : german);
+  const link = (english: string, german: string, url: string) => ({
+    label: t(english, german),
+    url,
+  });
   const month = (n: number) => ({
     id: `month${n}`,
     title: t(`Month ${n}`, `Monat ${n}`),
     targetMinor: monthlyExpensesMinor,
     notes: t(
       n === 1
-        ? 'The first month of expenses is the most important one: it covers the small emergencies (a broken phone, a repair, a dentist) so that they never need a loan.'
+        ? 'The first month of expenses is the most important one: it covers the small emergencies (a broken phone, a repair, a dentist) so that they never need a loan. Dave Ramsey starts even smaller, with a first 1,000, and Barefoot calls the first buffer the Mojo. Put it in an account you can reach on the same day, but not in your daily account, where it disappears.'
         : n === 2
-          ? 'Two months bridge a short gap: a delayed salary, a bigger repair or a few weeks without work.'
-          : 'Three months of expenses is the minimum the finance books ask for before you invest: the time to find a new job without selling anything at a bad price.',
+          ? 'Two months bridge a short gap: a delayed salary, a bigger repair or a few weeks without work. In Germany the first weeks of a job loss are also covered by unemployment pay (Arbeitslosengeld, about 60 percent of the net pay), but it starts only after the notice and a waiting period, so the reserve is what pays the rent in between.'
+          : 'Three months of expenses is the minimum the finance books ask for before you invest: the time to find a new job without selling anything at a bad price. Many books go further: Dave Ramsey asks for three to six months, Suze Orman for eight. If your income is irregular or you are self-employed, aim for the upper end.',
       n === 1
-        ? 'Der erste Monat an Ausgaben ist der wichtigste: er deckt die kleinen Notfälle (ein kaputtes Handy, eine Reparatur, der Zahnarzt), damit dafür nie ein Kredit nötig wird.'
+        ? 'Der erste Monat an Ausgaben ist der wichtigste: er deckt die kleinen Notfälle (ein kaputtes Handy, eine Reparatur, der Zahnarzt), damit dafür nie ein Kredit nötig wird. Dave Ramsey beginnt sogar kleiner, mit ersten 1.000, und Barefoot nennt den ersten Puffer das Mojo. Leg ihn auf ein Konto, an das du am selben Tag herankommst, aber nicht auf dein Alltagskonto, wo er verschwindet.'
         : n === 2
-          ? 'Zwei Monate überbrücken eine kurze Lücke: ein verspätetes Gehalt, eine größere Reparatur oder ein paar Wochen ohne Arbeit.'
-          : 'Drei Monate an Ausgaben sind das Minimum, das die Finanzbücher verlangen, bevor man investiert: die Zeit, eine neue Stelle zu finden, ohne etwas zu schlechten Kursen verkaufen zu müssen.',
+          ? 'Zwei Monate überbrücken eine kurze Lücke: ein verspätetes Gehalt, eine größere Reparatur oder ein paar Wochen ohne Arbeit. In Deutschland deckt bei einem Jobverlust auch das Arbeitslosengeld (etwa 60 Prozent des Nettos) die ersten Wochen, aber es beginnt erst nach der Kündigung und einer Wartezeit, und dazwischen zahlt der Notgroschen die Miete.'
+          : 'Drei Monate an Ausgaben sind das Minimum, das die Finanzbücher verlangen, bevor man investiert: die Zeit, eine neue Stelle zu finden, ohne etwas zu schlechten Kursen verkaufen zu müssen. Viele Bücher gehen weiter: Dave Ramsey verlangt drei bis sechs Monate, Suze Orman acht. Bei unregelmäßigem Einkommen oder als Selbstständiger solltest du eher ans obere Ende denken.',
     ),
+    links:
+      n === 1
+        ? [
+            link(
+              'Finanztip – saving and the emergency reserve',
+              'Finanztip – Sparen und Notgroschen',
+              'https://www.finanztip.de/',
+            ),
+          ]
+        : n === 2
+          ? [
+              link(
+                'Federal Employment Agency – unemployment pay',
+                'Bundesagentur für Arbeit – Arbeitslosengeld',
+                'https://www.arbeitsagentur.de/',
+              ),
+            ]
+          : [
+              link(
+                'Dave Ramsey – the baby steps (a first reserve, then three to six months)',
+                'Dave Ramsey – die Baby Steps (erst eine kleine Reserve, dann drei bis sechs Monate)',
+                'https://www.ramseysolutions.com/dave-ramsey-7-baby-steps',
+              ),
+            ],
   });
   return {
     // the project is called like the account it follows, so a payment into `@Mojo` and the project are one (JFK, 2026-10-26)
@@ -591,8 +619,8 @@ function reserveProject(lang: 'en' | 'de', monthlyExpensesMinor: number): Cashfl
       'Notgroschen · drei Monatsausgaben, nur für Notfälle',
     ),
     description: t(
-      'An emergency reserve is money that waits for the day something goes wrong: a job lost, a repair, a medical bill. Almost every book on personal finance starts here, before investing and before big goals, because without it one bad month turns into debt. The usual rule is three to six months of your expenses in an account you can reach at once. Here the first goal is three. Fill it with payment plans, a little every Payday; use it when you really have to pay for an emergency, and fill it up again afterwards. The game is won only with the reserve full.',
-      'Ein Notgroschen ist Geld, das auf den Tag wartet, an dem etwas schiefgeht: ein verlorener Job, eine Reparatur, eine Arztrechnung. Fast jedes Buch über persönliche Finanzen beginnt hier, vor dem Investieren und vor großen Zielen, denn ohne ihn wird aus einem schlechten Monat Schulden. Die übliche Regel sind drei bis sechs Monatsausgaben auf einem Konto, an das man sofort herankommt. Hier ist das erste Ziel drei. Fülle ihn mit Zahlplänen, jeden Zahltag ein wenig; nutze ihn, wenn du wirklich einen Notfall bezahlen musst, und fülle ihn danach wieder auf. Das Spiel gewinnst du nur mit vollem Notgroschen.',
+      'The emergency reserve is the first brick of every money plan: cash that waits for the day something goes wrong - a lost job, a repair, a medical bill, a car that breaks down. Almost every book on personal finance starts here, before investing and before big goals, because without it one bad month turns into debt at a high interest. The books differ a little on the size: Barefoot starts with a first buffer called the Mojo, Dave Ramsey with 1,000 and then three to six months, Suze Orman asks for eight, and the German consumer advisers say about three net salaries. Here the first goal is three months of your real expenses. Fill it with a payment plan, a little each Payday; use it when an emergency card really hits you, and fill it up again afterwards. The game is won only with the reserve full - and a full reserve is also what makes a Fire emergency a small thing instead of a crisis.',
+      'Der Notgroschen ist der erste Baustein jedes Geldplans: Bargeld, das auf den Tag wartet, an dem etwas schiefgeht - ein verlorener Job, eine Reparatur, eine Arztrechnung, ein Auto, das liegen bleibt. Fast jedes Buch über persönliche Finanzen beginnt hier, vor dem Investieren und vor großen Zielen, denn ohne ihn wird aus einem schlechten Monat Schulden mit hohen Zinsen. Die Bücher unterscheiden sich ein wenig in der Größe: Barefoot beginnt mit einem ersten Puffer namens Mojo, Dave Ramsey mit 1.000 und dann drei bis sechs Monaten, Suze Orman verlangt acht, und die deutschen Verbraucherberater sagen etwa drei Nettogehälter. Hier ist das erste Ziel drei Monate deiner echten Ausgaben. Fülle ihn mit einem Zahlplan, jeden Zahltag ein wenig; nutze ihn, wenn dich eine Notfallkarte wirklich trifft, und fülle ihn danach wieder auf. Das Spiel gewinnst du nur mit vollem Notgroschen - und ein voller Notgroschen macht aus einem Fire-Notfall eine Kleinigkeit statt einer Krise.',
     ),
     buckets: [month(1), month(2), month(3)],
     links: [
@@ -603,6 +631,21 @@ function reserveProject(lang: 'en' | 'de', monthlyExpensesMinor: number): Cashfl
         ),
         url: MOJO_BOOK,
       },
+      link(
+        'Dave Ramsey – The Total Money Makeover (book)',
+        'Dave Ramsey – The Total Money Makeover (Buch)',
+        'https://www.ramseysolutions.com/store/books/the-total-money-makeover',
+      ),
+      link(
+        'Suze Orman – an emergency fund of eight months',
+        'Suze Orman – ein Notgroschen von acht Monaten',
+        'https://www.suzeorman.com/',
+      ),
+      link(
+        'Verbraucherzentrale – the emergency reserve',
+        'Verbraucherzentrale – der Notgroschen',
+        'https://www.verbraucherzentrale.de/',
+      ),
     ],
     actionItems: [
       {
@@ -617,17 +660,35 @@ function reserveProject(lang: 'en' | 'de', monthlyExpensesMinor: number): Cashfl
           'After an emergency, fill the reserve up again before anything else',
           'Nach einem Notfall den Notgroschen zuerst wieder auffüllen',
         ),
+        priority: 'high',
+      },
+      {
+        text: t(
+          'Keep it apart from your daily money, in an account that earns a little interest',
+          'Halte ihn getrennt vom Alltagsgeld, auf einem Konto, das etwas Zinsen bringt',
+        ),
         priority: 'medium',
+      },
+      {
+        text: t(
+          'Check once a year whether three months of your expenses still match your life',
+          'Prüfe einmal im Jahr, ob drei Monatsausgaben noch zu deinem Leben passen',
+        ),
+        priority: 'low',
       },
     ],
     notes: [
       t(
-        "Why three months: Ramit Sethi, Dave Ramsey, Suze Orman and Barefoot's Mojo all give the same advice - a cushion of several months of expenses (not of income) before you invest.",
-        'Warum drei Monate: Ramit Sethi, Dave Ramsey, Suze Orman und Barefoots Mojo geben denselben Rat - ein Polster von mehreren Monatsausgaben (nicht Einkommen), bevor man investiert.',
+        "Why three months: Ramit Sethi, Dave Ramsey, Suze Orman and Barefoot's Mojo all give the same advice in different sizes - a cushion of several months of expenses (not of income) before you invest.",
+        'Warum drei Monate: Ramit Sethi, Dave Ramsey, Suze Orman und Barefoots Mojo geben denselben Rat in verschiedenen Größen - ein Polster von mehreren Monatsausgaben (nicht Einkommen), bevor man investiert.',
       ),
       t(
-        'The reserve is for emergencies, not for wishes: a sale or a holiday is not one.',
-        'Der Notgroschen ist für Notfälle, nicht für Wünsche: ein Angebot oder ein Urlaub sind keiner.',
+        'The reserve is for emergencies, not for wishes: a sale or a holiday is not one. Morgan Housel calls the same idea a margin of safety: the money you hope never to use.',
+        'Der Notgroschen ist für Notfälle, nicht für Wünsche: ein Angebot oder ein Urlaub sind keiner. Morgan Housel nennt dieselbe Idee einen Sicherheitsabstand: das Geld, das du hoffentlich nie brauchst.',
+      ),
+      t(
+        'Tip: count the reserve in months of your real expenses, not in a round sum. A person with a rent and a car needs more than a student with a room.',
+        'Tipp: Zähle den Notgroschen in Monaten deiner echten Ausgaben, nicht in einer runden Summe. Wer Miete und Auto hat, braucht mehr als eine Studentin mit einem Zimmer.',
       ),
     ],
   };
