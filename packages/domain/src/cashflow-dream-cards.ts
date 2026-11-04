@@ -3,8 +3,9 @@
  * generic - it belongs to no character - and becomes a Smile project when it is taken. Amounts are minor units of the game money.
  */
 import type { DreamCard } from './cashflow-game/dream-deck';
+import { withDreamDetails } from './cashflow-dream-details';
 
-export const DREAM_CARDS: DreamCard[] = [
+const BASE_DREAM_CARDS: DreamCard[] = [
   {
     id: 'D01',
     category: 'wonders',
@@ -3202,3 +3203,6 @@ export const DREAM_CARDS: DreamCard[] = [
     giving: true,
   },
 ];
+
+/** The dreams with their detail (`cashflow-dream-details.ts`): what a project made from a card has filled in. */
+export const DREAM_CARDS: DreamCard[] = withDreamDetails(BASE_DREAM_CARDS);

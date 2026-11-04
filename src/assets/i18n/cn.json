@@ -1979,6 +1979,8 @@
   "Fire.payIntoMojo": "Pay into the Mojo",
   "CashflowGame.life.badge.kids": "Children",
   "CashflowGame.life.badge.insurance": "Insurances",
+  "CashflowGame.life.badge.dreamPoints": "梦想点数",
+  "CashflowGame.life.info.dreamPoints": "你已有的梦想点数与本局要求的点数。每实现一个梦想都会获得点数。",
   "CashflowGame.life.badge.career": "Career",
   "CashflowGame.life.info.relationship": "Your relationship. Life cards like a proposal or moving in need a partner, and a break-up costs more the further the relationship had come. Some dreams for two need one too.",
   "CashflowGame.life.info.kids": "Your children. Each child costs a monthly sum that depends on your living standard and on its siblings; the child benefit helps a little. With children a job loss cuts your income less.",

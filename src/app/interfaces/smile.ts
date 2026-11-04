@@ -40,6 +40,8 @@ export interface Smile {
   dream?: boolean;
   /** The Dream card this project came from (a Dreamfund game): it can be lived once every bucket is full. */
   dreamCardId?: string;
+  /** What living this dream is worth in dream points (a Dreamfund game). */
+  points?: number;
   phase: SmilePhase; // Overall project phase
   description: string; // Detailed description
   targetDate?: string; // When you want to achieve this goal

@@ -104,6 +104,7 @@ import {
   lifeContext,
   monthlyExpensesMinor,
   livedPoints,
+  dreamProjectParts,
   netMonthlyMinor,
   resolveLifeCard,
   rollCareer,
@@ -3549,27 +3550,26 @@ export class CashflowGameService {
       deck: 'dream',
     });
     const now = new Date().toISOString();
+    const parts = dreamProjectParts(card, lang);
     const project: Smile = {
       title: card.title[lang],
+      points: livedPoints(card),
       sub: `${this.translate.instant(`CashflowGame.dream.tier.${card.tier}`)} · ${this.translate.instant(`CashflowGame.dream.category.${card.category}`)} · ${livedPoints(card)} ${this.translate.instant('CashflowGame.dream.points')}`,
       dreamCardId: card.id,
       phase: 'planning',
-      description: card.story[lang],
-      buckets: card.buckets.map((bucket) => ({
+      description: parts.description,
+      buckets: parts.buckets.map((bucket) => ({
         id: `${card.title[lang]}-${bucket.id}`,
-        title: bucket.title[lang],
+        title: bucket.title,
         target: fromMinorUnits(bucket.amountMinor),
         amount: 0,
-        notes: '',
+        notes: bucket.notes,
+        links: bucket.links,
       })),
-      links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
-      actionItems: card.actions.map((action) => ({
-        text: action.text[lang],
-        done: false,
-        priority: action.priority,
-      })),
+      links: parts.links,
+      actionItems: parts.actionItems,
       notes: [
-        ...(card.stat ? [{ text: card.stat[lang], createdAt: now }] : []),
+        ...parts.notes.map((text) => ({ text, createdAt: now })),
         ...(card.monthlyAfterMinor
           ? [
               {

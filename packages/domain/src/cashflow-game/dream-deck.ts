@@ -24,8 +24,19 @@ export interface DreamCard {
   giving?: boolean;
   title: Localized;
   story: Localized;
-  buckets: { id: string; title: Localized; amountMinor: number }[];
+  /** What the dream is and what it takes, in a few sentences: the project's description (the story when absent). */
+  description?: Localized;
+  buckets: {
+    id: string;
+    title: Localized;
+    amountMinor: number;
+    /** What the bucket is, what is realistic, where to look. */
+    notes?: Localized;
+    links?: { label: Localized; url: string }[];
+  }[];
   stat?: Localized;
+  /** More notes of the project besides `stat`: two at most, three in all. */
+  notes?: Localized[];
   actions: { text: Localized; priority: 'low' | 'medium' | 'high' }[];
   links: { label: Localized; url: string }[];
   /** What the dream costs every month once it is lived (a motorbike, a campervan, a farm). */

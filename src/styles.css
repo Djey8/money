@@ -968,11 +968,11 @@ body.table-mode
     app-info-liabilitie,
     app-info-interests,
     app-info-properties,
-    app-info-mojo,
-    app-info-smile,
-    app-info-fire
+    app-info-mojo
   )
   :is(#editbtn:not(.payback-btn), #addbtn, #deletebtn),
+/* a Smile or Fire project: money is added to it (the table books the move), only edit and delete are not offered */
+body.table-mode :is(app-info-smile, app-info-fire) :is(#editbtn:not(.payback-btn), #deletebtn),
 body.table-mode app-info-grow #deletebtn,
 body.table-mode
   :is(

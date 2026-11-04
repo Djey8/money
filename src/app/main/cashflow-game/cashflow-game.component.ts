@@ -1645,6 +1645,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('car') });
     const held = this.insurancesHeld;
     if (held > 0) badges.push({ key: 'insurance', icon: '🛡️', text: `× ${held}` });
+    // a table that asks for dream points: how many of them the player has
+    const asked = this.remote?.dreamPoints?.();
+    if (asked) {
+      badges.push({ key: 'dreamPoints', icon: '🌟', text: `${asked.points} / ${asked.goal}` });
+    }
     return badges;
   }
 

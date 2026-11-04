@@ -91,6 +91,8 @@ export class InfoSmileComponent extends BaseInfoComponent {
 
   static title = 'Driver Licence';
   static sub = '';
+  /** What living the dream is worth in dream points (a project of a Dreamfund card). */
+  static points = 0;
   static phase: SmilePhase = 'planning';
   static description = '';
   static buckets: SmileBucket[] = [];
@@ -127,6 +129,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     InfoSmileComponent.index = id;
     InfoSmileComponent.title = project.title;
     InfoSmileComponent.sub = project.sub || '';
+    InfoSmileComponent.points = project.points ?? 0;
     InfoSmileComponent.phase = project.phase || 'planning';
     InfoSmileComponent.description = project.description || '';
     InfoSmileComponent.buckets = project.buckets;

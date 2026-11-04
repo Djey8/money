@@ -18,6 +18,9 @@
         <span class="phase-badge phase-{{ classReference.phase }}">
           {{ 'Smile.phase.' + classReference.phase | translate }}
         </span>
+        <span class="points-badge" *ngIf="classReference.points"
+          >🌟 {{ classReference.points }} {{ 'CashflowGame.dream.points' | translate }}</span
+        >
       </div>
       <h3 class="detail-title">
         {{ classReference.title }} <span class="id-badge">#{{ classReference.index + 1 }}</span>

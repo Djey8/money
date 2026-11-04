@@ -2,6 +2,7 @@ import { fromMinorUnits } from '../../money/minor-units';
 import type { GameBooks } from '../books';
 import type { CashflowDreamProject } from '../types';
 import { DreamPlayer, type DreamPlayerData } from './player';
+import { dreamProjectParts } from '../dream-project';
 
 /**
  * A Dreamfund life as the entities the app keeps it in (todo/dreamfund-tables-solo-ui.md, R2 and R6): the Mojo, the dream and the dreams
@@ -63,6 +64,8 @@ export interface AppSmile extends AppProjectBase {
   /** What the table sets aside for it at every Payday (a plan of the player), minor units. */
   dreamPlanMinor?: number;
   dreamCardId?: string;
+  /** What living the dream is worth in dream points. */
+  points?: number;
 }
 
 export interface AppFire extends AppProjectBase {
@@ -228,10 +231,12 @@ export function dreamAppEntities(
   for (const { entry, complete } of taken) {
     const card = p.dreamCard(entry.cardId);
     if (!card) continue;
+    const parts = dreamProjectParts(card, l);
     const project: AppSmile = {
       title: card.title[l],
       sub: `${card.tier} · ${card.category} · ${card.points}`,
       dreamCardId: card.id,
+      points: card.points,
       dreamPlanMinor: planned('smile', card.id),
       plannedSubscriptions: planOf(
         complete ? 0 : planned('smile', card.id),
@@ -241,21 +246,18 @@ export function dreamAppEntities(
         nowIso,
       ),
       phase: 'planning',
-      description: card.story[l],
-      buckets: card.buckets.map((bucket) => ({
+      description: parts.description,
+      buckets: parts.buckets.map((bucket) => ({
         id: `${card.title[l]}-${bucket.id}`,
-        title: bucket.title[l],
+        title: bucket.title,
         target: fromMinorUnits(bucket.amountMinor),
         amount: 0,
-        notes: '',
+        notes: bucket.notes,
+        links: bucket.links,
       })),
-      links: card.links.map((link) => ({ label: link.label[l], url: link.url })),
-      actionItems: card.actions.map((action) => ({
-        text: action.text[l],
-        done: false,
-        priority: action.priority,
-      })),
-      notes: card.stat ? [{ text: card.stat[l], createdAt: nowIso }] : [],
+      links: parts.links,
+      actionItems: parts.actionItems,
+      notes: parts.notes.map((text) => ({ text, createdAt: nowIso })),
       createdAt: nowIso,
       updatedAt: nowIso,
     };
