@@ -27,3 +27,13 @@ describe('the dreams D49-D96', () => {
     expect(Math.max(...prices)).toBeGreaterThanOrEqual(400000);
   });
 });
+
+describe('the tips and fun facts of the dreams', () => {
+  it('every dream has one as its last note, in both languages', () => {
+    for (const card of DREAM_CARDS) {
+      const last = card.notes?.[card.notes.length - 1];
+      expect(last?.en).toMatch(/^(Tip|Fun fact): /);
+      expect(last?.de).toMatch(/^(Tipp: |Wusstest du\? )/);
+    }
+  });
+});

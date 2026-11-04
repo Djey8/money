@@ -2,6 +2,7 @@ import type { DreamCard } from './cashflow-game/dream-deck';
 import type { Localized } from './cashflow-game/emergency-deck';
 import { TRAVEL_DETAILS } from './cashflow-dream-details-travel';
 import { DOING_DETAILS } from './cashflow-dream-details-doing';
+import { DREAM_TIPS, DREAM_TIP_LABEL } from './cashflow-dream-tips';
 import { LIFE_DETAILS } from './cashflow-dream-details-life';
 import { MORE_TRAVEL } from './cashflow-dreams-more-travel';
 import { MORE_DOING } from './cashflow-dreams-more-doing';
@@ -636,6 +637,24 @@ export function withDreamDetails(cards: DreamCard[]): DreamCard[] {
   return cards.map((card) => {
     const detail = DREAM_DETAILS[card.id];
     if (!detail) return card;
+    // the notes of the detail, and a tip or a fun fact last: a project shows three notes in all (the statistic of a card counts as one)
+    const tip = DREAM_TIPS[card.id];
+    const room = tip ? (card.stat ? 1 : 2) : 2;
+    const base = detail.notes?.slice(0, room);
+    const notes =
+      base || tip
+        ? [
+            ...(base ?? []),
+            ...(tip
+              ? [
+                  {
+                    en: DREAM_TIP_LABEL[tip.kind].en + tip.en,
+                    de: DREAM_TIP_LABEL[tip.kind].de + tip.de,
+                  },
+                ]
+              : []),
+          ]
+        : undefined;
     return {
       ...card,
       ...(detail.description ? { description: detail.description } : {}),
@@ -645,7 +664,7 @@ export function withDreamDetails(cards: DreamCard[]): DreamCard[] {
       })),
       links: [...card.links, ...(detail.links ?? [])],
       actions: detail.actions ?? card.actions,
-      ...(detail.notes ? { notes: detail.notes.slice(0, 2) } : {}),
+      ...(notes ? { notes } : {}),
     };
   });
 }
