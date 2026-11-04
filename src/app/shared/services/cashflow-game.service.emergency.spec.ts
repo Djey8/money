@@ -60,6 +60,63 @@ describe('CashflowGameService: emergencies and insurance', () => {
     expect(premium).toMatchObject({ account: 'Fire', amount: -15.61 });
   });
 
+  it("the whole catalogue of insurances is on offer, as at a table: a premium line for each, none held but the profession's", () => {
+    const state = AppStateService.instance;
+    const premiums = state.cashflowGame.insurance!.premiums;
+    expect(Object.keys(premiums).sort()).toEqual(
+      [
+        'car_full',
+        'car_partial',
+        'dental',
+        'disability',
+        'household',
+        'legal',
+        'liability',
+        'travel',
+      ].sort(),
+    );
+    for (const kind of ['legal', 'disability', 'travel']) {
+      const line = state.allSubscriptions.find((sub) => sub.title === premiums[kind]);
+      expect(line).toMatchObject({ account: 'Fire' });
+      expect(Number(line!.amount)).toBeLessThan(0);
+    }
+    expect(state.cashflowGame.insurance!.active).not.toContain('legal');
+    // asked again, nothing is added twice
+    const lines = state.allSubscriptions.length;
+    service.ensureInsuranceOffers();
+    expect(state.allSubscriptions.length).toBe(lines);
+  });
+
+  it('a game saved before an insurance joined the catalogue is given its offer', () => {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const premiums = { ...game.insurance!.premiums };
+    delete premiums['travel'];
+    state.cashflowGame = { ...game, insurance: { ...game.insurance!, premiums } };
+    state.allSubscriptions = state.allSubscriptions.filter(
+      (sub) => sub.title !== game.insurance!.premiums['travel'],
+    );
+    service.ensureInsuranceOffers();
+    expect(Object.keys(state.cashflowGame.insurance!.premiums)).toContain('travel');
+  });
+
+  it('a hopped-in legal protection limits a card it covers to its deductible', () => {
+    draw('E61');
+    const bare = service.emergencyView!.quote;
+    expect(bare.insured).toBe(false);
+    const state = AppStateService.instance;
+    state.cashflowGame = {
+      ...state.cashflowGame,
+      insurance: {
+        ...state.cashflowGame.insurance!,
+        active: [...state.cashflowGame.insurance!.active, 'legal'],
+      },
+    };
+    const insured = service.emergencyView!.quote;
+    expect(insured.insured).toBe(true);
+    expect(insured.payMinor).toBeLessThan(bare.payMinor);
+  });
+
   it('a drawn card is kept with the turn and shows what it costs', () => {
     draw('E02');
     const view = service.emergencyView!;

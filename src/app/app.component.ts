@@ -396,6 +396,7 @@ export class AppComponent {
               AppDataService.instance
                 .loadCashflowGameData()
                 .then(() => this.cashflowGameService.endSoloGameIfOver())
+                .then(() => this.cashflowGameService.ensureInsuranceOffers())
                 .then(() => this.cashflowHistorySync.loadAndAdopt())
                 .catch((err) => console.error('Cashflow game data load error:', err));
             }

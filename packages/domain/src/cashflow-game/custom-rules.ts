@@ -29,6 +29,8 @@ export interface CustomRules {
   /** How many dreams a Dream tile offers (1 to 3), and how many can be open at once. */
   dreamOffers: number;
   maxOpenDreams: number;
+  /** The dream points to collect besides the life dream (JFK, 2026-11): 0 is the life dream alone, with no dream tiles on the map. */
+  dreamPointsGoal: number;
   /** The dreams offered may all be refused. */
   dreamMayDecline: boolean;
   /** A Life card that offers a choice may be declined. */
@@ -61,6 +63,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     cardChoice: 'free',
     dreamOffers: 2,
     maxOpenDreams: 3,
+    dreamPointsGoal: 10,
     dreamMayDecline: true,
     lifeMayDecline: true,
     careerMustRoll: false,
@@ -79,6 +82,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     cardChoice: 'random',
     dreamOffers: 2,
     maxOpenDreams: 3,
+    dreamPointsGoal: 10,
     dreamMayDecline: true,
     lifeMayDecline: true,
     careerMustRoll: true,
@@ -97,6 +101,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     cardChoice: 'random',
     dreamOffers: 2,
     maxOpenDreams: 3,
+    dreamPointsGoal: 10,
     // the dreams of the cards are for the points of a ranked game: they may be refused or given up; the life dream is the aim
     dreamMayDecline: true,
     lifeMayDecline: false,
@@ -128,6 +133,7 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
     dreamOffers: clamp(raw?.dreamOffers, 0, 3, base.dreamOffers),
     // 0: no limit, a player may have as many dreams open as they like
     maxOpenDreams: clamp(raw?.maxOpenDreams, 0, 20, base.maxOpenDreams),
+    dreamPointsGoal: clamp(raw?.dreamPointsGoal, 0, 60, base.dreamPointsGoal),
     dreamMayDecline:
       typeof raw?.dreamMayDecline === 'boolean' ? raw.dreamMayDecline : base.dreamMayDecline,
     lifeMayDecline:

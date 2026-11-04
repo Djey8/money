@@ -689,7 +689,11 @@ export class AppDataService {
                 CashflowGameState['boardSetup']
               >['size'],
               seed: num(raw.boardSetup.seed),
-              ...(raw.boardSetup.dreams === false ? { dreams: false } : {}),
+              // stored as text (every leaf of a saved game is): the life dream alone has no dream tiles
+              ...(raw.boardSetup.dreams === false ||
+              (raw.boardSetup.dreams != null && str(raw.boardSetup.dreams) === 'false')
+                ? { dreams: false }
+                : {}),
               ...(raw.boardSetup.difficulty != null
                 ? {
                     difficulty: str(raw.boardSetup.difficulty) as NonNullable<

@@ -126,6 +126,8 @@ import {
   insuranceOffers,
   planQuote,
   chooseInsurance,
+  INSURANCE_CATALOG,
+  premiumMinor,
   quoteEmergency,
   type EmergencyCard,
   type EmergencyContext,
@@ -507,6 +509,11 @@ function deepClone<T>(value: T): T {
  * not a clear browser cache"). A page reload/dev-server restart reads it straight back; clearing
  * the browser's site data removes it same as everything else — no extra code needed for that part.
  */
+/** The kinds of insurance that have a premium of their own (the catalogue). */
+const CATALOG_KINDS = new Set(
+  INSURANCE_CATALOG.filter((info) => info.baseMinor !== undefined).map((info) => info.kind),
+);
+
 const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
 
 /** The most characters the browser's copy of the undo history may take (localStorage holds about 5 million in all). */
@@ -1324,14 +1331,19 @@ export class CashflowGameService {
             insurance: {
               ...insurance,
               premiums: translatedPremiums,
+              // the ones the player chose: of the character's own and of the catalogue
               active: startInsurances
-                ? insurance.active.filter((kind) => startInsurances.includes(kind))
+                ? startInsurances.filter(
+                    (kind) => kind in translatedPremiums || CATALOG_KINDS.has(kind),
+                  )
                 : insurance.active,
             },
           }
         : {}),
       budgetPlan: [],
     };
+    // every insurance of the catalogue is on offer, as at a table; the ones chosen for the start are held
+    this.applyInsuranceOffers(startInsurances);
     // a new game starts without the plan of the last one
     if (state.tier2Loaded) {
       state.allBudgets = applyPlanChange(
@@ -1347,6 +1359,79 @@ export class CashflowGameService {
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
+  }
+
+  /**
+   * Every insurance of the catalogue is on offer in a game of the custom edition (JFK, 2026-11), as at a table: a premium line for each,
+   * not held until the player hops in. Done again it changes nothing. `startActive` is what the player chose for the start (when the
+   * character has no insurance lines of its own the game has no insurance state yet). Returns whether a line was added.
+   */
+  private applyInsuranceOffers(startActive?: string[]): boolean {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const profession = this.currentProfession();
+    if (!game.life || !profession) return false;
+    const known = game.insurance?.premiums ?? {};
+    const missing = INSURANCE_CATALOG.filter(
+      (info) => info.baseMinor !== undefined && !(info.kind in known),
+    );
+    if (missing.length === 0) return false;
+    const premiums = { ...known };
+    const lineTitles = { ...(game.lineTitles ?? {}) };
+    const titles = [...game.gameSubscriptionTitles];
+    const usedDays = this.currentMonthGameSubscriptionDays();
+    this.ensureGameLocation();
+    for (const info of missing) {
+      const title = this.translateOrFallback(
+        `CashflowGame.expenseLine.${info.lineKey}`,
+        info.lineTitle,
+      );
+      premiums[info.kind] = title;
+      lineTitles[info.lineKey] = title;
+      if (!titles.includes(title)) titles.push(title);
+      const premium = premiumMinor(
+        info.baseMinor!,
+        profession.priceFactor,
+        profession.insuranceFactor,
+      );
+      state.allSubscriptions = [
+        ...state.allSubscriptions.filter((sub) => sub.title !== title),
+        {
+          title,
+          account: 'Fire',
+          amount: -fromMinorUnits(premium),
+          startDate: this.nextSmartSubscriptionDate(usedDays),
+          endDate: '',
+          category: `@${title}`,
+          comment: '#dreamfund',
+          frequency: 'monthly',
+          locationId: GAME_BANK_LOCATION_ID,
+        },
+      ];
+    }
+    state.cashflowGame = {
+      ...game,
+      gameSubscriptionTitles: titles,
+      lineTitles,
+      insurance: {
+        active: game.insurance?.active ?? startActive ?? [],
+        premiums,
+        pending: game.insurance?.pending ?? [],
+        ...(game.insurance?.fresh ? { fresh: game.insurance.fresh } : {}),
+      },
+    };
+    return true;
+  }
+
+  /** A game that began before an insurance was in the catalogue is given its offer too (the lines are saved with the game). */
+  ensureInsuranceOffers(): void {
+    if (!this.applyInsuranceOffers()) return;
+    this.persistAll(
+      'cashflow_insurance_offers',
+      {},
+      { onSuccess: () => undefined, onError: () => undefined },
+      { quiet: true, includeSubscriptions: true },
+    );
   }
 
   /** Resolves a translation key against the currently-selected language, falling back to `fallback` (game-sets.ts's own string) if no such key exists yet — the same behavior ngx-translate's own missing-key handler already gives every other key in the app. */
@@ -2260,7 +2345,12 @@ export class CashflowGameService {
   /** The rules of this Custom JFK game (null in a classic game): what the player may decide and what the cards decide. */
   get customRules(): CustomRules | null {
     const game = AppStateService.instance.cashflowGame;
-    return game.life || game.customRules ? normalizeCustomRules(game.customRules) : null;
+    if (!game.life && !game.customRules) return null;
+    // a game saved before the dream points goal existed has none: it is not given one on the way
+    return normalizeCustomRules({
+      ...(game.customRules ?? {}),
+      dreamPointsGoal: game.customRules?.dreamPointsGoal ?? 0,
+    });
   }
 
   /** Whether the game lets the player decline what life offers (a game setting). */
@@ -5611,13 +5701,22 @@ export class CashflowGameService {
       ? gameSetFor(base, profession?.priceFactor, { round: profession?.roundNumbers })
       : undefined;
     const custom = set ? this.customRules : null;
-    if (!set || !custom || set.loanRule.monthlyInterestPercent === custom.bankInterestPercent) {
+    if (!set || !custom) return set;
+    // the Bank loan of a custom game costs and steps as its settings say (a step of 0 is the character's own)
+    const step = custom.bankLoanStepMinor || set.loanRule.incrementMinor;
+    if (
+      set.loanRule.monthlyInterestPercent === custom.bankInterestPercent &&
+      step === set.loanRule.incrementMinor
+    ) {
       return set;
     }
-    // the Bank loan of a custom game costs what its setting says
     return {
       ...set,
-      loanRule: { ...set.loanRule, monthlyInterestPercent: custom.bankInterestPercent },
+      loanRule: {
+        ...set.loanRule,
+        monthlyInterestPercent: custom.bankInterestPercent,
+        incrementMinor: step,
+      },
     };
   }
 

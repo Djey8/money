@@ -16,6 +16,7 @@ const NUMBER_FIELDS = new Set([
   'offersPerLanding',
   'dreamOffers',
   'maxOpenDreams',
+  'dreamPointsGoal',
   'opportunityOffers',
   'multiplier',
   'maxSteps',

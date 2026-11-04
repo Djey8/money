@@ -53,6 +53,8 @@ import {
   paymentDueComment,
   type PaymentDue,
   droppedPremiumTitles,
+  INSURANCE_CATALOG,
+  premiumMinor,
   classicRulesOfMode,
   isPresetMode,
   INITIAL_LIFE_STATE,
@@ -1032,9 +1034,27 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return [...(this.profileOf(this.selectedProfession)?.goalItems ?? []), ...this.extraGoals];
   }
 
-  /** The dream points a table asks for, besides the life dream (a game with others only). */
+  /**
+   * The dream points a game asks for besides the life dream (JFK, 2026-11): a table's setting, or the solo game's own - the running
+   * game's, or the one being set up.
+   */
+  private get pointsAsked(): { goal: number; points: number } | null {
+    const remote = this.remote?.dreamPoints?.();
+    if (remote) return remote;
+    if (this.hasActiveGame) {
+      const goal = this.cashflowGameService.customRules?.dreamPointsGoal ?? 0;
+      return goal > 0 && this.appState.cashflowGame.life
+        ? { goal, points: this.dreamPoints.total }
+        : null;
+    }
+    return this.showBoardChoice && this.customDraft.dreamPointsGoal > 0
+      ? { goal: this.customDraft.dreamPointsGoal, points: 0 }
+      : null;
+  }
+
+  /** The dream points a game asks for, besides the life dream. */
   get extraGoals(): { id: string; text: string }[] {
-    const asked = this.remote?.dreamPoints?.();
+    const asked = this.pointsAsked;
     if (!asked) return [];
     return [
       {
@@ -1083,7 +1103,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       reserve: this.reserveStatus?.ok ?? false,
       independence: this.escapedRatRace,
     };
-    const asked = this.remote?.dreamPoints?.();
+    const asked = this.pointsAsked;
     if (asked) (value as Record<string, boolean>)['dreamPoints'] = asked.points >= asked.goal;
     // the other debts of a character: a goal of its own each, met when that debt is repaid
     const profession = this.selectedProfession;
@@ -1172,7 +1192,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   get boardSetup(): BoardSetup {
-    return { shape: this.boardShape, size: this.boardSize, seed: this.boardSeed };
+    return {
+      shape: this.boardShape,
+      size: this.boardSize,
+      seed: this.boardSeed,
+      // the life dream alone: no dream tiles on the map
+      ...(this.customDraft.dreamPointsGoal === 0 ? { dreams: false } : {}),
+    };
   }
 
   tileCount(size: BoardSize): number {
@@ -1215,6 +1241,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     heldNext: boolean;
     fresh?: boolean;
   }[] {
+    // before the game starts the insurances are those chosen for the start (the whole catalogue is on offer)
+    if (!this.appState.cashflowGame.life && this.characterChosen) return this.setupInsuranceRows;
     const rows = this.cashflowGameService.insurances.map((offer) => ({
       kind: offer.kind,
       premium: this.cashflowGameService.insurancePremium(offer),
@@ -1228,6 +1256,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   toggleInsurance(change: { kind: string; on: boolean }): void {
+    if (!this.appState.cashflowGame.life && this.characterChosen) {
+      this.toggleSetupInsurance(change);
+      return;
+    }
     this.cashflowGameService.setInsurance(change.kind, change.on, {
       onSuccess: () => undefined,
       onError: (message) =>
@@ -1452,7 +1484,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }[] {
     const profession = this.selectedProfession;
     if (!this.characterChosen || !profession) return [];
-    const rows = profession.expenses
+    const own = profession.expenses
       .filter((line) => line.insurance && line.amountMinor !== 0)
       .map((line) => {
         const held = !this.startInsurances || this.startInsurances.includes(line.insurance!);
@@ -1463,6 +1495,22 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
           heldNext: held,
         };
       });
+    // the others of the catalogue are on offer too, as at a table: not held unless the player hops in
+    const ownKinds = new Set<string>(own.map((row) => row.kind));
+    const offered = INSURANCE_CATALOG.filter(
+      (info) => info.baseMinor !== undefined && !ownKinds.has(info.kind),
+    ).map((info) => {
+      const held = !!this.startInsurances?.includes(info.kind);
+      return {
+        kind: info.kind,
+        premium: this.toDisplayAmount(
+          premiumMinor(info.baseMinor!, profession.priceFactor, profession.insuranceFactor),
+        ),
+        held,
+        heldNext: held,
+      };
+    });
+    const rows = [...own, ...offered];
     const key = JSON.stringify(rows);
     if (this.setupInsuranceCache?.key !== key) this.setupInsuranceCache = { key, rows };
     return this.setupInsuranceCache.rows;
@@ -1475,8 +1523,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** Hop in or out of an insurance before the game starts: the premium and the cover follow from the first Payday. */
   toggleSetupInsurance(change: { kind: string; on: boolean }): void {
-    const all = this.setupInsuranceRows.map((row) => row.kind);
-    const held = new Set(this.startInsurances ?? all);
+    const rows = this.setupInsuranceRows;
+    const all = rows.map((row) => row.kind);
+    // when nothing was chosen yet the character's own insurances are held, the others of the catalogue are not
+    const ownKinds = (this.selectedProfession?.expenses ?? [])
+      .filter((line) => line.insurance && line.amountMinor !== 0)
+      .map((line) => line.insurance!);
+    const held = new Set(this.startInsurances ?? ownKinds);
     if (change.on) held.add(change.kind);
     else held.delete(change.kind);
     this.startInsurances = all.filter((kind) => held.has(kind));
@@ -1500,6 +1553,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   openInsurances(): void {
+    // a game that began before an insurance joined the catalogue is given its offer now
+    this.cashflowGameService.ensureInsuranceOffers();
     this.openTrait = null;
     this.insuranceOpen = true;
   }
@@ -1645,8 +1700,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('car') });
     const held = this.insurancesHeld;
     if (held > 0) badges.push({ key: 'insurance', icon: '🛡️', text: `× ${held}` });
-    // a table that asks for dream points: how many of them the player has
-    const asked = this.remote?.dreamPoints?.();
+    // a game that asks for dream points: how many of them the player has
+    const asked = this.pointsAsked;
     if (asked) {
       badges.push({ key: 'dreamPoints', icon: '🌟', text: `${asked.points} / ${asked.goal}` });
     }
@@ -2121,7 +2176,19 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     },
     {
       key: 'dreamOffers',
-      options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
+      // 0: one or two by chance, as at a table
+      options: [0, 1, 2, 3].map((n) => ({
+        value: n,
+        label: n === 0 ? 'CashflowGame.custom.dreamOffersChance' : String(n),
+      })),
+    },
+    {
+      // 0: the life dream alone, no dream tiles
+      key: 'dreamPointsGoal',
+      options: [0, 5, 8, 10, 15, 20, 30].map((n) => ({
+        value: n,
+        label: n === 0 ? 'CashflowGame.custom.dreamPointsAlone' : String(n),
+      })),
     },
     {
       key: 'maxOpenDreams',
@@ -2152,6 +2219,19 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     {
       key: 'bankInterestPercent',
       options: [5, 8, 10, 12, 15].map((n) => ({ value: n, label: `${n} %` })),
+    },
+    {
+      // the steps the Bank loan moves in: the character's own, any amount, or 50 to 1000 units (as at a table)
+      key: 'bankLoanStepMinor',
+      options: [0, 1, 5000, 10000, 20000, 50000, 100000].map((minor) => ({
+        value: minor,
+        label:
+          minor === 0
+            ? 'CashflowGame.custom.bankStepOwn'
+            : minor === 1
+              ? 'CashflowGame.custom.bankStepFree'
+              : String(minor / 100),
+      })),
     },
   ];
 
