@@ -1838,28 +1838,16 @@
   color: var(--color-text-secondary);
 }
 
+/* The buttons share the row by what is there: one button uses the whole width, two or three share it (a hidden button leaves no empty cell) */
 .cf-solo-decision-actions {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-}
-
-/* Pass (or Done) is gone: the buttons that are left share the whole row */
-.cf-solo-decision-actions[data-buttons='2'] {
-  grid-template-columns: 1fr 1fr;
-}
-
-.cf-solo-decision-actions[data-buttons='1'] {
-  grid-template-columns: 1fr;
-}
-
-.cf-solo-decision-actions[data-buttons='3'] {
-  grid-template-columns: 1fr 1fr 1fr;
 }
 
 /* The hint under the buttons (a payment that has to be made ...) uses the whole row, not the cell of a hidden button */
 .cf-solo-decision-actions > .cf-solo-hint {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   margin: 0;
 }
 
@@ -1942,10 +1930,14 @@
 }
 
 .cf-solo-decision-actions > .btn {
-  width: 100%;
-  flex: none;
+  flex: 1 1 6.5rem;
+  width: auto;
   padding: 10px 6px;
   font-size: 0.9rem;
+}
+
+.cf-solo-decision-actions > .btn.btn--primary {
+  flex-grow: 1.5;
 }
 
 .cf-dice-choice {
@@ -2349,20 +2341,7 @@
 /* The smallest phones (320 px): the decision buttons stay on one line each. */
 @media (max-width: 340px) {
   .cf-solo-decision-actions {
-    grid-template-columns: 1.9fr 1fr 1fr;
     gap: 6px;
-  }
-
-  .cf-solo-decision-actions[data-buttons='2'] {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .cf-solo-decision-actions[data-buttons='1'] {
-    grid-template-columns: 1fr;
-  }
-
-  .cf-solo-decision-actions[data-buttons='3'] {
-    grid-template-columns: 1fr 1fr 1fr;
   }
 
   .cf-solo-decision-actions > .btn {
