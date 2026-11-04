@@ -135,6 +135,24 @@ function accountName(): string {
                 </button>
               </div>
             </div>
+            <div class="at-row at-row--stack" *ngIf="dream">
+              <div class="at-label">
+                <strong>{{ a.currency }}</strong>
+                <small>{{ a.currencyHint }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.currency">
+                <button
+                  *ngFor="let option of currencyOptions()"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.currency === option.id"
+                  [attr.aria-checked]="form.currency === option.id"
+                  (click)="form.currency = option.id"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
             <div class="at-row" *ngIf="!existing">
               <div class="at-label">
                 <strong>{{ a.initials }}</strong>
@@ -936,6 +954,8 @@ export class AddTableComponent implements OnInit {
     showProgress: true,
     ranked: true,
     language: 'en',
+    // 'game' is Dream Taler (Traumtaler in German); else the sign of a real currency
+    currency: 'game',
     offerRolls: 3,
     pace: 'fast' as 'fast' | 'normal' | 'slow',
     difficulty: 'medium' as 'easy' | 'medium' | 'hard',
@@ -962,6 +982,15 @@ export class AddTableComponent implements OnInit {
   /** The steps the Bank loan moves in, in minor units: any amount (1), 50, 100, 200, 500, 1000. */
   readonly bankSteps = [1, 5000, 10000, 20000, 50000, 100000];
   readonly bankInterests = [5, 8, 10, 12, 15];
+  readonly realCurrencies = ['€', '$', '£', '¥', 'CHF'];
+
+  /** The money to choose: the game's own (DT, TT in German) and the real signs, as in a solo game. */
+  currencyOptions(): { id: string; label: string }[] {
+    return [
+      { id: 'game', label: this.form.language === 'de' ? 'TT' : 'DT' },
+      ...this.realCurrencies.map((sign) => ({ id: sign, label: sign })),
+    ];
+  }
   readonly pointGoals = [5, 8, 10, 15, 20, 30];
   /** How many dreams a landing on a Smile tile offers: 0 is one or two, by chance. */
   readonly dreamOfferChoices = [0, 1, 2];
@@ -1148,6 +1177,7 @@ export class AddTableComponent implements OnInit {
         size: f.size,
         mode: f.ranked ? 'strict' : f.mode,
         dreamPoints: f.pointsOn ? f.points : 0,
+        currency: f.currency,
         customRules: {
           bankLoanStepMinor: f.bankStep,
           bankInterestPercent: f.bankInterest,
@@ -1199,6 +1229,8 @@ export class AddTableComponent implements OnInit {
     if (dreamSettings.shape) f.shape = dreamSettings.shape;
     if (dreamSettings.size) f.size = dreamSettings.size;
     if (dreamSettings.mode) f.mode = dreamSettings.mode;
+    const savedCurrency = (current as unknown as { currency?: string }).currency;
+    if (savedCurrency) f.currency = savedCurrency;
     const points = (current as unknown as { dreamPoints?: number }).dreamPoints;
     if (points !== undefined) {
       f.pointsOn = points > 0;

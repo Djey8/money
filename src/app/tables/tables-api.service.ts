@@ -155,6 +155,8 @@ export interface CreateTableInput {
     mode?: 'guided' | 'strict';
     /** A Dreamfund table: the dream points to collect besides the life dream (0: the life dream alone, no Smile tiles). */
     dreamPoints?: number;
+    /** A Dreamfund table: the money its amounts show ('game' is Dream Taler, else the sign of a real currency). */
+    currency?: string;
     /** A Dreamfund table: the Bank loan's step and interest, and how many dreams a landing offers (0: one or two). */
     customRules?: {
       bankLoanStepMinor?: number;

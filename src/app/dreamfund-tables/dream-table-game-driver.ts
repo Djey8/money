@@ -152,6 +152,12 @@ export class DreamTableGameDriver extends TableGameDriver {
     return this.move({ type: 'end_turn' });
   }
 
+  /** The money of the table: the game's own, or the sign of a real currency. */
+  currency(): string {
+    const view = this.session.view() as unknown as { settings: { currency?: string } } | null;
+    return view?.settings.currency ?? 'game';
+  }
+
   /** The dream points the table asks for besides the life dream, and what this player has. */
   dreamPoints(): { goal: number; points: number } | null {
     const view = this.session.view() as unknown as {

@@ -36,6 +36,8 @@ export interface DreamTableSettings {
    * alone - nothing else to collect, and the map has no Smile tiles.
    */
   dreamPoints: number;
+  /** The money the table's amounts show (JFK, 2026-11): 'game' is Dream Taler (Traumtaler in German), else a real currency's sign. Only the sign changes. */
+  currency: string;
   /** The map everybody plays on. */
   shape: BoardSetup['shape'];
   size: BoardSetup['size'];
@@ -66,30 +68,35 @@ export interface DreamTableSettings {
 /** What the table wants from a player next: a landing's decisions, in order. */
 export type DreamPending =
   /** An Emergency card: the choice picked and the dice rolled on it so far (the table rolls them; they stay as they fell). */
-  | {
-      kind: 'emergency';
-      cardId: string;
-      choiceId?: string;
-      rolls?: Record<string, number>;
-      rerolled?: boolean;
-    }
-  | { kind: 'life'; cardId: string }
-  | { kind: 'career_branch'; options: string[]; roll?: number }
-  | { kind: 'dream'; offers: string[] }
-  | { kind: 'opportunity_pile' }
-  | {
-      kind: 'opportunity';
-      pile: OpportunityPile;
-      offers: string[];
-      /** An investment planned in Grow: bought from there, or let go (JFK, 2026-11-02: the game is played as solo). */
-      planned?: { cardId: string; title: string };
-      /** A card with a die is taken: the player throws it, and only then it is paid and in the books (as alone). */
-      rolling?: { cardId: string; choice: OpportunityChoice };
-    };
+  (
+    | {
+        kind: 'emergency';
+        cardId: string;
+        choiceId?: string;
+        rolls?: Record<string, number>;
+        rerolled?: boolean;
+      }
+    | { kind: 'life'; cardId: string }
+    | { kind: 'career_branch'; options: string[]; roll?: number }
+    | { kind: 'dream'; offers: string[] }
+    | { kind: 'opportunity_pile' }
+    | {
+        kind: 'opportunity';
+        pile: OpportunityPile;
+        offers: string[];
+        /** An investment planned in Grow: bought from there, or let go (JFK, 2026-11-02: the game is played as solo). */
+        planned?: { cardId: string; title: string };
+        /** A card with a die is taken: the player throws it, and only then it is paid and in the books (as alone). */
+        rolling?: { cardId: string; choice: OpportunityChoice };
+      }
+  ) & {
+    /** The dice the card's effects used so far, as they fell: the card shows them until it is done. */
+    dice?: number[];
+  };
 
 /** What a Harvest card left open to a player: they may still sell into it until the turn of the player who drew it is over. */
 /** A card that was dealt with in the turn, for the screen to show what happened. */
-export type DreamResolved =
+export type DreamResolved = (
   | {
       kind: 'emergency';
       cardId: string;
@@ -113,7 +120,11 @@ export type DreamResolved =
       passed?: boolean;
       /** The title of the Grow project the card became. */
       project?: string;
-    };
+    }
+) & {
+  /** The dice the card's effects used, as they fell. */
+  dice?: number[];
+};
 
 export interface DreamHarvestOpen {
   /** The card that was drawn for the table, what it did (told in words), and the markets that are open for selling. */
@@ -369,6 +380,7 @@ export interface DreamSettingsInput {
   pace?: TablePace;
   showProgress?: boolean;
   dreamPoints?: number;
+  currency?: string;
   ranked?: boolean;
   debug?: boolean;
   leaveFreeRounds?: number;

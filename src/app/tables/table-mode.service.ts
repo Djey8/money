@@ -137,6 +137,18 @@ export class TableModeService {
     });
   });
 
+  /** The amounts of the table show its money (a setting of the table) while it is open: a reload brings the account's own back. */
+  private readonly tableCurrency = effect(() => {
+    const view = this.view() as unknown as { settings?: { currency?: string } } | null;
+    const room = this.session()?.room?.();
+    if (!this.active() || !view) return;
+    const chosen = view.settings?.currency ?? 'game';
+    const code = chosen === 'game' ? (room?.language === 'de' ? 'TT' : 'DT') : chosen;
+    untracked(() => {
+      AppStateService.instance.currency = code;
+    });
+  });
+
   private lastOffersKey = '';
 
   /** When a buyer's offer comes in for the player, the screen goes to Grow, where the position is sold (once the story is told). */

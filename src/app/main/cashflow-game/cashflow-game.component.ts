@@ -3080,7 +3080,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   private currencyFor(lang: string, custom: boolean): string | null {
-    if (this.currencyChoice !== 'game') return this.currencyChoice;
+    // at a table the money is the table's own setting, not the player's choice for a solo game
+    const choice = this.remote?.currency?.() ?? this.currencyChoice;
+    if (choice !== 'game') return choice;
     return custom ? (lang === 'de' ? 'TT' : 'DT') : null;
   }
 

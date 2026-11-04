@@ -82,6 +82,8 @@ export interface RemoteGame {
   dreamMove?(decision: { decision: string } & Record<string, unknown>): Promise<RemoteOutcome>;
   /** A Dreamfund table that asks for dream points besides the life dream: the goal and what the player has. Null: none asked for. */
   dreamPoints?(): { goal: number; points: number } | null;
+  /** A Dreamfund table: the money of the table ('game' is Dream Taler, else a real currency's sign). */
+  currency?(): string;
   /** Another player's books are on screen: read only, nothing of the game can be done from here. */
   viewOnly(): boolean;
   /** Whose turn it is when it is not the player's own (a name and a colour), else null. */

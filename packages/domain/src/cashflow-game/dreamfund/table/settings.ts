@@ -16,6 +16,8 @@ import {
 
 const SHAPES = ['ring', 'infinity', 'rectangle', 'square', 'mountain'] as const;
 const SIZES = ['small', 'medium', 'large'] as const;
+/** The money of a table: the game's own, or the sign of a real one. */
+export const TABLE_CURRENCIES = ['game', '€', '$', '£', '¥', 'CHF'];
 
 function invalid(message: string): never {
   throw new TableCommandError('INVALID_SETTINGS', message);
@@ -89,6 +91,10 @@ export function normalizeDreamSettings(
   }
   const dreamPoints =
     input.dreamPoints === undefined ? 10 : whole(input.dreamPoints, 'dreamPoints', 0, 60);
+  const currency = input.currency ?? 'game';
+  if (!TABLE_CURRENCIES.includes(currency)) {
+    invalid(`currency must be one of ${TABLE_CURRENCIES.join(', ')}.`);
+  }
   const pace = input.pace ?? 'fast';
   if (pace !== 'fast' && pace !== 'normal' && pace !== 'slow') {
     invalid("pace must be 'fast', 'normal' or 'slow'.");
@@ -99,6 +105,7 @@ export function normalizeDreamSettings(
     maxSeats,
     difficulty,
     dreamPoints,
+    currency,
     shape,
     size,
     mode,
