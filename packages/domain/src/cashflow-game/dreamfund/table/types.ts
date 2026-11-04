@@ -38,6 +38,8 @@ export interface DreamTableSettings {
   dreamPoints: number;
   /** The money the table's amounts show (JFK, 2026-11): 'game' is Dream Taler (Traumtaler in German), else a real currency's sign. Only the sign changes. */
   currency: string;
+  /** The layout of the tiles of the map the host dealt (0: the table's own seed); the same seed is the same map. */
+  layoutSeed: number;
   /** The map everybody plays on. */
   shape: BoardSetup['shape'];
   size: BoardSetup['size'];
@@ -381,6 +383,7 @@ export interface DreamSettingsInput {
   showProgress?: boolean;
   dreamPoints?: number;
   currency?: string;
+  layoutSeed?: number;
   ranked?: boolean;
   debug?: boolean;
   leaveFreeRounds?: number;

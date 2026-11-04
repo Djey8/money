@@ -157,6 +157,7 @@ export interface CreateTableInput {
     dreamPoints?: number;
     /** A Dreamfund table: the money its amounts show ('game' is Dream Taler, else the sign of a real currency). */
     currency?: string;
+    layoutSeed?: number;
     /** A Dreamfund table: the Bank loan's step and interest, and how many dreams a landing offers (0: one or two). */
     customRules?: {
       bankLoanStepMinor?: number;

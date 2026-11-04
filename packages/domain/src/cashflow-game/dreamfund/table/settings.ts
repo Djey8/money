@@ -53,6 +53,7 @@ export function normalizeDreamSettings(
   if (difficulty !== 'easy' && difficulty !== 'medium' && difficulty !== 'hard') {
     invalid("difficulty must be 'easy', 'medium' or 'hard'.");
   }
+  const layoutSeed = whole(input.layoutSeed ?? 0, 'layoutSeed', 0, 999_999_999);
   const shape = input.shape ?? 'ring';
   if (!SHAPES.includes(shape)) invalid(`shape must be one of ${SHAPES.join(', ')}.`);
   const size = input.size ?? 'medium';
@@ -106,6 +107,7 @@ export function normalizeDreamSettings(
     difficulty,
     dreamPoints,
     currency,
+    layoutSeed,
     shape,
     size,
     mode,

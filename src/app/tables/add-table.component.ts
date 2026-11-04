@@ -288,7 +288,7 @@ function accountName(): string {
                     <app-board-thumb
                       [shape]="shape"
                       [size]="form.size"
-                      [seed]="7"
+                      [seed]="form.layoutSeed"
                       [dreams]="form.pointsOn"
                     ></app-board-thumb>
                     <span>{{ 'CashflowGame.board.shape.' + shape | translate }}</span>
@@ -306,6 +306,9 @@ function accountName(): string {
                     {{ 'CashflowGame.board.size.' + size | translate }}
                   </button>
                 </div>
+                <button type="button" class="at-another" (click)="anotherLayout()">
+                  ↻ {{ 'CashflowGame.board.another' | translate }}
+                </button>
               </div>
               <!-- a ranked game is always played under the strict rules; the choice is for a game with friends -->
               <div class="at-row at-row--stack" *ngIf="!form.ranked">
@@ -772,6 +775,16 @@ function accountName(): string {
         text-transform: uppercase;
         text-align: center;
       }
+      .at-another {
+        align-self: flex-start;
+        padding: 6px 12px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: 10px;
+        background: var(--color-surface, #fff);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
       .at-seg {
         display: flex;
         border: 1px solid var(--color-border, #ccc);
@@ -956,6 +969,8 @@ export class AddTableComponent implements OnInit {
     language: 'en',
     // 'game' is Dream Taler (Traumtaler in German); else the sign of a real currency
     currency: 'game',
+    // the layout of the tiles: the host sees the maps dealt from it and can deal again
+    layoutSeed: Math.floor(Math.random() * 1_000_000_000),
     offerRolls: 3,
     pace: 'fast' as 'fast' | 'normal' | 'slow',
     difficulty: 'medium' as 'easy' | 'medium' | 'hard',
@@ -985,6 +1000,11 @@ export class AddTableComponent implements OnInit {
   readonly realCurrencies = ['€', '$', '£', '¥', 'CHF'];
 
   /** The money to choose: the game's own (DT, TT in German) and the real signs, as in a solo game. */
+  /** The same shape and size with the tiles dealt out again. */
+  anotherLayout(): void {
+    this.form.layoutSeed = Math.floor(Math.random() * 1_000_000_000);
+  }
+
   currencyOptions(): { id: string; label: string }[] {
     return [
       { id: 'game', label: this.form.language === 'de' ? 'TT' : 'DT' },
@@ -1178,6 +1198,7 @@ export class AddTableComponent implements OnInit {
         mode: f.ranked ? 'strict' : f.mode,
         dreamPoints: f.pointsOn ? f.points : 0,
         currency: f.currency,
+        layoutSeed: f.layoutSeed,
         customRules: {
           bankLoanStepMinor: f.bankStep,
           bankInterestPercent: f.bankInterest,
@@ -1231,6 +1252,8 @@ export class AddTableComponent implements OnInit {
     if (dreamSettings.mode) f.mode = dreamSettings.mode;
     const savedCurrency = (current as unknown as { currency?: string }).currency;
     if (savedCurrency) f.currency = savedCurrency;
+    const savedLayout = (current as unknown as { layoutSeed?: number }).layoutSeed;
+    if (savedLayout) f.layoutSeed = savedLayout;
     const points = (current as unknown as { dreamPoints?: number }).dreamPoints;
     if (points !== undefined) {
       f.pointsOn = points > 0;

@@ -1,5 +1,6 @@
 import { quoteEmergency } from '../../emergency-deck';
 import { DreamPlayer } from '../player';
+import { normalizeDreamSettings } from './settings';
 import { TableCommandError } from '../../table/types';
 import {
   applyDreamCommand,
@@ -614,5 +615,23 @@ describe('the Dream and Career tiles at a Dreamfund table', () => {
     expect(() => run(asked, who, { type: 'choose_career_branch', index: 4 })).toThrow(
       /no such path/i,
     );
+  });
+});
+
+describe('the layout of the map the host dealt', () => {
+  it('is checked as a whole number and defaults to the table’s own seed', () => {
+    expect(normalizeDreamSettings({ name: 'T' } as never, 10).layoutSeed).toBe(0);
+    expect(normalizeDreamSettings({ name: 'T', layoutSeed: 42 } as never, 10).layoutSeed).toBe(42);
+    expect(() => normalizeDreamSettings({ name: 'T', layoutSeed: -1 } as never, 10)).toThrow();
+    expect(() => normalizeDreamSettings({ name: 'T', layoutSeed: 1.5 } as never, 10)).toThrow();
+  });
+
+  it('everybody plays the same map, dealt from the host’s layout seed rather than the table’s secret one', () => {
+    const seeds = (t: DreamTable) => t.players.map((p) => p.life!.seed);
+    expect(seeds(started({ layoutSeed: 123456 }, 7))).toEqual([123456, 123456, 123456]);
+    expect(seeds(started({ layoutSeed: 123456 }, 99))).toEqual([123456, 123456, 123456]);
+    // without a chosen layout the table's own seed deals the map, as before
+    expect(new Set(seeds(started({}, 7))).size).toBe(1);
+    expect(seeds(started({}, 7))[0]).toBe(7);
   });
 });

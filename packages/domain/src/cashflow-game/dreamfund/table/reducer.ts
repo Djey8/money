@@ -479,7 +479,7 @@ function reveal(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
     const professionId = settle(seat);
     const life = new DreamPlayer({
       rng: rng.rng,
-      seed: table.seed,
+      seed: table.settings.layoutSeed || table.seed,
       professionId,
       shape: table.settings.shape,
       size: table.settings.size,
@@ -598,7 +598,7 @@ function changeCharacter(
   }
   const life = new DreamPlayer({
     rng: rng.rng,
-    seed: table.seed,
+    seed: table.settings.layoutSeed || table.seed,
     professionId: chosen,
     shape: table.settings.shape,
     size: table.settings.size,
