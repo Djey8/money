@@ -42,8 +42,8 @@ const BANDS: Record<string, [number, number]> = {
 };
 
 describe('the portfolio of the Emergency stack', () => {
-  it('has 100 cards from small to huge', () => {
-    expect(EMERGENCY_CARDS).toHaveLength(100);
+  it('has 114 cards from small to huge', () => {
+    expect(EMERGENCY_CARDS).toHaveLength(114);
     const count = (tier: string) => EMERGENCY_CARDS.filter((card) => card.tier === tier).length;
     expect(count('spark')).toBeGreaterThanOrEqual(18);
     expect(count('flame')).toBeGreaterThanOrEqual(26);
@@ -95,8 +95,10 @@ describe('the portfolio of the Emergency stack', () => {
     const on = (kind: string) => EMERGENCY_CARDS.filter((card) => card.insurance === kind).length;
     expect(on('liability')).toBeGreaterThanOrEqual(6);
     expect(on('household')).toBeGreaterThanOrEqual(5);
-    expect(on('legal')).toBeGreaterThanOrEqual(6);
-    expect(on('dental')).toBeGreaterThanOrEqual(3);
+    expect(on('legal')).toBeGreaterThanOrEqual(9);
+    expect(on('dental')).toBeGreaterThanOrEqual(9);
+    expect(on('travel')).toBeGreaterThanOrEqual(8);
+    expect(on('disability')).toBeGreaterThanOrEqual(4);
     expect(on('car_partial')).toBeGreaterThanOrEqual(4);
     expect(on('car_full')).toBeGreaterThanOrEqual(3);
     expect(EMERGENCY_CARDS.filter((card) => card.requires === 'car').length).toBeGreaterThanOrEqual(

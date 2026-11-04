@@ -10,6 +10,7 @@ import { BIG_DETAILS } from './cashflow-emergency-details-big';
 import { MORE_CAR_CARDS } from './cashflow-emergency-more-car';
 import { MORE_HEALTH_CARDS } from './cashflow-emergency-more-health';
 import { MORE_LIFE_CARDS } from './cashflow-emergency-more-life';
+import { MORE_INSURED_CARDS } from './cashflow-emergency-more-insured';
 
 const BASE_EMERGENCY_CARDS: EmergencyCard[] = [
   {
@@ -3217,4 +3218,6 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
   ...MORE_CAR_CARDS,
   ...MORE_HEALTH_CARDS,
   ...MORE_LIFE_CARDS,
+  // the cards of the travel and disability insurances, and more for the legal and dental ones (JFK, 2026-11)
+  ...MORE_INSURED_CARDS,
 ];

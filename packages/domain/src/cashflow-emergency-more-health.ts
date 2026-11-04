@@ -140,6 +140,12 @@ export const MORE_HEALTH_CARDS = [
   }),
   emergencyCard({
     id: 'E62',
+    insurance: 'dental',
+    deductible: 50,
+    insuranceNote: [
+      'A dental top-up pays the sedation and most of the extras; you pay about 50.',
+      'Eine Zahnzusatzversicherung zahlt die Sedierung und das meiste der Extras; du zahlst etwa 50.',
+    ],
     tier: 'flame',
     category: 'health',
     type: 'choice',
@@ -632,6 +638,12 @@ export const MORE_HEALTH_CARDS = [
   }),
   emergencyCard({
     id: 'E88',
+    insurance: 'travel',
+    deductible: 50,
+    insuranceNote: [
+      'Travel health insurance pays the hospital abroad and the flight home with a doctor; you pay about 50. The EU health card covers only state care at local rates.',
+      'Die Auslandsreisekrankenversicherung zahlt Klinik im Ausland und Rückflug mit Arzt; du zahlst etwa 50. Die EU-Gesundheitskarte deckt nur staatliche Versorgung zu örtlichen Sätzen.',
+    ],
     tier: 'wildfire',
     category: 'health',
     type: 'dice',
@@ -760,6 +772,11 @@ export const MORE_HEALTH_CARDS = [
   }),
   emergencyCard({
     id: 'E97',
+    insurance: 'disability',
+    insuranceNote: [
+      'Disability insurance pays a monthly pension while you cannot work; here you pay only the deductible of 500. Taken out young and healthy it is cheap.',
+      'Die Berufsunfähigkeitsversicherung zahlt eine monatliche Rente, solange du nicht arbeiten kannst; hier zahlst du nur die Selbstbeteiligung von 500. Jung und gesund abgeschlossen ist sie günstig.',
+    ],
     tier: 'inferno',
     category: 'income',
     type: 'multi',

@@ -154,7 +154,7 @@ export const INSURANCE_CATALOG: readonly InsuranceInfo[] = [
   {
     kind: 'legal',
     priority: 3,
-    baseMinor: 2500,
+    baseMinor: 1800,
     lineKey: 'legalInsurance',
     lineTitle: 'Rechtsschutzversicherung',
     covers: {
@@ -189,7 +189,7 @@ export const INSURANCE_CATALOG: readonly InsuranceInfo[] = [
   {
     kind: 'dental',
     priority: 5,
-    baseMinor: 2000,
+    baseMinor: 900,
     lineKey: 'dentalInsurance',
     lineTitle: 'Zahnzusatzversicherung',
     covers: {
@@ -197,7 +197,36 @@ export const INSURANCE_CATALOG: readonly InsuranceInfo[] = [
       de: 'Was die Krankenkasse beim Zahnarzt nicht zahlt: Kronen, Implantate, professionelle Zahnreinigung.',
     },
   },
+  {
+    kind: 'disability',
+    // after the household insurance: the cover that decides whether an illness or an injury that ends the job ends the plan too
+    priority: 2.5,
+    baseMinor: 4000,
+    lineKey: 'disabilityInsurance',
+    lineTitle: 'Berufsunfähigkeitsversicherung',
+    covers: {
+      en: 'Your income when an illness or an injury keeps you from doing your job for months or for good: a back that gives out, a burnout, a hand that cannot do the work any more. The longest and the most expensive cards of the stack.',
+      de: 'Dein Einkommen, wenn eine Krankheit oder Verletzung dich monatelang oder für immer an deinem Beruf hindert: ein Rücken, der nicht mehr will, ein Burnout, eine Hand, die die Arbeit nicht mehr schafft. Die längsten und teuersten Karten des Stapels.',
+    },
+  },
+  {
+    kind: 'travel',
+    priority: 6,
+    baseMinor: 800,
+    lineKey: 'travelInsurance',
+    lineTitle: 'Reiseversicherung',
+    covers: {
+      en: 'Trips and time abroad: a doctor or a hospital, the flight home, a trip you have to cancel, lost luggage, a rescue in the mountains, a breakdown far from home.',
+      de: 'Reisen und Zeit im Ausland: Arzt oder Krankenhaus, der Rückflug, eine Reise, die du absagen musst, verlorenes Gepäck, eine Bergung im Gebirge, eine Panne weit weg von zu Hause.',
+    },
+  },
 ];
+
+/**
+ * How many Emergency cards a player draws in a month of the game (JFK, 2026-11): a medium board has 3 Emergency tiles in 36 spaces and a
+ * Payday every 9, a token moves about 3.5 spaces a roll. It is what `insurance-value.ts` and its spec weigh a premium against.
+ */
+export const EMERGENCIES_PER_PAYDAY = 0.22;
 
 export const insuranceInfo = (kind: string): InsuranceInfo | undefined =>
   INSURANCE_CATALOG.find((entry) => entry.kind === kind);

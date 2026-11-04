@@ -75,9 +75,16 @@ describe('the insurances of a Dreamfund character', () => {
     const tobias = player('tobias-designer');
     const kinds = insuranceOffers(tobias.state).map((offer) => offer.kind);
     expect(kinds).toEqual(
-      expect.arrayContaining(['liability', 'household', 'legal', 'dental', 'car_partial']),
+      expect.arrayContaining([
+        'liability',
+        'household',
+        'legal',
+        'dental',
+        'car_partial',
+        'disability',
+        'travel',
+      ]),
     );
-    expect(kinds).not.toContain('disability');
     const legal = insuranceOffers(tobias.state).find((offer) => offer.kind === 'legal')!;
     expect(legal).toMatchObject({ held: false, heldNext: false });
   });

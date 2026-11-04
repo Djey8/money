@@ -50,7 +50,7 @@ describe('CashflowGameService: emergencies and insurance', () => {
   };
 
   it('has the stack of the custom edition, and the insurances the profession pays', () => {
-    expect(service.emergencyCards).toHaveLength(100);
+    expect(service.emergencyCards).toHaveLength(114);
     const state = AppStateService.instance;
     expect(state.cashflowGame.insurance?.active).toEqual(['liability', 'household']);
     // the premium lines are real subscriptions, paid from the Fire account

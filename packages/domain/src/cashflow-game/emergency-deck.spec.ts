@@ -29,9 +29,9 @@ const insured: EmergencyContext = {
 const bare: EmergencyContext = { insurances: [], traits: [], openEmergencies: 0 };
 
 describe('the Emergency stack (temp_cards v0.2)', () => {
-  it('has the 100 cards, each once, in English and German', () => {
-    expect(EMERGENCY_CARDS).toHaveLength(100);
-    expect(new Set(EMERGENCY_CARDS.map((c) => c.id)).size).toBe(100);
+  it('has the 114 cards, each once, in English and German', () => {
+    expect(EMERGENCY_CARDS).toHaveLength(114);
+    expect(new Set(EMERGENCY_CARDS.map((c) => c.id)).size).toBe(114);
     for (const c of EMERGENCY_CARDS) {
       expect(c.title.en && c.title.de && c.story.en && c.story.de).toBeTruthy();
       expect(c.actions.length).toBeGreaterThan(0);
@@ -190,7 +190,8 @@ describe('drawing an emergency', () => {
       let deck = emptyEmergencyDeck();
       const ids = new Set<string>();
       const rng = seededRng(seed);
-      for (let i = 0; i < 50; i += 1) {
+      // more draws than the stack has cards: every card that fits the life has come up once
+      for (let i = 0; i < 130; i += 1) {
         const draw = drawEmergencyCard(EMERGENCY_CARDS, deck, ['car', 'pet'], rng, life);
         ids.add(draw.card.id);
         deck = draw.deck;

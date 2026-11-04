@@ -1227,6 +1227,12 @@ export const MORE_LIFE_CARDS = [
   }),
   emergencyCard({
     id: 'E98',
+    insurance: 'travel',
+    deductible: 50,
+    insuranceNote: [
+      'Travel health insurance pays the hospital, the flight home with a doctor and the journey of a parent; you pay about 50.',
+      'Die Auslandsreisekrankenversicherung zahlt Klinik, Rückflug mit Arzt und die Reise eines Elternteils; du zahlst etwa 50.',
+    ],
     tier: 'inferno',
     category: 'health',
     type: 'multi',

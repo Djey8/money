@@ -785,6 +785,11 @@ export const SMALL_DETAILS: Record<string, EmergencyDetails> = {
         'Prüfe deinen Anspruch auf eine Entschädigung von 250-600 bei Flügen in der EU',
       ],
     ],
+    insuranceNote: [
+      'Travel insurance pays hotel, meals and a new ticket after a cancelled or delayed trip, up to its limit; you pay about 50.',
+      'Die Reiseversicherung zahlt Hotel, Essen und ein neues Ticket nach einer ausgefallenen oder verspäteten Reise, bis zu ihrem Limit; du zahlst etwa 50.',
+    ],
+    patch: { insurance: 'travel', deductibleMinor: 5000 },
     tip: [
       'tip',
       'For a cancelled flight in the EU you can claim between 250 and 600 euros on top of the care, unless the airline told you at least two weeks ahead or there were extraordinary causes.',
@@ -972,6 +977,11 @@ export const SMALL_DETAILS: Record<string, EmergencyDetails> = {
         'low',
       ],
     ],
+    insuranceNote: [
+      'Household insurance pays storm damage to the things on your balcony from wind force 8; you pay about 100.',
+      'Die Hausrat zahlt Sturmschäden an den Sachen auf deinem Balkon ab Windstärke 8; du zahlst etwa 100.',
+    ],
+    patch: { insurance: 'household', deductibleMinor: 10000 },
     tip: [
       'tip',
       'The German weather service issues warnings by region and by level: set up the app and bring the parasol in when it shows orange.',
@@ -1094,7 +1104,11 @@ export const SMALL_DETAILS: Record<string, EmergencyDetails> = {
         'Hol eine zweite Meinung bei einem anderen Kieferorthopäden ein',
       ],
     ],
-    patch: { tier: 'blaze' },
+    patch: { tier: 'blaze', insurance: 'dental', deductibleMinor: 30000 },
+    insuranceNote: [
+      'A dental top-up with an orthodontic cover pays much of the braces of a child; you pay about 300.',
+      'Eine Zahnzusatzversicherung mit Kieferorthopädie-Baustein zahlt viel der Zahnspange eines Kindes; du zahlst etwa 300.',
+    ],
     tip: [
       'tip',
       'Take out a dental top-up policy for children early: for braces most policies need to be in place before the treatment is planned, and the waiting time is a year.',
@@ -1171,6 +1185,11 @@ export const SMALL_DETAILS: Record<string, EmergencyDetails> = {
         'low',
       ],
     ],
+    insuranceNote: [
+      'A dental top-up pays most of the crown and the treatment; you pay about 150.',
+      'Eine Zahnzusatzversicherung zahlt das meiste der Krone und der Behandlung; du zahlst etwa 150.',
+    ],
+    patch: { insurance: 'dental', deductibleMinor: 15000 },
     tip: [
       'tip',
       'Pay the dentist from a shared account if you have one and agree early: couples who talk about money before it is needed argue less about it afterwards.',

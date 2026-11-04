@@ -684,6 +684,12 @@ export const MORE_CAR_CARDS = [
   }),
   emergencyCard({
     id: 'E92',
+    insurance: 'travel',
+    deductible: 100,
+    insuranceNote: [
+      'Travel insurance with a protection letter pays towing, a rental car and often the way home; you pay about 100.',
+      'Eine Reiseversicherung mit Schutzbrief zahlt Abschleppen, Mietwagen und oft den Heimweg; du zahlst etwa 100.',
+    ],
     tier: 'wildfire',
     category: 'travel',
     type: 'multi',

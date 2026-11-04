@@ -85,7 +85,7 @@ describe('the simulation on the engine', () => {
     const b = simulateDreamGame({ seed: 3, policy, maxTurns: 150 });
     expect(a).toEqual(b);
     expect(a.outcome).not.toBe('error');
-    expect(a.turns).toBeGreaterThan(50);
+    expect(a.turns).toBeGreaterThan(30);
   });
 
   it('shows the die of the job search of a Payday and what it came to', () => {

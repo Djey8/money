@@ -211,6 +211,11 @@ export const BIG_DETAILS: Record<string, EmergencyDetails> = {
         'Tritt einem Mieterverein bei, um dich zu den Abzügen beraten zu lassen',
       ],
     ],
+    insuranceNote: [
+      'Legal protection pays the lawyer who gets the deposit back; you pay about 100 of the deduction.',
+      'Die Rechtsschutz zahlt den Anwalt, der die Kaution zurückholt; du zahlst etwa 100 des Abzugs.',
+    ],
+    patch: { insurance: 'legal', deductibleMinor: 10000 },
     tip: [
       'tip',
       'A landlord has to settle the deposit within a reasonable time, usually three to six months. Photograph every room at move-in and at move-out, with the date: it is the best protection you can have.',
@@ -370,6 +375,11 @@ export const BIG_DETAILS: Record<string, EmergencyDetails> = {
         'Sperre das Handy aus der Ferne mit dem Ortungsdienst und ändere deine Passwörter',
       ],
     ],
+    insuranceNote: [
+      'Travel insurance with a luggage cover pays a phone stolen abroad, up to its limit; you pay about 100. The household insurance does not pay a theft abroad.',
+      'Eine Reiseversicherung mit Gepäckschutz zahlt ein im Ausland gestohlenes Handy bis zu ihrem Limit; du zahlst etwa 100. Die Hausrat zahlt keinen Diebstahl im Ausland.',
+    ],
+    patch: { insurance: 'travel', deductibleMinor: 10000 },
     tip: [
       'tip',
       'From abroad the number +49 116 116 blocks your bank cards and your online accounts: save it in your notes or on paper before you travel.',
