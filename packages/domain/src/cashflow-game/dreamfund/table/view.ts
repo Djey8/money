@@ -365,12 +365,6 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
     }
     return actions;
   }
-  if (table.phase === 'picking') {
-    add('pick_profession');
-    add('leave');
-    if (host) add('close');
-    return actions;
-  }
   if (table.phase !== 'playing' || me.status !== 'active') return actions;
   if (host) {
     add('close');

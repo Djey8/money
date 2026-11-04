@@ -214,53 +214,6 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
           {{ h.waitingFor }}
         </p>
       </section>
-
-      <!-- the profession pick -->
-      <section class="wr-group" *ngIf="table.phase === 'picking' && me">
-        <header class="wr-group-head">
-          <h3>{{ t.pickProfession }}</h3>
-        </header>
-        <div class="wr-professions">
-          <button
-            *ngFor="let profession of professions()"
-            class="tx-btn"
-            type="button"
-            [class.tx-btn--primary]="me.pick === profession.id"
-            [class.wr-looking]="previewId === profession.id"
-            [disabled]="session.busy()"
-            (click)="previewId = profession.id"
-          >
-            {{ profession.title }}
-          </button>
-          <button
-            class="tx-btn"
-            type="button"
-            [class.tx-btn--primary]="me.pick === 'random'"
-            [disabled]="session.busy()"
-            (click)="session.lobby('profession', { professionId: 'random' })"
-          >
-            🎲 {{ t.random }}
-          </button>
-        </div>
-        <!-- a character is read before it is taken: who they are, the dream, the income, the debts -->
-        <div class="wr-preview" *ngIf="previewId">
-          <app-character-preview
-            [professionId]="previewId"
-            [difficulty]="dream ? dreamSettings().difficulty : undefined"
-            [gameSetId]="table.settings.gameSetId"
-            [lang]="lang"
-          ></app-character-preview>
-          <button
-            type="button"
-            class="tx-btn tx-btn--primary tx-btn--wide"
-            [disabled]="session.busy() || me.pick === previewId"
-            (click)="takePreview()"
-          >
-            {{ me.pick === previewId ? d.characterTaken : d.takeCharacter }}
-          </button>
-        </div>
-        <p class="wr-hint">{{ t.waitingPicks }}</p>
-      </section>
     </div>
 
     <!-- the host changes the settings with the panel that opens a table -->

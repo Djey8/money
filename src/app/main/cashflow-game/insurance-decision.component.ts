@@ -38,6 +38,7 @@ export interface InsuranceRow {
   template: `
     <div
       class="id-overlay"
+      [class.id-overlay--solid]="mode === 'start'"
       role="dialog"
       [attr.aria-label]="t.title"
       [attr.dir]="rtl ? 'rtl' : 'ltr'"
@@ -137,6 +138,9 @@ export interface InsuranceRow {
         box-sizing: border-box;
         background: rgba(0, 0, 0, 0.55);
         color: var(--color-text);
+      }
+      .id-overlay--solid {
+        background: var(--color-background);
       }
       .id-sheet {
         width: 100%;

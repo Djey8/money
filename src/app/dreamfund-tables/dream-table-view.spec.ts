@@ -35,12 +35,6 @@ function startedTable() {
     ctx,
   ).table;
   table = briefAll(applyDreamCommand(table, 'host', { type: 'start' }, ctx).table, ctx);
-  table = applyDreamCommand(
-    table,
-    'host',
-    { type: 'pick_profession', professionId: 'dual-student-informatik' },
-    ctx,
-  ).table;
   return table;
 }
 

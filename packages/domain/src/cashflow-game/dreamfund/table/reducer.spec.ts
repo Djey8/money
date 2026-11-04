@@ -99,24 +99,37 @@ describe('the Dreamfund table: the lobby', () => {
     expect(changed.settings.customRules.difficulty).toBe('easy');
   });
 
-  it('lets everybody pick a character, then starts: lives, an order and a clock', () => {
+  it('deals everybody a character at the start: lives, an order and a clock - and each may change theirs while reading it', () => {
     let t = table({ professions: 'unique' });
     t = run(t, 'ann', { type: 'join', name: 'Ann' });
     t = run(t, 'ann', { type: 'set_ready', ready: true });
     t = run(t, 'host', { type: 'start' });
-    expect(t.phase).toBe('picking');
-    t = run(t, 'host', { type: 'pick_profession', professionId: 'jan-oberarzt' });
-    expect(() => run(t, 'ann', { type: 'pick_profession', professionId: 'jan-oberarzt' })).toThrow(
-      /already/,
-    );
-    t = run(t, 'ann', { type: 'pick_profession', professionId: 'random' });
+    // no picking in the lobby: the game is on, and everybody reads the character they were dealt
     expect(t.phase).toBe('playing');
+    expect(t.briefing).toBe(true);
     expect(t.players.every((p) => p.life && p.professionId)).toBe(true);
-    expect(t.players.find((p) => p.id === 'host')!.professionId).toBe('jan-oberarzt');
     expect(new Set(t.players.map((p) => p.professionId)).size).toBe(2);
     expect(dreamCharacterIds()).toHaveLength(10);
     expect(t.tableRound).toBe(1);
     expect(t.order).toHaveLength(2);
+    // a character the other holds cannot be taken at a table of unique characters; a free one can
+    const annHas = t.players.find((p) => p.id === 'ann')!.professionId!;
+    expect(() => run(t, 'host', { type: 'pick_profession', professionId: annHas })).toThrow(
+      /already/,
+    );
+    const free = dreamCharacterIds().find((id) => !t.players.some((p) => p.professionId === id))!;
+    t = run(t, 'host', { type: 'pick_profession', professionId: free });
+    expect(t.players.find((p) => p.id === 'host')!.professionId).toBe(free);
+  });
+
+  it('a table where the characters are drawn does not let them be changed', () => {
+    let t = table({ professions: 'random' });
+    t = run(t, 'ann', { type: 'join', name: 'Ann' });
+    t = run(t, 'ann', { type: 'set_ready', ready: true });
+    t = run(t, 'host', { type: 'start' });
+    expect(() => run(t, 'host', { type: 'pick_profession', professionId: 'jan-oberarzt' })).toThrow(
+      /drawn/,
+    );
   });
 });
 
@@ -335,9 +348,6 @@ describe('the Dreamfund table: play', () => {
     t = run(t, 'ann', { type: 'set_ready', ready: true });
     t = run(t, 'bob', { type: 'set_ready', ready: true });
     t = run(t, 'host', { type: 'start' });
-    for (const who of ['host', 'ann']) {
-      t = run(t, who, { type: 'pick_profession', professionId: 'dual-student-informatik' });
-    }
     t = run(t, 'bob', { type: 'pick_profession', professionId: 'lena-pflege' });
     expect(t.phase).toBe('playing');
     expect(t.briefing).toBe(true);
@@ -349,11 +359,12 @@ describe('the Dreamfund table: play', () => {
       }).state.insurance?.active;
     t = run(t, 'bob', { type: 'set_insurance', kind: 'household', on: false });
     expect(insured(t, 'bob')).not.toContain('household');
-    // back to the choice: the others keep theirs
-    t = run(t, 'bob', { type: 'reopen_pick' });
-    expect(t.phase).toBe('picking');
-    expect(t.players.find((seat) => seat.id === 'ann')!.pick).toBe('dual-student-informatik');
+    // another character while reading: the life is new, the insurances start again, the others keep theirs
+    const annBefore = t.players.find((seat) => seat.id === 'ann')!.professionId;
     t = run(t, 'bob', { type: 'pick_profession', professionId: 'mehmet-elektroniker' });
+    expect(t.players.find((seat) => seat.id === 'bob')!.professionId).toBe('mehmet-elektroniker');
+    expect(t.players.find((seat) => seat.id === 'ann')!.professionId).toBe(annBefore);
+    expect(insured(t, 'bob')).toContain('household');
     expect(t.briefing).toBe(true);
     t = run(t, 'host', { type: 'confirm_briefing' });
     t = run(t, 'ann', { type: 'confirm_briefing' });
@@ -361,7 +372,9 @@ describe('the Dreamfund table: play', () => {
     t = run(t, 'bob', { type: 'confirm_briefing' });
     expect(t.briefing).toBe(false);
     expect(t.activePlayerId).toBe('host');
-    expect(() => run(t, 'bob', { type: 'reopen_pick' })).toThrow(/begun/);
+    expect(() => run(t, 'bob', { type: 'pick_profession', professionId: 'lena-pflege' })).toThrow(
+      /begun/,
+    );
   });
 
   it('a card with a die waits for the throw of the player, then it is a project that carries what the card told', () => {

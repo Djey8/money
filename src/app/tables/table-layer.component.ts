@@ -22,7 +22,7 @@ import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
 import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
 import { insuranceOffers } from '@money/domain';
 import { AppStateService } from '../shared/services/app-state.service';
-import { dreamTexts } from '../dreamfund-tables/dream-texts';
+import { characters as dreamCharacters, dreamTexts } from '../dreamfund-tables/dream-texts';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { extrasOf, moneyOf, pendingOf } from '../dreamfund-tables/dream-table-view';
@@ -69,14 +69,15 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         [insurances]="b.insurances"
         [currency]="currency"
         [confirmed]="b.confirmed"
-        [canGoBack]="b.canGoBack"
+        [canChange]="b.canChange"
+        [characters]="b.characters"
         [busy]="busy()"
         [waitingFor]="b.waitingFor"
         (insuranceChange)="move({ type: 'set_insurance', kind: $event.kind, on: $event.on })"
         (dreamOpen)="openProject('dream')"
         (reserveOpen)="openProject('reserve')"
         (confirm)="move({ type: 'confirm_briefing' })"
-        (back)="move({ type: 'reopen_pick' })"
+        (pickCharacter)="pickCharacter($event)"
       ></app-table-briefing>
       <div class="tl-status" [class.tl-status--mine]="isMyTurn()">
         <strong class="tl-turn">{{ turnText() }}</strong>
@@ -725,7 +726,16 @@ export class TableLayerComponent implements OnDestroy {
       difficulty: view.settings.difficulty,
       insurances,
       confirmed: me.dreamBriefed === true,
-      canGoBack: view.settings.professions !== 'random',
+      canChange: view.settings.professions !== 'random',
+      // at a table of unique characters one that another player holds cannot be taken
+      characters: dreamCharacters(this.lang).map((entry) => ({
+        ...entry,
+        held:
+          view.settings.professions === 'unique' &&
+          view.players.some(
+            (player, seat) => seat !== view.youSeat && player.professionId === entry.id,
+          ),
+      })),
       waitingFor: view.players
         .filter((player, seat) => seat !== view.youSeat && !player.dreamBriefed)
         .map((player) => player.name),
@@ -734,6 +744,11 @@ export class TableLayerComponent implements OnDestroy {
 
   get d() {
     return dreamTexts(this.lang);
+  }
+
+  /** Another character while reading the one dealt: the table deals a new life of it. */
+  pickCharacter(professionId: string): void {
+    void this.mode.session()?.lobby('profession', { professionId });
   }
 
   get currency(): string {

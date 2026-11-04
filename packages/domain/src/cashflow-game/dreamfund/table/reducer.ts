@@ -362,11 +362,9 @@ function lobbyCommand(
     case 'start':
       return start(table, playerId, ctx, emit);
     case 'pick_profession':
-      return pick(table, playerId, command.professionId, ctx, emit);
+      return changeCharacter(table, playerId, command.professionId, emit);
     case 'confirm_briefing':
       return confirmBriefing(table, playerId, ctx, emit);
-    case 'reopen_pick':
-      return reopenPick(table, playerId, emit);
     case 'close': {
       if (playerId !== table.hostId) fail('NOT_HOST', 'Only the host can close the table.');
       if (table.phase === 'finished' || table.phase === 'abandoned') {
@@ -446,57 +444,21 @@ function start(table: DreamTable, playerId: string, ctx: DreamContext, emit: Emi
   if (table.settings.professions === 'unique' && table.players.length > characters.length) {
     fail('INVALID_SETTINGS', `Unique characters allow at most ${characters.length} players.`);
   }
-  if (table.settings.professions === 'random') {
-    return reveal(
-      {
-        ...table,
-        players: table.players.map((p) => ({ ...p, pick: 'random' })),
-      },
-      ctx,
-      emit,
-    );
-  }
-  emit('picking_started', playerId);
-  return {
-    ...table,
-    phase: 'picking',
-    players: table.players.map((p) => ({
-      ...p,
-      pick: p.bot
-        ? table.settings.professions === 'unique'
-          ? 'random'
-          : (p.bot.professionId ?? 'random')
-        : null,
-    })),
-  };
-}
-
-function pick(
-  table: DreamTable,
-  playerId: string,
-  professionId: string,
-  ctx: DreamContext,
-  emit: Emit,
-): DreamTable {
-  if (table.phase !== 'picking') fail('WRONG_PHASE', 'Characters are not being picked now.');
-  if (professionId !== 'random') {
-    if (!dreamCharacterIds().includes(professionId)) {
-      fail('UNKNOWN_PROFESSION', `Unknown character '${professionId}'.`);
-    }
-    if (
-      table.settings.professions === 'unique' &&
-      table.players.some((p) => p.id !== playerId && p.pick === professionId)
-    ) {
-      fail('PROFESSION_TAKEN', 'Another player already picked that character.');
-    }
-  }
-  const next = mapSeat(table, playerId, (p) => ({ ...p, pick: professionId }));
-  emit(
-    'profession_picked',
-    playerId,
-    table.settings.professions === 'unique' ? { professionId } : undefined,
+  // everybody is dealt a character (a bot its own); each reads theirs first and may change it there - no picking in the lobby
+  return reveal(
+    {
+      ...table,
+      players: table.players.map((p) => ({
+        ...p,
+        pick:
+          p.bot && table.settings.professions !== 'unique'
+            ? (p.bot.professionId ?? 'random')
+            : 'random',
+      })),
+    },
+    ctx,
+    emit,
   );
-  return next.players.every((p) => p.pick !== null) ? reveal(next, ctx, emit) : next;
 }
 
 /** Everybody has chosen: the characters are settled, every life is begun and play starts. */
@@ -599,29 +561,61 @@ function confirmBriefing(
     : next;
 }
 
-/** Back to the choice of the character: the lives are dropped, the others keep their picks. */
-function reopenPick(table: DreamTable, playerId: string, emit: Emit): DreamTable {
+/**
+ * The player changes the character they were dealt, while they are still reading it (JFK, 2026-11-04): a new life of the character
+ * asked for - or a drawn one - takes its place; the insurances start again. Not at a table where the characters are drawn, not with a
+ * character another player holds at a table of unique characters, and not once the player has said they are ready.
+ */
+function changeCharacter(
+  table: DreamTable,
+  playerId: string,
+  professionId: string,
+  emit: Emit,
+): DreamTable {
   if (table.phase !== 'playing' || !table.briefing) {
     fail('WRONG_PHASE', 'The game has begun: the character cannot be changed now.');
   }
   if (table.settings.professions === 'random') {
     fail('ILLEGAL_MOVE', 'At this table the characters are drawn.');
   }
-  emit('picking_started', playerId);
+  const seat = seatOf(table, playerId);
+  if (seat.briefed) fail('ILLEGAL_MOVE', 'You said you are ready: go back first.');
+  const characters = dreamCharacterIds();
+  const unique = table.settings.professions === 'unique';
+  const rng = tableRng(table.rngState);
+  const held = new Set(
+    table.players.filter((p) => p.id !== playerId && p.professionId).map((p) => p.professionId),
+  );
+  let chosen = professionId;
+  if (professionId === 'random') {
+    const pool = characters.filter((id) => id !== seat.professionId && !(unique && held.has(id)));
+    chosen = shuffled(pool.length > 0 ? pool : characters, rng.rng)[0];
+  } else if (!characters.includes(professionId)) {
+    fail('UNKNOWN_PROFESSION', `Unknown character '${professionId}'.`);
+  } else if (unique && held.has(professionId)) {
+    fail('PROFESSION_TAKEN', 'Another player already holds that character.');
+  }
+  const life = new DreamPlayer({
+    rng: rng.rng,
+    seed: table.seed,
+    professionId: chosen,
+    shape: table.settings.shape,
+    size: table.settings.size,
+    rules: table.settings.customRules,
+    sharedMarkets: true,
+  }).snapshot();
+  emit('profession_picked', playerId, unique ? { professionId: chosen } : undefined);
   return {
-    ...table,
-    phase: 'picking',
-    briefing: false,
-    activePlayerId: null,
-    players: table.players.map((seat) => ({
-      ...seat,
-      pick: seat.id === playerId ? null : (seat.professionId ?? seat.pick),
-      professionId: null,
-      life: null,
+    ...mapSeat(table, playerId, (p) => ({
+      ...p,
+      pick: chosen,
+      professionId: chosen,
+      life,
       pending: null,
       harvest: null,
       briefed: false,
     })),
+    rngState: rng.state(),
   };
 }
 

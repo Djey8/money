@@ -270,7 +270,6 @@ export type DreamCommand =
   /** A debug game: the character stands one stage before this one of the career ladder, due for the promotion, and the Career tile is played. */
   | { type: 'debug_career'; stage: string }
   /** Back to the choice of the character (before the game has begun). */
-  | { type: 'reopen_pick' }
   | { type: 'close' }
   | { type: 'pause' }
   | { type: 'resume' }

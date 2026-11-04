@@ -82,13 +82,6 @@ export function playBotTable(input: {
     ).table;
   }
   table = briefAll(applyDreamCommand(table, 'host', { type: 'start' }, ctx).table, ctx);
-  // the bots have picked as they were seated; the host's own pick, repeated, lets the table reveal
-  table = applyDreamCommand(
-    table,
-    'host',
-    { type: 'pick_profession', professionId: first.character },
-    ctx,
-  ).table;
   for (let guard = 0; guard < input.roundLimit * 400 && table.phase !== 'finished'; guard += 1) {
     const next = runDreamBots(table, ctx).table;
     if (next.version === table.version) break;

@@ -146,7 +146,6 @@ const DREAMFUND_COMMANDS = {
   throw_job_search: { ...none, build: () => ({ type: 'throw_job_search' }) },
   roll_opportunity: { ...none, build: () => ({ type: 'roll_opportunity' }) },
   confirm_briefing: { ...none, build: () => ({ type: 'confirm_briefing' }) },
-  reopen_pick: { ...none, build: () => ({ type: 'reopen_pick' }) },
   end_turn: { ...none, build: () => ({ type: 'end_turn' }) },
   settle_payday: { ...none, build: () => ({ type: 'settle_payday' }) },
   fund_reserve: {

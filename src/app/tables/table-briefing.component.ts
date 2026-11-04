@@ -3,7 +3,6 @@ import {
   Component,
   EventEmitter,
   Input,
-  OnInit,
   Output,
   signal,
 } from '@angular/core';
@@ -37,7 +36,7 @@ export type BriefingInsurance = InsuranceRow;
       [currency]="currency"
       [busy]="busy"
       (insuranceChange)="insuranceChange.emit($event)"
-      (goBack)="canGoBack ? back.emit() : step.set('who')"
+      (goBack)="step.set('who')"
       (finish)="confirm.emit(); step.set('who')"
     ></app-insurance-decision>
     <div class="tb-overlay" role="dialog" [attr.aria-label]="t.briefingTitle">
@@ -53,6 +52,35 @@ export type BriefingInsurance = InsuranceRow;
           (reserveOpen)="reserveOpen.emit()"
         ></app-character-preview>
 
+        <!-- another character, as in the game on its own: a list to choose from, and the one shown above changes at once -->
+        <section class="tb-choose" *ngIf="choosing() && canChange && !confirmed">
+          <ul>
+            <li *ngFor="let entry of characters; trackBy: trackId">
+              <button
+                type="button"
+                class="tb-character"
+                [class.tb-character--on]="entry.id === professionId"
+                [disabled]="busy || entry.held || entry.id === professionId"
+                (click)="choose(entry.id)"
+              >
+                <strong>{{ entry.name }}</strong>
+                <small>{{ entry.tagline }}</small>
+                <small *ngIf="entry.held">{{ t.characterHeld }}</small>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                class="tb-character"
+                [disabled]="busy"
+                (click)="choose('random')"
+              >
+                🎲 {{ t.characterRandom }}
+              </button>
+            </li>
+          </ul>
+        </section>
+
         <div class="tb-actions">
           <button
             type="button"
@@ -65,9 +93,9 @@ export type BriefingInsurance = InsuranceRow;
           <button
             type="button"
             class="btn btn--action tb-wide"
-            *ngIf="canGoBack"
+            *ngIf="canChange && !confirmed"
             [disabled]="busy"
-            (click)="back.emit()"
+            (click)="choosing.set(!choosing())"
           >
             {{ t.briefingBack }}
           </button>
@@ -118,6 +146,35 @@ export type BriefingInsurance = InsuranceRow;
         background: var(--color-background);
       }
 
+      .tb-choose ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .tb-character {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding: 8px 12px;
+        border: 1px solid var(--color-border-light);
+        border-radius: 10px;
+        background: var(--color-surface);
+        color: inherit;
+        text-align: start;
+        cursor: pointer;
+      }
+      .tb-character--on {
+        border-color: var(--color-primary, #1976d2);
+      }
+      .tb-character:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
       .tb-wide {
         width: 100%;
         margin: 0;
@@ -134,7 +191,7 @@ export type BriefingInsurance = InsuranceRow;
     `,
   ],
 })
-export class TableBriefingComponent implements OnInit {
+export class TableBriefingComponent {
   @Input({ required: true }) professionId = '';
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;
   @Input() lang = 'en';
@@ -143,27 +200,31 @@ export class TableBriefingComponent implements OnInit {
   /** The first decision is who you are; the second the insurances; then the player is ready. */
   readonly step = signal<'who' | 'insurance'>('who');
   @Input() confirmed = false;
-  @Input() canGoBack = true;
+  /** The characters may be changed at this table (not where they are drawn). */
+  @Input() canChange = true;
+  /** The characters to choose from; `held` is one another player has at a table of unique characters. */
+  @Input() characters: { id: string; name: string; tagline: string; held: boolean }[] = [];
+  readonly choosing = signal(false);
   @Input() busy = false;
   /** The names of the players who have not said they are ready. */
   @Input() waitingFor: string[] = [];
   @Output() dreamOpen = new EventEmitter<void>();
   @Output() reserveOpen = new EventEmitter<void>();
   @Output() confirm = new EventEmitter<void>();
-  @Output() back = new EventEmitter<void>();
+  @Output() pickCharacter = new EventEmitter<string>();
   @Output() insuranceChange = new EventEmitter<{ kind: string; on: boolean }>();
 
   get t(): DreamTexts {
     return dreamTexts(this.lang);
   }
 
-  /**
-   * A character the player chose was read before it was taken: the first decision here is the insurances. Only a character that was
-   * drawn at random is read here first ("I know who I am - start").
-   */
-  ngOnInit(): void {
-    if (this.canGoBack && this.insurances.length > 0) this.step.set('insurance');
+  /** A character was chosen: the list closes, the one above is the new one. */
+  choose(id: string): void {
+    this.choosing.set(false);
+    this.pickCharacter.emit(id);
   }
+
+  trackId = (_: number, entry: { id: string }): string => entry.id;
 
   /** "I know who I am - start": on to the insurances (nobody is ready before they are chosen). */
   start(): void {
