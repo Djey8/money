@@ -3,6 +3,13 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { TablesApiService } from './tables-api.service';
 import { leaderboardTexts } from './leaderboard.texts';
+import { TurnAlert } from './table-turn-alert';
+import { tableRoomTexts } from './table-room.texts';
+import {
+  APP_LANGUAGES,
+  LanguageService,
+  type AppLanguage,
+} from '../shared/services/language.service';
 import { problemText } from './problem.texts';
 import { TableStageComponent } from './table-stage.component';
 import {
@@ -95,6 +102,39 @@ export class TableModeService {
           ? Math.max(1, rolls - (count - offer.offeredAtRoll))
           : null,
     }));
+  });
+
+  /** The tab says "your turn" while it is (and a notification, only if the player asked for them): it moved here from the table page. */
+  readonly alert = new TurnAlert({
+    document,
+    Notification: typeof Notification === 'undefined' ? undefined : (Notification as never),
+  });
+  private readonly alerting = effect(() => {
+    const view = this.view();
+    const mine =
+      this.active() &&
+      !!view &&
+      view.youSeat !== null &&
+      view.phase === 'playing' &&
+      view.activeSeat === view.youSeat &&
+      view.clock.pausedAt === null;
+    untracked(() => {
+      if (mine && view)
+        this.alert.turnStarted(tableRoomTexts(this.lang).yourTurn, view.settings?.name ?? '');
+      else this.alert.turnEnded();
+    });
+  });
+
+  /** The app speaks the language the table is played in, whoever opens it. */
+  private readonly tableLanguage = effect(() => {
+    const code = this.session()?.room?.()?.language as AppLanguage['code'] | undefined;
+    if (!this.active() || !code || !APP_LANGUAGES.some((lang) => lang.code === code)) return;
+    untracked(() => {
+      const languages = this.injector.get(LanguageService);
+      if (code === languages.current) return;
+      this.lang = code;
+      void languages.use(code);
+    });
   });
 
   private lastOffersKey = '';
@@ -250,6 +290,7 @@ export class TableModeService {
       // nothing stored
     }
     LocalService.shadow = null;
+    this.alert.turnEnded();
     RemoteGameHook.current = null;
     RemoteGameHook.debug = null;
     this.debugPanel.set(null);
@@ -372,7 +413,11 @@ export class TableModeService {
     }
     if (session?.can('pause')) items.push({ id: 'pause', label: words.pauseGame });
     if (session?.can('resume')) items.push({ id: 'resume', label: words.resumeGame });
-    items.push({ id: 'page', label: words.tablePage }, { id: 'lobby', label: words.toLobby });
+    // the browser can tell the player when it is their turn, once they have allowed it
+    if (this.alert.canAsk) {
+      items.push({ id: 'notify', label: tableRoomTexts(this.lang).notifyMe });
+    }
+    items.push({ id: 'lobby', label: words.toLobby });
     // the table is the host's to take away only while nobody else is at it; with others it is left (resigned) like any seat
     const others = view.players.filter(
       (player, seat) => seat !== view.youSeat && !player.bot && player.status === 'active',
@@ -439,19 +484,9 @@ export class TableModeService {
       const away = !!view?.players[view.youSeat ?? -1]?.away;
       await this.session()?.play({ type: away ? 'back' : 'away' });
     } else if (id === 'pause' || id === 'resume') await this.session()?.play({ type: id });
-    else if (id === 'page') this.toTablePage();
+    else if (id === 'notify') await this.alert.ask();
     else if (id === 'lobby') this.toLobby();
     else if (id === 'remove') await this.removeTable();
-  }
-
-  /** The table's own page (pause and resume, the table's state): the game screen is left, the table stays and goes on. */
-  toTablePage(): void {
-    const id = this.view()?.id;
-    if (!id) return this.toLobby();
-    this.leave(() => {
-      window.location.hash = `#/tables/${id}?lobby=1`;
-      window.location.reload();
-    });
   }
 
   /** Back to the table's lobby: the app is reloaded on its own account, the lobby page asks not to jump straight back in. */

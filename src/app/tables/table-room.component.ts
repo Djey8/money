@@ -20,7 +20,6 @@ import {
   RatRaceBoardComponent,
   type BoardToken,
 } from '../main/cashflow-game/rat-race-board.component';
-import { TableCardsComponent } from './table-cards.component';
 import { TableInspectorComponent } from './table-inspector.component';
 import { TableWaitingRoomComponent } from './table-waiting-room.component';
 import { HttpClient } from '@angular/common/http';
@@ -38,7 +37,6 @@ import { tablesTexts } from './tables.texts';
 import { TableSessionService } from './table-session.service';
 import { TableModeService } from './table-mode.service';
 import { bankSeconds, clockReading, formatClock } from './table-clock';
-import { TurnAlert } from './table-turn-alert';
 import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
 
 /** A player's numbers as the table shows them to everyone. */
@@ -72,7 +70,6 @@ const money = (minor: number | null): string =>
     CommonModule,
     RouterLink,
     RatRaceBoardComponent,
-    TableCardsComponent,
     TableInspectorComponent,
     TableWaitingRoomComponent,
   ],
@@ -149,8 +146,20 @@ const money = (minor: number | null): string =>
         (leaveRequested)="leave()"
       ></app-table-waiting-room>
 
-      <!-- Play. -->
-      <ng-container *ngIf="table.phase === 'playing' || table.phase === 'finished'">
+      <!-- Play: a seated player plays in the game screen (Home with the game dashboard) - there is no table page for it (JFK, 2026-11-04). -->
+      <section
+        class="tr-card"
+        *ngIf="(table.phase === 'playing' || table.phase === 'finished') && table.youSeat !== null"
+      >
+        <button class="tx-btn tx-btn--primary" type="button" (click)="openGameScreen()">
+          🎲 {{ t.openGameScreen }}
+        </button>
+      </section>
+
+      <!-- A spectator has no game screen: the table is shown to them. -->
+      <ng-container
+        *ngIf="(table.phase === 'playing' || table.phase === 'finished') && table.youSeat === null"
+      >
         <section class="tr-card tr-turn" *ngIf="table.phase === 'playing'">
           <div class="tr-turn-line">
             <strong *ngIf="isMyTurn(); else others">{{ t.yourTurn }}</strong>
@@ -178,70 +187,10 @@ const money = (minor: number | null): string =>
               [style.width.%]="reading().fraction! * 100"
             ></div>
           </div>
-          <button *ngIf="alert.canAsk" class="tx-btn tr-notify" type="button" (click)="alert.ask()">
-            {{ t.notifyMe }}
-          </button>
           <p class="tr-banner tr-banner--warn" *ngIf="table.clock.pausedAt !== null">
             {{ t.paused }}
           </p>
-          <div class="tr-actions">
-            <button class="tx-btn tx-btn--primary" type="button" (click)="openGameScreen()">
-              🎲 {{ t.openGameScreen }}
-            </button>
-            <button
-              *ngIf="session.can('roll')"
-              class="tx-btn tx-btn--primary"
-              type="button"
-              [disabled]="session.busy()"
-              (click)="session.play({ type: 'roll' })"
-            >
-              {{ t.roll }}
-            </button>
-            <button
-              *ngIf="session.can('roll') && canRollTwo()"
-              class="tx-btn"
-              type="button"
-              [disabled]="session.busy()"
-              (click)="session.play({ type: 'roll', dice: 2 })"
-            >
-              {{ t.rollTwo }}
-            </button>
-            <button
-              *ngIf="session.can('back')"
-              class="tx-btn"
-              type="button"
-              (click)="session.play({ type: 'back' })"
-            >
-              {{ t.imBack }}
-            </button>
-            <button
-              *ngIf="session.can('pause')"
-              class="tx-btn"
-              type="button"
-              (click)="session.play({ type: 'pause' })"
-            >
-              {{ t.pause }}
-            </button>
-            <button
-              *ngIf="session.can('resume')"
-              class="tx-btn tx-btn--primary"
-              type="button"
-              (click)="session.play({ type: 'resume' })"
-            >
-              {{ t.resume }}
-            </button>
-          </div>
         </section>
-
-        <app-table-cards
-          *ngIf="table.phase === 'playing'"
-          [view]="table"
-          [allowed]="allowedActions()"
-          [gameSets]="gameSets"
-          [lang]="lang"
-          [busy]="session.busy()"
-          (move)="session.play($event)"
-        ></app-table-cards>
 
         <section
           class="tr-card tr-result"
@@ -260,17 +209,6 @@ const money = (minor: number | null): string =>
               >
             </li>
           </ol>
-          <div class="tr-actions" *ngIf="table.youSeat !== null">
-            <button
-              class="tx-btn tx-btn--primary"
-              type="button"
-              [disabled]="session.busy() || saved()"
-              (click)="saveGame()"
-            >
-              {{ saved() ? t.savedGame : t.saveGame }}
-            </button>
-            <a class="tx-btn" routerLink="/tables">‹ {{ t.back }}</a>
-          </div>
         </section>
 
         <section class="tr-card">
@@ -520,7 +458,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   t: TableRoomTexts = tableRoomTexts('en');
   rtl = false;
   readonly board = CLASSIC_RAT_RACE_BOARD;
-  readonly gameSets = CASHFLOW_GAME_SETS;
   lang = 'en';
   readonly allowedActions = computed(() =>
     this.session.legalActions().map((entry) => entry.action),
@@ -607,20 +544,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   /** Seconds the player on the move has left; null without a clock. */
   readonly secondsLeft = computed(() => this.reading().secondsLeft);
 
-  /** The tab says "your turn" while it is; a notification only if the player asked for them. */
-  readonly alert = new TurnAlert({
-    document,
-    Notification: typeof Notification === 'undefined' ? undefined : (Notification as never),
-  });
-  private readonly alerting = effect(() => {
-    const view = this.view();
-    if (view && view.phase === 'playing' && this.isMyTurn() && view.clock.pausedAt === null) {
-      this.alert.turnStarted(this.t.yourTurn, view.settings.name);
-    } else {
-      this.alert.turnEnded();
-    }
-  });
-
   /** The app speaks the language the table is played in, whoever opens it. */
   private readonly tableLanguage = effect(() => {
     const code = this.session.room()?.language as AppLanguage['code'] | undefined;
@@ -657,8 +580,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     this.entering.destroy();
     this.tableLanguage.destroy();
     if (this.timer) clearInterval(this.timer);
-    this.alerting.destroy();
-    this.alert.turnEnded();
     // a table that is being played in the game screen goes on after this page is left
     if (this.tableMode.session() !== this.session) this.session.close();
   }
@@ -668,7 +589,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
 
   fmt = money;
 
-  readonly saved = signal(false);
   /** The id of the table in the address. */
   roomId = '';
 
@@ -687,6 +607,8 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     this.enteredOnce = true;
     if (this.route.snapshot.queryParamMap.get('lobby') === '1') return;
     this.openGameScreen();
+    // a running game is played from Home with the game dashboard: this page is only the lobby of a table
+    void this.router.navigate(['/home']);
   });
 
   /** The solo game's own screen over my table character's books. */
@@ -694,10 +616,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     const view = this.view();
     if (!view || view.youSeat === null) return;
     this.tableMode.begin(this.session, this.lang);
-  }
-
-  async saveGame(): Promise<void> {
-    if (await this.session.save()) this.saved.set(true);
   }
 
   colorOf(seat: number): string {
@@ -755,13 +673,6 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   activeName(): string {
     const view = this.view();
     return view && view.activeSeat !== null ? this.nameOf(view.activeSeat) : '';
-  }
-
-  /** Two dice are offered while Charity allows; the server lists `roll` either way, so ask the books. */
-  canRollTwo(): boolean {
-    const me = this.myPlayer();
-    const books = me?.books as unknown as GameBooks | null | undefined;
-    return !!books && books.state.charityRoundsLeft > 0;
   }
 
   async leave(): Promise<void> {
