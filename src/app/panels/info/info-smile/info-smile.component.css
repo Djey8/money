@@ -1837,3 +1837,10 @@
   border: 1px solid var(--color-warning, #d98e04);
   color: var(--color-warning, #d98e04);
 }
+
+.points-badge--corner {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+}

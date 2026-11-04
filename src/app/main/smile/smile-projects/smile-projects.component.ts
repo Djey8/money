@@ -327,6 +327,14 @@ export class SmileProjectsComponent {
     const totalTarget = project.buckets.reduce((sum, b) => sum + (b.target || 0), 0);
     const totalAmount = project.buckets.reduce((sum, b) => sum + (b.amount || 0), 0);
     AddComponent.commentTextField = `${project.title} ${totalTarget - totalAmount} `;
+    // in a game the amount that finishes the project is filled in; never the amount of the last payment
+    const remaining = Math.round((totalTarget - totalAmount) * 100) / 100;
+    AddComponent.amountTextField =
+      CashflowGameService.isCashflowGame() &&
+      !!AppStateService.instance.cashflowGame.professionId &&
+      remaining > 0
+        ? (remaining * -1).toString()
+        : '';
   }
 
   /**

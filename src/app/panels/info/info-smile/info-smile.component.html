@@ -9,6 +9,10 @@
   [style.z-index]="classReference.zIndex + 1001"
 >
   <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+  <!-- what living the dream is worth: in the upper left corner of the panel -->
+  <span class="points-badge points-badge--corner" *ngIf="classReference.points"
+    >🌟 {{ classReference.points }} {{ 'CashflowGame.dream.points' | translate }}</span
+  >
 
   <!-- ── VIEW MODE ── -->
   <div *ngIf="!classReference.isEdit">
@@ -18,9 +22,6 @@
         <span class="phase-badge phase-{{ classReference.phase }}">
           {{ 'Smile.phase.' + classReference.phase | translate }}
         </span>
-        <span class="points-badge" *ngIf="classReference.points"
-          >🌟 {{ classReference.points }} {{ 'CashflowGame.dream.points' | translate }}</span
-        >
       </div>
       <h3 class="detail-title">
         {{ classReference.title }} <span class="id-badge">#{{ classReference.index + 1 }}</span>
