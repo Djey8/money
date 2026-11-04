@@ -17,7 +17,9 @@ describe('playing for dream points, or for the life dream alone', () => {
       const alone = describeBoard(buildDreamfundBoard({ ...base, dreams: false }).board);
       expect(withDreams['dream']).toBeGreaterThan(0);
       expect(alone['dream'] ?? 0).toBe(0);
-      expect(alone['opportunity']).toBe(withDreams['opportunity'] + withDreams['dream']);
+      // the dreams are gone: Opportunity takes their place, and one tile of them is an Emergency, so the map does not get easier
+      expect(alone['opportunity']).toBe(withDreams['opportunity'] + withDreams['dream'] - 1);
+      expect(alone['emergency']).toBe(withDreams['emergency'] + 1);
       expect(Object.values(alone).reduce((a, b) => a + b, 0)).toBe(
         Object.values(withDreams).reduce((a, b) => a + b, 0),
       );

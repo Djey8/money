@@ -131,9 +131,11 @@ function spreadEvenly(n: number, count: number, fixed: number[] = []): number[] 
 export function layoutTiles(setup: BoardSetup, fixedPaydays: number[] = []): DreamfundTile[] {
   const n = TILE_COUNTS[setup.size];
   const counts = { ...TILE_MIX[setup.size][setup.difficulty ?? 'medium'] };
-  // a game for the life dream alone has no dreams to collect: the tiles are dealt out again, with more Opportunity
-  if (setup.dreams === false) {
-    counts.opportunity += counts.dream;
+  // a game for the life dream alone has no dreams to collect: the tiles are dealt out again, with more Opportunity - and one
+  // more Emergency, so the map does not get easier (JFK, 2026-11-04)
+  if (setup.dreams === false && counts.dream > 0) {
+    counts.opportunity += counts.dream - 1;
+    counts.emergency += 1;
     counts.dream = 0;
   }
   const random = mulberry32(setup.seed * 7919 + n);
