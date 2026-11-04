@@ -418,6 +418,8 @@ export interface CashflowPendingDecision {
     projectTitle?: string;
     planned?: boolean;
   };
+  /** The dice the effects of this card used, in the order they fell (JFK, 2026-11): the card shows them until it is done. */
+  dice?: number[];
   emergency?: {
     cardId: string;
     choiceId?: string;

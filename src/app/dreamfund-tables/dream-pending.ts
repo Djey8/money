@@ -181,6 +181,11 @@ export function withDreamPending(
   }
   // a card that was dealt with: only Done is left on its tile
   if (!card && done && next !== open) next = { ...next, played: true };
+  // the dice that were thrown for the card (of the open one, or of the one just dealt with)
+  const thrown =
+    (card as { dice?: number[] } | null | undefined)?.dice ??
+    (done as { dice?: number[] } | null | undefined)?.dice;
+  if (thrown?.length && next !== open) next = { ...next, dice: thrown };
   if (next === open) return books;
   return { ...books, state: { ...books.state, turn: { ...turn, pending: next } } };
 }

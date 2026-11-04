@@ -1511,6 +1511,7 @@
   "CashflowGame.diceGotIt": "رميت: فزت",
   "CashflowGame.diceNoLuck": "رميت: لا حظ",
   "CashflowGame.diceRolled": "خرج {{roll}}.",
+  "CashflowGame.dice.rolled": "النتيجة",
   "CashflowGame.diceWonToast": "ربحت {{coins}} عملات ذهبية!",
   "CashflowGame.diceLostToast": "لا حظ هذه المرة.",
   "CashflowGame.step.buyAsset": "تم شراء أصل",

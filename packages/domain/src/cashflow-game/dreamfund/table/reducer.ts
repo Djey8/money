@@ -1,5 +1,5 @@
 import { harvestWaiting } from './harvest-ack';
-import { rollDie } from '../../rng';
+import { loggedRng, rollDie } from '../../rng';
 import { quoteEmergency } from '../../emergency-deck';
 import { defaultTableGameSets } from '../../table/default-game-sets';
 import { driftMarkets, drawHarvestCard, initialMarkets } from '../../harvest';
@@ -697,10 +697,17 @@ function play(
     fail('NOT_YOUR_TURN', 'It is not your turn.');
   }
   const rng = tableRng(table.rngState);
-  const player = wake(table, seat, rng.rng);
+  // every die an effect of the card rolls is written down: the card shows them until it is done
+  const dice: number[] = [];
+  const logged = loggedRng(rng.rng, dice);
+  const player = wake(table, seat, logged);
   let patch: Partial<DreamSeat>;
   try {
-    patch = doCommand(table, seat, player, command, rng.rng, emit, internal);
+    patch = doCommand(table, seat, player, command, logged, emit, internal);
+    // the dice of the token's move are the roll's own (told with it): the dice of the card follow them
+    const own = (patch as { __moveDice?: number }).__moveDice ?? 0;
+    delete (patch as { __moveDice?: number }).__moveDice;
+    patch = withDice(seat, patch, dice.slice(own));
   } catch (error) {
     if (error instanceof TableCommandError) throw error;
     return fail(
@@ -745,6 +752,27 @@ const TILE_EVENT: Record<string, DreamEventType> = {
   harvest: 'harvest',
 };
 
+/**
+ * The dice a move rolled for a card are kept with the card (JFK, 2026-11): on what is still to be decided, or on what the card came to.
+ * The dice of the same card that fell earlier stay in front of them.
+ */
+function withDice(
+  seat: DreamSeat,
+  patch: Partial<DreamSeat>,
+  rolled: number[],
+): Partial<DreamSeat> {
+  if (rolled.length === 0) return patch;
+  const before = seat.pending as { kind?: string; dice?: number[] } | null | undefined;
+  const target = (patch.pending ?? patch.resolved) as
+    { kind?: string; dice?: number[] } | null | undefined;
+  if (!target || typeof target !== 'object') return patch;
+  const earlier = before?.kind === target.kind ? (before?.dice ?? []) : [];
+  const dice = [...earlier, ...rolled].slice(-12);
+  return patch.pending
+    ? { ...patch, pending: { ...patch.pending, dice } as never }
+    : { ...patch, resolved: { ...patch.resolved, dice } as never };
+}
+
 /** What a command does to a life; returns what is to change on the seat. Throws when the move is not possible. */
 function doCommand(
   table: DreamTable,
@@ -785,8 +813,16 @@ function doCommand(
       }
       const tile = p.pendingTile();
       const jobSearch = rolled.jobSearch ? { ...rolled.jobSearch, thrown: false } : null;
+      // the dice of the move itself (and of the job search of a Payday) are not the card's
+      const moveDice = { __moveDice: rolled.dice.length + (rolled.jobSearch ? 1 : 0) } as object;
       if (!tile) {
-        return { pending: null, resolved: null, paydayDue: rolled.paydays > 0, jobSearch };
+        return {
+          pending: null,
+          resolved: null,
+          paydayDue: rolled.paydays > 0,
+          jobSearch,
+          ...moveDice,
+        };
       }
       // the landing is told with the card the tile dealt, so everybody at the table can read what was drawn
       const landing = enterTile(tile, p, rng, emit, id);
@@ -800,7 +836,7 @@ function doCommand(
       if (landing.resolved?.kind === 'life') {
         emit('life_answered', id, { cardId: landing.resolved.cardId, decision: 'fate' });
       }
-      return { resolved: null, ...landing, paydayDue: rolled.paydays > 0, jobSearch };
+      return { resolved: null, ...landing, paydayDue: rolled.paydays > 0, jobSearch, ...moveDice };
     }
     case 'pay_emergency': {
       if (pending?.kind !== 'emergency') return refuse('There is no emergency to pay.');

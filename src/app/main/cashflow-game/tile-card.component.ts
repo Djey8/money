@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   OnDestroy,
@@ -43,6 +44,7 @@ import { AppStateService } from '../../shared/services/app-state.service';
 import { RemoteGameHook, type RemoteGame } from 'src/app/shared/services/remote-game';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
 import { ToastService } from '../../shared/services/toast.service';
+import { DieComponent } from './die.component';
 
 /** One card of a stack in the grid of the free rules. */
 interface PickerItem {
@@ -57,6 +59,10 @@ const SHUFFLE_PICKED_MS = 350;
 
 /** How long the die tumbles before the result is shown. */
 const ROLL_MS = 1000;
+/** How long the die lies on its number, big, before it moves into the card (JFK, 2026-11: a couple of seconds, not too long). */
+const HOLD_MS = 2200;
+/** How long its flight into the card takes. */
+const FLY_MS = 750;
 
 /** One row of a dice table: the numbers on the die, and what they do. */
 export interface DiceRowView {
@@ -91,7 +97,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
 @Component({
   selector: 'app-tile-card',
   standalone: true,
-  imports: [CommonModule, TranslateModule, AppNumberPipe],
+  imports: [CommonModule, TranslateModule, AppNumberPipe, DieComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -207,6 +213,9 @@ interface OpportunityBandLike extends OpportunityRollLike {
             </button>
 
             <ng-container *ngIf="e.quote.ready && !rolling">
+              <ng-container
+                *ngTemplateOutlet="rolledStrip; context: { dice: settledDice }"
+              ></ng-container>
               <ul class="tc-lines">
                 <li *ngFor="let bucket of e.quote.buckets; trackBy: trackId">
                   <span>{{ bucket.title[lang] }}</span>
@@ -392,6 +401,11 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 </ng-container>
               </div>
             </ng-container>
+            <ng-container *ngIf="l.outcome && !rolling">
+              <ng-container
+                *ngTemplateOutlet="rolledStrip; context: { dice: settledDice }"
+              ></ng-container>
+            </ng-container>
             <ul class="tc-bullets tc-bullets--done" *ngIf="l.outcome && !rolling">
               <li *ngFor="let line of outcomeLines(l.outcome)">{{ line }}</li>
             </ul>
@@ -466,6 +480,9 @@ interface OpportunityBandLike extends OpportunityRollLike {
 
             <ng-container *ngIf="careerResult as r; else careerOpen">
               <ng-container *ngIf="!rolling">
+                <ng-container
+                  *ngTemplateOutlet="rolledStrip; context: { dice: settledDice }"
+                ></ng-container>
                 <p
                   class="tc-result"
                   [class.tc-result--good]="
@@ -601,6 +618,9 @@ interface OpportunityBandLike extends OpportunityRollLike {
               <p class="tc-card-story">{{ c.story[lang] }}</p>
 
               <!-- what the card does to everybody -->
+              <ng-container
+                *ngTemplateOutlet="rolledStrip; context: { dice: settledDice }"
+              ></ng-container>
               <ul class="tc-effects" *ngIf="h.told.length">
                 <li
                   class="tc-effect"
@@ -937,6 +957,9 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 <p class="tc-good" *ngIf="o.planned">
                   ✓ {{ 'CashflowGame.opportunity.planned' | translate: { project: project } }}
                 </p>
+                <ng-container
+                  *ngTemplateOutlet="rolledStrip; context: { dice: settledDice }"
+                ></ng-container>
                 <ul class="tc-bullets tc-bullets--done" *ngIf="o.told.length">
                   <li *ngFor="let line of o.told; trackBy: trackValue">{{ line }}</li>
                 </ul>
@@ -1115,6 +1138,23 @@ interface OpportunityBandLike extends OpportunityRollLike {
           </ng-template>
         </ng-container>
       </ng-container>
+
+      <!-- what the dice of this card rolled, small, where the effect is told: they stay as long as the card is open -->
+      <ng-template #rolledStrip let-dice="dice">
+        <div class="tc-rolled" *ngIf="dice.length > 0">
+          <app-die
+            *ngFor="let face of dice; trackBy: trackIndex"
+            class="tc-slot"
+            [class.tc-slot--wait]="faces.length > 0"
+            size="sm"
+            [face]="face"
+            data-die-slot
+          ></app-die>
+          <span class="tc-rolled-text"
+            >{{ 'CashflowGame.dice.rolled' | translate }}: {{ dice.join(' + ') }}</span
+          >
+        </div>
+      </ng-template>
 
       <!-- the card is closed: open it (or, where nobody has to, leave it) -->
       <ng-template #closed let-text="text" let-canDecline="canDecline">
@@ -1425,6 +1465,40 @@ interface OpportunityBandLike extends OpportunityRollLike {
       }
       @media (prefers-reduced-motion: reduce) {
         .tc-die--tumbling {
+          animation: none;
+        }
+      }
+      /* the dice a card rolled, small, where its effect is told: they stay while the card is open */
+      .tc-rolled {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin: 8px 0 6px;
+      }
+      .tc-rolled-text {
+        margin-left: 4px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        opacity: 0.85;
+      }
+      /* the small die waits, unseen, until the big one has moved into its place */
+      .tc-slot--wait {
+        visibility: hidden;
+      }
+      .tc-slot:not(.tc-slot--wait) {
+        animation: tc-slot-pop 0.25s ease-out;
+      }
+      @keyframes tc-slot-pop {
+        from {
+          transform: scale(1.35);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tc-slot:not(.tc-slot--wait) {
           animation: none;
         }
       }
@@ -2129,8 +2203,10 @@ export class TileCardComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
     }, 90);
     let rolled: number[] = [];
+    this.service.forgetDice();
     try {
       rolled = await run();
+      this.service.noteDice();
     } catch (error) {
       this.toast.show(error instanceof Error ? error.message : String(error), 'error');
     }
@@ -2141,6 +2217,93 @@ export class TileCardComponent implements OnInit, OnDestroy {
     this.rolling = false;
     this.busy = false;
     this.cdr.markForCheck();
+    // the die lies on its number for a moment, then moves into the card and stays there, small
+    void this.settle();
+  }
+
+  private readonly host = inject(ElementRef<HTMLElement>);
+  /** Whoever starts a new throw (or opens another card) cancels the flight of the one before. */
+  private flight = 0;
+
+  private async pause(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /** The dice that were thrown lie still for a couple of seconds, then fly to their places on the card and leave the stage. */
+  private async settle(): Promise<void> {
+    const mine = ++this.flight;
+    if (this.faces.length === 0) return;
+    await this.pause(HOLD_MS);
+    if (mine !== this.flight) return;
+    await this.flyDice();
+    if (mine !== this.flight) return;
+    this.faces = [];
+    this.cdr.markForCheck();
+  }
+
+  /** A die that was rolled without being thrown (a card that rolled on its own): it lands, is read, and moves into the card. */
+  private landDice(dice: number[]): void {
+    if (dice.length === 0) return;
+    this.faces = dice.slice(0, 4);
+    this.rolling = false;
+    this.cdr.markForCheck();
+    void this.settle();
+  }
+
+  /** The big dice move, smoothly, to the small ones of the card (the last of them in the card are the ones that were just rolled). */
+  private async flyDice(): Promise<void> {
+    const root = this.host.nativeElement as HTMLElement;
+    const big = Array.from(root.querySelectorAll<HTMLElement>('.tc-dice .tc-die'));
+    const slots = Array.from(root.querySelectorAll<HTMLElement>('[data-die-slot]'));
+    const reduced =
+      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (big.length === 0 || typeof big[0].animate !== 'function') return;
+    const flights = big.map((die, index) => {
+      const slot = slots[slots.length - big.length + index];
+      const from = die.getBoundingClientRect();
+      if (!slot || reduced) {
+        // no place to go (or no motion wanted): it fades
+        return die.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: reduced ? 1 : 350,
+          fill: 'forwards',
+        });
+      }
+      const to = slot.getBoundingClientRect();
+      const scale = to.width / Math.max(1, from.width);
+      const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+      const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+      return die.animate(
+        [
+          { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 1 },
+        ],
+        { duration: FLY_MS, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)', fill: 'forwards' },
+      );
+    });
+    await Promise.all(flights.map((flight) => flight.finished.catch(() => undefined)));
+  }
+
+  /**
+   * The dice the open card rolled, as the game keeps them (JFK, 2026-11): they are shown small on the card for as long as it is open,
+   * also when the player comes back to it from a project. An Emergency card keeps them by die, the others with the turn.
+   */
+  get settledDice(): number[] {
+    if (this.tile === 'emergency') {
+      return Object.values(this.service.emergencyView?.selection.rolls ?? {});
+    }
+    if (this.tile === 'life') {
+      const own = this.service.lifeView?.outcome?.rolls;
+      if (own?.length) return own;
+    }
+    if (this.tile === 'career') {
+      const result = this.service.careerView?.result as unknown as
+        Record<string, number> | null | undefined;
+      const dice = [result?.['roll'], result?.['confirmRoll'], result?.['momentRoll']].filter(
+        (face): face is number => typeof face === 'number' && face > 0,
+      );
+      if (dice.length) return dice;
+    }
+    return AppStateService.instance.cashflowGame.turn?.pending?.dice ?? [];
   }
 
   // ── opening the card ──
@@ -3022,10 +3185,12 @@ export class TileCardComponent implements OnInit, OnDestroy {
     }
     this.busy = true;
     this.faces = [];
+    this.service.forgetDice();
     this.service.decideLife(decision, this.callbacks);
+    this.service.noteDice();
     // a card that rolled on its own (a proposal declined, a partner who may leave) shows its dice
     const rolls = this.service.lifeView?.outcome?.rolls ?? [];
-    if (rolls.length) this.faces = rolls.slice(0, 3);
+    if (rolls.length) this.landDice(rolls.slice(0, 3));
   }
 
   effectLines(effect: LifeEffect | null | undefined): string[] {

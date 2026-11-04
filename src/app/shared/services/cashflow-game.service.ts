@@ -210,6 +210,7 @@ import {
   UNDO_STACK_LIMIT,
   systemClock,
   systemRng,
+  loggedRng,
   endIfOver,
   playCharityPaying,
   playDownsizedPaying,
@@ -535,8 +536,27 @@ export class CashflowGameService {
   /** "Now" for everything the game dates and stamps. A property (not a constructor argument) so a test can pin it. */
   clock: Clock = systemClock;
 
+  /** The faces rolled since the last `noteDice()`: what the card in front of the player shows small, for as long as it is open. */
+  private readonly diceLog: number[] = [];
+
   /** Where chance comes from (the dice, the card draws, a shuffled profession). A property so a test - or the solo engine - can pin it. */
-  rng: Rng = systemRng;
+  rng: Rng = loggedRng(systemRng, this.diceLog);
+
+  /** Forgets the faces of earlier rolls: called before a throw the player sees, so only its own dice are noted. */
+  forgetDice(): void {
+    this.diceLog.length = 0;
+  }
+
+  /** Keeps the dice rolled since in the pending decision, so the card shows them again whenever the player comes back to it. */
+  noteDice(): number[] {
+    const rolled = this.diceLog.splice(0);
+    if (rolled.length === 0) return rolled;
+    this.updatePending((pending) => ({
+      ...pending,
+      dice: [...(pending.dice ?? []), ...rolled].slice(-12),
+    }));
+    return rolled;
+  }
 
   /**
    * Not synced to the DB — see `UNDO_STACK_STORAGE_KEY`'s own comment. Starts from whatever's in

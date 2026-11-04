@@ -75,7 +75,7 @@ const BOOLEAN_FIELDS = new Set([
 ]);
 
 /** Fields whose parts are all numbers, whatever their own names are (the dice rolled on a card). */
-const NUMBER_CONTAINERS = new Set(['rolls', 'markets', 'nextPaydayIndex']);
+const NUMBER_CONTAINERS = new Set(['rolls', 'markets', 'nextPaydayIndex', 'dice']);
 
 function isNumberField(key: string): boolean {
   return NUMBER_FIELDS.has(key) || /(Minor|Left|Percent|Turns|Paydays|Count)$/.test(key);
@@ -160,6 +160,8 @@ export const REVIVED_PENDING_FIELDS = [
   'dream',
   'opportunity',
   'harvest',
+  // the dice thrown for the card, shown small on it while it is open
+  'dice',
 ] as const;
 
 function reviveFields(

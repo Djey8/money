@@ -21,9 +21,23 @@ export function seededRng(seed: number): Rng {
   };
 }
 
-/** One roll of a six-sided die: 1 to 6. */
+/** A source of chance that tells every die rolled with it (JFK, 2026-11): the screen shows the dice an effect used. */
+export type LoggedRng = Rng & { onDie?: (face: number) => void };
+
+/** The source, wrapped so that every die rolled with it (`rollDie`) is written to `log`. */
+export function loggedRng(rng: Rng, log: number[]): Rng {
+  const wrapped: LoggedRng = () => rng();
+  wrapped.onDie = (face) => {
+    log.push(face);
+  };
+  return wrapped;
+}
+
+/** One roll of a six-sided die: 1 to 6. A logging source (`loggedRng`) is told the face. */
 export function rollDie(rng: Rng = systemRng): number {
-  return Math.floor(rng() * 6) + 1;
+  const face = Math.floor(rng() * 6) + 1;
+  (rng as LoggedRng).onDie?.(face);
+  return face;
 }
 
 /** One item of a non-empty list, chosen evenly. */

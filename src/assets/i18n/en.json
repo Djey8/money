@@ -1511,6 +1511,7 @@
   "CashflowGame.diceGotIt": "I rolled it: I won",
   "CashflowGame.diceNoLuck": "I rolled it: no luck",
   "CashflowGame.diceRolled": "Rolled a {{roll}}.",
+  "CashflowGame.dice.rolled": "Rolled",
   "CashflowGame.diceWonToast": "You won {{coins}} gold coins!",
   "CashflowGame.diceLostToast": "No luck this time.",
   "CashflowGame.step.buyAsset": "Asset bought",

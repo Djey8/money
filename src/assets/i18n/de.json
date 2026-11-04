@@ -1536,6 +1536,7 @@
   "CashflowGame.diceGotIt": "Ich habe gewürfelt: gewonnen",
   "CashflowGame.diceNoLuck": "Ich habe gewürfelt: kein Glück",
   "CashflowGame.diceRolled": "Gewürfelt: {{roll}}.",
+  "CashflowGame.dice.rolled": "Gewürfelt",
   "CashflowGame.diceWonToast": "Du hast {{coins}} Goldmünzen gewonnen!",
   "CashflowGame.diceLostToast": "Diesmal kein Glück.",
   "CashflowGame.step.buyAsset": "Vermögenswert gekauft",

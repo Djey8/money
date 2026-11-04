@@ -1536,6 +1536,7 @@
   "CashflowGame.diceGotIt": "我掷了：赢了",
   "CashflowGame.diceNoLuck": "我掷了：没赢",
   "CashflowGame.diceRolled": "掷出了 {{roll}}。",
+  "CashflowGame.dice.rolled": "掷出",
   "CashflowGame.diceWonToast": "你赢得了 {{coins}} 枚金币！",
   "CashflowGame.diceLostToast": "这次没有运气。",
   "CashflowGame.step.buyAsset": "买入资产",

@@ -1480,6 +1480,7 @@
   "CashflowGame.diceGotIt": "Lo lancé: gané",
   "CashflowGame.diceNoLuck": "Lo lancé: sin suerte",
   "CashflowGame.diceRolled": "Salió un {{roll}}.",
+  "CashflowGame.dice.rolled": "Lanzado",
   "CashflowGame.diceWonToast": "¡Ganaste {{coins}} monedas de oro!",
   "CashflowGame.diceLostToast": "Sin suerte esta vez.",
   "CashflowGame.step.buyAsset": "Activo comprado",
