@@ -3,6 +3,9 @@ import type { Localized } from './cashflow-game/emergency-deck';
 import { TRAVEL_DETAILS } from './cashflow-dream-details-travel';
 import { DOING_DETAILS } from './cashflow-dream-details-doing';
 import { LIFE_DETAILS } from './cashflow-dream-details-life';
+import { MORE_TRAVEL } from './cashflow-dreams-more-travel';
+import { MORE_DOING } from './cashflow-dreams-more-doing';
+import { MORE_LIFE } from './cashflow-dreams-more-life';
 
 /**
  * What a dream tells once it is a project (JFK, 2026-11-04): a description of what you need, a note and links for every bucket, links to
@@ -623,6 +626,9 @@ export const DREAM_DETAILS: Record<string, DreamDetails> = {
   ...TRAVEL_DETAILS,
   ...DOING_DETAILS,
   ...LIFE_DETAILS,
+  ...MORE_TRAVEL.details,
+  ...MORE_DOING.details,
+  ...MORE_LIFE.details,
 };
 
 /** The cards with their detail: links are added, action items and the notes are those of the detail where it has them. */

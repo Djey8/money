@@ -32,7 +32,7 @@ const log = (open: string[] = [], lived: string[] = []): DreamLog => ({
 
 describe('the Dream stack (temp_cards v0.2)', () => {
   it('has the 48 dreams and 8 moments in English and German, every price adding up', () => {
-    expect(DREAM_CARDS).toHaveLength(48);
+    expect(DREAM_CARDS).toHaveLength(96);
     expect(DREAM_MOMENTS).toHaveLength(8);
     for (const card of DREAM_CARDS) {
       expect(card.title.en && card.title.de && card.story.en && card.story.de).toBeTruthy();

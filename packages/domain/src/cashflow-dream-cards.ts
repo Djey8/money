@@ -4,6 +4,9 @@
  */
 import type { DreamCard } from './cashflow-game/dream-deck';
 import { withDreamDetails } from './cashflow-dream-details';
+import { MORE_TRAVEL } from './cashflow-dreams-more-travel';
+import { MORE_DOING } from './cashflow-dreams-more-doing';
+import { MORE_LIFE } from './cashflow-dreams-more-life';
 
 const BASE_DREAM_CARDS: DreamCard[] = [
   {
@@ -3205,4 +3208,9 @@ const BASE_DREAM_CARDS: DreamCard[] = [
 ];
 
 /** The dreams with their detail (`cashflow-dream-details.ts`): what a project made from a card has filled in. */
-export const DREAM_CARDS: DreamCard[] = withDreamDetails(BASE_DREAM_CARDS);
+export const DREAM_CARDS: DreamCard[] = withDreamDetails([
+  ...BASE_DREAM_CARDS,
+  ...MORE_TRAVEL.cards,
+  ...MORE_DOING.cards,
+  ...MORE_LIFE.cards,
+]);
