@@ -228,7 +228,10 @@ describe('queryAuditEntries', () => {
     const auditDb = makeMockAuditDb([]);
     await queryAuditEntries(auditDb, 'user1');
     expect(auditDb.find).toHaveBeenCalledWith(
-      expect.objectContaining({ selector: { userId: 'user1' } }),
+      expect.objectContaining({
+        selector: { userId: 'user1', timestamp: { $gt: null } },
+        sort: [{ userId: 'desc' }, { timestamp: 'desc' }],
+      }),
     );
   });
 
@@ -236,30 +239,22 @@ describe('queryAuditEntries', () => {
     const auditDb = makeMockAuditDb([]);
     await queryAuditEntries(auditDb, 'user1', { resource: 'transactions' });
     expect(auditDb.find).toHaveBeenCalledWith(
-      expect.objectContaining({ selector: { userId: 'user1', resource: 'transactions' } }),
+      expect.objectContaining({
+        selector: { userId: 'user1', resource: 'transactions', timestamp: { $gt: null } },
+        sort: [{ userId: 'desc' }, { resource: 'desc' }, { timestamp: 'desc' }],
+      }),
     );
   });
 
-  it('returns entries sorted most-recent-first regardless of DB return order', async () => {
+  it('asks the index for the newest first, and for no more than was asked for', async () => {
     const auditDb = makeMockAuditDb([
-      { _id: 'a', userId: 'user1', timestamp: '2026-01-01T00:00:00.000Z' },
-      { _id: 'b', userId: 'user1', timestamp: '2026-03-01T00:00:00.000Z' },
-      { _id: 'c', userId: 'user1', timestamp: '2026-02-01T00:00:00.000Z' },
-    ]);
-
-    const result = await queryAuditEntries(auditDb, 'user1');
-    expect(result.map((e) => e._id)).toEqual(['b', 'c', 'a']);
-  });
-
-  it('truncates to the requested limit after sorting', async () => {
-    const auditDb = makeMockAuditDb([
-      { _id: 'a', timestamp: '2026-01-01T00:00:00.000Z' },
       { _id: 'b', timestamp: '2026-03-01T00:00:00.000Z' },
       { _id: 'c', timestamp: '2026-02-01T00:00:00.000Z' },
     ]);
 
     const result = await queryAuditEntries(auditDb, 'user1', { limit: 2 });
     expect(result.map((e) => e._id)).toEqual(['b', 'c']);
+    expect(auditDb.find).toHaveBeenCalledWith(expect.objectContaining({ limit: 2 }));
   });
 });
 

@@ -96,8 +96,10 @@ async function saveResult(db, doc) {
 
 /** Results whose profiles have not all taken them up (a crash between the writes), oldest first. */
 async function findUnappliedResults(db, limit = 50) {
+  // `endedAt` is in the selector so the index of the unapplied results answers it (the oldest first)
   const found = await db.find({
-    selector: { kind: 'result', applied: false },
+    selector: { kind: 'result', applied: false, endedAt: { $gt: null } },
+    sort: [{ kind: 'asc' }, { applied: 'asc' }, { endedAt: 'asc' }],
     limit,
   });
   return found.docs.sort((a, b) => String(a.endedAt).localeCompare(String(b.endedAt)));
@@ -116,26 +118,62 @@ async function listResults(db, { after = '', limit = 200 } = {}) {
 
 /** The recent results one player took part in, newest first. */
 async function resultsOfPlayer(db, playerId, limit = 20) {
-  const found = await db.find({
-    selector: { kind: 'result', playerIds: { $elemMatch: { $eq: playerId } } },
-    limit: 500,
+  const found = await db.view('results', 'byPlayer', {
+    startkey: ['result', playerId, '\ufff0'],
+    endkey: ['result', playerId],
+    descending: true,
+    include_docs: true,
+    limit,
   });
-  return found.docs
-    .sort((a, b) => String(b.endedAt).localeCompare(String(a.endedAt)))
-    .slice(0, limit);
+  return found.rows.map((row) => row.doc).filter(Boolean);
 }
 
 /** Every profile, visible or not (for the checks that look at all of them). */
 async function listProfiles(db) {
-  const found = await db.find({ selector: { kind: 'profile' }, limit: 20000 });
-  return found.docs;
+  const found = await db.list({
+    startkey: PROFILE_PREFIX,
+    endkey: `${PROFILE_PREFIX}\ufff0`,
+    include_docs: true,
+  });
+  return found.rows.map((row) => row.doc).filter(Boolean);
 }
 
 /** The board: profiles of a type that are visible, best rating first. */
 async function listBoard(db, { type, minGames = 0, limit = 50, skip = 0 } = {}) {
-  const selector = { kind: 'profile', visible: true, rated: { $gte: minGames } };
-  if (type === 'human' || type === 'bot') selector.type = type;
-  const found = await db.find({ selector, limit: 5000 });
+  // the usual board (everybody who has played): a view of the listed players, best rating first
+  if (minGames === 1) {
+    const which = type === 'human' || type === 'bot' ? type : 'all';
+    const rows = await db.view('board', 'listed', {
+      startkey: [which, {}],
+      endkey: [which],
+      descending: true,
+      include_docs: true,
+      limit: skip + limit + 50,
+    });
+    return rows.rows
+      .map((row) => row.doc)
+      .filter(Boolean)
+      .sort((a, b) => b.rating - a.rating || String(a.playerId).localeCompare(String(b.playerId)))
+      .slice(skip, skip + limit);
+  }
+  // answered from the board index, best rating first; a few more than asked for, so that a tie at the edge is ordered as it should
+  const typed = type === 'human' || type === 'bot';
+  const found = await db.find({
+    selector: {
+      kind: 'profile',
+      ...(typed ? { type } : {}),
+      visible: true,
+      rating: { $gte: -1e9 },
+      rated: { $gte: minGames },
+    },
+    sort: [
+      { kind: 'desc' },
+      ...(typed ? [{ type: 'desc' }] : []),
+      { visible: 'desc' },
+      { rating: 'desc' },
+    ],
+    limit: skip + limit + 50,
+  });
   return found.docs
     .sort((a, b) => b.rating - a.rating || String(a.playerId).localeCompare(String(b.playerId)))
     .slice(skip, skip + limit);

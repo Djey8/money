@@ -124,13 +124,14 @@ const OVERFETCH_LIMIT = 1000;
 async function queryAuditEntries(auditDb, userId, { resource, limit = 50 } = {}) {
   if (!userId) throw new Error('queryAuditEntries: userId is required');
 
-  const selector = { userId };
-  if (resource) selector.resource = resource;
-
-  const result = await auditDb.find({ selector, limit: OVERFETCH_LIMIT });
-  return result.docs
-    .sort((a, b) => (a.timestamp < b.timestamp ? 1 : a.timestamp > b.timestamp ? -1 : 0))
-    .slice(0, limit);
+  // newest first, from the index of the account's entries by time: only what is asked for is read
+  const selector = { userId, ...(resource ? { resource } : {}), timestamp: { $gt: null } };
+  const result = await auditDb.find({
+    selector,
+    sort: [{ userId: 'desc' }, ...(resource ? [{ resource: 'desc' }] : []), { timestamp: 'desc' }],
+    limit: Math.min(limit, OVERFETCH_LIMIT),
+  });
+  return result.docs;
 }
 
 module.exports = {

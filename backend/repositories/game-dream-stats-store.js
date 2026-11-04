@@ -95,19 +95,27 @@ async function createResult(db, doc) {
 
 /** The recent results one player took part in, newest first. */
 async function resultsOfPlayer(db, playerId, limit = 20) {
-  const found = await db.find({
-    selector: { kind: 'dresult', playerIds: { $elemMatch: { $eq: playerId } } },
-    limit: 500,
+  const found = await db.view('results', 'byPlayer', {
+    startkey: ['dresult', playerId, '\ufff0'],
+    endkey: ['dresult', playerId],
+    descending: true,
+    include_docs: true,
+    limit,
   });
-  return found.docs
-    .sort((a, b) => String(b.endedAt).localeCompare(String(a.endedAt)))
-    .slice(0, limit);
+  return found.rows.map((row) => row.doc).filter(Boolean);
 }
 
 /** Every profile of the board, visible or not. */
 async function listProfiles(db) {
-  const found = await db.find({ selector: { kind: 'dprofile' }, limit: 20000 });
-  return found.docs.map(upgrade);
+  const found = await db.list({
+    startkey: PROFILE_PREFIX,
+    endkey: `${PROFILE_PREFIX}\ufff0`,
+    include_docs: true,
+  });
+  return found.rows
+    .map((row) => row.doc)
+    .filter(Boolean)
+    .map(upgrade);
 }
 
 module.exports = {
