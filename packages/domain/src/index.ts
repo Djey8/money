@@ -63,6 +63,7 @@ export * from './cashflow-game/card-scale';
 export * from './cashflow-game/german-pay';
 export * from './cashflow-game/dream-deck';
 export * from './cashflow-game/dream-project';
+export * from './cashflow-game/emergency-project';
 export * from './cashflow-game/custom-rules';
 export * from './cashflow-game/steps';
 export * from './cashflow-game/card-reference';

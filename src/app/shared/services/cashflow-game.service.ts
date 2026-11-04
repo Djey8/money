@@ -105,6 +105,7 @@ import {
   monthlyExpensesMinor,
   livedPoints,
   dreamProjectParts,
+  emergencyProjectParts,
   netMonthlyMinor,
   resolveLifeCard,
   rollCareer,
@@ -2080,16 +2081,7 @@ export class CashflowGameService {
     const gameDate = game.virtualDate ?? this.clock.todayIso();
     const title = `${card.title[lang]} · M${String(game.round).padStart(2, '0')}`;
 
-    const buckets = quote.buckets.map((bucket) => ({
-      id: `${title}-${bucket.id}`,
-      title: bucket.title[lang],
-      target: fromMinorUnits(bucket.amountMinor),
-      amount: 0,
-      notes: '',
-      ...(bucket.dueInMonths > 0
-        ? { targetDate: addMonthsToIsoDate(gameDate, bucket.dueInMonths) }
-        : {}),
-    }));
+    // the project of the card: description, bucket notes and links, actions and notes - as the project of a dream
     const insuranceNote = quote.insured
       ? this.translate.instant('CashflowGame.emergency.insuredNote', {
           saved: fromMinorUnits(quote.savedMinor),
@@ -2098,24 +2090,27 @@ export class CashflowGameService {
       : card.insurance
         ? this.translate.instant('CashflowGame.emergency.uninsuredNote')
         : '';
-    const notes = [
-      ...(card.stat ? [card.stat[lang]] : []),
-      ...(card.insuranceNote ? [card.insuranceNote[lang]] : []),
-      ...(insuranceNote ? [insuranceNote] : []),
-      ...(card.refund ? [card.refund.note[lang]] : []),
-    ].map((text) => ({ text, createdAt: now }));
+    const parts = emergencyProjectParts(card, lang, quote, insuranceNote);
+    const buckets = parts.buckets.map((bucket) => ({
+      id: `${title}-${bucket.id}`,
+      title: bucket.title,
+      target: fromMinorUnits(bucket.amountMinor),
+      amount: 0,
+      notes: bucket.notes,
+      ...(bucket.links.length > 0 ? { links: bucket.links } : {}),
+      ...(bucket.dueInMonths > 0
+        ? { targetDate: addMonthsToIsoDate(gameDate, bucket.dueInMonths) }
+        : {}),
+    }));
+    const notes = parts.notes.map((text) => ({ text, createdAt: now }));
     const project: Fire = {
       title,
       sub: `${this.translate.instant(`CashflowGame.emergency.tier.${card.tier}`)} · ${card.category}`,
       phase: 'saving',
-      description: card.story[lang],
+      description: parts.description,
       buckets,
-      links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
-      actionItems: card.actions.map((action) => ({
-        text: action.text[lang],
-        done: false,
-        priority: action.priority,
-      })),
+      links: parts.links,
+      actionItems: parts.actionItems.map((action) => ({ ...action, done: false })),
       notes,
       emergencyCardId: card.id,
       ...(card.payment === 'pay_now' ? { emergencyPayNow: true } : {}),

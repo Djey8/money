@@ -132,6 +132,18 @@ interface OpportunityBandLike extends OpportunityRollLike {
               }}</small>
             </h4>
             <p>{{ e.card.story[lang] }}</p>
+            <!-- what kind of card it is: how the cost is found, when it is paid, what could have limited it -->
+            <p class="tc-chips">
+              <span class="tc-chip-info">{{
+                'CashflowGame.emergency.kind.' + e.card.type | translate
+              }}</span>
+              <span class="tc-chip-info">{{
+                'CashflowGame.emergency.pay.' + e.card.payment | translate
+              }}</span>
+              <span class="tc-chip-info" *ngIf="e.card.insurance"
+                >🛡 {{ insuranceName(e.card.insurance) }}</span
+              >
+            </p>
 
             <!-- what each number of the die means, and what was rolled (it stays on the card) -->
             <section
@@ -208,7 +220,10 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 }}
               </p>
               <p class="tc-bad" *ngIf="!e.quote.insured && e.card.insurance">
-                {{ 'CashflowGame.emergency.notInsured' | translate }}
+                {{
+                  'CashflowGame.emergency.notInsured'
+                    | translate: { cap: amount(e.quote.capMinor), currency: currency }
+                }}
               </p>
               <p class="tc-note" *ngIf="e.card.insuranceNote">{{ e.card.insuranceNote[lang] }}</p>
               <ng-container *ngIf="!e.projectTitle && dreamTable">
@@ -1245,6 +1260,20 @@ interface OpportunityBandLike extends OpportunityRollLike {
       }
       .tc-lucky {
         font-weight: 600;
+      }
+      .tc-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 4px 0 8px;
+      }
+      .tc-chip-info {
+        padding: 2px 9px;
+        border: 1px solid var(--color-border, #d9dde3);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        opacity: 0.85;
       }
       .tc-good {
         color: var(--color-success, #2e7d32);
@@ -3177,6 +3206,13 @@ export class TileCardComponent implements OnInit, OnDestroy {
 
   get dream() {
     return this.service.dreamView;
+  }
+
+  /** The name of the insurance a card names (the car cover of the full cover reads as the partial one's). */
+  insuranceName(kind: string): string {
+    return this.translate.instant(
+      `CashflowGame.insurance.kind.${kind === 'liability_keyloss' ? 'liability' : kind}`,
+    );
   }
 
   get maxOpen(): number {

@@ -3,6 +3,7 @@ import type { GameBooks } from '../books';
 import type { CashflowDreamProject } from '../types';
 import { DreamPlayer, type DreamPlayerData } from './player';
 import { dreamProjectParts } from '../dream-project';
+import { emergencyProjectParts } from '../emergency-project';
 
 /**
  * A Dreamfund life as the entities the app keeps it in (todo/dreamfund-tables-solo-ui.md, R2 and R6): the Mojo, the dream and the dreams
@@ -317,24 +318,30 @@ export function dreamAppEntities(
     const card = p.emergencyCard(plan.id);
     if (!card) continue;
     const paid = (plan.totalMinor ?? plan.leftMinor) - plan.leftMinor;
+    // the project of the card, as the solo game makes it: the plan is one bucket, what the card's own buckets are is told in its notes
+    const parts = emergencyProjectParts(card, l);
+    const bucketNotes = parts.buckets
+      .filter((bucket) => bucket.notes)
+      .map((bucket) => `${bucket.title}: ${bucket.notes}`)
+      .join('\n');
     fire.push({
       title: card.title[l],
       sub: card.category,
       phase: phaseOf(complete, paid, plan.perMinor),
       ...(complete ? { completionDate: nowIso.slice(0, 10) } : {}),
-      description: card.story[l],
+      description: parts.description,
       buckets: [
         {
           id: `${card.title[l]}-plan`,
           title: card.title[l],
           target: fromMinorUnits(plan.totalMinor ?? plan.leftMinor),
           amount: fromMinorUnits((plan.totalMinor ?? plan.leftMinor) - plan.leftMinor),
-          notes: '',
+          notes: bucketNotes,
         },
       ],
-      links: [],
-      actionItems: [],
-      notes: [],
+      links: parts.links,
+      actionItems: parts.actionItems.map((action) => ({ ...action, done: false })),
+      notes: parts.notes.map((text) => ({ text, createdAt: nowIso })),
       emergencyCardId: card.id,
       dreamPlanMinor: plan.perMinor,
       plannedSubscriptions: planOf(plan.perMinor, 'fire', card.title[l], card.id, nowIso),
