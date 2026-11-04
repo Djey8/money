@@ -8,6 +8,7 @@
  * Every character exists three times - Easy, Medium and Hard (`id`, `id~easy`, `id~hard`): the story is the same, the numbers are
  * not. Easy is round and simple (few lines, round amounts, a little more left of a month), Medium is a realistic budget, Hard is tight.
  */
+import { withLifeDreamDetails } from './cashflow-life-dream-details';
 import type { CareerStage, CareerTrack } from './cashflow-game/career';
 import { germanPay, type GermanPayOptions } from './cashflow-game/german-pay';
 import type { Difficulty } from './cashflow-game/difficulty';
@@ -321,23 +322,27 @@ function dreamProject(
   const dream = spec.dream;
   const bucketAmount = (amount: number) =>
     round_ ? round(amount * scale, 100) : round(amount * scale);
-  return {
-    title: dream.title[lang],
-    sub: dream.sub[lang],
-    description: dream.description?.[lang] ?? dream.sub[lang],
-    buckets: dream.buckets.map((bucket) => ({
-      id: bucket.id,
-      title: bucket.title[lang],
-      targetMinor: minor(bucketAmount(bucket.amount)),
-      notes: bucket.note?.[lang] ?? '',
-    })),
-    links: (dream.links ?? []).map((link) => ({ label: link.label[lang], url: link.url })),
-    actionItems: (dream.actions ?? []).map((item) => ({
-      text: item.text[lang],
-      priority: item.priority,
-    })),
-    notes: (dream.notes ?? []).map((note) => note[lang]),
-  };
+  return withLifeDreamDetails(
+    {
+      title: dream.title[lang],
+      sub: dream.sub[lang],
+      description: dream.description?.[lang] ?? dream.sub[lang],
+      buckets: dream.buckets.map((bucket) => ({
+        id: bucket.id,
+        title: bucket.title[lang],
+        targetMinor: minor(bucketAmount(bucket.amount)),
+        notes: bucket.note?.[lang] ?? '',
+      })),
+      links: (dream.links ?? []).map((link) => ({ label: link.label[lang], url: link.url })),
+      actionItems: (dream.actions ?? []).map((item) => ({
+        text: item.text[lang],
+        priority: item.priority,
+      })),
+      notes: (dream.notes ?? []).map((note) => note[lang]),
+    },
+    spec.id,
+    lang,
+  );
 }
 
 /** The debts of a variant: tuned and, on Easy, round. */

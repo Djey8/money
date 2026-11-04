@@ -1,5 +1,8 @@
 import type { DreamCard } from './cashflow-game/dream-deck';
 import type { Localized } from './cashflow-game/emergency-deck';
+import { TRAVEL_DETAILS } from './cashflow-dream-details-travel';
+import { DOING_DETAILS } from './cashflow-dream-details-doing';
+import { LIFE_DETAILS } from './cashflow-dream-details-life';
 
 /**
  * What a dream tells once it is a project (JFK, 2026-11-04): a description of what you need, a note and links for every bucket, links to
@@ -34,7 +37,7 @@ const step = (
   priority: 'low' | 'medium' | 'high' = 'medium',
 ): DreamCard['actions'][number] => ({ text: l(en, de), priority });
 
-export const DREAM_DETAILS: Record<string, DreamDetails> = {
+const FIRST_DETAILS: Record<string, DreamDetails> = {
   D01: {
     description: l(
       'Rome in four nights: the Colosseum, the Forum and the Palatine Hill share one ticket that is valid for a day. Book a timed slot online, add the Vatican and a few trattorias, and four nights are plenty. It is the cheapest "wonder of the world" for most Europeans.',
@@ -612,6 +615,14 @@ export const DREAM_DETAILS: Record<string, DreamDetails> = {
       ),
     ],
   },
+};
+
+/** Every dream's detail: the first eight written one by one, the rest by theme. */
+export const DREAM_DETAILS: Record<string, DreamDetails> = {
+  ...FIRST_DETAILS,
+  ...TRAVEL_DETAILS,
+  ...DOING_DETAILS,
+  ...LIFE_DETAILS,
 };
 
 /** The cards with their detail: links are added, action items and the notes are those of the detail where it has them. */
