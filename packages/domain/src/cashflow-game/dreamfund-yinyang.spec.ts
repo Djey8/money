@@ -70,6 +70,28 @@ describe('the Yin Yang map: two tracks that share the S', () => {
     }
   });
 
+  it('the two players start on opposite sides, each on their own half of the circle, and meet on the S later', () => {
+    for (const size of SIZES) {
+      const white = buildDreamfundBoard({ shape: 'yinyang', size, seed: 3, lane: 0 });
+      const black = buildDreamfundBoard({ shape: 'yinyang', size, seed: 3, lane: 1 });
+      const picture = white.picture!;
+      const n = TILE_COUNTS[size];
+      const m = n / 2;
+      const shared = new Set(picture.lanes[0].filter((tile) => picture.lanes[1].includes(tile)));
+      // the first tiles are their own, not shared
+      expect(shared.has(picture.lanes[0][0])).toBe(false);
+      expect(shared.has(picture.lanes[1][0])).toBe(false);
+      // the first half-way is the own half (m - 1 tiles) and then the common ground
+      for (let i = 0; i < m - 1; i += 1) {
+        expect(shared.has(picture.lanes[0][i])).toBe(false);
+        expect(shared.has(picture.lanes[1][i])).toBe(false);
+      }
+      // opposite: the two starts are mirror images through the middle of the circle
+      expect(white.points[0].x + black.points[0].x).toBeCloseTo(1, 5);
+      expect(white.points[0].y + black.points[0].y).toBeCloseTo(1, 5);
+    }
+  });
+
   it('draws every tile apart from the others, inside the box of the circle', () => {
     for (const size of SIZES) {
       const { picture } = buildDreamfundBoard({ shape: 'yinyang', size, seed: 5 });

@@ -691,4 +691,4 @@ A circle with an S through it (2026-11-04). Every player walks one whole side: t
 the **black** track the right half of the circle and the S walked the other way. The S (with its two ends, where the sides meet) is common
 ground - the same tiles for both tracks, and all the Paydays except one more on each side of a large map. Each track has the tiles of the
 size (24, 36 or 48) with the usual mix. The seats take the tracks in turn, white first; with an odd number of players one side has one more.
-The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track.
+Both start on opposite sides of the circle - each on the first tile of their own half - walk their half, and meet on the S. The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track.

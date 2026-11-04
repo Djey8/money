@@ -477,6 +477,11 @@ function arc(
   });
 }
 
+/** A track turned so it starts `by` tiles later (the same ring, another first tile). */
+function turn<T>(ring: T[], by: number): T[] {
+  return ring.map((_, i) => ring[(i + by) % ring.length]);
+}
+
 /**
  * The Yin Yang map (JFK, 2026-11-04): a circle with an S through it. Every player walks a whole side: the white track is the S and
  * the left half of the circle, the black track the right half of the circle and the S the other way. The S is common ground, and so
@@ -551,13 +556,15 @@ function yinYang(setup: BoardSetup): {
     }, 0) / n;
   return {
     spacing,
+    // Both start on their own half of the circle, on opposite sides, and meet on the S: the white track begins at the first tile of
+    // the left half (just after the bottom), the black one at the first tile of the right half (just after the top).
     boards: [
-      { kinds: whiteKinds, points: whitePoints },
-      { kinds: blackKinds, points: blackPoints },
+      { kinds: turn(whiteKinds, m + 1), points: turn(whitePoints, m + 1) },
+      { kinds: turn(blackKinds, 1), points: turn(blackPoints, 1) },
     ],
     picture: {
       tiles,
-      lanes: [whiteLane, blackLane],
+      lanes: [turn(whiteLane, m + 1), turn(blackLane, 1)],
       // the heads of the symbol: the players of the white track show in the white one (the lower), the black in the upper
       heads: [
         { x: 0.5, y: 0.7, radius: 0.1 },
