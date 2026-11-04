@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnInit,
   Output,
   signal,
 } from '@angular/core';
@@ -40,7 +41,40 @@ export type BriefingInsurance = InsuranceRow;
       (finish)="confirm.emit(); step.set('who')"
     ></app-insurance-decision>
     <div class="tb-overlay" role="dialog" [attr.aria-label]="t.briefingTitle">
-      <div class="tb-sheet">
+      <!-- the characters to choose from, as in the game on its own: the name, who they are, what is left of a month -->
+      <div class="tb-sheet" *ngIf="step() === 'choose' && canChange && !confirmed">
+        <h2>{{ t.characterChoose }}</h2>
+        <div class="tb-grid">
+          <button
+            *ngFor="let entry of characters; trackBy: trackId"
+            type="button"
+            class="tb-person"
+            [class.tb-person--on]="entry.id === professionId"
+            [disabled]="busy || entry.held"
+            (click)="choose(entry.id)"
+          >
+            <span class="tb-avatar" aria-hidden="true">{{ entry.name.charAt(0) }}</span>
+            <span class="tb-person-text">
+              <strong>{{ entry.name }}</strong>
+              <small *ngIf="entry.tagline">{{ entry.tagline }}</small>
+              <small>{{ t.characterCashflow }}: {{ entry.cashflowText }}</small>
+              <small *ngIf="entry.held">{{ t.characterHeld }}</small>
+            </span>
+          </button>
+          <button type="button" class="tb-person" [disabled]="busy" (click)="choose('random')">
+            <span class="tb-avatar" aria-hidden="true">🎲</span>
+            <span class="tb-person-text">
+              <strong>{{ t.characterRandom }}</strong>
+            </span>
+          </button>
+        </div>
+        <button type="button" class="btn btn--action tb-wide" (click)="step.set('who')">
+          {{ t.characterKeep }}
+        </button>
+      </div>
+
+      <!-- the details of the character -->
+      <div class="tb-sheet" *ngIf="step() !== 'choose' || !canChange || confirmed">
         <h2>{{ t.briefingTitle }}</h2>
         <p class="tb-intro">{{ t.briefingIntro }}</p>
 
@@ -51,35 +85,6 @@ export type BriefingInsurance = InsuranceRow;
           (dreamOpen)="dreamOpen.emit()"
           (reserveOpen)="reserveOpen.emit()"
         ></app-character-preview>
-
-        <!-- another character, as in the game on its own: a list to choose from, and the one shown above changes at once -->
-        <section class="tb-choose" *ngIf="choosing() && canChange && !confirmed">
-          <ul>
-            <li *ngFor="let entry of characters; trackBy: trackId">
-              <button
-                type="button"
-                class="tb-character"
-                [class.tb-character--on]="entry.id === professionId"
-                [disabled]="busy || entry.held || entry.id === professionId"
-                (click)="choose(entry.id)"
-              >
-                <strong>{{ entry.name }}</strong>
-                <small>{{ entry.tagline }}</small>
-                <small *ngIf="entry.held">{{ t.characterHeld }}</small>
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                class="tb-character"
-                [disabled]="busy"
-                (click)="choose('random')"
-              >
-                🎲 {{ t.characterRandom }}
-              </button>
-            </li>
-          </ul>
-        </section>
 
         <div class="tb-actions">
           <button
@@ -95,7 +100,7 @@ export type BriefingInsurance = InsuranceRow;
             class="btn btn--action tb-wide"
             *ngIf="canChange && !confirmed"
             [disabled]="busy"
-            (click)="choosing.set(!choosing())"
+            (click)="step.set('choose')"
           >
             {{ t.briefingBack }}
           </button>
@@ -146,34 +151,55 @@ export type BriefingInsurance = InsuranceRow;
         background: var(--color-background);
       }
 
-      .tb-choose ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+      .tb-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 4px;
       }
-      .tb-character {
-        width: 100%;
+      .tb-person {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-        padding: 8px 12px;
-        border: 1px solid var(--color-border-light);
-        border-radius: 10px;
-        background: var(--color-surface);
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border: 2px solid var(--color-border, #d9dde3);
+        border-radius: var(--radius-lg, 12px);
+        background: var(--color-surface, #fff);
         color: inherit;
+        font: inherit;
         text-align: start;
         cursor: pointer;
       }
-      .tb-character--on {
-        border-color: var(--color-primary, #1976d2);
+      .tb-person--on {
+        border-color: var(--color-primary, #2a7de1);
       }
-      .tb-character:disabled {
+      .tb-person:disabled {
         opacity: 0.55;
         cursor: default;
+      }
+      .tb-avatar {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--color-primary, #2a7de1);
+        color: #fff;
+        font-weight: 700;
+      }
+      .tb-person-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .tb-person-text small {
+        opacity: 0.75;
+      }
+      @media (max-width: 480px) {
+        .tb-grid {
+          grid-template-columns: 1fr;
+        }
       }
       .tb-wide {
         width: 100%;
@@ -191,20 +217,25 @@ export type BriefingInsurance = InsuranceRow;
     `,
   ],
 })
-export class TableBriefingComponent {
+export class TableBriefingComponent implements OnInit {
   @Input({ required: true }) professionId = '';
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;
   @Input() lang = 'en';
   @Input() insurances: BriefingInsurance[] = [];
   @Input() currency = '€';
   /** The first decision is who you are; the second the insurances; then the player is ready. */
-  readonly step = signal<'who' | 'insurance'>('who');
+  readonly step = signal<'choose' | 'who' | 'insurance'>('who');
   @Input() confirmed = false;
   /** The characters may be changed at this table (not where they are drawn). */
   @Input() canChange = true;
   /** The characters to choose from; `held` is one another player has at a table of unique characters. */
-  @Input() characters: { id: string; name: string; tagline: string; held: boolean }[] = [];
-  readonly choosing = signal(false);
+  @Input() characters: {
+    id: string;
+    name: string;
+    tagline: string;
+    cashflowText: string;
+    held: boolean;
+  }[] = [];
   @Input() busy = false;
   /** The names of the players who have not said they are ready. */
   @Input() waitingFor: string[] = [];
@@ -218,10 +249,15 @@ export class TableBriefingComponent {
     return dreamTexts(this.lang);
   }
 
-  /** A character was chosen: the list closes, the one above is the new one. */
+  /** Where the characters may be chosen, the list is the first decision; a character that is dealt and kept is read at once. */
+  ngOnInit(): void {
+    if (this.canChange && !this.confirmed) this.step.set('choose');
+  }
+
+  /** A character was chosen: its details are shown (a new life is dealt by the table, unless it is the one already shown). */
   choose(id: string): void {
-    this.choosing.set(false);
-    this.pickCharacter.emit(id);
+    this.step.set('who');
+    if (id !== this.professionId) this.pickCharacter.emit(id);
   }
 
   trackId = (_: number, entry: { id: string }): string => entry.id;

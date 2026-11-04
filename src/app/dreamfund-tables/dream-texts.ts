@@ -61,6 +61,9 @@ export interface DreamTexts {
   briefingBack: string;
   characterTaken: string;
   characterRandom: string;
+  characterChoose: string;
+  characterCashflow: string;
+  characterKeep: string;
   characterHeld: string;
   modeFriendsHint: string;
   boardHint: string;
@@ -286,6 +289,9 @@ const EN: DreamTexts = {
   briefingBack: 'Choose another character',
   characterTaken: 'This is your character',
   characterRandom: 'A random character',
+  characterChoose: 'Who do you want to be?',
+  characterCashflow: 'Cashflow',
+  characterKeep: 'Keep the character I was dealt',
   characterHeld: 'taken',
   modeFriendsHint:
     'Guided helps you learn the game with friends. A ranked game is always played strict.',
@@ -519,6 +525,9 @@ const DE: Partial<DreamTexts> = {
   briefingBack: 'Anderen Charakter wählen',
   characterTaken: 'Das ist dein Charakter',
   characterRandom: 'Ein zufälliger Charakter',
+  characterChoose: 'Wer willst du sein?',
+  characterCashflow: 'Cashflow',
+  characterKeep: 'Den zugeteilten Charakter behalten',
   characterHeld: 'vergeben',
   modeFriendsHint:
     'Geführt hilft beim Lernen mit Freunden. Ein gewertetes Spiel wird immer streng gespielt.',

@@ -20,9 +20,17 @@ import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
 import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
 import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
-import { insuranceOffers } from '@money/domain';
+import {
+  computeCashflowProfessionMonthlyCashflowMinor,
+  insuranceOffers,
+  professionIdAtDifficulty,
+} from '@money/domain';
 import { AppStateService } from '../shared/services/app-state.service';
-import { characters as dreamCharacters, dreamTexts } from '../dreamfund-tables/dream-texts';
+import {
+  characters as dreamCharacters,
+  dreamMoney,
+  dreamTexts,
+} from '../dreamfund-tables/dream-texts';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { extrasOf, moneyOf, pendingOf } from '../dreamfund-tables/dream-table-view';
@@ -728,7 +736,7 @@ export class TableLayerComponent implements OnDestroy {
       confirmed: me.dreamBriefed === true,
       canChange: view.settings.professions !== 'random',
       // at a table of unique characters one that another player holds cannot be taken
-      characters: dreamCharacters(this.lang).map((entry) => ({
+      characters: this.characterList(view.settings.difficulty).map((entry) => ({
         ...entry,
         held:
           view.settings.professions === 'unique' &&
@@ -744,6 +752,23 @@ export class TableLayerComponent implements OnDestroy {
 
   get d() {
     return dreamTexts(this.lang);
+  }
+
+  /** The characters with what is left of a month at the level of the table, the lowest first (as in the game on its own). */
+  private characterList(
+    difficulty: 'easy' | 'medium' | 'hard' | undefined,
+  ): { id: string; name: string; tagline: string; cashflowText: string; cashflow: number }[] {
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    return dreamCharacters(this.lang)
+      .map((entry) => {
+        const played = set?.professions.find(
+          (candidate) =>
+            candidate.id === professionIdAtDifficulty(set, entry.id, difficulty ?? 'medium'),
+        );
+        const cashflow = played ? computeCashflowProfessionMonthlyCashflowMinor(played) : 0;
+        return { ...entry, cashflow, cashflowText: dreamMoney(cashflow, this.lang) };
+      })
+      .sort((a, b) => a.cashflow - b.cashflow);
   }
 
   /** Another character while reading the one dealt: the table deals a new life of it. */
