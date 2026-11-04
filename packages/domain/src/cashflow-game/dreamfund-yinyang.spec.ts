@@ -49,17 +49,24 @@ describe('the Yin Yang map: two tracks that share the S', () => {
     }
   });
 
-  it('the Paydays are on the common S, with one more on each side of a big map', () => {
+  it('the Paydays are spread evenly round each track, some on the common S and some on the own half', () => {
     for (const size of SIZES) {
-      const map = buildDreamfundBoard({ shape: 'yinyang', size, seed: 11, lane: 0 });
-      const picture = map.picture!;
-      const m = TILE_COUNTS[size] / 2;
-      const onSeam = picture.lanes[0]
-        .slice(0, m + 1)
-        .filter((tile) => picture.tiles[tile].kind === 'payday').length;
-      const total = map.board.filter((space) => space.kind === 'payday').length;
-      expect(total).toBe(TILE_MIX[size].medium.payday);
-      expect(total - onSeam).toBe(size === 'large' ? 1 : 0);
+      const n = TILE_COUNTS[size];
+      const count = TILE_MIX[size].medium.payday;
+      for (const lane of [0, 1]) {
+        const map = buildDreamfundBoard({ shape: 'yinyang', size, seed: 11, lane });
+        const at = map.board.flatMap((space, i) => (space.kind === 'payday' ? [i] : []));
+        expect(at).toHaveLength(count);
+        for (let k = 0; k < at.length; k += 1) {
+          const gap = (at[(k + 1) % at.length] - at[k] + n) % n;
+          expect(Math.abs(gap - n / count)).toBeLessThanOrEqual(1);
+        }
+        // the common ones lie on the S (the first half and the end of the track), the others on its own half
+        const picture = map.picture!;
+        const shared = at.filter((i) => picture.lanes[1 - lane].includes(picture.lanes[lane][i]));
+        expect(shared.length).toBeGreaterThanOrEqual(2);
+        expect(shared.length).toBeLessThan(count + 1);
+      }
     }
   });
 

@@ -583,7 +583,7 @@ export class DreamBoardComponent {
           clip: `db-av-${this.map.setup.seed}-${token.id}`,
           x: circle.x + ((i % columns) - (columns - 1) / 2) * cell,
           y: circle.y + (Math.floor(i / columns) - (rows - 1) / 2) * cell,
-          r: Math.min(circle.r * 0.8, (cell / 2) * 0.92),
+          r: Math.min(circle.r * 0.64, (cell / 2) * 0.74),
           color: token.color,
           initial: (token.name || token.label || '?').trim().charAt(0).toUpperCase(),
           photo: token.photo ?? null,

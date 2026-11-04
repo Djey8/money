@@ -516,15 +516,13 @@ function yinYang(setup: BoardSetup): {
     wayPoints[m],
     ...[...wayPoints].reverse().slice(1, m),
   ];
-  // the Paydays are on the S, which both walk; a big map has one more on each side's own half
-  const common = setup.size === 'large' ? 5 : setup.size === 'medium' ? 4 : 3;
-  const own = setup.size === 'large' ? 1 : 0;
-  const onSeam = Array.from({ length: common }, (_, j) => Math.round((j * m) / (common - 1)));
-  const whiteFixed = [...onSeam, ...(own ? [m + Math.round(m / 2)] : [])];
-  const blackFixed = [
-    ...onSeam.map((k) => (k === 0 ? 0 : k === m ? m : m + (m - k))),
-    ...(own ? [Math.round(m / 2)] : []),
-  ];
+  // The Paydays are spread evenly round the white track, as on every map: those on the S are common (the black track has them too),
+  // the others are on the white half; the black track gets the same on its own half, mirrored, so both have the usual spread.
+  const count = TILE_MIX[setup.size][setup.difficulty ?? 'medium'].payday;
+  const whiteFixed = Array.from({ length: count }, (_, j) => Math.floor((j * n) / count));
+  const blackFixed = whiteFixed.map((w) =>
+    w === 0 ? 0 : w === m ? m : w < m ? m + (m - w) : n - w,
+  );
   const whiteKinds = layoutTiles(setup, whiteFixed);
   // the S of the black track is the white one walked the other way: its tiles are the same tiles
   const blackPreset: (DreamfundTile | null)[] = Array.from({ length: n }, () => null);
