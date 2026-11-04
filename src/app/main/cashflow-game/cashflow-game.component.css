@@ -3217,14 +3217,20 @@
   max-width: 100%;
 }
 
+/* one row of maps: more maps are scrolled to, never a second row (JFK, 2026-11-04) */
 .cf-shapes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr));
+  display: flex;
   gap: 8px;
   margin-bottom: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .cf-shape {
+  flex: 0 0 5.6rem;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   align-items: center;

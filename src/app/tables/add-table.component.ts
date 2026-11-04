@@ -673,13 +673,19 @@ function accountName(): string {
         opacity: 0.75;
       }
       /* the maps, as in the solo setup: a grid of small boards, the chosen one framed */
+      /* one row of maps: more maps are scrolled to, never a second row (JFK, 2026-11-04) */
       .at-maps {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr));
+        display: flex;
         gap: 8px;
         margin-bottom: 10px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
       }
       .at-map {
+        flex: 0 0 5.6rem;
+        scroll-snap-align: start;
         display: flex;
         flex-direction: column;
         align-items: center;
