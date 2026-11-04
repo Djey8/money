@@ -1675,6 +1675,7 @@
   "CashflowGame.board.title": "Board",
   "CashflowGame.board.shape.ring": "Ring",
   "CashflowGame.board.shape.infinity": "Infinity",
+  "CashflowGame.board.shape.yinyang": "Yin Yang",
   "CashflowGame.board.shape.rectangle": "Rectangle",
   "CashflowGame.board.shape.square": "Square",
   "CashflowGame.board.shape.mountain": "Mountain",

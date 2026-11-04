@@ -6702,7 +6702,7 @@ paths:
                   enum: [classic, dreamfund]
                   default: classic
                   description: >-
-                    Which game the table plays. `dreamfund` is the Dreamfund (Traumtopf): everyone plays their own life on the same map with the same difficulty, the Harvest market is the table's, and Opportunity cards can be traded for a fee. Its `settings` are `name`, `visibility`, `maxSeats`, `difficulty` (easy|medium|hard), `shape` (ring|infinity|rectangle|square|mountain), `size` (small|medium|large), `mode` (guided|strict), `customRules`, `professions` (duplicates|unique|random), `turnOrder`, `clock`, `awayAfterTimeouts`, `endCondition` (first-win|all-done|round-limit), `roundLimit`, `spectators`, `pace`, `ranked`. Bots: `listGameBots?kind=dreamfund`; a bot is seated with `policyId` `dream:<id>`.
+                    Which game the table plays. `dreamfund` is the Dreamfund (Traumtopf): everyone plays their own life on the same map with the same difficulty, the Harvest market is the table's, and Opportunity cards can be traded for a fee. Its `settings` are `name`, `visibility`, `maxSeats`, `difficulty` (easy|medium|hard), `shape` (ring|infinity|yinyang|rectangle|square|mountain), `size` (small|medium|large), `mode` (guided|strict), `customRules`, `professions` (duplicates|unique|random), `turnOrder`, `clock`, `awayAfterTimeouts`, `endCondition` (first-win|all-done|round-limit), `roundLimit`, `spectators`, `pace`, `ranked`. Bots: `listGameBots?kind=dreamfund`; a bot is seated with `policyId` `dream:<id>`.
                 settings:
                   $ref: '#/components/schemas/GameRoomSettingsInput'
             example:

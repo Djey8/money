@@ -1700,6 +1700,7 @@
   "CashflowGame.board.title": "Spielfeld",
   "CashflowGame.board.shape.ring": "Ring",
   "CashflowGame.board.shape.infinity": "Unendlich",
+  "CashflowGame.board.shape.yinyang": "Yin und Yang",
   "CashflowGame.board.shape.rectangle": "Rechteck",
   "CashflowGame.board.shape.square": "Quadrat",
   "CashflowGame.board.shape.mountain": "Berg",

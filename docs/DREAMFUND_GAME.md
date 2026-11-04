@@ -46,7 +46,7 @@ you can hop in or out of an insurance with the next Payday. Without it, the bill
 
 ## The map
 
-A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, rectangle, square or mountain** - and a size (**24, 36 or 48
+A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48
 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:
 
 | Tile           | Count | Colour | What happens                                                                     |
@@ -684,3 +684,11 @@ number changes. The best strategy of each character and difficulty (share of gam
 | Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
 
 <!-- matrix:end -->
+
+### The Yin Yang map
+
+A circle with an S through it (2026-11-04). Every player walks one whole side: the **white** track is the S and the left half of the circle,
+the **black** track the right half of the circle and the S walked the other way. The S (with its two ends, where the sides meet) is common
+ground - the same tiles for both tracks, and all the Paydays except one more on each side of a large map. Each track has the tiles of the
+size (24, 36 or 48) with the usual mix. The seats take the tracks in turn, white first; with an odd number of players one side has one more.
+The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track.

@@ -14,7 +14,7 @@ import {
  * the difficulty, the map and the Custom JFK rules, the same ones the solo game is set up with. Validated once, frozen when play starts.
  */
 
-const SHAPES = ['ring', 'infinity', 'rectangle', 'square', 'mountain'] as const;
+const SHAPES = ['ring', 'infinity', 'yinyang', 'rectangle', 'square', 'mountain'] as const;
 const SIZES = ['small', 'medium', 'large'] as const;
 /** The money of a table: the game's own, or the sign of a real one. */
 export const TABLE_CURRENCIES = ['game', '€', '$', '£', '¥', 'CHF'];

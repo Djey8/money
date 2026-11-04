@@ -88,7 +88,52 @@ const HEIGHT_TAKEN = 400;
       [attr.aria-label]="ariaLabel"
       preserveAspectRatio="xMidYMid meet"
     >
-      <polygon class="db-track" [attr.points]="layout.trackPoints" />
+      <polygon *ngIf="!layout.seamPoints" class="db-track" [attr.points]="layout.trackPoints" />
+      <!-- the Yin Yang map: the circle, the S through it, and the two heads where the players of each side are shown -->
+      <ng-container *ngIf="layout.seamPoints">
+        <polygon class="db-track" [attr.points]="layout.trackPoints" />
+        <polyline class="db-track" [attr.points]="layout.seamPoints" />
+        <g *ngFor="let head of heads; trackBy: trackHead" class="db-head">
+          <circle
+            [attr.cx]="head.x"
+            [attr.cy]="head.y"
+            [attr.r]="head.r"
+            [attr.fill]="head.fill"
+            class="db-head-disc"
+          />
+          <g *ngFor="let who of head.avatars; trackBy: trackAvatar">
+            <clipPath [attr.id]="who.clip">
+              <circle [attr.cx]="who.x" [attr.cy]="who.y" [attr.r]="who.r" />
+            </clipPath>
+            <circle [attr.cx]="who.x" [attr.cy]="who.y" [attr.r]="who.r" [style.fill]="who.color" />
+            <text
+              [attr.x]="who.x"
+              [attr.y]="who.y"
+              class="db-head-initial"
+              [style.font-size.px]="who.r * 0.9"
+            >
+              {{ who.bot ? '🤖' : who.initial }}
+            </text>
+            <image
+              *ngIf="who.photo"
+              [attr.href]="who.photo"
+              [attr.x]="who.x - who.r"
+              [attr.y]="who.y - who.r"
+              [attr.width]="who.r * 2"
+              [attr.height]="who.r * 2"
+              preserveAspectRatio="xMidYMid slice"
+              [attr.clip-path]="'url(#' + who.clip + ')'"
+            />
+            <circle
+              [attr.cx]="who.x"
+              [attr.cy]="who.y"
+              [attr.r]="who.r"
+              class="db-head-ring"
+              [style.stroke]="who.color"
+            />
+          </g>
+        </g>
+      </ng-container>
       <g
         *ngFor="let tile of layout.tiles; trackBy: trackTile"
         class="db-tile"
@@ -252,6 +297,20 @@ const HEIGHT_TAKEN = 400;
         stroke-dasharray: 8 12;
         stroke-linejoin: round;
       }
+      .db-head-disc {
+        stroke: var(--color-border, #999);
+        stroke-width: 4;
+      }
+      .db-head-initial {
+        fill: #fff;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .db-head-ring {
+        fill: none;
+        stroke-width: 4;
+      }
       .db-tile rect {
         stroke-width: 6;
         stroke: var(--tc);
@@ -369,18 +428,30 @@ export class DreamBoardComponent {
 
   /** Everything the picture needs, made again only when the map, the orientation or the START marker changes. */
   get layout(): Layout {
-    const key = `${this.map.setup.shape}/${this.map.setup.size}/${this.map.setup.seed}/${this.atStart}`;
+    const key = `${this.map.setup.shape}/${this.map.setup.size}/${this.map.setup.seed}/${this.atStart}/${this.map.setup.dreams === false ? 'life' : 'dreams'}`;
     if (this.cache?.key === key) return this.cache.value;
     const scale = SPACING / this.map.spacing;
     // the map is always drawn as it is shown in the choice of the maps: an infinity lies down, whatever the screen
     const width = this.map.aspect * scale;
     const height = scale;
-    const tiles: DrawnTile[] = this.map.board.map((space, index) => ({
-      index,
-      kind: space.kind as DreamfundTile,
-      x: this.map.points[index].x * scale + MARGIN,
-      y: this.map.points[index].y * scale + MARGIN,
-    }));
+    // a map with two tracks (the Yin Yang) draws every tile once; a track's tile is one of them
+    const picture = this.map.picture;
+    const tiles: DrawnTile[] = picture
+      ? picture.tiles.map((tile, index) => ({
+          index,
+          kind: tile.kind,
+          x: tile.x * scale + MARGIN,
+          y: tile.y * scale + MARGIN,
+        }))
+      : this.map.board.map((space, index) => ({
+          index,
+          kind: space.kind as DreamfundTile,
+          x: this.map.points[index].x * scale + MARGIN,
+          y: this.map.points[index].y * scale + MARGIN,
+        }));
+    const lanes = picture?.lanes ?? null;
+    const drawn = (line: { x: number; y: number }[]) =>
+      line.map((p) => `${p.x * scale + MARGIN},${p.y * scale + MARGIN}`).join(' ');
     // START is a pad above the map, in the middle: the tokens wait there side by side until the first roll
     const startWidth = Math.min(width + 2 * MARGIN - 20, 300);
     const start = { x: MARGIN + width / 2, y: -START_GAP - START_HEIGHT / 2 };
@@ -389,14 +460,24 @@ export class DreamBoardComponent {
     const maxX = width + 2 * MARGIN;
     const maxY = height + 2 * MARGIN;
     // a token stands inside the map, next to its tile, the way tokens do at a table
-    const spots = tokenSpots(tiles, this.map.setup.shape === 'infinity');
+    // (the Yin Yang: every track has its own, inside its own side)
+    const spotsByLane = lanes
+      ? lanes.map((lane) => tokenSpots(lane.map((index) => tiles[index])))
+      : [tokenSpots(tiles, this.map.setup.shape === 'infinity')];
     const value: Layout = {
       tiles,
-      spots,
+      lanes,
+      spotsByLane,
+      seamPoints: picture ? drawn(picture.seam) : null,
+      headCircles: (picture?.heads ?? []).map((head) => ({
+        x: head.x * scale + MARGIN,
+        y: head.y * scale + MARGIN,
+        r: head.radius * scale,
+      })),
       start,
       startWidth,
       viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`,
-      trackPoints: tiles.map((t) => `${t.x},${t.y}`).join(' '),
+      trackPoints: picture ? drawn(picture.rim) : tiles.map((t) => `${t.x},${t.y}`).join(' '),
       ratio: (maxX - minX) / (maxY - minY),
     };
     this.cache = { key, value };
@@ -412,12 +493,13 @@ export class DreamBoardComponent {
     transform: string;
     angle: number | null;
   }[] {
-    const sameAt = new Map<number | null, number>();
+    const sameAt = new Map<string, number>();
+    const spot = (t: { lane?: number; position: number | null }) => `${t.lane ?? 0}:${t.position}`;
     return this.tokens.map((token) => {
-      const count = sameAt.get(token.position) ?? 0;
-      sameAt.set(token.position, count + 1);
+      const count = sameAt.get(spot(token)) ?? 0;
+      sameAt.set(spot(token), count + 1);
       const shift =
-        count * 26 - 13 * (this.tokens.filter((t) => t.position === token.position).length - 1);
+        count * 26 - 13 * (this.tokens.filter((t) => spot(t) === spot(token)).length - 1);
       if (token.position === null) {
         const at = this.layout.start;
         return {
@@ -429,9 +511,11 @@ export class DreamBoardComponent {
           angle: null,
         };
       }
-      const at = this.layout.spots[token.position] ?? this.layout.tiles[token.position];
+      const lane = token.lane ?? 0;
+      const spotOf = this.spotAt(lane, token.position);
+      const at = spotOf ?? this.layout.tiles[this.drawnIndex(lane, token.position)];
       // tokens on one tile are spread along the track, at right angles to the way they face
-      const angle = this.layout.spots[token.position]?.angle ?? 0;
+      const angle = spotOf?.angle ?? 0;
       const rad = ((angle + 90) * Math.PI) / 180;
       return {
         id: token.id,
@@ -439,9 +523,82 @@ export class DreamBoardComponent {
         color: token.color,
         active: !!token.active,
         transform: `translate(${at.x + Math.cos(rad) * shift}px, ${at.y + Math.sin(rad) * shift}px)`,
-        angle: this.layout.spots[token.position]?.angle ?? null,
+        angle: spotOf?.angle ?? null,
       };
     });
+  }
+
+  /** The track this screen's own token walks (the Yin Yang map has two). */
+  private get ownLane(): number {
+    return this.map.setup.lane ?? 0;
+  }
+
+  /** The drawn tile that a track's tile is (the two tracks of a Yin Yang share the tiles of the S). */
+  private drawnIndex(lane: number, position: number): number {
+    const lanes = this.layout.lanes;
+    return lanes ? (lanes[lane % lanes.length][position] ?? position) : position;
+  }
+
+  private spotAt(
+    lane: number,
+    position: number,
+  ): { x: number; y: number; angle: number } | undefined {
+    const all = this.layout.spotsByLane;
+    return all[Math.min(lane, all.length - 1)][position];
+  }
+
+  /**
+   * The heads of the Yin Yang symbol: the players of the white track are in the white dot, those of the black track in the black one,
+   * each with their picture (their letter on their colour when there is none); several are drawn smaller side by side.
+   */
+  get heads(): {
+    x: number;
+    y: number;
+    r: number;
+    fill: string;
+    avatars: {
+      id: string;
+      clip: string;
+      x: number;
+      y: number;
+      r: number;
+      color: string;
+      initial: string;
+      photo: string | null;
+      bot: boolean;
+    }[];
+  }[] {
+    return this.layout.headCircles.map((circle, lane) => {
+      const who = this.tokens.filter((token) => (token.lane ?? 0) % 2 === lane);
+      const columns = who.length <= 1 ? 1 : who.length <= 4 ? 2 : 3;
+      const rows = Math.max(1, Math.ceil(who.length / columns));
+      const cell = (circle.r * 2 * 0.9) / Math.max(columns, rows);
+      return {
+        x: circle.x,
+        y: circle.y,
+        r: circle.r,
+        fill: lane === 0 ? '#ffffff' : '#1b1b1f',
+        avatars: who.map((token, i) => ({
+          id: token.id,
+          clip: `db-av-${this.map.setup.seed}-${token.id}`,
+          x: circle.x + ((i % columns) - (columns - 1) / 2) * cell,
+          y: circle.y + (Math.floor(i / columns) - (rows - 1) / 2) * cell,
+          r: Math.min(circle.r * 0.8, (cell / 2) * 0.92),
+          color: token.color,
+          initial: (token.name || token.label || '?').trim().charAt(0).toUpperCase(),
+          photo: token.photo ?? null,
+          bot: !!token.bot,
+        })),
+      };
+    });
+  }
+
+  trackHead(index: number): number {
+    return index;
+  }
+
+  trackAvatar(_: number, who: { id: string }): string {
+    return who.id;
   }
 
   trackToken(_: number, token: { id: string }): string {
@@ -449,7 +606,9 @@ export class DreamBoardComponent {
   }
 
   get hereTile(): DrawnTile | null {
-    return this.position === null ? null : (this.layout.tiles[this.position] ?? null);
+    return this.position === null
+      ? null
+      : (this.layout.tiles[this.drawnIndex(this.ownLane, this.position)] ?? null);
   }
 
   /** Where the token stands: on its tile, or at START outside the track. */
@@ -458,14 +617,16 @@ export class DreamBoardComponent {
       const at = this.layout.start;
       return `translate(${at.x}px, ${at.y + 8}px)`;
     }
-    const at = this.layout.spots[this.position] ?? this.layout.tiles[this.position];
+    const at =
+      this.spotAt(this.ownLane, this.position) ??
+      this.layout.tiles[this.drawnIndex(this.ownLane, this.position)];
     return `translate(${at.x}px, ${at.y}px)`;
   }
 
   /** The way the token points: at its tile (none while it waits at START). */
   get tokenAngle(): number | null {
     if (this.position === null) return null;
-    return this.layout.spots[this.position]?.angle ?? null;
+    return this.spotAt(this.ownLane, this.position)?.angle ?? null;
   }
 
   get ariaLabel(): string {
@@ -494,8 +655,13 @@ export class DreamBoardComponent {
 
 interface Layout {
   tiles: DrawnTile[];
-  /** Where the token stands when it is on a tile: inside the map, beside it. */
-  spots: { x: number; y: number; angle: number }[];
+  /** A map with two tracks: for each, the index of the drawn tile of each of its tiles. */
+  lanes: number[][] | null;
+  /** Where the token stands when it is on a tile, by track: inside the map, beside it. */
+  spotsByLane: { x: number; y: number; angle: number }[][];
+  /** The S through the circle (a Yin Yang map) and the two heads of the symbol. */
+  seamPoints: string | null;
+  headCircles: { x: number; y: number; r: number }[];
   start: { x: number; y: number };
   startWidth: number;
   viewBox: string;

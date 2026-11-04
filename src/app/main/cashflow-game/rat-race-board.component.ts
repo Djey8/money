@@ -18,6 +18,12 @@ export interface BoardToken {
   label: string;
   /** The token of the player on the move is drawn larger. */
   active?: boolean;
+  /** The Yin Yang map: the track the player walks (0 white, 1 black). */
+  lane?: number;
+  /** Who it is, for the picture in the head of their side (Yin Yang map): the name, the profile picture, a bot. */
+  name?: string;
+  photo?: string | null;
+  bot?: boolean;
 }
 
 /** One drawn cell of the ring. */

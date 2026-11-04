@@ -1700,6 +1700,7 @@
   "CashflowGame.board.title": "棋盘",
   "CashflowGame.board.shape.ring": "环形",
   "CashflowGame.board.shape.infinity": "无穷",
+  "CashflowGame.board.shape.yinyang": "阴阳",
   "CashflowGame.board.shape.rectangle": "长方形",
   "CashflowGame.board.shape.square": "正方形",
   "CashflowGame.board.shape.mountain": "山",

@@ -922,7 +922,7 @@ export class AddTableComponent implements OnInit {
   /** The game the table is for: the classic Cashflow, or the Dreamfund of this app (the same panel, a few settings more). */
   @Input() game: 'classic' | 'dreamfund' = 'classic';
   readonly levels = ['easy', 'medium', 'hard'] as const;
-  readonly shapes = ['ring', 'infinity', 'rectangle', 'square', 'mountain'] as const;
+  readonly shapes = ['ring', 'infinity', 'yinyang', 'rectangle', 'square', 'mountain'] as const;
   readonly sizes = ['small', 'medium', 'large'] as const;
   d: DreamTexts = dreamTexts('en');
   get dream(): boolean {
@@ -980,7 +980,7 @@ export class AddTableComponent implements OnInit {
     offerRolls: 3,
     pace: 'fast' as 'fast' | 'normal' | 'slow',
     difficulty: 'medium' as 'easy' | 'medium' | 'hard',
-    shape: 'ring' as 'ring' | 'infinity' | 'rectangle' | 'square' | 'mountain',
+    shape: 'ring' as 'ring' | 'infinity' | 'yinyang' | 'rectangle' | 'square' | 'mountain',
     size: 'medium' as 'small' | 'medium' | 'large',
     mode: 'guided' as 'guided' | 'strict',
     bankStep: 100000,

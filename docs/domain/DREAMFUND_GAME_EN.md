@@ -46,7 +46,7 @@ you can hop in or out of an insurance with the next Payday. Without it, the bill
 
 ## The map
 
-A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, rectangle, square or mountain** - and a size (**24, 36 or 48
+A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48
 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:
 
 | Tile           | Count | Colour | What happens                                                                     |

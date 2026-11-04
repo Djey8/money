@@ -475,11 +475,13 @@ function reveal(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
     taken.add(chosen);
     return chosen;
   };
-  const players = table.players.map((seat): DreamSeat => {
+  const players = table.players.map((seat, index): DreamSeat => {
     const professionId = settle(seat);
     const life = new DreamPlayer({
       rng: rng.rng,
       seed: table.settings.layoutSeed || table.seed,
+      // the Yin Yang map has two tracks: the seats take them in turn, white first (three players: two white, one black)
+      lane: index % 2,
       professionId,
       shape: table.settings.shape,
       size: table.settings.size,
@@ -599,6 +601,7 @@ function changeCharacter(
   const life = new DreamPlayer({
     rng: rng.rng,
     seed: table.settings.layoutSeed || table.seed,
+    lane: Math.max(0, table.players.indexOf(seat)) % 2,
     professionId: chosen,
     shape: table.settings.shape,
     size: table.settings.size,

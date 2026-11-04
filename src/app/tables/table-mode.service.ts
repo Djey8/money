@@ -344,6 +344,24 @@ export class TableModeService {
     return this.historyMemo.lines;
   }
 
+  /** The profile pictures of the seats (by seat), fetched once for a table that shows them on its map. */
+  readonly pictures = signal<Record<number, string | null>>({});
+  private picturesOf = '';
+
+  private loadPictures(): void {
+    const id = this.session()?.tableId;
+    if (!id || this.picturesOf === id) return;
+    this.picturesOf = id;
+    const api = this.injector.get(TablesApiService);
+    api.seats(id).subscribe({
+      next: (r) =>
+        this.pictures.set(
+          Object.fromEntries(r.seats.map((seat) => [seat.seat, api.pictureUrl(seat, id)])),
+        ),
+      error: () => undefined,
+    });
+  }
+
   /** Everybody's token for the board: their own books say where each stands; mine is where the screen draws it right now. */
   private tokens(mine: number | null): BoardToken[] {
     const view = this.view();
@@ -358,8 +376,19 @@ export class TableModeService {
       RemoteGameHook.holdUpdates && this.looking() === null && view.activeSeat === view.youSeat;
     return view.players.map((player) => {
       const books = player.books as unknown as GameBooks | null;
+      const setup = books?.state.boardSetup;
+      if (setup?.shape === 'yinyang') this.loadPictures();
       return {
         id: String(player.seat),
+        // the Yin Yang map: the track of the player, and who is shown in the head of it
+        ...(setup?.shape === 'yinyang'
+          ? {
+              lane: setup.lane ?? 0,
+              name: player.name,
+              photo: this.pictures()[player.seat] ?? null,
+              bot: !!player.bot,
+            }
+          : {}),
         position:
           player.seat === view.youSeat && walking
             ? mine

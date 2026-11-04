@@ -1644,6 +1644,7 @@
   "CashflowGame.board.title": "Tablero",
   "CashflowGame.board.shape.ring": "Anillo",
   "CashflowGame.board.shape.infinity": "Infinito",
+  "CashflowGame.board.shape.yinyang": "Yin Yang",
   "CashflowGame.board.shape.rectangle": "Rectángulo",
   "CashflowGame.board.shape.square": "Cuadrado",
   "CashflowGame.board.shape.mountain": "Montaña",
