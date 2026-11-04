@@ -108,7 +108,9 @@ describe('the insurances of a Dreamfund character', () => {
     expect(insuranceCoverage('car_full').length).toBeGreaterThanOrEqual(
       insuranceCoverage('car_partial').length,
     );
-    expect(insuranceCoverage('legal')).toEqual([]);
-    expect(insuranceCoverage('dental')).toEqual([]);
+    // every insurance of the catalogue works on at least one card (JFK, 2026-11)
+    expect(insuranceCoverage('legal').length).toBeGreaterThan(0);
+    expect(insuranceCoverage('dental').length).toBeGreaterThan(0);
+    expect(insuranceCoverage('household').length).toBeGreaterThan(0);
   });
 });

@@ -4,8 +4,14 @@
  * Kept out of the domain package's main entry like the other printed content (the Firebase edition ships none of it).
  */
 import type { EmergencyCard } from './cashflow-game/emergency-deck';
+import { withEmergencyDetails } from './cashflow-emergency-kit';
+import { SMALL_DETAILS } from './cashflow-emergency-details-small';
+import { BIG_DETAILS } from './cashflow-emergency-details-big';
+import { MORE_CAR_CARDS } from './cashflow-emergency-more-car';
+import { MORE_HEALTH_CARDS } from './cashflow-emergency-more-health';
+import { MORE_LIFE_CARDS } from './cashflow-emergency-more-life';
 
-export const EMERGENCY_CARDS: EmergencyCard[] = [
+const BASE_EMERGENCY_CARDS: EmergencyCard[] = [
   {
     id: 'E01',
     tier: 'spark',
@@ -3202,4 +3208,13 @@ export const EMERGENCY_CARDS: EmergencyCard[] = [
     ],
     links: [],
   },
+];
+
+/** The cards with their detail (`cashflow-emergency-details-*.ts`): what a Fire project made from a card is filled in with. */
+export const EMERGENCY_CARDS: EmergencyCard[] = [
+  ...withEmergencyDetails(BASE_EMERGENCY_CARDS, { ...SMALL_DETAILS, ...BIG_DETAILS }),
+  // the second stack (E51-E100, JFK 2026-11): written whole, with their detail
+  ...MORE_CAR_CARDS,
+  ...MORE_HEALTH_CARDS,
+  ...MORE_LIFE_CARDS,
 ];

@@ -29,9 +29,9 @@ const insured: EmergencyContext = {
 const bare: EmergencyContext = { insurances: [], traits: [], openEmergencies: 0 };
 
 describe('the Emergency stack (temp_cards v0.2)', () => {
-  it('has the 50 cards, each once, in English and German', () => {
-    expect(EMERGENCY_CARDS).toHaveLength(50);
-    expect(new Set(EMERGENCY_CARDS.map((c) => c.id)).size).toBe(50);
+  it('has the 100 cards, each once, in English and German', () => {
+    expect(EMERGENCY_CARDS).toHaveLength(100);
+    expect(new Set(EMERGENCY_CARDS.map((c) => c.id)).size).toBe(100);
     for (const c of EMERGENCY_CARDS) {
       expect(c.title.en && c.title.de && c.story.en && c.story.de).toBeTruthy();
       expect(c.actions.length).toBeGreaterThan(0);
@@ -90,9 +90,11 @@ describe('the Emergency stack (temp_cards v0.2)', () => {
     expect(withCover.payMinor).toBe(INSURANCE_DEDUCTIBLE_CAP_MINOR);
     expect(withCover.savedMinor).toBe(without.fullMinor - INSURANCE_DEDUCTIBLE_CAP_MINOR);
     expect(withCover.buckets).toHaveLength(1);
-    // the liability covers the key-loss clause of the stack, a bike add-on it does not
+    // the liability covers the key-loss clause of the stack; a stolen bike is the household insurance's, with its own deductible
     expect(quoteEmergency(card('E35'), {}, insured).payMinor).toBe(INSURANCE_DEDUCTIBLE_CAP_MINOR);
-    expect(quoteEmergency(card('E18'), { rolls: { main: 6 } }, insured).insured).toBe(false);
+    const bike = quoteEmergency(card('E18'), { rolls: { main: 6 } }, insured);
+    expect(bike.insured).toBe(true);
+    expect(bike.payMinor).toBe(20000);
   });
 
   it('the flat that burns down: the insured player rolls the hotel overrun on top of the deductible', () => {
@@ -157,8 +159,11 @@ describe('drawing an emergency', () => {
     // the pile is used up: the next draw reshuffles the discards (the unique card never comes back)
     const next = drawEmergencyCard(EMERGENCY_CARDS, deck, [], rng);
     expect(next.deck.seen).toEqual([next.card.id]);
-    expect(deck.gone).toEqual(['E30']);
-    expect(next.card.id).not.toBe('E30');
+    // the unique cards that were played (those that need no car or pet) never come back
+    const unique = EMERGENCY_CARDS.filter((c) => c.unique && !c.requires).map((c) => c.id);
+    expect([...deck.gone].sort()).toEqual([...unique].sort());
+    expect(unique).toContain('E30');
+    expect(deck.gone).not.toContain(next.card.id);
   });
 
   it('a card that needs a car applies to a player with one', () => {
