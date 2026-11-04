@@ -60,7 +60,7 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(game.career).toMatchObject({ stage: 'C1' });
     expect(game.dreams).toEqual({ open: [], lived: [], bonusPoints: 0 });
     expect(game.lineTitles?.['incomeTax']).toBeTruthy();
-    expect(service.lifeCards).toHaveLength(27);
+    expect(service.lifeCards.length).toBeGreaterThanOrEqual(70);
     expect(service.dreamCards).toHaveLength(96);
   });
 

@@ -72,9 +72,9 @@ const monthly = (books: LifeBooks) =>
     .reduce((sum, sub) => sum + sub.amountMinor, 0);
 
 describe('the Life stack (temp_cards v0.3)', () => {
-  it('has the 27 cards, 36 with the copies, in English and German', () => {
-    expect(LIFE_CARDS).toHaveLength(27);
-    expect(LIFE_CARDS.reduce((sum, c) => sum + c.copies, 0)).toBe(36);
+  it('has the first 27 cards of the design and the more that balance them, in English and German', () => {
+    expect(LIFE_CARDS.length).toBeGreaterThanOrEqual(70);
+    expect(LIFE_CARDS.slice(0, 27).reduce((sum, c) => sum + c.copies, 0)).toBe(36);
     for (const c of LIFE_CARDS)
       expect(c.title.en && c.title.de && c.story.en && c.story.de).toBeTruthy();
   });
@@ -211,10 +211,10 @@ describe('the Life stack (temp_cards v0.3)', () => {
     expect(monthly(books)).toBe(
       Math.max(monthly(before) - Math.round(net * 0.4), Math.round(monthly(before) * 0.25)),
     );
-    expect(books.state.jobSearch).toMatchObject({ rollFrom: 6, paydaysLeft: 6 });
-    // six Paydays without a six (a rng that never rolls a six): the next offer pays 15% less
+    expect(books.state.jobSearch).toMatchObject({ rollFrom: 5, paydaysLeft: 5 });
+    // five Paydays without a five or six (a rng that never rolls them): the next offer pays 10% less
     const never = () => 0;
-    for (let payday = 0; payday < 6; payday += 1) {
+    for (let payday = 0; payday < 5; payday += 1) {
       const tick = tickLife(books, { date: '2026-12-15', lang: 'en', rng: never })!;
       books = {
         state: tick.effects.state,
@@ -230,7 +230,7 @@ describe('the Life stack (temp_cards v0.3)', () => {
     }
     expect(books.state.life!.employment).toBe('employed');
     expect(books.state.jobSearch).toBeUndefined();
-    expect(monthly(books)).toBe(monthly(before) - Math.round(net * 0.15));
+    expect(monthly(books)).toBe(monthly(before) - Math.round(net * 0.1));
   });
 
   it('a blow is softened: a card never takes the monthly cashflow below a quarter of what it was', () => {

@@ -3,8 +3,9 @@
  * German. Amounts are minor units of the game money. Kept out of the domain package's main entry like the other printed content.
  */
 import type { LifeCard } from './cashflow-game/life-deck';
+import { LIFE_CARDS_MORE } from './cashflow-life-cards-more';
 
-export const LIFE_CARDS: LifeCard[] = [
+const BASE_LIFE_CARDS: LifeCard[] = [
   {
     id: 'L01',
     copies: 2,
@@ -548,9 +549,9 @@ export const LIFE_CARDS: LifeCard[] = [
         employment: 'unemployed',
       },
       jobSearch: {
-        rollFrom: 6,
-        maxPaydays: 6,
-        fallbackPercent: -15,
+        rollFrom: 5,
+        maxPaydays: 5,
+        fallbackPercent: -10,
       },
       group: 'employment',
     },
@@ -728,3 +729,6 @@ export const LIFE_CARDS: LifeCard[] = [
     },
   },
 ];
+
+/** The whole stack: the first cards of the design and the more that make it balanced (JFK, 2026-11-04). */
+export const LIFE_CARDS: LifeCard[] = [...BASE_LIFE_CARDS, ...LIFE_CARDS_MORE];

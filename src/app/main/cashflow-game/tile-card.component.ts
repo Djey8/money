@@ -33,6 +33,7 @@ import {
   fromMinorUnits,
   keywordsOfCard,
   projectTitleOf,
+  scaledEffect,
   type DreamMomentId,
   type LifeCard,
   type LifeDecision,
@@ -3193,8 +3194,12 @@ export class TileCardComponent implements OnInit, OnDestroy {
     if (rolls.length) this.landDice(rolls.slice(0, 3));
   }
 
-  effectLines(effect: LifeEffect | null | undefined): string[] {
-    if (!effect) return [];
+  effectLines(printed: LifeEffect | null | undefined): string[] {
+    if (!printed) return [];
+    // the amounts as this character feels them (a higher price level: bigger windfalls and bigger bills)
+    const effect = scaledEffect(printed, {
+      livingStandard: AppStateService.instance.cashflowGame.livingStandard ?? 1,
+    });
     const money = (minor: number) => `${this.amount(minor)} ${this.currency}`;
     const t = (key: string, params?: Record<string, unknown>) =>
       this.translate.instant(`CashflowGame.life.${key}`, params);
