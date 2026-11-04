@@ -204,6 +204,57 @@ function accountName(): string {
               </label>
             </div>
             <ng-container *ngIf="dream">
+              <!-- what the game is played for: the life dream alone, or the dream points as well -->
+              <div class="at-row">
+                <div class="at-label">
+                  <strong>{{ d.dreamPointsTitle }}</strong>
+                  <small>{{ form.pointsOn ? d.dreamPointsHint : d.dreamPointsOffHint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    name="pointsOn"
+                    [(ngModel)]="form.pointsOn"
+                    [attr.aria-label]="d.dreamPointsTitle"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
+              </div>
+              <div class="at-row at-row--stack" *ngIf="form.pointsOn">
+                <div class="at-label">
+                  <strong>{{ d.dreamPointsGoal }}</strong>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.dreamPointsGoal">
+                  <button
+                    *ngFor="let points of pointGoals"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.points === points"
+                    [attr.aria-checked]="form.points === points"
+                    (click)="form.points = points"
+                  >
+                    {{ points }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack" *ngIf="form.pointsOn">
+                <div class="at-label">
+                  <strong>{{ d.dreamOffersTitle }}</strong>
+                  <small>{{ d.dreamOffersHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.dreamOffersTitle">
+                  <button
+                    *ngFor="let offers of dreamOfferChoices"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.dreamOffers === offers"
+                    [attr.aria-checked]="form.dreamOffers === offers"
+                    (click)="form.dreamOffers = offers"
+                  >
+                    {{ offers === 0 ? d.dreamOffersChance : offers }}
+                  </button>
+                </div>
+              </div>
               <div class="at-row at-row--stack">
                 <div class="at-label">
                   <strong>{{ d.difficulty }}</strong>
@@ -238,6 +289,7 @@ function accountName(): string {
                       [shape]="shape"
                       [size]="form.size"
                       [seed]="7"
+                      [dreams]="form.pointsOn"
                     ></app-board-thumb>
                     <span>{{ 'CashflowGame.board.shape.' + shape | translate }}</span>
                   </button>
@@ -870,6 +922,10 @@ export class AddTableComponent implements OnInit {
     mode: 'guided' as 'guided' | 'strict',
     bankStep: 100000,
     bankInterest: 10,
+    // what the game is played for: 10 dream points besides the life dream (off: the life dream alone, no Smile tiles)
+    pointsOn: true,
+    points: 10,
+    dreamOffers: 0,
     debug: false,
   };
 
@@ -883,6 +939,9 @@ export class AddTableComponent implements OnInit {
   /** The steps the Bank loan moves in, in minor units: any amount (1), 50, 100, 200, 500, 1000. */
   readonly bankSteps = [1, 5000, 10000, 20000, 50000, 100000];
   readonly bankInterests = [5, 8, 10, 12, 15];
+  readonly pointGoals = [5, 8, 10, 15, 20, 30];
+  /** How many dreams a landing on a Smile tile offers: 0 is one or two, by chance. */
+  readonly dreamOfferChoices = [0, 1, 2];
 
   bankStepLabel(step: number): string {
     if (step === 1) return this.d.bankStepFree;
@@ -1063,7 +1122,12 @@ export class AddTableComponent implements OnInit {
         shape: f.shape,
         size: f.size,
         mode: f.ranked ? 'strict' : f.mode,
-        customRules: { bankLoanStepMinor: f.bankStep, bankInterestPercent: f.bankInterest },
+        dreamPoints: f.pointsOn ? f.points : 0,
+        customRules: {
+          bankLoanStepMinor: f.bankStep,
+          bankInterestPercent: f.bankInterest,
+          dreamOffers: f.dreamOffers,
+        },
       };
     }
     return {
@@ -1109,6 +1173,11 @@ export class AddTableComponent implements OnInit {
     if (dreamSettings.shape) f.shape = dreamSettings.shape;
     if (dreamSettings.size) f.size = dreamSettings.size;
     if (dreamSettings.mode) f.mode = dreamSettings.mode;
+    const points = (current as unknown as { dreamPoints?: number }).dreamPoints;
+    if (points !== undefined) {
+      f.pointsOn = points > 0;
+      if (points > 0) f.points = points;
+    }
     const rules = (
       current as unknown as {
         customRules?: { bankLoanStepMinor?: number; bankInterestPercent?: number };
@@ -1116,6 +1185,9 @@ export class AddTableComponent implements OnInit {
     ).customRules;
     f.debug = (current as unknown as { debug?: boolean }).debug === true;
     if (rules?.bankLoanStepMinor) f.bankStep = rules.bankLoanStepMinor;
+    if ((rules as { dreamOffers?: number } | undefined)?.dreamOffers !== undefined) {
+      f.dreamOffers = (rules as { dreamOffers: number }).dreamOffers;
+    }
     if (rules?.bankInterestPercent !== undefined) f.bankInterest = rules.bankInterestPercent;
     f.offerRolls = current.rules.sellOfferRolls;
     if (current.clock.mode === 'per-move') {

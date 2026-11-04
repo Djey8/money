@@ -76,6 +76,7 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         [lang]="lang"
         [insurances]="b.insurances"
         [currency]="currency"
+        [pointsGoal]="b.pointsGoal"
         [confirmed]="b.confirmed"
         [canChange]="b.canChange"
         [characters]="b.characters"
@@ -732,6 +733,7 @@ export class TableLayerComponent implements OnDestroy {
     return {
       professionId: me.professionId,
       difficulty: view.settings.difficulty,
+      pointsGoal: (view.settings as { dreamPoints?: number }).dreamPoints ?? 0,
       insurances,
       confirmed: me.dreamBriefed === true,
       canChange: view.settings.professions !== 'random',

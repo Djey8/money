@@ -152,6 +152,18 @@ export class DreamTableGameDriver extends TableGameDriver {
     return this.move({ type: 'end_turn' });
   }
 
+  /** The dream points the table asks for besides the life dream, and what this player has. */
+  dreamPoints(): { goal: number; points: number } | null {
+    const view = this.session.view() as unknown as {
+      youSeat: number | null;
+      settings: { dreamPoints?: number };
+      players: { dreamSummary?: { dreamPoints?: number } | null }[];
+    } | null;
+    const goal = view?.settings.dreamPoints ?? 0;
+    if (!view || view.youSeat === null || goal <= 0) return null;
+    return { goal, points: view.players[view.youSeat]?.dreamSummary?.dreamPoints ?? 0 };
+  }
+
   /** The gate button: "End turn" for the player on the move, "Continue" for one a Harvest card of this turn affects. */
   override proceed(): Promise<RemoteOutcome> {
     const view = this.session.view();

@@ -153,8 +153,14 @@ export interface CreateTableInput {
     shape?: string;
     size?: string;
     mode?: 'guided' | 'strict';
-    /** A Dreamfund table: the Bank loan's step and interest. */
-    customRules?: { bankLoanStepMinor?: number; bankInterestPercent?: number };
+    /** A Dreamfund table: the dream points to collect besides the life dream (0: the life dream alone, no Smile tiles). */
+    dreamPoints?: number;
+    /** A Dreamfund table: the Bank loan's step and interest, and how many dreams a landing offers (0: one or two). */
+    customRules?: {
+      bankLoanStepMinor?: number;
+      bankInterestPercent?: number;
+      dreamOffers?: number;
+    };
     /** A game for debugging the cards: the host chooses the card of every tile. */
     debug?: boolean;
     /** How fast the bots play and how long each move is told. */

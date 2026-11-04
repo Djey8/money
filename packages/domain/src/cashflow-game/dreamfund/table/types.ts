@@ -31,6 +31,11 @@ export interface DreamTableSettings {
   maxSeats: number;
   /** The level: the characters' numbers and the cards change with it (Easy, Normal, Hard). */
   difficulty: Difficulty;
+  /**
+   * The dream points every player has to collect to win, besides living their life dream (JFK, 2026-11-04). 0: a game for the life dream
+   * alone - nothing else to collect, and the map has no Smile tiles.
+   */
+  dreamPoints: number;
   /** The map everybody plays on. */
   shape: BoardSetup['shape'];
   size: BoardSetup['size'];
@@ -167,6 +172,7 @@ export interface DreamSeat {
     debts?: number;
     dream?: number;
     independence?: number;
+    points?: number;
     won?: number;
   };
 }
@@ -362,6 +368,7 @@ export interface DreamSettingsInput {
   turnGate?: boolean;
   pace?: TablePace;
   showProgress?: boolean;
+  dreamPoints?: number;
   ranked?: boolean;
   debug?: boolean;
   leaveFreeRounds?: number;

@@ -87,7 +87,7 @@ type SheetId = 'cashflow' | 'income' | 'balance';
         <h4>{{ 'CashflowGame.setup.goal' | translate }}</h4>
         <p class="cs-story">{{ story.goal }}</p>
         <ul class="cs-check">
-          <li *ngFor="let item of story.goalItems" [class.cs-check--done]="done(item.id)">
+          <li *ngFor="let item of goalList" [class.cs-check--done]="done(item.id)">
             <span class="cs-box" aria-hidden="true">{{ done(item.id) ? '☑' : '☐' }}</span>
             <span
               >{{ item.text }}
@@ -336,6 +336,12 @@ export class CharacterSheetComponent {
   @Input() story: CashflowProfileTexts | null = null;
   /** What of the winning list is met, by id; null: nothing yet (a character looked at before the game). */
   @Input() checks: Record<string, boolean> | null = null;
+  /** Goals of the table besides those of the character (the dream points a table asks for). */
+  @Input() extraGoals: { id: string; text: string }[] = [];
+
+  get goalList(): { id: string; text: string }[] {
+    return [...(this.story?.goalItems ?? []), ...this.extraGoals];
+  }
   @Input() sheets: ProfessionSheetNumbers | null = null;
   @Input() currency = '';
   @Output() liabilityOpen = new EventEmitter<number>();

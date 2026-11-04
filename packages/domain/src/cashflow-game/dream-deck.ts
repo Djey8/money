@@ -173,7 +173,12 @@ export function drawDreamLanding(
       deck: { seen: [...seen, first.moment.id], gone: deck.gone },
     };
   }
-  const wanted = context.forceOffers ?? context.settings.offersPerLanding;
+  // an offer of 0 is one or two dreams, by chance
+  const wanted =
+    context.forceOffers ??
+    (context.settings.offersPerLanding === 0
+      ? 1 + Math.floor(rng() * 2)
+      : context.settings.offersPerLanding);
   const offers: DreamCard[] = [];
   const left = eligibleCards();
   if (first && 'card' in first) {

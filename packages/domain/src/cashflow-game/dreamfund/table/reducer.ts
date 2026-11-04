@@ -483,6 +483,7 @@ function reveal(table: DreamTable, ctx: DreamContext, emit: Emit): DreamTable {
       professionId,
       shape: table.settings.shape,
       size: table.settings.size,
+      dreamTiles: (table.settings.dreamPoints ?? 0) > 0,
       rules: table.settings.customRules,
       sharedMarkets: true,
     }).snapshot();
@@ -601,6 +602,7 @@ function changeCharacter(
     professionId: chosen,
     shape: table.settings.shape,
     size: table.settings.size,
+    dreamTiles: (table.settings.dreamPoints ?? 0) > 0,
     rules: table.settings.customRules,
     sharedMarkets: true,
   }).snapshot();
@@ -1600,11 +1602,11 @@ function noteGoals(table: DreamTable, seatId: string, emit: Emit): DreamTable {
   const seat = seatOf(table, seatId);
   if (!seat.life || table.finishers.some((f) => f.playerId === seatId)) return table;
   const p = DreamPlayer.restore(seat.life, () => 0.5, { sharedMarkets: true });
-  const goals = goalsOf(p);
+  const goals = goalsOf(p, table.settings.dreamPoints ?? 0);
   const reached = { ...seat.reached };
   const round = table.tableRound;
-  for (const key of ['reserve', 'debts', 'dream', 'independence'] as const) {
-    if (goals[key] >= 1 && reached[key] === undefined) {
+  for (const key of ['reserve', 'debts', 'dream', 'independence', 'points'] as const) {
+    if ((goals[key] ?? 0) >= 1 && reached[key] === undefined) {
       reached[key] = round;
       emit('goal_reached', seatId, { goal: key, round });
     }
@@ -1639,7 +1641,7 @@ export function dreamStandings(table: DreamTable) {
               : finisher?.outcome === 'bankrupt'
                 ? 'bankrupt'
                 : 'playing';
-        return standingOf(seat, p, outcome);
+        return standingOf(seat, p, outcome, table.settings.dreamPoints ?? 0);
       }),
   );
 }

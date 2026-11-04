@@ -37,6 +37,7 @@ import type { ProfessionSheetNumbers } from '../main/cashflow-game/profession-sh
       [tagline]="story?.tagline ?? p.title"
       [story]="story"
       [sheets]="sheets"
+      [extraGoals]="extraGoals"
       [currency]="currency"
       (dreamOpen)="dreamOpen.emit()"
       (reserveOpen)="reserveOpen.emit()"
@@ -47,6 +48,21 @@ export class CharacterPreviewComponent {
   private readonly game = inject(CashflowGameService);
 
   @Input({ required: true }) professionId = '';
+  /** The dream points the table asks for besides the life dream (0: none). */
+  @Input() pointsGoal = 0;
+
+  get extraGoals(): { id: string; text: string }[] {
+    if (this.pointsGoal <= 0) return [];
+    return [
+      {
+        id: 'dreamPoints',
+        text:
+          this.lang === 'de'
+            ? `${this.pointsGoal} Traumpunkte mit weiteren Träumen sammeln`
+            : `Collect ${this.pointsGoal} dream points with other dreams`,
+      },
+    ];
+  }
   @Input() gameSetId = 'jfk-stories';
   /** The difficulty of the table (a Dreamfund character has its own numbers on Easy and Hard). */
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;

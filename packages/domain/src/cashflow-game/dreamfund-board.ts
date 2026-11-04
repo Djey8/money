@@ -41,6 +41,8 @@ export interface BoardSetup {
   /** The seed of the layout: the same seed gives the same tiles. */
   seed: number;
   difficulty?: BoardDifficulty;
+  /** False: a game for the life dream alone - the map has no Smile tiles, the Opportunity tiles take their place. */
+  dreams?: boolean;
 }
 
 export const TILE_COUNTS: Record<BoardSize, number> = { small: 24, medium: 36, large: 48 };
@@ -129,6 +131,11 @@ function spreadEvenly(n: number, count: number, fixed: number[] = []): number[] 
 export function layoutTiles(setup: BoardSetup, fixedPaydays: number[] = []): DreamfundTile[] {
   const n = TILE_COUNTS[setup.size];
   const counts = { ...TILE_MIX[setup.size][setup.difficulty ?? 'medium'] };
+  // a game for the life dream alone has no dreams to collect: the tiles are dealt out again, with more Opportunity
+  if (setup.dreams === false) {
+    counts.opportunity += counts.dream;
+    counts.dream = 0;
+  }
   const random = mulberry32(setup.seed * 7919 + n);
   const paydays = new Set(spreadEvenly(n, counts.payday, fixedPaydays));
   const rest = (Object.keys(counts) as DreamfundTile[]).filter((kind) => kind !== 'payday');
@@ -384,7 +391,7 @@ const cache = new Map<string, DreamfundBoard>();
 
 /** The map of a setup: its tiles for the engine and where they stand for the picture. The same setup is always the same map. */
 export function buildDreamfundBoard(setup: BoardSetup): DreamfundBoard {
-  const key = `${setup.shape}/${setup.size}/${setup.seed}/${setup.difficulty ?? 'medium'}`;
+  const key = `${setup.shape}/${setup.size}/${setup.seed}/${setup.difficulty ?? 'medium'}/${setup.dreams === false ? 'life' : 'dreams'}`;
   const cached = cache.get(key);
   if (cached) return cached;
   const n = TILE_COUNTS[setup.size];

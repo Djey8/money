@@ -124,7 +124,8 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
     mode: base.mode,
     cardChoice:
       raw?.cardChoice === 'free' || raw?.cardChoice === 'random' ? raw.cardChoice : base.cardChoice,
-    dreamOffers: clamp(raw?.dreamOffers, 1, 3, base.dreamOffers),
+    // 0: one or two dreams at each landing, by chance
+    dreamOffers: clamp(raw?.dreamOffers, 0, 3, base.dreamOffers),
     maxOpenDreams: clamp(raw?.maxOpenDreams, 1, 5, base.maxOpenDreams),
     dreamMayDecline:
       typeof raw?.dreamMayDecline === 'boolean' ? raw.dreamMayDecline : base.dreamMayDecline,

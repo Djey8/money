@@ -80,6 +80,8 @@ export interface RemoteGame {
   ): Promise<RemoteOutcome>;
   /** A Dreamfund table: a decision of a stack tile, sent as the table's own command (answer a card, roll its die, pay). */
   dreamMove?(decision: { decision: string } & Record<string, unknown>): Promise<RemoteOutcome>;
+  /** A Dreamfund table that asks for dream points besides the life dream: the goal and what the player has. Null: none asked for. */
+  dreamPoints?(): { goal: number; points: number } | null;
   /** Another player's books are on screen: read only, nothing of the game can be done from here. */
   viewOnly(): boolean;
   /** Whose turn it is when it is not the player's own (a name and a colour), else null. */

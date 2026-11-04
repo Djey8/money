@@ -689,6 +689,7 @@ export class AppDataService {
                 CashflowGameState['boardSetup']
               >['size'],
               seed: num(raw.boardSetup.seed),
+              ...(raw.boardSetup.dreams === false ? { dreams: false } : {}),
               ...(raw.boardSetup.difficulty != null
                 ? {
                     difficulty: str(raw.boardSetup.difficulty) as NonNullable<

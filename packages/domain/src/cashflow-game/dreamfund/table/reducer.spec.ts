@@ -480,7 +480,7 @@ describe('the Dreamfund table: play', () => {
   });
 
   it('counts the goals of a life: a reserve, no debts, a dream lived and passive income make a win', () => {
-    const t = started({ endCondition: 'first-win' });
+    const t = started({ endCondition: 'first-win', dreamPoints: 0 });
     const who = t.activePlayerId!;
 
     const life: any = JSON.parse(JSON.stringify(t.players.find((p) => p.id === who)!.life));

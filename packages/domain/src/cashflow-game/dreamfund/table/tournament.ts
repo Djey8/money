@@ -56,6 +56,8 @@ export function playBotTable(input: {
         name: input.id,
         difficulty: input.difficulty,
         endCondition: 'round-limit',
+        // the bots' ratings were measured on the life dream alone
+        dreamPoints: 0,
         roundLimit: input.roundLimit,
         turnOrder: 'seat',
         professions: 'duplicates',

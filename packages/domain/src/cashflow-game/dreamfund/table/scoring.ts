@@ -19,12 +19,14 @@ export interface Goals {
   debts: number;
   dream: number;
   independence: number;
+  /** The dream points against the number the table asks for; absent at a table for the life dream alone. */
+  points?: number;
 }
 
 const share = (value: number) => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 
-/** The four goals of a life. */
-export function goalsOf(player: DreamPlayer): Goals {
+/** The goals of a life: four, and a fifth - the dream points - when the table asks for them (`pointsGoal` above 0). */
+export function goalsOf(player: DreamPlayer, pointsGoal = 0): Goals {
   const expenses = player.monthlyExpenses();
   const finances = player.finances();
   const living =
@@ -46,15 +48,23 @@ export function goalsOf(player: DreamPlayer): Goals {
       : living > 0
         ? share(finances.passiveIncomeMinor / living)
         : 1,
+    ...(pointsGoal > 0
+      ? { points: share((player.dreamPoints + player.bonusPoints) / pointsGoal) }
+      : {}),
   };
 }
 
 export const isWon = (goals: Goals): boolean =>
-  goals.reserve >= 1 && goals.debts >= 1 && goals.dream >= 1 && goals.independence >= 1;
+  goals.reserve >= 1 &&
+  goals.debts >= 1 &&
+  goals.dream >= 1 &&
+  goals.independence >= 1 &&
+  (goals.points ?? 1) >= 1;
 
 /** The number a player is ranked by: the goals reached (partly counts), the dream points, and a win. */
 export function scoreOf(goals: Goals, dreamPoints: number, won: boolean): number {
-  const progress = goals.reserve + goals.debts + goals.dream + goals.independence;
+  const progress =
+    goals.reserve + goals.debts + goals.dream + goals.independence + (goals.points ?? 0);
   return Math.round(
     progress * SCORE_PER_GOAL + dreamPoints * SCORE_PER_DREAM_POINT + (won ? SCORE_FOR_A_WIN : 0),
   );
@@ -64,8 +74,9 @@ export function standingOf(
   seat: DreamSeat,
   player: DreamPlayer,
   outcome: DreamStanding['outcome'],
+  pointsGoal = 0,
 ): Omit<DreamStanding, 'rank'> {
-  const goals = goalsOf(player);
+  const goals = goalsOf(player, pointsGoal);
   const won = outcome === 'won';
   const dreamPoints = player.dreamPoints + player.bonusPoints;
   const finances = player.finances();

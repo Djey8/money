@@ -1029,7 +1029,22 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   get winGoals(): { id: string; text: string }[] {
-    return this.profileOf(this.selectedProfession)?.goalItems ?? [];
+    return [...(this.profileOf(this.selectedProfession)?.goalItems ?? []), ...this.extraGoals];
+  }
+
+  /** The dream points a table asks for, besides the life dream (a game with others only). */
+  get extraGoals(): { id: string; text: string }[] {
+    const asked = this.remote?.dreamPoints?.();
+    if (!asked) return [];
+    return [
+      {
+        id: 'dreamPoints',
+        text:
+          this.language.current === 'de'
+            ? `${asked.goal} Traumpunkte mit weiteren Träumen sammeln`
+            : `Collect ${asked.goal} dream points with other dreams`,
+      },
+    ];
   }
 
   get winStats(): { round: number; turns: number; passive: number; expenses: number } {
@@ -1068,6 +1083,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       reserve: this.reserveStatus?.ok ?? false,
       independence: this.escapedRatRace,
     };
+    const asked = this.remote?.dreamPoints?.();
+    if (asked) (value as Record<string, boolean>)['dreamPoints'] = asked.points >= asked.goal;
     // the other debts of a character: a goal of its own each, met when that debt is repaid
     const profession = this.selectedProfession;
     for (const liability of profession?.starterKit.liabilities ?? []) {

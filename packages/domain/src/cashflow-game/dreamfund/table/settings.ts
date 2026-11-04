@@ -87,6 +87,8 @@ export function normalizeDreamSettings(
   } else if (input.roundLimit !== undefined) {
     invalid("roundLimit only goes with endCondition 'round-limit'.");
   }
+  const dreamPoints =
+    input.dreamPoints === undefined ? 10 : whole(input.dreamPoints, 'dreamPoints', 0, 60);
   const pace = input.pace ?? 'fast';
   if (pace !== 'fast' && pace !== 'normal' && pace !== 'slow') {
     invalid("pace must be 'fast', 'normal' or 'slow'.");
@@ -96,6 +98,7 @@ export function normalizeDreamSettings(
     visibility,
     maxSeats,
     difficulty,
+    dreamPoints,
     shape,
     size,
     mode,

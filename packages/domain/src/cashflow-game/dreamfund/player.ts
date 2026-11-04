@@ -133,6 +133,8 @@ export interface DreamPlayerConfig {
   professionId?: string;
   shape?: BoardSetup['shape'];
   size?: BoardSetup['size'];
+  /** False: the map has no Smile tiles (a game for the life dream alone). */
+  dreamTiles?: boolean;
   rules?: Partial<CustomRules>;
   /** At a table the Harvest markets are everybody's: this player's own Paydays do not drift them. */
   sharedMarkets?: boolean;
@@ -146,6 +148,7 @@ export interface DreamPlayerData {
   rules: CustomRules;
   shape: BoardSetup['shape'];
   size: BoardSetup['size'];
+  dreamTiles?: boolean;
   /** The books without the game set (the set is the same for everybody and is found again). */
   books: Omit<GameBooks, 'gameSet'>;
   reserveMinor: number;
@@ -221,6 +224,7 @@ export class DreamPlayer {
       shape: config.shape ?? 'ring',
       size: config.size ?? 'medium',
       seed: config.seed,
+      ...(config.dreamTiles === false ? { dreams: false } : {}),
     };
     this.board = buildDreamfundBoard(this.setup).board;
     const pick = pickCashflowProfession(
@@ -304,6 +308,7 @@ export class DreamPlayer {
         rules: this.rules,
         shape: this.setup.shape,
         size: this.setup.size,
+        ...(this.setup.dreams === false ? { dreamTiles: false } : {}),
         books,
         reserveMinor: this.reserveMinor,
         dreamSavedMinor: this.dreamSavedMinor,
@@ -331,6 +336,7 @@ export class DreamPlayer {
       professionId: data.professionId,
       shape: data.shape,
       size: data.size,
+      dreamTiles: data.dreamTiles,
       rules: data.rules,
     });
     player.books = {

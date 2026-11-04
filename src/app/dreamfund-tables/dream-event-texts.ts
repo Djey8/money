@@ -70,6 +70,7 @@ const GOALS: Record<string, { en: string; de: string }> = {
   reserve: { en: 'the reserve', de: 'die Reserve' },
   debts: { en: 'no debts', de: 'schuldenfrei' },
   dream: { en: 'the dream', de: 'der Traum' },
+  points: { en: 'the dream points', de: 'die Traumpunkte' },
   independence: { en: 'independence', de: 'Unabhängigkeit' },
   won: { en: 'everything', de: 'alles' },
 };

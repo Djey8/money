@@ -61,6 +61,15 @@ export interface DreamTexts {
   briefingBack: string;
   characterTaken: string;
   characterRandom: string;
+  dreamPointsTitle: string;
+  dreamPointsHint: string;
+  dreamPointsOffHint: string;
+  dreamPointsGoal: string;
+  dreamPointsUnit: string;
+  dreamPointsAlone: string;
+  dreamOffersTitle: string;
+  dreamOffersHint: string;
+  dreamOffersChance: string;
   characterChoose: string;
   characterCashflow: string;
   characterKeep: string;
@@ -289,6 +298,17 @@ const EN: DreamTexts = {
   briefingBack: 'Choose another character',
   characterTaken: 'This is your character',
   characterRandom: 'A random character',
+  dreamPointsTitle: 'Play for dream points',
+  dreamPointsHint:
+    'Besides your life dream you have to live other dreams until you have the points: small dreams are worth little, big ones a lot. The map has Smile tiles to find them.',
+  dreamPointsOffHint:
+    'A short game for the life dream alone: nothing else to collect, and the map has no Smile tiles.',
+  dreamPointsGoal: 'Dream points to win',
+  dreamPointsUnit: 'dream points',
+  dreamPointsAlone: 'Life dream only',
+  dreamOffersTitle: 'Dreams at a Smile tile',
+  dreamOffersHint: 'How many dreams a landing offers: one, two, or one or two by chance.',
+  dreamOffersChance: '1 or 2',
   characterChoose: 'Who do you want to be?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Keep the character I was dealt',
@@ -525,6 +545,17 @@ const DE: Partial<DreamTexts> = {
   briefingBack: 'Anderen Charakter wählen',
   characterTaken: 'Das ist dein Charakter',
   characterRandom: 'Ein zufälliger Charakter',
+  dreamPointsTitle: 'Um Traumpunkte spielen',
+  dreamPointsHint:
+    'Neben deinem Lebenstraum musst du weitere Träume leben, bis du die Punkte hast: kleine Träume zählen wenig, große viel. Auf der Karte findest du sie auf Smile-Feldern.',
+  dreamPointsOffHint:
+    'Ein kurzes Spiel nur um den Lebenstraum: nichts weiter zu sammeln, und die Karte hat keine Smile-Felder.',
+  dreamPointsGoal: 'Traumpunkte zum Sieg',
+  dreamPointsUnit: 'Traumpunkte',
+  dreamPointsAlone: 'Nur der Lebenstraum',
+  dreamOffersTitle: 'Träume auf einem Smile-Feld',
+  dreamOffersHint: 'Wie viele Träume ein Feld anbietet: einen, zwei oder zufällig einen oder zwei.',
+  dreamOffersChance: '1 oder 2',
   characterChoose: 'Wer willst du sein?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Den zugeteilten Charakter behalten',

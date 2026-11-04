@@ -81,6 +81,7 @@ export type BriefingInsurance = InsuranceRow;
         <app-character-preview
           [professionId]="professionId"
           [difficulty]="difficulty"
+          [pointsGoal]="pointsGoal"
           [lang]="lang"
           (dreamOpen)="dreamOpen.emit()"
           (reserveOpen)="reserveOpen.emit()"
@@ -223,6 +224,7 @@ export class TableBriefingComponent implements OnInit {
   @Input() lang = 'en';
   @Input() insurances: BriefingInsurance[] = [];
   @Input() currency = '€';
+  @Input() pointsGoal = 0;
   /** The first decision is who you are; the second the insurances; then the player is ready. */
   readonly step = signal<'choose' | 'who' | 'insurance'>('who');
   @Input() confirmed = false;

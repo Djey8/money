@@ -45,9 +45,16 @@ export class BoardThumbComponent {
   @Input({ required: true }) shape!: BoardShape;
   @Input() size: BoardSize = 'medium';
   @Input() seed = 1;
+  /** False: the map of a game for the life dream alone, without Smile tiles. */
+  @Input() dreams = true;
 
   private get map() {
-    return buildDreamfundBoard({ shape: this.shape, size: this.size, seed: this.seed });
+    return buildDreamfundBoard({
+      shape: this.shape,
+      size: this.size,
+      seed: this.seed,
+      ...(this.dreams ? {} : { dreams: false }),
+    });
   }
 
   /** In the box of the map's own proportions: wide maps wide, so a thumbnail is as large as it can be. */

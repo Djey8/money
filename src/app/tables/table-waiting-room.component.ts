@@ -87,6 +87,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
           }}</span>
           <span class="wr-chip">{{ table.settings.maxSeats }} {{ h.seatsChip }}</span>
           <span class="wr-chip" *ngIf="dream">{{ d[dreamSettings().difficulty] }}</span>
+          <span class="wr-chip" *ngIf="dream">{{ pointsChip() }}</span>
           <span class="wr-chip" *ngIf="dream"
             >{{ dreamSettings().shape }} · {{ dreamSettings().size }} ·
             {{ dreamSettings().mode }}</span
@@ -748,6 +749,12 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
 
   get dream(): boolean {
     return this.game === 'dreamfund';
+  }
+
+  /** What the table plays for: the life dream alone, or the dream points as well. */
+  pointsChip(): string {
+    const points = (this.table.settings as unknown as { dreamPoints?: number }).dreamPoints ?? 0;
+    return points > 0 ? `🌟 ${points} ${this.d.dreamPointsUnit}` : `🌟 ${this.d.dreamPointsAlone}`;
   }
 
   /** The Dreamfund's own settings of the table (a Dreamfund room passes its view in the shape of the classic one). */
