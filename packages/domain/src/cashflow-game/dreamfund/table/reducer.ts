@@ -1,7 +1,7 @@
 import { harvestWaiting } from './harvest-ack';
 import { rollDie } from '../../rng';
 import { quoteEmergency } from '../../emergency-deck';
-import { CASHFLOW_GAME_SETS } from '../../../cashflow-content';
+import { defaultTableGameSets } from '../../table/default-game-sets';
 import { driftMarkets, drawHarvestCard, initialMarkets } from '../../harvest';
 import { normalizeCustomRules } from '../../custom-rules';
 import type { Rng } from '../../rng';
@@ -56,7 +56,7 @@ export interface DreamCommandResult {
   events: DreamEvent[];
 }
 
-const base = () => CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories')!;
+const base = () => defaultTableGameSets().find((set) => set.id === 'jfk-stories')!;
 
 /** The characters a table offers: the Normal version of each (Easy and Hard are the table's difficulty). */
 export const dreamCharacterIds = (): string[] =>

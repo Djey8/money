@@ -2,6 +2,7 @@
 
 const domain = require('@money/domain');
 // the Dreamfund table is kept out of the domain package's barrel (the browser bundle does not carry the table's rules)
+require('./game-sets'); // registers the printed sets the dream table's rules look for
 const dreamTable = require('@money/domain/dist/cashflow-game/dreamfund/table/reducer');
 const dreamBots = require('@money/domain/dist/cashflow-game/dreamfund/table/bot');
 const dreamView = require('@money/domain/dist/cashflow-game/dreamfund/table/view');

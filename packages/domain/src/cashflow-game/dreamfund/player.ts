@@ -1,4 +1,4 @@
-import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
+import { defaultTableGameSets } from '../table/default-game-sets';
 import { applyEffectsToBooks, type GameBooks } from '../books';
 import { cashOnHandMinor, loanForShortfallMinor } from '../cash';
 import { fixedClock } from '../clock';
@@ -198,7 +198,7 @@ export class DreamPlayer {
     this.rng = config.rng;
     this.baseProfessionId = (config.professionId ?? 'dual-student-informatik').split('~')[0];
     this.rules = normalizeCustomRules({ mode: 'free', ...config.rules });
-    const gameSet = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories');
+    const gameSet = defaultTableGameSets().find((set) => set.id === 'jfk-stories');
     // Easy and Hard are characters of their own that share the story of the one asked for
     const professionId = professionIdAtDifficulty(
       gameSet,
@@ -228,7 +228,7 @@ export class DreamPlayer {
     };
     this.board = buildDreamfundBoard(this.setup).board;
     const pick = pickCashflowProfession(
-      CASHFLOW_GAME_SETS,
+      defaultTableGameSets(),
       'jfk-stories',
       professionId,
       TODAY,

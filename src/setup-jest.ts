@@ -1,6 +1,13 @@
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import { CASHFLOW_GAME_SETS as printedSets } from '@money/domain/dist/cashflow-content';
+import { setDefaultTableGameSets } from '@money/domain/dist/cashflow-game/table/default-game-sets';
+import { CASHFLOW_GAME_SETS } from './app/shared/cashflow-content';
 
 setupZoneTestEnv();
+
+// The specs play with the printed catalog, which the app loads on demand: here it is there from the start (JFK, 2026-11)
+CASHFLOW_GAME_SETS.splice(0, CASHFLOW_GAME_SETS.length, ...printedSets);
+setDefaultTableGameSets(printedSets);
 
 // Global mocks for browser APIs not available in jsdom
 Object.defineProperty(window, 'getComputedStyle', {

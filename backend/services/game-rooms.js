@@ -13,7 +13,7 @@ const {
 } = require('@money/domain');
 // the catalog of bots is data kept out of the domain package's barrel (the browser bundle must not carry it)
 const { botPolicy } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
-const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
+const { CASHFLOW_GAME_SETS } = require('./game-sets');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
 const { createRoomQueue } = require('./room-queue');

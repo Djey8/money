@@ -8,7 +8,10 @@ import {
   offerInsurances,
   withoutDroppedPremiums,
 } from './insurance';
-import { insuranceCoverage } from './insurance-coverage';
+import { insuranceCoverage as coverageOf } from './insurance-coverage';
+import { EMERGENCY_CARDS } from '../cashflow-emergency-cards';
+
+const insuranceCoverage = (kind: string) => coverageOf(kind, EMERGENCY_CARDS);
 
 const player = (professionId: string) =>
   DreamPlayer.fromSeed({ seed: 5, professionId, rules: { mode: 'free' } as never });

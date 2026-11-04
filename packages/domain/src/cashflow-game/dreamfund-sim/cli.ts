@@ -3,6 +3,11 @@ import { dirname } from 'node:path';
 import { reportMarkdown, runBatch, type BatchConfig } from './batch';
 import type { CustomRules } from '../custom-rules';
 import { injectStats, statsMarkdown } from './stats-doc';
+import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
+import { setDefaultTableGameSets } from '../table/default-game-sets';
+
+// the lab plays with the printed catalog (the domain package does not import it itself)
+setDefaultTableGameSets(CASHFLOW_GAME_SETS);
 
 /**
  * Runs a batch of Dreamfund games from the command line (JFK, 2026-10-26):

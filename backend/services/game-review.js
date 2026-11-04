@@ -13,7 +13,7 @@ const {
   reviewDreamfund,
   describeDreamfundReview,
 } = require('@money/domain');
-const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
+const { CASHFLOW_GAME_SETS } = require('./game-sets');
 
 /**
  * The game analyst on the server (todo/cashflow-game-analysis.md, E6): runs the domain's `reviewGame` on a stored undo

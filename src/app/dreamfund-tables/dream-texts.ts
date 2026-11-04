@@ -749,7 +749,8 @@ export function dreamTexts(lang: string): DreamTexts {
 
 // ── the game's own content ──
 
-const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+// looked up when it is asked: the content arrives after the first screen
+const jfkSet = () => CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
 type Localized = Record<string, string | undefined>;
 interface Card {
   id: string;
@@ -766,7 +767,7 @@ export function cardText(
   id: string,
   lang: string,
 ): { title: string; story: string } {
-  const cards = ((set?.decks as unknown as Record<string, Card[]> | undefined)?.[deck] ??
+  const cards = ((jfkSet()?.decks as unknown as Record<string, Card[]> | undefined)?.[deck] ??
     []) as Card[];
   const card = cards.find((candidate) => candidate.id === id);
   return { title: text(card?.title, lang) || id, story: text(card?.story, lang) };
@@ -774,8 +775,9 @@ export function cardText(
 
 /** A card's choices (an emergency may ask how to deal with it), with their labels. */
 export function choicesOf(id: string, lang: string): { id: string; label: string }[] {
-  const cards = ((set?.decks as unknown as Record<string, Card[]> | undefined)?.['emergency'] ??
-    []) as Card[];
+  const cards = ((jfkSet()?.decks as unknown as Record<string, Card[]> | undefined)?.[
+    'emergency'
+  ] ?? []) as Card[];
   const card = cards.find((candidate) => candidate.id === id);
   return (card?.choices ?? []).map((choice) => ({
     id: choice.id,
@@ -785,7 +787,7 @@ export function choicesOf(id: string, lang: string): { id: string; label: string
 
 /** The characters of the edition (the Normal version of each) with their name and tagline. */
 export function characters(lang: string): { id: string; name: string; tagline: string }[] {
-  return (set?.professions ?? [])
+  return (jfkSet()?.professions ?? [])
     .filter((profession) => !profession.variantOf)
     .map((profession) => {
       const profile = profession.profile?.texts[lang] ?? profession.profile?.texts['en'];
@@ -898,7 +900,7 @@ export function lifeCardOf(
   title: string;
   story: string;
 } {
-  const cards = ((set?.decks as unknown as Record<string, unknown[]> | undefined)?.['life'] ??
+  const cards = ((jfkSet()?.decks as unknown as Record<string, unknown[]> | undefined)?.['life'] ??
     []) as {
     id: string;
     type: string;

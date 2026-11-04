@@ -252,7 +252,12 @@ import {
   type RoundDeps,
   type SavedGameSummary,
 } from '@money/domain';
-import { CASHFLOW_GAME_SETS, loadCardTextDe } from '../cashflow-content';
+import {
+  CASHFLOW_CONTENT_AVAILABLE,
+  CASHFLOW_GAME_SETS,
+  ensureCashflowContent,
+  loadCardTextDe,
+} from '../cashflow-content';
 import { syncPaymentPlans } from '../payment-plan-sync';
 import { AppStateService } from './app-state.service';
 import { CashflowCardText } from './cashflow-card-text.service';
@@ -606,6 +611,16 @@ export class CashflowGameService {
 
   private static ruleTextOrNull(message: string | null): string | null {
     return message === null ? null : CashflowGameService.ruleText(message);
+  }
+
+  /** The account is a game account of a build that carries the game: its content has to be loaded (it may not be yet). */
+  static wantsContent(): boolean {
+    return CASHFLOW_CONTENT_AVAILABLE && Boolean(ProfileComponent.mail?.includes('cashflow'));
+  }
+
+  /** Resolves when the game content is there; at once for an account that is not a game account. */
+  ensureContent(): Promise<void> {
+    return CashflowGameService.wantsContent() ? ensureCashflowContent() : Promise.resolve();
   }
 
   static isCashflowGame(): boolean {

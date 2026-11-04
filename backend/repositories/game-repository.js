@@ -26,7 +26,7 @@ const { readHistoryStack, readHistoryLog } = require('../services/game-snapshot'
 
 /** The printed content lives in its own module, kept out of the domain package's main entry on purpose. */
 function loadGameSets() {
-  return require('@money/domain/dist/cashflow-content').CASHFLOW_GAME_SETS;
+  return require('../services/game-sets').CASHFLOW_GAME_SETS;
 }
 
 async function loadUserData({ usersDb }, userId) {

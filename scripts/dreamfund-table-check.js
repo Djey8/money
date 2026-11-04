@@ -13,6 +13,11 @@ const arg = (name, fallback) => {
   return at >= 0 ? process.argv[at + 1] : fallback;
 };
 const dist = path.resolve(root, arg('dist', 'packages/domain/dist/cashflow-game/dreamfund'));
+// the table rules find their game sets where the caller registered them
+const domainDist = path.resolve(dist, '../..');
+require(path.join(domainDist, 'cashflow-game/table/default-game-sets.js')).setDefaultTableGameSets(
+  require(path.join(domainDist, 'cashflow-content.js')).CASHFLOW_GAME_SETS,
+);
 const { createDreamTable, applyDreamCommand, passiveCommands } = require(
   path.join(dist, 'table/reducer.js'),
 );

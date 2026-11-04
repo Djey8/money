@@ -7,5 +7,13 @@ import type { CashflowGameSet } from '@money/domain';
  */
 export const CASHFLOW_GAME_SETS: CashflowGameSet[] = [];
 
+/** This build carries no game. */
+export const CASHFLOW_CONTENT_AVAILABLE = false;
+
+/** Nothing to load. */
+export const ensureCashflowContent = (): Promise<void> => Promise.resolve();
+
+export const preloadCashflowContentFor = (_mail: string | undefined | null): void => undefined;
+
 /** No game, no card texts. */
 export const loadCardTextDe = (): Promise<Record<string, string>> => Promise.resolve({});
