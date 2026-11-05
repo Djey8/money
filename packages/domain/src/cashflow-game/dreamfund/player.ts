@@ -163,8 +163,16 @@ export interface DreamPlayerData {
   plans: DreamPlan[];
   /** The projects that are paid in full: they stay, as completed. */
   done?: DreamDone[];
+  /** What the player set by hand on a project the game keeps (the phase of a Smile or Fire project), by its kind and id. */
+  phaseEdits?: Record<string, string>;
   turns: number;
 }
+
+/** The accounts a booking may be moved between by hand: the four that make up the cash, so the money of the game does not change. */
+export const MOVABLE_ACCOUNTS = ['Daily', 'Splurge', 'Smile', 'Fire'] as const;
+/** The phases a player may set on a project by hand (a project paid in full is completed by the game, never by hand). */
+export const EDITABLE_PHASES = ['idea', 'planning', 'saving', 'ready'] as const;
+export const GROW_PHASES = ['idea', 'research', 'plan', 'execute', 'monitor', 'completed'] as const;
 
 type Pending = ReturnType<typeof playHarvestCard>['pending'];
 
@@ -189,6 +197,7 @@ export class DreamPlayer {
   smile: DreamProject[] = [];
   dreamPoints = 0;
   done: DreamDone[] = [];
+  phaseEdits: Record<string, string> = {};
   bonusPoints = 0;
   /** What the Smile and Fire projects are paid by: a plan pays an installment at every Payday (the payment plans of the app). */
   plans: DreamPlan[] = [];
@@ -323,6 +332,7 @@ export class DreamPlayer {
         bonusPoints: this.bonusPoints,
         plans: this.plans,
         done: this.done,
+        ...(Object.keys(this.phaseEdits).length > 0 ? { phaseEdits: this.phaseEdits } : {}),
         turns: this.turns,
       }),
     ) as DreamPlayerData;
@@ -357,6 +367,7 @@ export class DreamPlayer {
     player.bonusPoints = data.bonusPoints;
     player.plans = JSON.parse(JSON.stringify(data.plans));
     player.done = JSON.parse(JSON.stringify(data.done ?? []));
+    player.phaseEdits = { ...(data.phaseEdits ?? {}) };
     player.turns = data.turns;
     return player;
   }
@@ -1402,6 +1413,88 @@ export class DreamPlayer {
       ),
     );
     return true;
+  }
+
+  // ── what the player may change by hand (JFK, 2026-11-05) ──
+
+  /**
+   * The parts of a booking that do not change the game: the category, the time of day, and the account among the four that make up the
+   * cash. The amount, the date and the comment are the game's own and are never changed here. Throws with the reason.
+   */
+  editTransaction(
+    index: number,
+    patch: { category?: string; account?: string; time?: string },
+  ): void {
+    const record = this.books.transactions[index];
+    if (!record) throw new Error('There is no such booking.');
+    const next = { ...record };
+    if (patch.category !== undefined) {
+      if (patch.category.length > 80) throw new Error('The category is too long.');
+      next.category = patch.category;
+    }
+    if (patch.time !== undefined) {
+      if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(patch.time)) {
+        throw new Error('The time is not a time of day.');
+      }
+      next.time = patch.time;
+    }
+    if (patch.account !== undefined && patch.account !== record.account) {
+      const movable = (account: string) =>
+        (MOVABLE_ACCOUNTS as readonly string[]).includes(account);
+      if (!movable(record.account) || !movable(patch.account)) {
+        throw new Error(
+          'Only a booking of Daily, Splurge, Smile or Fire can move between those accounts.',
+        );
+      }
+      next.account = patch.account;
+    }
+    this.books = {
+      ...this.books,
+      transactions: this.books.transactions.map((entry, i) => (i === index ? next : entry)),
+    };
+  }
+
+  /** From which of the four accounts a running payment is paid. */
+  editSubscription(title: string, account: string): void {
+    const sub = this.books.subscriptions.find((entry) => entry.title === title);
+    if (!sub) throw new Error('There is no such payment.');
+    const movable = (name: string) => (MOVABLE_ACCOUNTS as readonly string[]).includes(name);
+    if (sub.amountMinor >= 0 || !movable(sub.account) || !movable(account)) {
+      throw new Error('Only a payment of Daily, Splurge, Smile or Fire can change its account.');
+    }
+    this.books = {
+      ...this.books,
+      subscriptions: this.books.subscriptions.map((entry) =>
+        entry.title === title ? { ...entry, account } : entry,
+      ),
+    };
+  }
+
+  /**
+   * The phase of a project, set by hand - forwards and backwards, so a project can go back to an idea. A Grow project takes any of its
+   * six phases; a dream or a Fire project one of idea, planning, saving and ready (the game completes it when it is paid).
+   */
+  setPhase(kind: 'grow' | 'smile' | 'fire', id: string, phase: string): void {
+    if (kind === 'grow') {
+      if (!(GROW_PHASES as readonly string[]).includes(phase))
+        throw new Error('That is not a phase.');
+      if (!this.books.growProjects.some((project) => project.title === id)) {
+        throw new Error('There is no such project.');
+      }
+      this.books = {
+        ...this.books,
+        growProjects: this.books.growProjects.map((project) =>
+          project.title === id ? { ...project, phase: phase as never } : project,
+        ),
+      };
+      return;
+    }
+    if (!(EDITABLE_PHASES as readonly string[]).includes(phase)) {
+      throw new Error(
+        'Pick idea, planning, saving or ready: the game completes a project when it is paid.',
+      );
+    }
+    this.phaseEdits = { ...this.phaseEdits, [`${kind}:${id}`]: phase };
   }
 
   // ── selling and trading what the player owns ──

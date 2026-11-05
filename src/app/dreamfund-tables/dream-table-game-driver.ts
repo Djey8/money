@@ -147,6 +147,14 @@ export class DreamTableGameDriver extends TableGameDriver {
     return this.move({ type: 'roll' });
   }
 
+  /**
+   * What may be changed by hand without changing the game (a booking's category, time and account, the account a payment is paid
+   * from, the phase of a project): it does not wait for a turn.
+   */
+  editEntry(command: Record<string, unknown>): Promise<RemoteOutcome> {
+    return this.move(command, false);
+  }
+
   /** The turn is over: the card's decisions are made, or the tile had none. */
   override finish(): Promise<RemoteOutcome> {
     return this.move({ type: 'end_turn' });

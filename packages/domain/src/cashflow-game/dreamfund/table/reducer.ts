@@ -220,6 +220,9 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'skip',
   'end_turn',
   'fund_reserve',
+  'edit_transaction',
+  'edit_subscription',
+  'set_phase',
   'fund_dream',
   'repay_debt',
   'repay_bank_loan',
@@ -684,7 +687,11 @@ function play(
   const seat = seatOf(table, playerId);
   if (!alive(table, seat)) fail('ILLEGAL_MOVE', 'You are out of the game.');
   const now = nowOf(ctx);
+  // changing how the books are kept does not wait for a turn (it changes nothing of the game)
   const harvestOption =
+    command.type === 'edit_transaction' ||
+    command.type === 'edit_subscription' ||
+    command.type === 'set_phase' ||
     command.type === 'harvest_continue' ||
     command.type === 'harvest_sell' ||
     command.type === 'harvest_accept' ||
@@ -1094,7 +1101,14 @@ function doCommand(
       if (pending?.kind === 'opportunity' && pending.rolling) {
         return refuse('Throw the die of the card you bought first.');
       }
-      if (pending?.kind === 'opportunity' && pending.planned) {
+      // Done on an Opportunity nobody took is the same as passing: nobody has to take a card (JFK, 2026-11-05)
+      if (pending?.kind === 'opportunity_pile') {
+        p.endTurn();
+        return { pending: null };
+      }
+      if (pending?.kind === 'opportunity') {
+        // a card that was only offered or planned in Grow: the chance is missed
+        p.closePlans();
         emit('opportunity_passed', id, { pile: pending.pile, offers: pending.offers });
         p.endTurn();
         return {
@@ -1115,6 +1129,27 @@ function doCommand(
         );
       }
       p.endTurn();
+      return {};
+    }
+    case 'edit_transaction': {
+      const patch = command.patch ?? {};
+      const critical = Object.keys(patch).filter(
+        (key) => !['category', 'account', 'time'].includes(key),
+      );
+      if (critical.length > 0) {
+        return refuse(
+          `The ${critical.join(', ')} of a booking belong to the game and cannot be changed.`,
+        );
+      }
+      p.editTransaction(command.index, patch);
+      return {};
+    }
+    case 'edit_subscription': {
+      p.editSubscription(command.title, command.account);
+      return {};
+    }
+    case 'set_phase': {
+      p.setPhase(command.kind, command.id, command.phase);
       return {};
     }
     case 'fund_reserve': {

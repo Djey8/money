@@ -635,3 +635,152 @@ describe('the layout of the map the host dealt', () => {
     expect(seeds(started({}, 7))[0]).toBe(7);
   });
 });
+
+describe('passing on an Opportunity (JFK, 2026-11-05)', () => {
+  const open = (t: DreamTable, who: string, pending: object): DreamTable => ({
+    ...t,
+    turnRolled: true,
+    players: t.players.map((seat) =>
+      seat.id === who ? { ...seat, pending: pending as never } : seat,
+    ),
+  });
+
+  it.each([
+    ['the pile to choose', { kind: 'opportunity_pile' }],
+    ['offers shown', { kind: 'opportunity', pile: 'seed', offers: ['S10'] }],
+    [
+      'a card planned in Grow',
+      { kind: 'opportunity', pile: 'seed', offers: ['S10'], planned: 'S10' },
+    ],
+  ])('%s: pass leaves the card and the turn can end', (_name, pending) => {
+    const t0 = started({}, 5);
+    const who = t0.activePlayerId!;
+    const left = run(open(t0, who, pending), who, { type: 'skip' });
+    expect(left.players.find((seat) => seat.id === who)!.pending).toBeNull();
+    expect(() => run(left, who, { type: 'end_turn' })).not.toThrow();
+  });
+
+  it.each([
+    ['the pile to choose', { kind: 'opportunity_pile' }],
+    ['offers shown', { kind: 'opportunity', pile: 'seed', offers: ['S10'] }],
+  ])('%s: ending the turn with Done is the same as passing', (_name, pending) => {
+    const t0 = started({}, 5);
+    const who = t0.activePlayerId!;
+    expect(() => run(open(t0, who, pending), who, { type: 'end_turn' })).not.toThrow();
+  });
+});
+
+describe('what a player may change by hand (JFK, 2026-11-05)', () => {
+  const life = (t: DreamTable, who: string) =>
+    DreamPlayer.restore(t.players.find((seat) => seat.id === who)!.life!, () => 0.5, {
+      sharedMarkets: true,
+    });
+
+  /** A table whose players have a booking of the Daily account (the start has only an income). */
+  const withBookings = (): DreamTable => {
+    const t = started({}, 5);
+    return {
+      ...t,
+      players: t.players.map((seat) =>
+        seat.life
+          ? {
+              ...seat,
+              life: {
+                ...seat.life,
+                books: {
+                  ...seat.life.books,
+                  transactions: [
+                    ...seat.life.books.transactions,
+                    {
+                      account: 'Daily',
+                      amountMinor: -1250,
+                      date: '2026-11-16',
+                      time: '08:00',
+                      category: '@Food',
+                      comment: 'Groceries',
+                    },
+                  ],
+                },
+              },
+            }
+          : seat,
+      ),
+    };
+  };
+
+  it('changes the category, the time and the account of a booking, on or off the turn, and keeps the cash', () => {
+    const t0 = withBookings();
+    const who = t0.activePlayerId!;
+    const other = t0.players.find((seat) => seat.id !== who)!.id;
+    const before = life(t0, other);
+    const index = before.books.transactions.findIndex((tx) => tx.account === 'Daily');
+    expect(index).toBeGreaterThanOrEqual(0);
+    const t1 = run(t0, other, {
+      type: 'edit_transaction',
+      index,
+      patch: { category: '@Groceries', account: 'Splurge', time: '09:15' },
+    });
+    const after = life(t1, other);
+    expect(after.books.transactions[index]).toMatchObject({
+      account: 'Splurge',
+      category: '@Groceries',
+      time: '09:15',
+    });
+    expect(after.books.transactions[index].amountMinor).toBe(
+      before.books.transactions[index].amountMinor,
+    );
+    expect(after.cash()).toBe(before.cash());
+  });
+
+  it('refuses what belongs to the game: the amount, the date, the comment, an income or the Mojo', () => {
+    const t0 = withBookings();
+    const who = t0.activePlayerId!;
+    for (const patch of [{ amount: 5 }, { date: '2030-01-01' }, { comment: 'x' }]) {
+      expect(() =>
+        run(t0, who, { type: 'edit_transaction', index: 0, patch: patch as never }),
+      ).toThrow(/belong to the game/);
+    }
+    const txs = life(t0, who).books.transactions;
+    const income = txs.findIndex((tx) => tx.account === 'Income');
+    if (income >= 0) {
+      expect(() =>
+        run(t0, who, { type: 'edit_transaction', index: income, patch: { account: 'Daily' } }),
+      ).toThrow(/move between/);
+    }
+    expect(() =>
+      run(t0, who, { type: 'edit_transaction', index: 0, patch: { account: 'Mojo' } }),
+    ).toThrow(/move between/);
+    expect(() =>
+      run(t0, who, { type: 'edit_transaction', index: 99999, patch: { category: 'x' } }),
+    ).toThrow(/no such booking/);
+  });
+
+  it('changes the account a running payment is paid from, but nothing else of it', () => {
+    const t0 = started({}, 5);
+    const who = t0.activePlayerId!;
+    const sub = life(t0, who).books.subscriptions.find(
+      (entry) => entry.amountMinor < 0 && entry.account === 'Daily',
+    )!;
+    const t1 = run(t0, who, { type: 'edit_subscription', title: sub.title, account: 'Splurge' });
+    const changed = life(t1, who).books.subscriptions.find((entry) => entry.title === sub.title)!;
+    expect(changed).toEqual({ ...sub, account: 'Splurge' });
+    expect(() =>
+      run(t0, who, { type: 'edit_subscription', title: sub.title, account: 'Income' }),
+    ).toThrow(/change its account/);
+  });
+
+  it('sets the phase of a project by hand, backwards too, but never completes one', () => {
+    const t0 = started({}, 5);
+    const who = t0.activePlayerId!;
+    const t1 = run(t0, who, { type: 'set_phase', kind: 'smile', id: 'life', phase: 'idea' });
+    expect(life(t1, who).phaseEdits).toEqual({ 'smile:life': 'idea' });
+    const t2 = run(t1, who, { type: 'set_phase', kind: 'smile', id: 'life', phase: 'saving' });
+    expect(life(t2, who).phaseEdits).toEqual({ 'smile:life': 'saving' });
+    expect(() =>
+      run(t0, who, { type: 'set_phase', kind: 'smile', id: 'life', phase: 'completed' }),
+    ).toThrow(/idea, planning, saving or ready/);
+    expect(() =>
+      run(t0, who, { type: 'set_phase', kind: 'grow', id: 'nothing', phase: 'plan' }),
+    ).toThrow(/no such project/);
+  });
+});

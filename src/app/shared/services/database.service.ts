@@ -64,6 +64,20 @@ export class DatabaseService {
     return DatabaseService.readOnly && !DatabaseService.ACCOUNT_OWN.has(tag);
   }
 
+  /**
+   * Told what a page tried to write while `readOnly` is on (a game table): the table works out which of it may be kept (a booking's
+   * category, the account of a payment, the phase of a project) and which belongs to the game and is put back.
+   */
+  static onBlockedWrite: ((tag: string, data: unknown) => void) | null = null;
+
+  private static refused(tag: string, data: unknown): void {
+    try {
+      DatabaseService.onBlockedWrite?.(tag, data);
+    } catch {
+      // what a table does with an edit never stops the page that made it
+    }
+  }
+
   /** Self-hosted writes run one at a time — see `queueSelfhostedWrite`. */
   private selfhostedWriteQueue: Promise<unknown> = Promise.resolve();
 
@@ -88,7 +102,10 @@ export class DatabaseService {
    * The auth database email (backend) remains unencrypted for login matching.
    */
   writeObject(tag: string, element: any): Observable<any> {
-    if (DatabaseService.blocked(tag)) return of({ success: true, skipped: true, readOnly: true });
+    if (DatabaseService.blocked(tag)) {
+      DatabaseService.refused(tag, element);
+      return of({ success: true, skipped: true, readOnly: true });
+    }
     this.ensureStableIds(tag, element);
     const dataToWrite = this.encryptForStorage(tag, element);
 
@@ -164,7 +181,10 @@ export class DatabaseService {
    * @returns {Observable<any>} Observable that completes when write succeeds or errors on failure.
    */
   writeObjectIfDirty(tag: string, element: any): Observable<any> {
-    if (DatabaseService.blocked(tag)) return of({ success: true, skipped: true, readOnly: true });
+    if (DatabaseService.blocked(tag)) {
+      DatabaseService.refused(tag, element);
+      return of({ success: true, skipped: true, readOnly: true });
+    }
     if (this.mode === 'firebase') {
       // Firebase mode: write immediately (no optimization needed)
       return this.writeObject(tag, element);
@@ -194,6 +214,9 @@ export class DatabaseService {
    */
   batchWrite(writes: { tag: string; data: any }[], forceWrite = false): Observable<any> {
     if (DatabaseService.readOnly) {
+      for (const write of writes) {
+        if (DatabaseService.blocked(write.tag)) DatabaseService.refused(write.tag, write.data);
+      }
       writes = writes.filter((write) => !DatabaseService.blocked(write.tag));
       if (writes.length === 0) return of({ success: true, skipped: true, readOnly: true });
     }

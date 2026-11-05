@@ -1240,6 +1240,36 @@ export class InfoFireComponent extends BaseInfoComponent {
     return phases[Math.min(currentIndex + 1, phases.length - 1)];
   }
 
+  phaseOptions: FirePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
+
+  getPreviousPhase(): FirePhase {
+    const phases = this.phaseOptions;
+    const currentIndex = phases.indexOf(InfoFireComponent.phase);
+    return phases[Math.max(currentIndex - 1, 0)];
+  }
+
+  /** The phase set by hand, forwards or backwards (a project can go back to an idea, or be reopened). */
+  setPhase(phase: FirePhase) {
+    const project = AppStateService.instance.allFireEmergencies[InfoFireComponent.index];
+    if (!project || project.phase === phase) return;
+    project.phase = phase;
+    project.updatedAt = new Date().toISOString();
+    if (phase === 'completed' && !project.completionDate) {
+      project.completionDate = new Date().toISOString().split('T')[0];
+    }
+    if (phase !== 'completed') delete project.completionDate;
+    InfoFireComponent.phase = phase;
+    this.persistence.writeAndSync({
+      tag: 'fire',
+      data: AppStateService.instance.allFireEmergencies,
+      localStorageKey: 'fire',
+      logEvent: 'set_fire_phase',
+      logMetadata: { title: project.title, phase },
+      onSuccess: () => this.toastService.show('Phase changed', 'update'),
+      onError: (error) => this.showError(error.message || 'Failed to change the phase'),
+    });
+  }
+
   advancePhase() {
     const nextPhase = this.getNextPhase();
     if (nextPhase !== InfoFireComponent.phase) {

@@ -118,6 +118,11 @@ function phaseOf(funded: boolean, paid: number, planned: number): string {
   return paid > 0 || planned > 0 ? 'saving' : 'planning';
 }
 
+/** The phase the player set by hand wins over the one the money says - except a project that is paid in full. */
+function withEdit(edits: Record<string, string>, key: string, phase: string): string {
+  return phase === 'completed' ? phase : (edits[key] ?? phase);
+}
+
 /** Puts `minor` into the buckets one after the other, each up to its target (the money goes where the project asks for it first). */
 function fill(buckets: AppBucket[], minor: number): void {
   let left = minor;
@@ -210,7 +215,11 @@ export function dreamAppEntities(
     scaleTargets(project.buckets, p.dreamTargetMinor);
     const paid = p.dreamLived ? p.dreamTargetMinor : p.dreamSavedMinor;
     fill(project.buckets, paid);
-    project.phase = phaseOf(p.dreamLived, paid, planned('life', 'life'));
+    project.phase = withEdit(
+      p.phaseEdits,
+      'smile:life',
+      phaseOf(p.dreamLived, paid, planned('life', 'life')),
+    );
     if (p.dreamLived) project.completionDate = nowIso.slice(0, 10);
     smile.push(project);
   }
@@ -263,7 +272,11 @@ export function dreamAppEntities(
       updatedAt: nowIso,
     };
     fill(project.buckets, entry.savedMinor);
-    project.phase = phaseOf(complete, entry.savedMinor, planned('smile', card.id));
+    project.phase = withEdit(
+      p.phaseEdits,
+      `smile:${card.id}`,
+      phaseOf(complete, entry.savedMinor, planned('smile', card.id)),
+    );
     if (complete) project.completionDate = nowIso.slice(0, 10);
     smile.push(project);
   }
@@ -284,10 +297,14 @@ export function dreamAppEntities(
     );
     for (const bucket of project.buckets) bucket.target = fromMinorUnits(monthly);
     fill(project.buckets, p.reserveMinor);
-    project.phase = phaseOf(
-      p.reserveMinor >= monthly * 3 && monthly > 0,
-      p.reserveMinor,
-      planned('mojo', 'mojo'),
+    project.phase = withEdit(
+      p.phaseEdits,
+      'fire:mojo',
+      phaseOf(
+        p.reserveMinor >= monthly * 3 && monthly > 0,
+        p.reserveMinor,
+        planned('mojo', 'mojo'),
+      ),
     );
     fire.push(project);
   }
@@ -327,7 +344,7 @@ export function dreamAppEntities(
     fire.push({
       title: card.title[l],
       sub: card.category,
-      phase: phaseOf(complete, paid, plan.perMinor),
+      phase: withEdit(p.phaseEdits, `fire:${card.id}`, phaseOf(complete, paid, plan.perMinor)),
       ...(complete ? { completionDate: nowIso.slice(0, 10) } : {}),
       description: parts.description,
       buckets: [

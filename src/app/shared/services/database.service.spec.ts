@@ -731,3 +731,34 @@ describe('DatabaseService (firebase mode)', () => {
     });
   });
 });
+
+describe('DatabaseService while a game table is on screen (read only)', () => {
+  afterEach(() => {
+    DatabaseService.readOnly = false;
+    DatabaseService.onBlockedWrite = null;
+  });
+
+  it('writes nothing, and tells the table what the page tried to write', async () => {
+    const told: [string, unknown][] = [];
+    DatabaseService.readOnly = true;
+    DatabaseService.onBlockedWrite = (tag, data) => told.push([tag, data]);
+    const service = Object.create(DatabaseService.prototype) as DatabaseService;
+    const rows = [{ title: 'Rent' }];
+    const single = await lastValueFrom(service.writeObject('subscriptions', rows));
+    await lastValueFrom(service.batchWrite([{ tag: 'transactions', data: [1] }]));
+    expect(single).toMatchObject({ skipped: true, readOnly: true });
+    expect(told).toContainEqual(['subscriptions', rows]);
+    expect(told).toContainEqual(['transactions', [1]]);
+  });
+
+  it('is not stopped by a table that fails to work an edit out', async () => {
+    DatabaseService.readOnly = true;
+    DatabaseService.onBlockedWrite = () => {
+      throw new Error('boom');
+    };
+    const service = Object.create(DatabaseService.prototype) as DatabaseService;
+    await expect(lastValueFrom(service.writeObject('grow', []))).resolves.toMatchObject({
+      skipped: true,
+    });
+  });
+});

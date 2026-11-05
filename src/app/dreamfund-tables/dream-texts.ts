@@ -76,6 +76,7 @@ export interface DreamTexts {
   sellValidTitle: string;
   sellValidHint: string;
   sellValidTurns: string;
+  editRefused: string;
   maxOpenNoLimit: string;
   characterChoose: string;
   characterCashflow: string;
@@ -325,6 +326,8 @@ const EN: DreamTexts = {
   sellValidHint:
     'A Harvest card that opens the market or brings a buyer makes an offer for the things you own. It stays open for this many of your own turns - then the deal is off and life goes on.',
   sellValidTurns: 'turns',
+  editRefused:
+    'The amount, the date and the comment of a booking belong to the game and cannot be changed. The category, the time and the account can.',
   characterChoose: 'Who do you want to be?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Keep the character I was dealt',
@@ -581,6 +584,8 @@ const DE: Partial<DreamTexts> = {
   sellValidHint:
     'Eine Ernte-Karte, die den Markt öffnet oder einen Käufer bringt, macht ein Angebot für das, was du besitzt. Es bleibt so viele eigene Züge offen - dann ist das Geschäft vorbei und das Leben geht weiter.',
   sellValidTurns: 'Züge',
+  editRefused:
+    'Betrag, Datum und Kommentar einer Buchung gehören zum Spiel und lassen sich nicht ändern. Kategorie, Uhrzeit und Konto schon.',
   characterChoose: 'Wer willst du sein?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Den zugeteilten Charakter behalten',

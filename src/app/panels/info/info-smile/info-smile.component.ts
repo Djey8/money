@@ -691,6 +691,36 @@ export class InfoSmileComponent extends BaseInfoComponent {
     return project.buckets.every((bucket) => bucket.amount >= bucket.target);
   }
 
+  phaseOptions: SmilePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
+
+  getPreviousPhase(): SmilePhase {
+    const phases = this.phaseOptions;
+    const currentIndex = phases.indexOf(InfoSmileComponent.phase);
+    return phases[Math.max(currentIndex - 1, 0)];
+  }
+
+  /** The phase set by hand, forwards or backwards (a project can go back to an idea, or be reopened). */
+  setPhase(phase: SmilePhase) {
+    const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
+    if (!project || project.phase === phase) return;
+    project.phase = phase;
+    project.updatedAt = new Date().toISOString();
+    if (phase === 'completed' && !project.completionDate) {
+      project.completionDate = new Date().toISOString().split('T')[0];
+    }
+    if (phase !== 'completed') delete project.completionDate;
+    InfoSmileComponent.phase = phase;
+    this.persistence.writeAndSync({
+      tag: 'smile',
+      data: AppStateService.instance.allSmileProjects,
+      localStorageKey: 'smile',
+      logEvent: 'set_smile_phase',
+      logMetadata: { title: project.title, phase },
+      onSuccess: () => this.toastService.show('Phase changed', 'update'),
+      onError: (error) => this.showError(error.message || 'Failed to change the phase'),
+    });
+  }
+
   advancePhase() {
     const nextPhase = this.getNextPhase();
     if (nextPhase !== InfoSmileComponent.phase) {

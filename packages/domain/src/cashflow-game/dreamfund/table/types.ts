@@ -333,6 +333,16 @@ export type DreamCommand =
   /** Says the month's money is dealt with (plans set, lump sums paid): a bot sends it after its money moves. */
   | { type: 'settle_payday' }
   | { type: 'fund_reserve'; amountMinor: number }
+  /** What may be changed by hand without changing the game (JFK, 2026-11-05): a booking's category, time and account ... */
+  | {
+      type: 'edit_transaction';
+      index: number;
+      patch: { category?: string; account?: string; time?: string };
+    }
+  /** ... the account a running payment is paid from ... */
+  | { type: 'edit_subscription'; title: string; account: string }
+  /** ... and the phase of a project (a Smile or Fire project by its id: 'life', a card id, 'mojo'). */
+  | { type: 'set_phase'; kind: 'grow' | 'smile' | 'fire'; id: string; phase: string }
   /** Money for a dream: the character's own (`life`) or a dream taken (its card); none asked for: the life dream first. */
   | { type: 'fund_dream'; amountMinor: number; id?: string }
   | { type: 'repay_debt'; tag: string }

@@ -799,6 +799,13 @@ export class InfoGrowComponent extends BaseInfoComponent {
     this.editingLinkUrl = '';
   }
 
+  phaseOptions: GrowPhase[] = ['idea', 'research', 'plan', 'execute', 'monitor', 'completed'];
+
+  getPreviousPhase(): GrowPhase {
+    const idx = this.phaseOptions.indexOf(this.classReference.phase);
+    return this.phaseOptions[Math.max(idx - 1, 0)];
+  }
+
   getNextPhase(): GrowPhase {
     const order: GrowPhase[] = ['idea', 'research', 'plan', 'execute', 'monitor', 'completed'];
     const idx = order.indexOf(this.classReference.phase);

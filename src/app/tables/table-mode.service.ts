@@ -36,6 +36,13 @@ import {
 import { historyLines } from './table-history';
 import { TablePresenter } from './table-presenter';
 import { applyDreamExtrasToApp, dreamLifeToApp } from './dream-books-bridge';
+import {
+  captureShown,
+  EDITABLE_TAGS,
+  reconcileEdit,
+  type ShownBooks,
+} from './dream-edit-reconcile';
+import { dreamTexts } from '../dreamfund-tables/dream-texts';
 import { extrasOf, lifeOf, pendingOf } from '../dreamfund-tables/dream-table-view';
 import { withDreamPending } from '../dreamfund-tables/dream-pending';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
@@ -240,6 +247,10 @@ export class TableModeService {
       // no storage: a reload then lands on the lobby
     }
     DatabaseService.readOnly = true;
+    DatabaseService.onBlockedWrite =
+      (session.view() as { kind?: string } | null)?.kind === 'dreamfund'
+        ? (tag, data) => void this.editedAtTable(tag, data)
+        : null;
     LocalService.shadow = shownData();
     const Driver =
       (session.view() as { kind?: string } | null)?.kind === 'dreamfund'
@@ -308,6 +319,8 @@ export class TableModeService {
       // nothing stored
     }
     LocalService.shadow = null;
+    DatabaseService.onBlockedWrite = null;
+    this.shownBooks = null;
     this.alert.turnEnded();
     RemoteGameHook.current = null;
     RemoteGameHook.debug = null;
@@ -406,6 +419,44 @@ export class TableModeService {
         active: player.seat === view.activeSeat,
       };
     });
+  }
+
+  /** What was on screen of the player's own books when they started to edit (see `dream-edit-reconcile.ts`). */
+  private shownBooks: ShownBooks | null = null;
+  private editing: Promise<void> = Promise.resolve();
+
+  /**
+   * A page wrote something while a Dreamfund table is on screen (JFK, 2026-11-05): what does not change the game is kept - the
+   * category, time and account of a booking, the account a payment is paid from, the phase of a project -, the rest is put back.
+   */
+  private editedAtTable(tag: string, data: unknown): Promise<void> {
+    if (!EDITABLE_TAGS.includes(tag)) return this.editing;
+    const shown = this.shownBooks;
+    const driver = RemoteGameHook.current as DreamTableGameDriver | null;
+    if (!shown || this.looking() !== null || !(driver instanceof DreamTableGameDriver)) {
+      return this.editing;
+    }
+    const worked = reconcileEdit(tag, data, shown);
+    if (worked.commands.length === 0 && !worked.refused) return this.editing;
+    // one edit after the other: the table numbers its answers
+    this.editing = this.editing.then(async () => {
+      let failed: string | undefined;
+      for (const command of worked.commands) {
+        const outcome = await driver.editEntry(command as unknown as Record<string, unknown>);
+        if (!outcome.ok) failed = outcome.message ?? 'The change did not go through.';
+      }
+      if (worked.refused || failed) {
+        try {
+          this.injector
+            .get(ToastService)
+            .show(failed ?? dreamTexts(this.lang).editRefused, 'error');
+        } catch {
+          // without the app's own services (a bare test) there is nothing to tell
+        }
+        this.showLatest();
+      }
+    });
+    return this.editing;
   }
 
   /** Puts the latest books of whoever is being looked at on screen (after a held animation). */
@@ -757,6 +808,12 @@ export class TableModeService {
         // without the app's own translations (a bare test) the books are shown as they are
       }
     }
+    // the title a payment is shown by, and the one the table knows it by (the screen shows the lines in its own language)
+    const subscriptionTitles: Record<string, string> = {};
+    shownInLanguage.subscriptions.forEach((sub, index) => {
+      const own = shown.subscriptions[index]?.title;
+      if (own && own !== sub.title) subscriptionTitles[sub.title] = own;
+    });
     // the subscriptions are the bill of the next Payday: the premium of an insurance that is dropped is not on it
     if (lifeOf(view, seat)) shownInLanguage = withoutDroppedPremiums(shownInLanguage);
     applyBooksToApp(
@@ -783,6 +840,11 @@ export class TableModeService {
     // move - the table's books arrive without a save, so nothing else tells them (JFK, 2026-10-18).
     AppStateService.instance.transactionsUpdated$.next();
     AppStateService.instance.subscriptionsUpdated$.next();
+    // what a player may change by hand is compared with this: only their own books can be edited
+    this.shownBooks =
+      life && seat === view.youSeat
+        ? captureShown(AppStateService.instance as never, subscriptionTitles)
+        : null;
   }
 }
 
