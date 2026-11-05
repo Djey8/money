@@ -462,7 +462,24 @@ export class DreamBoardComponent {
     // a token stands inside the map, next to its tile, the way tokens do at a table
     // (the Yin Yang: every track has its own, inside its own side)
     const spotsByLane = lanes
-      ? lanes.map((lane) => tokenSpots(lane.map((index) => tiles[index])))
+      ? lanes.map((lane, laneNumber) => {
+          const spots = tokenSpots(lane.map((index) => tiles[index]));
+          // on the S both tracks walk the same tiles: each stays on its own side of the S the whole way (white on the white side,
+          // black on the black side), so a token never jumps from one side of the tiles to the other where the S bends
+          if (picture) {
+            const other = lanes[1 - laneNumber];
+            lane.forEach((index, position) => {
+              if (!other.includes(index)) return;
+              spots[position] = seamSpot(
+                tiles[index],
+                picture.seam.map((p) => ({ x: p.x * scale + MARGIN, y: p.y * scale + MARGIN })),
+                laneNumber % 2 === 0 ? 1 : -1,
+                tiles,
+              );
+            });
+          }
+          return spots;
+        })
       : [tokenSpots(tiles, this.map.setup.shape === 'infinity')];
     const value: Layout = {
       tiles,
@@ -668,6 +685,58 @@ interface Layout {
   trackPoints: string;
   /** Width over height of the picture. */
   ratio: number;
+}
+
+/**
+ * Where a token stands beside a tile of the S of a Yin Yang map: on one fixed side of the curve, whichever way it bends. The S is
+ * drawn from the top to the bottom, and white is always on the right-hand side of that way (heading down, the white side is the
+ * west), black on the left. `side` is 1 for white, -1 for black.
+ */
+export function seamSpot(
+  tile: { x: number; y: number },
+  seam: { x: number; y: number }[],
+  side: 1 | -1,
+  others: { x: number; y: number }[] = [],
+): { x: number; y: number; angle: number } {
+  let nearest = 0;
+  let best = Infinity;
+  seam.forEach((p, i) => {
+    const d = Math.hypot(p.x - tile.x, p.y - tile.y);
+    if (d < best) {
+      best = d;
+      nearest = i;
+    }
+  });
+  const before = seam[Math.max(0, nearest - 3)];
+  const after = seam[Math.min(seam.length - 1, nearest + 3)];
+  const length = Math.hypot(after.x - before.x, after.y - before.y) || 1;
+  const tx = (after.x - before.x) / length;
+  const ty = (after.y - before.y) / length;
+  // the right-hand side of the way (the screen's y points down): heading south (0, 1) it is the west (-1, 0)
+  const nx = -ty * side;
+  const ny = tx * side;
+  const spotAt = (turn: number, distance: number) => {
+    // turn 0: straight to the side; turn 1: along the S, away from the end of it
+    const end = nearest === 0 ? 1 : nearest === seam.length - 1 ? -1 : 0;
+    return {
+      x: tile.x + (nx * (1 - turn) + tx * end * turn) * distance,
+      y: tile.y + (ny * (1 - turn) + ty * end * turn) * distance,
+    };
+  };
+  const room = (at: { x: number; y: number }) =>
+    Math.min(...others.filter((t) => t !== tile).map((t) => Math.hypot(at.x - t.x, at.y - t.y)));
+  // beside the tile, as far as the room allows; at the two ends of the S, where tiles of the circle are close on both sides, turned
+  // into the S until it is clear
+  const isEnd = nearest === 0 || nearest === seam.length - 1;
+  let at = spotAt(0, TOKEN_DISTANCE);
+  search: for (const distance of [TOKEN_DISTANCE, 68, 62, 56]) {
+    for (const turn of isEnd ? [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9] : [0]) {
+      const tried = spotAt(turn, distance);
+      if (room(tried) > room(at)) at = tried;
+      if (room(at) >= TILE / 2 + 4) break search;
+    }
+  }
+  return { ...at, angle: (Math.atan2(tile.y - at.y, tile.x - at.x) * 180) / Math.PI };
 }
 
 /**
