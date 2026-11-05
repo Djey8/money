@@ -86,9 +86,9 @@ const play = (books: GameBooks, id: string, rng = seededRng(4)) => {
 };
 
 describe('the Harvest stack', () => {
-  it('has the 87 cards with the 103 physical cards of a Medium game, in both languages', () => {
+  it('has the 87 cards of the first stack with 101 physical cards of a Medium game, in both languages', () => {
     expect(HARVEST_CARDS).toHaveLength(87);
-    expect(HARVEST_CARDS.reduce((sum, c) => sum + c.copies, 0)).toBe(103);
+    expect(HARVEST_CARDS.reduce((sum, c) => sum + c.copies, 0)).toBe(101);
     for (const c of HARVEST_CARDS)
       expect(c.title.en && c.title.de && c.story.en && c.story.de).toBeTruthy();
   });
@@ -97,7 +97,7 @@ describe('the Harvest stack', () => {
     let deck;
     const seen: string[] = [];
     const rng = seededRng(2);
-    for (let i = 0; i < 103; i += 1) {
+    for (let i = 0; i < 101; i += 1) {
       const draw = drawHarvestCard(HARVEST_CARDS, deck, rng);
       deck = draw.deck;
       seen.push(draw.card.id);

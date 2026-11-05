@@ -73,6 +73,9 @@ export interface DreamTexts {
   groupDreams: string;
   maxOpenTitle: string;
   maxOpenHint: string;
+  sellValidTitle: string;
+  sellValidHint: string;
+  sellValidTurns: string;
   maxOpenNoLimit: string;
   characterChoose: string;
   characterCashflow: string;
@@ -318,6 +321,10 @@ const EN: DreamTexts = {
   maxOpenHint:
     'How many dreams a player can have open in parallel; no limit lets everybody take as many as they like.',
   maxOpenNoLimit: 'No limit',
+  sellValidTitle: 'How long a sell offer stays open',
+  sellValidHint:
+    'A Harvest card that opens the market or brings a buyer makes an offer for the things you own. It stays open for this many of your own turns - then the deal is off and life goes on.',
+  sellValidTurns: 'turns',
   characterChoose: 'Who do you want to be?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Keep the character I was dealt',
@@ -570,6 +577,10 @@ const DE: Partial<DreamTexts> = {
   maxOpenHint:
     'Wie viele Träume ein Spieler gleichzeitig offen haben kann; ohne Limit darf jeder so viele nehmen, wie er will.',
   maxOpenNoLimit: 'Kein Limit',
+  sellValidTitle: 'Wie lange ein Verkaufsangebot offen bleibt',
+  sellValidHint:
+    'Eine Ernte-Karte, die den Markt öffnet oder einen Käufer bringt, macht ein Angebot für das, was du besitzt. Es bleibt so viele eigene Züge offen - dann ist das Geschäft vorbei und das Leben geht weiter.',
+  sellValidTurns: 'Züge',
   characterChoose: 'Wer willst du sein?',
   characterCashflow: 'Cashflow',
   characterKeep: 'Den zugeteilten Charakter behalten',

@@ -92,16 +92,22 @@ export class TableModeService {
     if (!books) return [];
     const rolls = view.settings.rules?.sellOfferRolls ?? 0;
     const count = books.state.turn?.count ?? 0;
-    return (books.state.marketOffers ?? []).map((offer) => ({
-      title: offer.title,
-      label: offer.label,
-      priceMinor: offer.pricePerShareMinor ?? offer.pricePerCoinMinor ?? offer.salePriceMinor,
-      cardId: offer.cardId,
-      left:
-        rolls > 0 && offer.offeredAtRoll !== undefined
-          ? Math.max(1, rolls - (count - offer.offeredAtRoll))
-          : null,
-    }));
+    return (books.state.marketOffers ?? [])
+      .map((offer) => {
+        // a Harvest card of the Dreamfund game names its own number of turns (the setting of the table), the classic ones the rules'
+        const turns = offer.validRolls ?? rolls;
+        return {
+          title: offer.title,
+          label: offer.label,
+          priceMinor: offer.pricePerShareMinor ?? offer.pricePerCoinMinor ?? offer.salePriceMinor,
+          cardId: offer.cardId,
+          left:
+            turns > 0 && offer.offeredAtRoll !== undefined
+              ? turns - (count - offer.offeredAtRoll)
+              : null,
+        };
+      })
+      .filter((offer) => offer.left === null || offer.left > 0);
   });
 
   /** The tab says "your turn" while it is (and a notification, only if the player asked for them): it moved here from the table page. */

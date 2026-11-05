@@ -3,6 +3,8 @@
  * German (JFK, 2026-10-26: everything the player reads is in the language of the game). Keyed by the English text of the card, so a
  * card that is changed in English falls back to English until its German is changed too.
  */
+import { HARVEST_MORE_DE } from './cashflow-harvest-more';
+
 export const CARD_TEXT_DE: Record<string, string> = {
   'Seed · savings': 'Seed · Sparen',
   'cancel or downgrade subscriptions': 'Abos kündigen oder herunterstufen',
@@ -1126,3 +1128,5 @@ export const CARD_TEXT_DE: Record<string, string> = {
     'Der Squid-Game-Token brach 2021 binnen Minuten von ~2.850 $ auf fast null zusammen (~3,4 Mio. $ Rug Pull); Inhaber konnten nicht verkaufen. Chainalysis zählte 2025 mindestens 14 Milliarden Dollar an Krypto-Betrug.',
   'Chainalysis: crypto scams ≥ $14B in 2025': 'Chainalysis: Krypto-Betrug ≥ 14 Mrd. $ im Jahr 2025',
 };
+
+Object.assign(CARD_TEXT_DE, HARVEST_MORE_DE);

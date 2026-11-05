@@ -2215,6 +2215,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       key: 'opportunityValidTurns',
       options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
     },
+    {
+      key: 'sellValidTurns',
+      options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+    },
     { key: 'savingsCardCopies', options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })) },
     {
       key: 'bankInterestPercent',

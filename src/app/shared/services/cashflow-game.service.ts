@@ -2718,6 +2718,7 @@ export class CashflowGameService {
       date: this.gameDay,
       rng: this.rng,
       difficulty: this.customRules?.difficulty,
+      validRolls: this.customRules?.sellValidTurns,
     };
   }
 

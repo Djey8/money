@@ -93,6 +93,8 @@ export interface OpportunityHolding {
   paidMinor?: number;
   /** What its monthly line says now. */
   lineMinor?: number;
+  /** What a Harvest card did to the price of this one holding alone (a scam that is found out: ×0.2); 1 when nothing did. */
+  priceFactor?: number;
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { offerIsOpen } from './rules';
 import { applyInsuranceChanges } from './insurance';
 import { tickCareer } from './career';
 import { tickLife } from './life-books';
@@ -197,8 +198,14 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   const hadOffers = (next.marketOffers ?? []).length > 0;
   const growUpdates: BookGrowUpdate[] = [];
   if (hadOffers) {
-    next = { ...next, marketOffers: [] };
+    // a Harvest card's offer of the Dreamfund game outlives the Payday for as many turns as the table allows; the others end here
+    const staying = (next.marketOffers ?? []).filter(
+      (offer) => offer.validRolls !== undefined && offerIsOpen(next, offer),
+    );
+    next = { ...next, marketOffers: staying };
+    const stayingTitles = new Set(staying.map((offer) => offer.title));
     for (const project of books.growNotes ?? []) {
+      if (stayingTitles.has(project.title)) continue;
       const kept = project.notes.filter((note) => !note.text.startsWith(MARKET_NOTE_MARK));
       if (kept.length !== project.notes.length)
         growUpdates.push({ title: project.title, notes: kept });

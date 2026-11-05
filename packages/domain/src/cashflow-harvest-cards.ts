@@ -499,7 +499,7 @@ export const HARVEST_CARDS: HarvestCard[] = [
   {
     id: 'H12',
     group: 'market',
-    copies: 3,
+    copies: 1,
     title: {
       en: 'Quiet Market',
       de: 'Ruhiger Markt',

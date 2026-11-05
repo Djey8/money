@@ -1,4 +1,4 @@
-import { fromMinorUnits } from '@money/domain';
+import { fromMinorUnits, openOfferFor } from '@money/domain';
 import { Router } from '@angular/router';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Grow, GrowPhase, GrowType } from 'src/app/interfaces/grow';
@@ -286,7 +286,9 @@ export class GrowComponent implements OnInit, AfterViewInit {
   /** A Market card of this turn touched the project (an offer, a price move, a boost, a cost): look at it. */
   isAffected(project: Grow): boolean {
     const game = AppStateService.instance.cashflowGame;
-    return CashflowGameService.isCashflowGame() && !!game.turn?.affected?.includes(project.title);
+    if (!CashflowGameService.isCashflowGame()) return false;
+    // a sell offer of a Harvest card stays marked for as long as it is open (the setting of the game: for some turns)
+    return !!game.turn?.affected?.includes(project.title) || !!openOfferFor(game, project.title);
   }
 
   /** A Cashflow game under rules that allow selling only to a Market card's offer hides the Sell button until there is one. */

@@ -46,6 +46,11 @@ export interface CustomRules {
   savingsCardCopies: number;
   /** How many turns a planned Opportunity card can still be bought: 1 = only in the turn the card is in hand (JFK, 2026-10-26). */
   opportunityValidTurns: number;
+  /**
+   * How many of the player's own turns a sell offer of a Harvest card stays open (JFK, 2026-11-05): 1 = only in the turn the card is
+   * played, 2 = this one and the next, and so on. After that the deal is off - life goes on.
+   */
+  sellValidTurns: number;
   /** The level of the game: the defaults of the decks and the odds. Only Medium is offered until the simulation has set the others. */
   difficulty: Difficulty;
   /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
@@ -75,6 +80,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     maxSideHustles: 3,
     savingsCardCopies: 2,
     opportunityValidTurns: 1,
+    sellValidTurns: 2,
     difficulty: 'medium',
   },
   guided: {
@@ -94,6 +100,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     maxSideHustles: 3,
     savingsCardCopies: 2,
     opportunityValidTurns: 1,
+    sellValidTurns: 2,
     difficulty: 'medium',
   },
   strict: {
@@ -114,6 +121,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     maxSideHustles: 3,
     savingsCardCopies: 2,
     opportunityValidTurns: 1,
+    sellValidTurns: 2,
     difficulty: 'medium',
   },
 };
@@ -153,6 +161,7 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
     maxSideHustles: clamp(raw?.maxSideHustles, 1, 5, base.maxSideHustles),
     savingsCardCopies: clamp(raw?.savingsCardCopies, 1, 3, base.savingsCardCopies),
     opportunityValidTurns: clamp(raw?.opportunityValidTurns, 1, 3, base.opportunityValidTurns),
+    sellValidTurns: clamp(raw?.sellValidTurns, 1, 5, base.sellValidTurns),
     difficulty:
       raw?.difficulty === 'easy' || raw?.difficulty === 'medium' || raw?.difficulty === 'hard'
         ? raw.difficulty

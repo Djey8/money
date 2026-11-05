@@ -165,6 +165,8 @@ export interface CreateTableInput {
       dreamOffers?: number;
       /** How many dreams a player can have open at once (0: no limit). */
       maxOpenDreams?: number;
+      /** How many of a player's own turns a sell offer of a Harvest card stays open (1-5). */
+      sellValidTurns?: number;
     };
     /** A game for debugging the cards: the host chooses the card of every tile. */
     debug?: boolean;

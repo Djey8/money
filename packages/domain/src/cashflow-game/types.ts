@@ -262,6 +262,8 @@ export interface CashflowMarketOffer {
   pricePerShareMinor?: number;
   /** The player's roll count when the card was played: with `sellOfferRolls` it decides how long the offer stays open. */
   offeredAtRoll?: number;
+  /** A Harvest card of the Dreamfund game: the offer stays open for this many of the player's own turns (counted from `offeredAtRoll`), across Paydays. */
+  validRolls?: number;
 }
 
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';

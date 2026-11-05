@@ -1315,6 +1315,7 @@ export class DreamPlayer {
       date: TODAY,
       rng: this.rng,
       difficulty: this.rules.difficulty,
+      validRolls: this.rules.sellValidTurns,
     };
   }
 

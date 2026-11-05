@@ -517,6 +517,24 @@ function accountName(): string {
               <ng-container *ngIf="dream">
                 <div class="at-row at-row--stack">
                   <div class="at-label">
+                    <strong>{{ d.sellValidTitle }}</strong>
+                    <small>{{ d.sellValidHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.sellValidTitle">
+                    <button
+                      *ngFor="let turns of sellValidChoices"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.sellValid === turns"
+                      [attr.aria-checked]="form.sellValid === turns"
+                      (click)="form.sellValid = turns"
+                    >
+                      {{ turns }}
+                    </button>
+                  </div>
+                </div>
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
                     <strong>{{ d.bankStep }}</strong>
                     <small>{{ d.bankStepHint }}</small>
                   </div>
@@ -990,6 +1008,8 @@ export class AddTableComponent implements OnInit {
     points: 10,
     dreamOffers: 0,
     maxOpen: 3,
+    // how many of a player's own turns a sell offer of a Harvest card stays open
+    sellValid: 2,
     debug: false,
   };
 
@@ -1018,6 +1038,7 @@ export class AddTableComponent implements OnInit {
     ];
   }
   readonly pointGoals = [5, 8, 10, 15, 20, 30];
+  readonly sellValidChoices = [1, 2, 3, 4, 5];
   /** How many dreams a landing on a Smile tile offers: 0 is one or two, by chance. */
   readonly dreamOfferChoices = [0, 1, 2];
   /** How many dreams a player can have open at once: 0 is no limit. */
@@ -1210,6 +1231,7 @@ export class AddTableComponent implements OnInit {
           bankInterestPercent: f.bankInterest,
           dreamOffers: f.dreamOffers,
           maxOpenDreams: f.maxOpen,
+          sellValidTurns: f.sellValid,
         },
       };
     }
@@ -1274,6 +1296,9 @@ export class AddTableComponent implements OnInit {
     if (rules?.bankLoanStepMinor) f.bankStep = rules.bankLoanStepMinor;
     if ((rules as { dreamOffers?: number } | undefined)?.dreamOffers !== undefined) {
       f.dreamOffers = (rules as { dreamOffers: number }).dreamOffers;
+    }
+    if ((rules as { sellValidTurns?: number } | undefined)?.sellValidTurns !== undefined) {
+      f.sellValid = (rules as { sellValidTurns: number }).sellValidTurns;
     }
     if ((rules as { maxOpenDreams?: number } | undefined)?.maxOpenDreams !== undefined) {
       f.maxOpen = (rules as { maxOpenDreams: number }).maxOpenDreams;
