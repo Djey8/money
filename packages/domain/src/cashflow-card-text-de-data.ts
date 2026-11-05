@@ -4,6 +4,7 @@
  * card that is changed in English falls back to English until its German is changed too.
  */
 import { HARVEST_MORE_DE } from './cashflow-harvest-more';
+import { OPPORTUNITY_ENRICH_DE } from './cashflow-opportunity-enrich';
 
 export const CARD_TEXT_DE: Record<string, string> = {
   'Seed · savings': 'Seed · Sparen',
@@ -1129,4 +1130,4 @@ export const CARD_TEXT_DE: Record<string, string> = {
   'Chainalysis: crypto scams ≥ $14B in 2025': 'Chainalysis: Krypto-Betrug ≥ 14 Mrd. $ im Jahr 2025',
 };
 
-Object.assign(CARD_TEXT_DE, HARVEST_MORE_DE);
+Object.assign(CARD_TEXT_DE, HARVEST_MORE_DE, OPPORTUNITY_ENRICH_DE);

@@ -925,6 +925,8 @@
   "Grow.pl": "P/L",
   "Grow.buy": "acheter",
   "Grow.sell": "vendre",
+  "Grow.sellOffer": "Offer to buy: {{price}}",
+  "Grow.sellOfferLeft": "open for {{turns}} more turn(s)",
   "Grow.AddCashflow": "Ajouter Flux de Trésorerie",
   "Grow.AddDeposit": "Ajouter Dépôt",
   "Grow.UpdateValue": "Mettre à jour l'actif",

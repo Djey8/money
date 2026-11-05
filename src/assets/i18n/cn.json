@@ -952,6 +952,8 @@
   "Grow.pl": "盈亏",
   "Grow.buy": "买入",
   "Grow.sell": "卖出",
+  "Grow.sellOffer": "Offer to buy: {{price}}",
+  "Grow.sellOfferLeft": "open for {{turns}} more turn(s)",
   "Grow.AddCashflow": "添加现金流",
   "Grow.AddDeposit": "添加存款",
   "Grow.UpdateValue": "更新资产",

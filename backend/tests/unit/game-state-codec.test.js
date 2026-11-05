@@ -86,6 +86,7 @@ describe('game text', () => {
           label: '15',
           pricePerShareMinor: 1500,
           offeredAtRoll: 7,
+          validRolls: 3,
         },
       ],
     };

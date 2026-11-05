@@ -15,6 +15,7 @@ import { DREAMFUND_SPECS } from './cashflow-professions-dreamfund';
 import { LIFE_CARDS } from './cashflow-life-cards';
 import { HARVEST_CARDS } from './cashflow-harvest-cards';
 import { HARVEST_CARDS_MORE } from './cashflow-harvest-more';
+import { enrichOpportunityCards } from './cashflow-opportunity-enrich';
 import { OPPORTUNITY_CARDS } from './cashflow-opportunity-cards';
 import { tuneOpportunityCards } from './cashflow-opportunity-tuning';
 import { CLASSIC_DEAL_BIG } from './cashflow-game/classic-deal-big';
@@ -921,7 +922,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
     emergency: EMERGENCY_CARDS,
     life: LIFE_CARDS,
     dream: DREAM_CARDS,
-    opportunity: tuneOpportunityCards(OPPORTUNITY_CARDS),
+    opportunity: enrichOpportunityCards(tuneOpportunityCards(OPPORTUNITY_CARDS)),
     harvest: [...HARVEST_CARDS, ...HARVEST_CARDS_MORE],
   }, // the Emergency stack is its own; the other piles are the classic ones until this set gets its own
   professions: [

@@ -246,7 +246,7 @@ that is worth much or little. The card lists every number; you throw the die aft
 **Traps.** Some offers look like normal investments and are not (a "2% a week" lending app, a "pre-IPO" tip, a timeshare). Their
 numbers are not given away. The Harvest cards later show which were scams.
 
-### 🌾 Harvest - the markets (87 cards)
+### 🌾 Harvest - the markets (120 cards)
 
 Every market has an **index** that starts at 1.00 and drifts at every Payday (World stocks, Bonds, Tech, Gold, Bitcoin, Property...).
 What you own is worth its card price times the index of its market.
@@ -266,13 +266,26 @@ about - red when you own something with that word -, an **"Affects you / Not abo
 means for you. Every affected Grow project gets a note and a highlight.
 
 **Selling what the cards gave you.** What the Opportunity cards made is sold at the price of a Harvest card: in an open market, to a
-buyer, or on a hype. The offer stays open (for a few rolls, depending on the rules) even after you pressed **Done**: the project's
-**Sell** button in Grow then sells at the card's price.
+buyer, or on a hype. The offer **stays open for as many of your own turns as the table allows** (the setting _How long a sell offer stays
+open_, 1 to 5 turns, 2 by default) even after you pressed **Done** and across a Payday; then the deal is off. While it is open the project
+in Grow is highlighted and says what it pays and how many turns are left, and its **Sell** button sells at that price.
 
-**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it is rare - about one landing in a hundred rolls
-speaks of a given holding. So the **Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
+**Who buys what.** Every kind of holding has buyers among the Harvest cards - about one card in ten speaks of a property, a business, a side
+hustle, a loan, a collection, a metal or the shares of a market. The price is a roll of the die: a young family pays a little under or a
+little over what the flat is worth, an institution pays 1% to 20% over the screen price for a block of shares, a search fund pays three
+years of the profit of a business (at least a share of what you paid), a takeover bid pays a premium. A year-end rally opens every market;
+a wave of forced selling opens it too - at a loss, so you can also cut it.
+
+**A scam has a last exit.** One card says the price of a scam has fallen by 80% and the market is still open for one more turn; a claims
+buyer pays cents on the euro; a later card closes it for good. What you do with the last chance is yours.
+
+**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it does not come on every landing. So the
+**Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
 15% for a coin, a collection or a property (the mortgage comes off the proceeds), and a business or a hustle for a year of what it pays
 (half of what a buyer on a card pays). Nothing is sold below that, and savings and scams cannot be sold at all.
+
+Each Opportunity card has, in its Grow project, how to invest, what to do and what not to do, its risk (1 to 5) with the reason, tasks, and
+links to read more.
 
 ### 🔥 Emergency (50 cards)
 

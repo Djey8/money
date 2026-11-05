@@ -57,8 +57,8 @@ export const HARVEST_CARDS_MORE: HarvestCard[] = [
     ],
     links: [
       {
-        label: 'Destatis – Immobilienpreisindex',
-        url: 'https://www.destatis.de/DE/Themen/Wirtschaft/Preise/Baupreisindex/_inhalt.html',
+        label: 'Destatis – Federal Statistical Office',
+        url: 'https://www.destatis.de/',
       },
     ],
   },
@@ -268,8 +268,8 @@ export const HARVEST_CARDS_MORE: HarvestCard[] = [
     ],
     links: [
       {
-        label: 'DIHK – Unternehmensnachfolge',
-        url: 'https://www.dihk.de/de/themen-und-positionen/unternehmensnachfolge',
+        label: 'IHK – Chambers of Commerce',
+        url: 'https://www.ihk.de/',
       },
       { label: 'nexxt-change – Börse', url: 'https://www.nexxt-change.org/' },
     ],
@@ -426,7 +426,7 @@ export const HARVEST_CARDS_MORE: HarvestCard[] = [
         },
       },
     ],
-    links: [{ label: 'Wikipedia – Blockhandel', url: 'https://de.wikipedia.org/wiki/Blockhandel' }],
+    links: [{ label: 'Wikipedia – Aktie', url: 'https://de.wikipedia.org/wiki/Aktie' }],
   },
   {
     id: 'H105',
@@ -584,8 +584,8 @@ export const HARVEST_CARDS_MORE: HarvestCard[] = [
     ],
     links: [
       {
-        label: 'SEC – Microcap fraud',
-        url: 'https://www.sec.gov/resources-for-investors/investor-alerts-bulletins/ib_microcapfraud',
+        label: 'Investor.gov – Investor protection',
+        url: 'https://www.investor.gov/',
       },
     ],
   },

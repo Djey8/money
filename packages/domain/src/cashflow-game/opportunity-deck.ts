@@ -134,6 +134,8 @@ export interface OpportunityCard {
   requires?: OpportunityRequirement;
   setsCar?: boolean;
   note?: string;
+  /** A tip and a warning (do / don't), a note of the Grow project of its own. */
+  tip?: string;
   trap?: OpportunityTrap;
 }
 

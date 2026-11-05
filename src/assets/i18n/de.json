@@ -939,6 +939,8 @@
   "Grow.pl": "G/V",
   "Grow.buy": "kaufen",
   "Grow.sell": "verkaufen",
+  "Grow.sellOffer": "Angebot zum Verkauf: {{price}}",
+  "Grow.sellOfferLeft": "noch {{turns}} Zug(e) offen",
   "Grow.AddCashflow": "Cashflow hinzufügen",
   "Grow.AddDeposit": "Einzahlung hinzufügen",
   "Grow.UpdateValue": "Vermögenswert aktualisieren",

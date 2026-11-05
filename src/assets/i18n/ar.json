@@ -925,6 +925,8 @@
   "Grow.pl": "ر/خ",
   "Grow.buy": "شراء",
   "Grow.sell": "بيع",
+  "Grow.sellOffer": "Offer to buy: {{price}}",
+  "Grow.sellOfferLeft": "open for {{turns}} more turn(s)",
   "Grow.AddCashflow": "إضافة تدفق نقدي",
   "Grow.AddDeposit": "إضافة إيداع",
   "Grow.UpdateValue": "تحديث الأصل",

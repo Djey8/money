@@ -410,6 +410,7 @@ export function buyOpportunity(
   const notes = [
     note(`${card.title[lang]}: ${card.story[lang]}`, at),
     ...(card.note ? [note(cardText(card.note, lang), at)] : []),
+    ...(card.tip ? [note(cardText(card.tip, lang), at)] : []),
   ];
   const update: BookGrowUpdate = {
     title,
@@ -1210,6 +1211,7 @@ export function planOpportunity(
       notes: [
         ...(first.notes ?? []),
         ...(card.note ? [note(cardText(card.note, lang), at)] : []),
+        ...(card.tip ? [note(cardText(card.tip, lang), at)] : []),
         ...(card.sideHustle
           ? [
               note(

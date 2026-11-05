@@ -255,7 +255,7 @@ schlechtem Start, eine Sammlung, die viel oder wenig wert ist. Die Karte listet 
 **Fallen.** Manche Angebote sehen aus wie normale Investitionen und sind es nicht (eine Verleih-App mit „2 % pro Woche“, ein
 „Pre-IPO“-Tipp, ein Timesharing). Ihre Zahlen werden nicht verraten. Die Ernte-Karten zeigen später, was Betrug war.
 
-### 🌾 Ernte - die Märkte (87 Karten)
+### 🌾 Ernte - die Märkte (120 Karten)
 
 Jeder Markt hat einen **Index**, der bei 1,00 beginnt und bei jedem Zahltag driftet (Weltaktien, Anleihen, Technologie, Gold, Bitcoin,
 Immobilien ...). Was du besitzt, ist so viel wert wie sein Kartenpreis mal dem Index seines Marktes.
@@ -275,14 +275,29 @@ Jede Karte zeigt ihre **Gruppe** (Markt, Aktien, Krypto, Hype, Metalle, Sammlers
 sie für alle tut und was sie für dich bedeutet. Jedes betroffene Grow-Projekt bekommt eine Notiz und eine Markierung.
 
 **Verkaufen, was du bekommen hast.** Was die Chance-Karten dir gebracht haben, verkaufst du zum Preis einer Ernte-Karte: in einem offenen
-Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot bleibt offen (je nach Regeln mehrere Würfe lang), auch nachdem du auf
-**Fertig** gedrückt hast: Der **Verkaufen**-Button des Projekts in Grow verkauft dann zum Preis der Karte.
+Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot **bleibt so viele eigene Züge offen, wie der Tisch erlaubt** (die Einstellung
+_Wie lange ein Verkaufsangebot offen bleibt_, 1 bis 5 Züge, standardmäßig 2), auch nachdem du auf **Fertig** gedrückt hast und über einen Zahltag
+hinweg; dann ist das Geschäft vorbei. Solange es offen ist, ist das Projekt in Grow hervorgehoben und sagt, was es zahlt und wie viele Züge
+bleiben; sein **Verkaufen**-Button verkauft zu diesem Preis.
 
-**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber selten - auf etwa hundert Würfe
-kommt eine Landung, die von einem bestimmten Besitz spricht. Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
+**Wer was kauft.** Jede Art von Besitz hat unter den Ernte-Karten Käufer - etwa jede zehnte Karte spricht von einer Immobilie, einem
+Unternehmen, einem Nebenprojekt, einem Kredit, einer Sammlung, einem Metall oder den Aktien eines Marktes. Der Preis ist ein Würfelwurf: Eine
+junge Familie zahlt etwas unter oder über dem Wert der Wohnung, ein Institut zahlt 1 % bis 20 % über dem Kurs für ein Aktienpaket, ein
+Search-Fund zahlt drei Jahre Gewinn für ein Unternehmen (mindestens einen Teil dessen, was du gezahlt hast), ein Übernahmeangebot zahlt einen
+Aufschlag. Eine Jahresendrally öffnet jeden Markt; eine Welle von Zwangsverkäufen öffnet ihn auch - mit Verlust, du kannst also auch Verluste
+begrenzen.
+
+**Ein Betrug hat einen letzten Ausstieg.** Eine Karte sagt, der Kurs eines Betrugs sei um 80 % gefallen und der Markt noch einen Zug offen; ein
+Forderungskäufer zahlt Cent pro Euro; eine spätere Karte schließt ihn endgültig. Was du mit der letzten Chance tust, ist deine Sache.
+
+**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber sie kommt nicht bei jeder Landung.
+Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
 Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer Münze, einer Sammlung oder einer Immobilie (die Hypothek geht vom
 Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt).
 Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen.
+
+Jede Chance-Karte hat in ihrem Grow-Projekt, wie man investiert, was man tun und was man lassen sollte, ihr Risiko (1 bis 5) mit Begründung,
+Aufgaben und Links zum Weiterlesen.
 
 ### 🔥 Notfall (50 Karten)
 

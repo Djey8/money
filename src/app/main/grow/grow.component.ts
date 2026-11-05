@@ -291,6 +291,27 @@ export class GrowComponent implements OnInit, AfterViewInit {
     return !!game.turn?.affected?.includes(project.title) || !!openOfferFor(game, project.title);
   }
 
+  /**
+   * The sell offer a Harvest card has open for the project (JFK, 2026-11-05): what it pays and for how many more turns it stays - the
+   * price a sale from Grow gets, so it is told before the player sells. Null when no offer is open.
+   */
+  sellOffer(project: Grow): { price: number; left: number | null } | null {
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame()) return null;
+    const offer = openOfferFor(game, project.title);
+    if (!offer) return null;
+    const holding = (game.holdings ?? []).find((h) => !h.ended && h.title === project.title);
+    const minor =
+      offer.pricePerShareMinor !== undefined && holding?.units
+        ? offer.pricePerShareMinor * holding.units
+        : offer.salePriceMinor;
+    const left =
+      offer.validRolls !== undefined && offer.offeredAtRoll !== undefined && game.turn
+        ? offer.validRolls - (game.turn.count - offer.offeredAtRoll)
+        : null;
+    return { price: fromMinorUnits(minor), left };
+  }
+
   /** A Cashflow game under rules that allow selling only to a Market card's offer hides the Sell button until there is one. */
   sellBlocked(project: Grow): boolean {
     return CashflowGameService.sellRefusalFor(project.title) !== null;

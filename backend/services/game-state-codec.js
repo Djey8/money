@@ -72,6 +72,7 @@ function decodeGameState(raw, session) {
       ...(o.pricePerCoinMinor != null ? { pricePerCoinMinor: num(o.pricePerCoinMinor) } : {}),
       ...(o.pricePerShareMinor != null ? { pricePerShareMinor: num(o.pricePerShareMinor) } : {}),
       ...(o.offeredAtRoll != null ? { offeredAtRoll: num(o.offeredAtRoll) } : {}),
+      ...(o.validRolls != null ? { validRolls: num(o.validRolls) } : {}),
     })),
   };
   if (raw.turn != null) {
