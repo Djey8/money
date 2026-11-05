@@ -187,7 +187,7 @@ describe('TableLayerComponent', () => {
     expect(fixture.nativeElement.querySelector('.tl-problem')).not.toBeNull();
   });
 
-  it('lists the buyers waiting for me and sells into one', () => {
+  it('tells in one small line which buyer waits for me and for how long, with a way to its Grow project, and nothing to act on', () => {
     const mine = {
       state: {
         marketOffers: [{ title: 'EFH', label: '+20%', salePriceMinor: 9000000, cardId: 'c' }],
@@ -203,13 +203,14 @@ describe('TableLayerComponent', () => {
       }),
       ['sell_position'],
     );
-    expect(fixture.nativeElement.textContent).toContain('Buyers waiting for you');
     expect(fixture.nativeElement.textContent).toContain('EFH');
-    const sell = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((b) => b.textContent!.trim() === 'Sell')!;
-    sell.click();
-    expect(play).toHaveBeenCalledWith({ type: 'sell_position', input: { title: 'EFH' } });
+    const buttons = Array.from<HTMLButtonElement>(fixture.nativeElement.querySelectorAll('button'));
+    // the note is a link to the project; the selling is done there, so no Sell button and nothing was sent
+    expect(buttons.some((b) => b.textContent!.trim() === 'Sell')).toBe(false);
+    const note = fixture.nativeElement.querySelector('.tl-offer') as HTMLButtonElement;
+    expect(note.textContent).toContain('EFH');
+    expect(note.textContent).toContain('EFH · 90');
+    expect(play).not.toHaveBeenCalled();
   });
 
   it('shows a card offered to me as a card, with what it would do to me, and lets me take it or turn it down', () => {

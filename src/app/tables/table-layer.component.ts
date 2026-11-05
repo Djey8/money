@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import type { GameBooks } from '@money/domain';
 import { formatClock, clockReading } from './table-clock';
 import { standings } from './table-statements';
@@ -18,7 +19,6 @@ import { TableStageComponent } from './table-stage.component';
 import { TradeOfferComponent } from './trade-offer.component';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
-import { DreamMoneyComponent } from '../dreamfund-tables/dream-money.component';
 import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
 import {
   computeCashflowProfessionMonthlyCashflowMinor,
@@ -51,7 +51,6 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
     FormsModule,
     TableStageComponent,
     TradeOfferComponent,
-    DreamMoneyComponent,
     TableBriefingComponent,
     DebugPanelComponent,
   ],
@@ -160,26 +159,23 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
           {{ t.resumeButton }}
         </button>
       </p>
+      <!-- a buyer's offer open for the player: only a small note and a quick way to the Grow project, where it is sold -->
       <div
         class="tl-offers"
         *ngIf="offers().length"
         role="region"
         [attr.aria-label]="t.offersTitle"
       >
-        <strong>{{ t.offersTitle }}</strong>
-        <div class="tl-row" *ngFor="let offer of offers()">
-          <span
-            >{{ offer.title }} · {{ offer.label }} · {{ offer.price }}
-            <small class="tl-left">({{ offerLeft(offer.left) }})</small></span
-          >
-          <button
-            type="button"
-            class="tx-btn tx-btn--primary tx-btn--small"
-            (click)="sell(offer.title)"
-          >
-            {{ t.sell }}
-          </button>
-        </div>
+        <button
+          type="button"
+          class="tl-offer"
+          *ngFor="let offer of offers()"
+          [title]="t.offersTitle"
+          (click)="openOfferProject(offer.title)"
+        >
+          {{ offer.title }} · {{ offer.price }}
+          <small class="tl-left">({{ offerLeft(offer.left) }})</small> ↗
+        </button>
       </div>
 
       <!-- a card on offer: every player who may answer reads it as a card, and the seller sees the offers that came in -->
@@ -232,21 +228,6 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
           </span>
         </button>
       </div>
-
-      <!-- a Dreamfund table: the player's own money moves, as the table's own commands -->
-      <app-dream-money
-        *ngIf="dreamMoney() as money"
-        [summary]="money.summary"
-        [canAct]="money.canAct"
-        [trade]="money.trade"
-        [youSeat]="money.youSeat"
-        [names]="money.names"
-        [allowed]="allowedActions()"
-        [harvest]="money.harvest"
-        [busy]="busy()"
-        [lang]="lang"
-        (move)="move($event)"
-      ></app-dream-money>
 
       <div class="tl-looking" *ngIf="lookedName() as who" role="status">
         <span>{{ t.lookingAt.replace('{name}', who) }}</span>
@@ -523,6 +504,19 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
         padding: 8px;
         border-radius: 8px;
         background: var(--color-surface-alt, #f4f6f8);
+      }
+      .tl-offer {
+        align-self: flex-start;
+        padding: 2px 6px;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: 0.82rem;
+        text-align: start;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
       }
       .tl-row {
         display: flex;
@@ -871,25 +865,6 @@ export class TableLayerComponent implements OnDestroy {
     };
   });
 
-  /** At a Dreamfund table, the player's own money: shown while their own books are on screen. */
-  readonly dreamMoney = computed(() => {
-    const view = this.view();
-    if (!view || view.youSeat === null || view.phase !== 'playing') return null;
-    if ((view as { kind?: string }).kind !== 'dreamfund' || this.mode.looking() !== null)
-      return null;
-    const own = moneyOf(view, view.youSeat);
-    if (!own) return null;
-    const trade = (view as unknown as { dreamTrade?: DreamTableView['trade'] }).dreamTrade ?? null;
-    return {
-      ...own,
-      canAct: view.activeSeat === view.youSeat,
-      trade,
-      youSeat: view.youSeat,
-      harvest: extrasOf(view, view.youSeat).harvest,
-      names: view.players.map((player) => player.name),
-    };
-  });
-
   readonly rows = computed(() => {
     const table = this.view();
     if (!table) return [];
@@ -1074,8 +1049,13 @@ export class TableLayerComponent implements OnDestroy {
     return left <= 1 ? this.t.offerLeftOne : this.t.offerLeft.replace('{n}', String(left));
   }
 
-  async sell(title: string): Promise<void> {
-    await this.mode.session()?.play({ type: 'sell_position', input: { title } });
+  /** The Grow project of an offer opens, where it is sold with Grow's own tools. */
+  async openOfferProject(title: string): Promise<void> {
+    const { InfoGrowComponent } = await import('src/app/panels/info/info-grow/info-grow.component');
+    await this.injector.get(Router).navigate(['/grow']);
+    const projects = AppStateService.instance.allGrowProjects;
+    const index = projects.findIndex((project) => project.title === title);
+    if (index >= 0) InfoGrowComponent.setInfoGrowComponent(index, projects[index]);
   }
 
   async move(command: Record<string, unknown>): Promise<void> {
