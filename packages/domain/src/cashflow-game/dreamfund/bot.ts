@@ -1,5 +1,6 @@
 import type { HarvestLadderOffer, HarvestSale } from '../harvest';
-import { indexOf } from '../harvest';
+import { indexOf, taxOnSale } from '../harvest';
+import { insuranceInfo, insuranceOffers } from '../insurance';
 import type { LifeCard, LifeDecision } from '../life-deck';
 import type { OpportunityCard, OpportunityPile } from '../opportunity-deck';
 import type { OpportunityChoice } from '../opportunity';
@@ -217,5 +218,82 @@ export class DreamBot {
 
   ladder(p: DreamPlayer, offer: HarvestLadderOffer): 'skip' | 'ride' | 'cash' {
     return this.policy.ladder(this.view(p), offer);
+  }
+
+  // ── what a player can do besides the cards ──
+
+  /** What a standing sale of a holding would bring after what is owed and the tax on the gain, and what the holding pays on that value. */
+  private worth(p: DreamPlayer, title: string) {
+    const found = p.sellable(title);
+    if (!found) return null;
+    const { holding, card, standing } = found;
+    const proceeds = standing.grossMinor - standing.owedMinor;
+    const paid = holding.paidMinor ?? 0;
+    const tax = taxOnSale(proceeds, paid, p.rules.capitalGainsTaxPercent);
+    const monthly = card.share
+      ? card.share.dividendMonthPerUnitMinor * (holding.units ?? 0)
+      : holding.cashflowMinor;
+    return {
+      title,
+      netMinor: proceeds - tax,
+      paidMinor: paid,
+      gain: paid > 0 ? proceeds / paid - 1 : 0,
+      yearlyYield: proceeds > 0 ? (monthly * 12) / proceeds : 0,
+      heldPaydays: p.state.round - holding.boughtRound,
+    };
+  }
+
+  /**
+   * The holdings to sell at the standing price now (the capability the first strategies did not have: selling to put the money to work
+   * elsewhere). Two reasons: a Bank loan is open (10% a month - any holding earns less) and the cash does not cover it; or the strategy
+   * steps up - the holding has gained, pays little for what it is worth and has been held long enough. Lowest yield first, one at a time.
+   */
+  standingSale(p: DreamPlayer): string | null {
+    const policy = this.policy;
+    if (!policy.clearLoanBySale && !policy.stepUp) return null;
+    const loan =
+      p.books.liabilities.find((liability) => liability.tag === 'Bank loan')?.amountMinor ?? 0;
+    const list = (p.state.holdings ?? [])
+      .filter((holding) => !holding.ended)
+      .flatMap((holding) => this.worth(p, holding.title) ?? [])
+      .filter((entry) => entry.netMinor > 0)
+      .sort((a, b) => a.yearlyYield - b.yearlyYield);
+    if (policy.clearLoanBySale && loan > 0 && p.cash() < loan) return list[0]?.title ?? null;
+    const up = policy.stepUp;
+    if (!up) return null;
+    return (
+      list.find(
+        (entry) =>
+          entry.gain >= up.gain &&
+          entry.yearlyYield < up.yieldBelow &&
+          entry.heldPaydays >= up.holdPaydays,
+      )?.title ?? null
+    );
+  }
+
+  /** What to repay of the Bank loan at once after a sale made to clear it (the loan is repaid in steps). */
+  loanRepayment(p: DreamPlayer): number {
+    if (!this.policy.clearLoanBySale) return 0;
+    const loan =
+      p.books.liabilities.find((liability) => liability.tag === 'Bank loan')?.amountMinor ?? 0;
+    if (loan <= 0) return 0;
+    const step = p.books.gameSet?.loanRule.incrementMinor ?? 100000;
+    return Math.min(loan, Math.floor(p.cash() / step) * step);
+  }
+
+  /** The insurance changes the strategy wants (the ones that differ from what is held or already queued). */
+  insuranceMoves(p: DreamPlayer): { kind: string; on: boolean }[] {
+    const mode = this.policy.insure;
+    if (mode === 'keep') return [];
+    // all: everything but the partial car cover (only one car insurance can be held); core: the most important two, no car; none: nothing
+    const wanted = (kind: string) =>
+      mode === 'all'
+        ? kind !== 'car_partial'
+        : mode === 'core'
+          ? (insuranceInfo(kind)?.priority ?? 9) <= 2 && !insuranceInfo(kind)?.exclusiveGroup
+          : false;
+    return insuranceOffers(p.state)
+      .filter((offer) => offer.heldNext !== wanted(offer.kind))
+      .map((offer) => ({ kind: offer.kind, on: wanted(offer.kind) }));
   }
 }

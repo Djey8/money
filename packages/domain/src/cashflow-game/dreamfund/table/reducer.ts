@@ -750,6 +750,11 @@ function play(
   const ended = checkEnd(current, emit);
   if (ended) return ended;
   if (command.type === 'end_turn') return advance(current, ctx, emit);
+  // the player on the move has just gone out (bankrupt, or won): they cannot end their turn any more, so the turn goes on without them
+  // (a bot would have waited for ever, and so would the table)
+  if (current.finishers.length > table.finishers.length && current.activePlayerId === playerId) {
+    return advance(current, ctx, emit);
+  }
   return current;
 }
 

@@ -3,6 +3,7 @@ import type { OpportunityChoice } from '../opportunity';
 import type { DreamCard } from '../dream-deck';
 import type { HarvestLadderOffer, HarvestSale } from '../harvest';
 import type { Rng } from '../rng';
+import { DREAM_CHAMPION_KNOBS } from './champions.generated';
 
 /**
  * How a bot plays the Dreamfund game (JFK, 2026-10-26): a small set of rules - what to take, what to keep in cash, when to sell, whether
@@ -60,7 +61,94 @@ export interface DreamPolicy {
   sellWindow(view: DreamView, holding: { title: string; tag?: string }, index: number): boolean;
   acceptBuyer(view: DreamView, sale: HarvestSale): boolean;
   ladder(view: DreamView, offer: HarvestLadderOffer): 'ride' | 'cash' | 'skip';
+  /**
+   * What the strategy does besides the cards (JFK, 2026-11-06: every capability of the game is a thing a bot can try). Selling a holding
+   * at the standing price to put the money to work elsewhere (`stepUp`: sell what has gained and pays little), selling to clear a Bank loan
+   * (10% a month), and which insurances to hold.
+   */
+  stepUp: StepUp | null;
+  clearLoanBySale: boolean;
+  insure: InsureMode;
+  /** The knobs the policy was built with: its genome, as the search tunes it. */
+  knobs: DreamKnobs;
+  /** Every knob with the value the policy plays with (the strategy's own where the knobs say nothing): the point a search starts from. */
+  resolved: Required<DreamKnobs>;
+  /** The same strategy with other knobs (the ones given replace the ones it has). */
+  retune(knobs: DreamKnobs): DreamPolicy;
 }
+
+/** Sell a holding when it is worth `gain` more than was paid, pays less than `yieldBelow` a year on its value, and has been held `holdPaydays`. */
+export interface StepUp {
+  gain: number;
+  yieldBelow: number;
+  holdPaydays: number;
+}
+
+export type InsureMode = 'keep' | 'all' | 'core' | 'none';
+
+/**
+ * Everything a search may turn on a strategy (the genome of a bot): the numbers of the strategy and the capabilities. A knob left out keeps
+ * what the strategy has; the search starts from the champion of the last calibration and moves a few knobs at a time.
+ */
+export interface DreamKnobs {
+  bufferMonths?: number;
+  planShare?: number;
+  planMonths?: number;
+  /** The dream is planned once passive income pays this share of the living costs (a negative number: from the start). */
+  dreamAfterPassiveShare?: number;
+  dreamShare?: number;
+  lifeAcceptChance?: number;
+  riskTolerance?: number;
+  unitsShare?: number;
+  minScore?: number;
+  /** A share lot or an asset is sold into a window when its index is 1 + this (a negative number: never). */
+  sellProfit?: number;
+  treeFromMinor?: number;
+  ride?: boolean;
+  takeDreams?: boolean;
+  /** Added to the taste for a course or a diploma (S40, P34, P35, T31) and for a plan paid into (S37-S39, P33, T32). */
+  courseBoost?: number;
+  pensionBoost?: number;
+  stepUpGain?: number;
+  /** 0 = the strategy does not step up. */
+  stepUpYield?: number;
+  stepUpHold?: number;
+  clearLoanBySale?: boolean;
+  insure?: InsureMode;
+}
+
+export const KNOB_RANGES: Record<
+  Exclude<keyof DreamKnobs, 'ride' | 'takeDreams' | 'clearLoanBySale' | 'insure'>,
+  [number, number, number]
+> = {
+  // [low, high, step]
+  bufferMonths: [0, 4, 0.25],
+  planShare: [0.1, 1, 0.05],
+  planMonths: [6, 36, 3],
+  dreamAfterPassiveShare: [-1, 0.9, 0.05],
+  dreamShare: [0.1, 1, 0.1],
+  lifeAcceptChance: [0, 1, 0.1],
+  riskTolerance: [0, 5, 1],
+  unitsShare: [0.1, 1, 0.1],
+  minScore: [0, 12, 1],
+  sellProfit: [-1, 1.5, 0.1],
+  treeFromMinor: [500000, 6000000, 250000],
+  courseBoost: [0, 20, 2],
+  pensionBoost: [0, 20, 2],
+  stepUpGain: [0.05, 1, 0.05],
+  stepUpYield: [0, 0.6, 0.05],
+  stepUpHold: [1, 24, 1],
+};
+
+const BASE_KNOBS = [
+  'bufferMonths',
+  'planShare',
+  'planMonths',
+  'dreamShare',
+  'lifeAcceptChance',
+  'riskTolerance',
+] as const;
+const EXTRA_KNOBS = ['unitsShare', 'minScore', 'treeFromMinor', 'ride', 'takeDreams'] as const;
 
 const avg = (values: number[]) =>
   values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
@@ -101,7 +189,7 @@ interface Taste {
 
 /** A policy made of a taste: it takes the best affordable card that its risk tolerance allows. */
 function makePolicy(
-  base: Pick<
+  base0: Pick<
     DreamPolicy,
     | 'id'
     | 'name'
@@ -114,8 +202,8 @@ function makePolicy(
     | 'lifeAcceptChance'
     | 'riskTolerance'
   >,
-  taste: Taste,
-  extra: {
+  taste0: Taste,
+  extra0: {
     piles: OpportunityPile[];
     unitsShare?: number;
     /** A card scoring less than this is not taken, however affordable. */
@@ -126,9 +214,69 @@ function makePolicy(
     ride?: boolean;
     takeDreams?: boolean;
   },
+  knobs: DreamKnobs = {},
 ): DreamPolicy {
+  const baseKnobs = Object.fromEntries(
+    BASE_KNOBS.filter((key) => knobs[key] !== undefined).map((key) => [key, knobs[key]]),
+  );
+  const extraKnobs = Object.fromEntries(
+    EXTRA_KNOBS.filter((key) => knobs[key] !== undefined).map((key) => [key, knobs[key]]),
+  );
+  const base = { ...base0, ...baseKnobs } as typeof base0;
+  const extra = { ...extra0, ...extraKnobs } as typeof extra0;
+  if (knobs.dreamAfterPassiveShare !== undefined) {
+    base.dreamAfterPassiveShare =
+      knobs.dreamAfterPassiveShare < 0 ? undefined : knobs.dreamAfterPassiveShare;
+  }
+  if (knobs.sellProfit !== undefined) {
+    extra.sellProfit = knobs.sellProfit < 0 ? undefined : knobs.sellProfit;
+  }
+  const isCourse = (card: OpportunityCard) => !!card.unsellable && !card.contribution;
+  const taste: Taste =
+    knobs.courseBoost || knobs.pensionBoost
+      ? {
+          weight: (card, monthly, cost) =>
+            taste0.weight(card, monthly, cost) +
+            (isCourse(card) ? (knobs.courseBoost ?? 0) : 0) +
+            (card.contribution ? (knobs.pensionBoost ?? 0) : 0),
+        }
+      : taste0;
   return {
     ...base,
+    stepUp:
+      knobs.stepUpYield && knobs.stepUpYield > 0
+        ? {
+            gain: knobs.stepUpGain ?? 0.2,
+            yieldBelow: knobs.stepUpYield,
+            holdPaydays: knobs.stepUpHold ?? 6,
+          }
+        : null,
+    clearLoanBySale: knobs.clearLoanBySale ?? false,
+    insure: knobs.insure ?? 'keep',
+    knobs,
+    resolved: {
+      bufferMonths: base.bufferMonths,
+      planShare: base.planShare,
+      planMonths: base.planMonths,
+      dreamAfterPassiveShare: base.dreamAfterPassiveShare ?? -1,
+      dreamShare: base.dreamShare,
+      lifeAcceptChance: base.lifeAcceptChance,
+      riskTolerance: base.riskTolerance,
+      unitsShare: extra.unitsShare ?? 0.5,
+      minScore: extra.minScore ?? 0,
+      sellProfit: extra.sellProfit ?? -1,
+      treeFromMinor: extra.treeFromMinor ?? 3000000,
+      ride: !!extra.ride,
+      takeDreams: !!extra.takeDreams,
+      courseBoost: knobs.courseBoost ?? 0,
+      pensionBoost: knobs.pensionBoost ?? 0,
+      stepUpGain: knobs.stepUpGain ?? 0.2,
+      stepUpYield: knobs.stepUpYield ?? 0,
+      stepUpHold: knobs.stepUpHold ?? 6,
+      clearLoanBySale: knobs.clearLoanBySale ?? false,
+      insure: knobs.insure ?? 'keep',
+    },
+    retune: (more) => makePolicy(base0, taste0, extra0, { ...knobs, ...more }),
     pile(view, rng) {
       // the pile the money allows: the biggest the player can pay for, now and then a smaller one to look around
       const allowed = (pile: OpportunityPile) =>
@@ -210,7 +358,8 @@ const isShare = (card: OpportunityCard, ...tags: string[]) =>
   !!card.share && tags.includes(card.market?.tag ?? '');
 
 /** The five strategies the Dreamfund deck sketch names, plus a baseline that takes only what is free. */
-export const DREAM_POLICIES: DreamPolicy[] = [
+/** The strategies as they were written: no knob turned. The search starts from these (or from the last champion). */
+export const BASE_POLICIES: DreamPolicy[] = [
   makePolicy(
     {
       id: 'saver',
@@ -498,7 +647,73 @@ export const DREAM_POLICIES: DreamPolicy[] = [
     { weight: (card) => (isSaving(card) ? 10 : 0) },
     { piles: ['seed'], takeDreams: true },
   ),
+  // the strategies for the capabilities added on 2026-11-06 (JFK: new bots join at any time and are measured like the others)
+  // sell, step up, repeat: the expert's taste, and every holding that has gained and pays little is sold at the standing price
+  makePolicy(
+    {
+      id: 'flipper',
+      dreamAfterPassiveShare: 0.35,
+      name: 'Flipper',
+      planShare: 0.45,
+      planMonths: 18,
+      bufferMonths: 0.5,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.5,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 4,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.riskScore >= 5
+            ? 0
+            : Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4),
+    },
+    { piles: ['seed', 'sapling', 'tree'], takeDreams: true, unitsShare: 0.5, sellProfit: 0.25 },
+    { stepUpGain: 0.25, stepUpYield: 0.12, stepUpHold: 4, clearLoanBySale: true },
+  ),
+  // the employer's money, the pension and the courses first: free money and a higher pay, then the cards that pay
+  makePolicy(
+    {
+      id: 'scholar',
+      dreamAfterPassiveShare: 0.35,
+      name: 'Scholar',
+      planShare: 0.5,
+      planMonths: 18,
+      bufferMonths: 1,
+      priorities: ['reserve', 'debt', 'invest', 'dream'],
+      dreamShare: 0.5,
+      lifeAcceptChance: 0.5,
+      riskTolerance: 3,
+    },
+    {
+      weight: (card, monthly, cost) =>
+        isSaving(card)
+          ? 10
+          : card.riskScore >= 4
+            ? 0
+            : Math.min(30, (monthly / 100) ** 0.6 + ((monthly * 12) / Math.max(cost, 100)) * 4),
+    },
+    { piles: ['seed', 'sapling'], takeDreams: true, unitsShare: 0.5 },
+    { courseBoost: 12, pensionBoost: 12, insure: 'core', clearLoanBySale: true },
+  ),
 ];
+
+/**
+ * The strategies the bots play: each the champion of its type from the last calibration (`champions.generated.ts`, written by
+ * `scripts/dreamfund-calibrate.js`) - the base strategy with the knobs the search found. A type without a champion plays as written.
+ */
+export const DREAM_POLICIES: DreamPolicy[] = BASE_POLICIES.map((policy) => {
+  const knobs = DREAM_CHAMPION_KNOBS[policy.id];
+  return knobs ? policy.retune(knobs) : policy;
+});
+
+export const baseById = (id: string): DreamPolicy => {
+  const found = BASE_POLICIES.find((policy) => policy.id === id);
+  if (!found) throw new Error(`Unknown policy ${id}`);
+  return found;
+};
 
 export const policyById = (id: string): DreamPolicy => {
   const found = DREAM_POLICIES.find((policy) => policy.id === id);

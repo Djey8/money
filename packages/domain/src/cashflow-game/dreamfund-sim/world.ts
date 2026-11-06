@@ -57,6 +57,12 @@ export interface DreamGameRecord {
   landings: Record<string, number>;
   /** How often each Opportunity card was taken, and what it earned. */
   taken: Record<string, number>;
+  /** How often the bot used each capability of the game (see capabilities.ts): the test bed's proof that nothing is left out. */
+  used: Record<string, number>;
+  /** Net tax paid on sales, and what standing sales brought (the profit side of stepping up). */
+  taxPaidMinor: number;
+  /** What the bot's own standing sales brought in. */
+  soldMinor: number;
   /** How often each card of the other stacks was met (`E01`, `L05`, `H12`, `D...`): for finding the events that break a game. */
   drawn: Record<string, number>;
   /** The same, only in the first 60 rolls: every game gets that far, so the events can be compared fairly. */
@@ -115,6 +121,9 @@ export class DreamSim {
       dreamPoints: 0,
       landings: {},
       taken: {},
+      used: {},
+      taxPaidMinor: 0,
+      soldMinor: 0,
       emergenciesPaidMinor: 0,
       lastEvents: [],
       drawn: {},
@@ -184,13 +193,50 @@ export class DreamSim {
     return record;
   }
 
+  /** A capability used once more. */
+  private use(id: string, times = 1): void {
+    this.record.used[id] = (this.record.used[id] ?? 0) + times;
+  }
+
+  /** The insurances the strategy wants, before the roll; then, after the tile, the sales it makes to clear a loan or step up. */
+  private chores(phase: 'before' | 'after'): void {
+    const p = this.p;
+    if (phase === 'before') {
+      for (const move of this.bot.insuranceMoves(p)) {
+        p.setInsurance(move.kind, move.on);
+        this.use('insurance');
+      }
+      return;
+    }
+    for (let guard = 0; guard < 6; guard += 1) {
+      const title = this.bot.standingSale(p);
+      if (!title) break;
+      const forLoan = this.bank() > p.cash();
+      const before = p.cash();
+      if (!p.sellAtStanding(title)) break;
+      this.use(forLoan ? 'sell-to-clear-loan' : 'sell-step-up');
+      this.record.soldMinor += p.cash() - before;
+      const repay = this.bot.loanRepayment(p);
+      if (repay > 0) {
+        p.repayBankLoan(repay);
+        this.use('repay-bank-loan');
+      }
+    }
+  }
+
+  private bank(): number {
+    return p_bank(this.p);
+  }
+
   private turn(): void {
     const p = this.p;
+    this.chores('before');
     const rolled = p.roll();
     this.record.landings[rolled.landed] = (this.record.landings[rolled.landed] ?? 0) + 1;
     for (let i = 0; i < rolled.paydays; i += 1) this.payday();
     const tile = p.pendingTile();
     if (tile) this.tile(tile);
+    this.chores('after');
     p.endTurn();
     this.track();
   }
@@ -331,6 +377,9 @@ export class DreamSim {
     if (!pick) return;
     p.buyOpportunity(pick.card, pick.choice, pick.costMinor);
     this.record.taken[pick.card.id] = (this.record.taken[pick.card.id] ?? 0) + 1;
+    this.use(
+      pick.card.contribution ? 'buy-pension' : pick.card.unsellable ? 'buy-course' : 'buy-card',
+    );
   }
 
   private harvest(): void {
@@ -366,6 +415,7 @@ export class DreamSim {
           context,
         ),
       );
+      this.use('sell-window');
     }
     // a buyer
     for (const sale of pending.sales) {
@@ -376,6 +426,7 @@ export class DreamSim {
       if (!live) continue;
       p.apply(sellHolding(p.books, sale.holding, sale, context));
       p.payDues();
+      this.use('sell-buyer');
     }
     // a hype
     for (let offer of pending.ladders) {
@@ -385,6 +436,7 @@ export class DreamSim {
       if (!live) continue;
       let choice = policy.ladder(this.view(), offer);
       if (choice === 'skip') continue;
+      this.use('ride-hype');
       for (let step = 0; step < 6 && choice === 'ride' && offer.state !== 'done'; step += 1) {
         offer = rideLadder(offer, p.rng).offer;
         if (offer.state === 'done') break;
@@ -400,6 +452,10 @@ export class DreamSim {
       );
     }
   }
+}
+
+function p_bank(p: DreamPlayer): number {
+  return p.books.liabilities.find((liability) => liability.tag === 'Bank loan')?.amountMinor ?? 0;
 }
 
 export function simulateDreamGame(config: DreamSimConfig): DreamGameRecord {

@@ -26,6 +26,14 @@ export interface TournamentOptions {
   levels?: DreamBotLevel[];
   /** How strongly a table moves a bot (Elo K; the board's own is 8, a tournament needs to travel further). */
   k?: number;
+  /** K at the last table: it falls from `k` to this one over the tournament, so the first tables place the bots and the last ones settle them. */
+  kEnd?: number;
+  /** The ratings an earlier calibration found: the tournament starts from them (a bot not in the list starts at 1500). */
+  initial?: Record<string, number>;
+  /** Only these bots (default: every strategy at every skill level). */
+  bots?: string[];
+  /** Called now and then with the number of tables played. */
+  onTable?: (played: number) => void;
 }
 
 export interface TournamentBot {
@@ -101,13 +109,20 @@ export function runBotTournament(options: TournamentOptions): TournamentBot[] {
   const levels = options.levels ?? (Object.keys(DREAM_BOT_LEVELS) as DreamBotLevel[]);
   const k = options.k ?? 24;
   const characters = dreamCharacterIds();
-  const pool = strategies.flatMap((s) => levels.map((l) => dreamBotId(s, l)));
+  const pool = options.bots ?? strategies.flatMap((s) => levels.map((l) => dreamBotId(s, l)));
   const bots = new Map<string, TournamentBot>(
     pool.map((botId) => [
       botId,
-      { botId, rating: DREAM_START_RATING, games: 0, tableWins: 0, places: 0 },
+      {
+        botId,
+        rating: options.initial?.[botId] ?? DREAM_START_RATING,
+        games: 0,
+        tableWins: 0,
+        places: 0,
+      },
     ]),
   );
+  const kEnd = options.kEnd ?? k;
   // a shuffled deck of the pool, dealt `seats` at a time, so everybody plays about as often
   let deck: string[] = [];
   const deal = (): string[] => {
@@ -150,14 +165,16 @@ export function runBotTournament(options: TournamentOptions): TournamentBot[] {
     }
     // the table's own K: a tournament rates with `k` for everybody
     const changes = rateTable(ranked, options.difficulty, { stake: false });
+    const kNow = k + ((kEnd - k) * n) / Math.max(1, options.tables - 1);
     for (const change of changes) {
       const bot = bots.get(change.playerId) as TournamentBot;
       const seat = ranked.find((r) => r.playerId === change.playerId) as RatedSeat;
-      bot.rating += (change.delta * k) / 24;
+      bot.rating += (change.delta * kNow) / 24;
       bot.games += 1;
       bot.places += seat.rank;
       if (seat.rank === 1) bot.tableWins += 1;
     }
+    options.onTable?.(n + 1);
   }
   return [...bots.values()].sort((a, b) => b.rating - a.rating);
 }

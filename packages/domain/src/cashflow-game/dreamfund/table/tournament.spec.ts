@@ -17,6 +17,29 @@ describe('the bot tournament of the Dreamfund', () => {
     expect(table.players.every((p) => p.bot)).toBe(true);
   });
 
+  // two tables that used to stall for ever: a bot that went bankrupt on its own roll stayed the player on the move, and a bot that had
+  // said it would take a card offered by another could not after all, so the seller waited for an answer that never came
+  it.each([
+    ['a bankrupt player on the move', 231, ['flipper', 'scholar', 'expert--casual', 'tree']],
+    ['an offer a bot cannot take', 1386, ['expert', 'sapling', 'expert--casual', 'tree']],
+  ])(
+    'plays on to the end: %s',
+    (_name, seed, bots) => {
+      const table = playBotTable({
+        id: 'stall',
+        seed,
+        difficulty: 'easy',
+        roundLimit: 40,
+        bots: bots.map((botId, index) => ({
+          botId,
+          character: index % 2 ? 'jan-oberarzt' : 'dual-student-informatik',
+        })),
+      });
+      expect(table.phase).toBe('finished');
+    },
+    120_000,
+  );
+
   it('rates every bot, the same for the same seed', () => {
     const run = () =>
       runBotTournament({

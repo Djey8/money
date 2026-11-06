@@ -197,10 +197,24 @@ export function dreamPolicyCommands(
   if (table.activePlayerId !== botId) return [];
   if (seat.paydayDue) return moneyCommands(bot, p);
   if (seat.pending) return [pendingCommand(bot, p, seat, luck)];
-  if (!table.turnRolled) return [{ type: 'roll' }];
+  if (!table.turnRolled) {
+    const hop = bot.insuranceMoves(p);
+    if (hop.length > 0) return hop.map((move) => ({ type: 'set_insurance', ...move }));
+    return [{ type: 'roll' }];
+  }
   // the turn is played: a card offered to the others stays until the bots have answered (people have the seconds the pace gives them)
   if (table.trade?.sellerId === botId) {
     return awaitedBuyers(table, botId).length > 0 ? [] : [{ type: 'end_turn' }];
+  }
+  // a holding sold to clear the Bank loan or to put the money to work elsewhere (and the loan repaid from it at once)
+  const sale = bot.standingSale(p);
+  if (sale) {
+    const commands: DreamCommand[] = [{ type: 'sell_holding', holding: sale }];
+    if (p.sellAtStanding(sale)) {
+      const repay = bot.loanRepayment(p);
+      if (repay > 0) commands.push({ type: 'repay_bank_loan', amountMinor: repay });
+    }
+    return commands;
   }
   const offer = offerCommand(table, bot, p, botId);
   return offer ? [offer] : [{ type: 'end_turn' }];
@@ -311,8 +325,13 @@ export function playBotStep(
       events.push(...result.events);
     } catch (error) {
       if (!(error instanceof TableCommandError)) throw error;
-      // not possible after all (the table's dice differed from the bot's guess): the most passive way on
-      for (const passive of passiveCommands(current, step.playerId)) {
+      // not possible after all (the table's dice differed from the bot's guess): the most passive way on - a card offered to it that it
+      // cannot take after all is declined, or the seller would wait for ever
+      const fallback: DreamCommand[] =
+        command.type === 'accept_trade'
+          ? [{ type: 'decline_trade' }]
+          : passiveCommands(current, step.playerId);
+      for (const passive of fallback) {
         try {
           const result = applyDreamCommand(current, step.playerId, passive, ctx);
           current = result.table;
