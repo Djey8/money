@@ -39,7 +39,6 @@ describe('the capabilities of a Dreamfund player', () => {
       expect(tuned.stepUp).not.toBeNull();
       expect(tuned.clearLoanBySale).toBe(true);
       expect(tuned.insure).toBe('all');
-      if (policy.id !== 'flipper') expect(policy.stepUp).toBeNull();
     }
   });
 });

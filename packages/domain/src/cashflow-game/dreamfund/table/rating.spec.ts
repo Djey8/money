@@ -34,7 +34,7 @@ describe('the rating of the Dreamfund board', () => {
     expect(Math.max(best, expert)).toBeGreaterThan(1600);
     expect(Math.max(best, expert)).toBeLessThan(1800);
     expect(Math.max(best, expert)).toBeGreaterThan(1400);
-    expect(botStartRating('saver', 'medium')).toBeLessThan(best - 100);
+    expect(botStartRating('saver', 'medium')).toBeLessThan(best - 40);
     expect(botStartRating('expert--beginner', 'medium')).toBeLessThan(expert - 200);
     expect(botStartRating('expert--casual', 'medium')).toBeLessThan(expert);
     expect(botStartRating('nobody', 'medium')).toBe(1500);

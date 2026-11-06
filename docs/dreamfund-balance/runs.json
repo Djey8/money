@@ -1,0 +1,589 @@
+[
+ {
+  "id": "202611061134",
+  "date": "2026-11-06T11:34:14.439Z",
+  "mode": "full",
+  "seed": 20261106,
+  "plan": {
+   "generations": 10,
+   "mutants": 5,
+   "games": 80,
+   "verify": 600,
+   "tables": 3000,
+   "gauntlet": 600
+  },
+  "types": {
+   "saver": {
+    "changed": true,
+    "newMean": 0.38239000000000034,
+    "oldMean": 0.18293333333333264,
+    "z": 14.33642413966789,
+    "newWinRate": 0.30833333333333335,
+    "oldWinRate": 0.07,
+    "newBankrupt": 0.25166666666666665,
+    "oldBankrupt": 0.25333333333333335,
+    "games": 600,
+    "used": {
+     "buy-card": 13.791666666666666,
+     "buy-pension": 6.749999999999999,
+     "sell-buyer": 1.395833333333333
+    },
+    "steps": 2
+   },
+   "etf": {
+    "changed": true,
+    "newMean": 0.7347066666666665,
+    "oldMean": 0.3571833333333338,
+    "z": 16.78261912308341,
+    "newWinRate": 0.6566666666666666,
+    "oldWinRate": 0.26666666666666666,
+    "newBankrupt": 0.17666666666666667,
+    "oldBankrupt": 0.25166666666666665,
+    "games": 600,
+    "used": {
+     "buy-card": 15.541666666666663,
+     "buy-pension": 8.104166666666666,
+     "sell-buyer": 2.4375000000000004
+    },
+    "steps": 6
+   },
+   "property": {
+    "changed": true,
+    "newMean": 0.5051599999999998,
+    "oldMean": 0.46079333333333294,
+    "z": 2.3803945601814225,
+    "newWinRate": 0.46166666666666667,
+    "oldWinRate": 0.43333333333333335,
+    "newBankrupt": 0.28,
+    "oldBankrupt": 0.31833333333333336,
+    "games": 600,
+    "used": {
+     "buy-card": 9.41666666666666,
+     "buy-pension": 7.958333333333333,
+     "sell-buyer": 0.4166666666666665
+    },
+    "steps": 3
+   },
+   "hustler": {
+    "changed": true,
+    "newMean": 0.7727033333333322,
+    "oldMean": 0.6626899999999983,
+    "z": 7.8595400369394,
+    "newWinRate": 0.6933333333333334,
+    "oldWinRate": 0.5933333333333334,
+    "newBankrupt": 0.25166666666666665,
+    "oldBankrupt": 0.25333333333333335,
+    "games": 600,
+    "used": {
+     "buy-card": 17.395833333333332,
+     "buy-pension": 6.145833333333334,
+     "sell-buyer": 1.4374999999999996
+    },
+    "steps": 3
+   },
+   "gambler": {
+    "changed": false,
+    "newMean": 0.11662999999999964,
+    "oldMean": 0.10869666666666629,
+    "z": 0.898167048227262,
+    "newWinRate": 0.015,
+    "oldWinRate": 0.0016666666666666668,
+    "newBankrupt": 0.31833333333333336,
+    "oldBankrupt": 0.31666666666666665,
+    "games": 600,
+    "used": {
+     "buy-card": 17.91666666666667,
+     "buy-pension": 6.895833333333334,
+     "sell-window": 1.125,
+     "sell-buyer": 2.0416666666666665,
+     "ride-hype": 0.31250000000000006
+    },
+    "steps": 2
+   },
+   "expert": {
+    "changed": true,
+    "newMean": 0.8511633333333317,
+    "oldMean": 0.809633333333332,
+    "z": 3.4260166159472254,
+    "newWinRate": 0.7433333333333333,
+    "oldWinRate": 0.715,
+    "newBankrupt": 0.23666666666666666,
+    "oldBankrupt": 0.23,
+    "games": 600,
+    "used": {
+     "buy-card": 21.958333333333343,
+     "buy-pension": 4.083333333333334,
+     "sell-buyer": 2.708333333333334,
+     "buy-course": 1.041666666666667
+    },
+    "steps": 2
+   },
+   "dividend": {
+    "changed": true,
+    "newMean": 0.5877933333333325,
+    "oldMean": 0.42605000000000065,
+    "z": 12.733621771088206,
+    "newWinRate": 0.545,
+    "oldWinRate": 0.365,
+    "newBankrupt": 0.2783333333333333,
+    "oldBankrupt": 0.275,
+    "games": 600,
+    "used": {
+     "buy-card": 19.97916666666667,
+     "buy-pension": 8.166666666666668,
+     "sell-buyer": 3.125
+    },
+    "steps": 2
+   },
+   "sapling": {
+    "changed": true,
+    "newMean": 0.8617733333333314,
+    "oldMean": 0.7928066666666648,
+    "z": 9.045925127461574,
+    "newWinRate": 0.755,
+    "oldWinRate": 0.7083333333333334,
+    "newBankrupt": 0.24333333333333335,
+    "oldBankrupt": 0.24666666666666667,
+    "games": 600,
+    "used": {
+     "buy-card": 16.041666666666668,
+     "buy-pension": 4.854166666666667,
+     "sell-buyer": 1.520833333333333,
+     "buy-course": 0.7083333333333335
+    },
+    "steps": 3
+   },
+   "tree": {
+    "changed": true,
+    "newMean": 0.5547799999999997,
+    "oldMean": 0.31091666666666673,
+    "z": 16.345809843470185,
+    "newWinRate": 0.49666666666666665,
+    "oldWinRate": 0.22333333333333333,
+    "newBankrupt": 0.24166666666666667,
+    "oldBankrupt": 0.2683333333333333,
+    "games": 600,
+    "used": {
+     "buy-card": 10.708333333333332,
+     "buy-pension": 9.416666666666668,
+     "sell-buyer": 0.6458333333333333,
+     "buy-course": 0.33333333333333326
+    },
+    "steps": 3
+   },
+   "dreamer": {
+    "changed": true,
+    "newMean": 0.5968233333333324,
+    "oldMean": 0.3650599999999992,
+    "z": 14.380270996134728,
+    "newWinRate": 0.5666666666666667,
+    "oldWinRate": 0.3233333333333333,
+    "newBankrupt": 0.295,
+    "oldBankrupt": 0.3016666666666667,
+    "games": 600,
+    "used": {
+     "buy-card": 15.583333333333332,
+     "buy-pension": 8.312499999999998,
+     "sell-buyer": 1.9375,
+     "buy-course": 0.8958333333333336
+    },
+    "steps": 2
+   },
+   "steady": {
+    "changed": true,
+    "newMean": 0.7835399999999991,
+    "oldMean": 0.7020399999999992,
+    "z": 8.047942243466016,
+    "newWinRate": 0.7016666666666667,
+    "oldWinRate": 0.6316666666666667,
+    "newBankrupt": 0.235,
+    "oldBankrupt": 0.24333333333333335,
+    "games": 600,
+    "used": {
+     "buy-card": 21.000000000000004,
+     "buy-pension": 5.375,
+     "sell-buyer": 2.229166666666668,
+     "buy-course": 1.1666666666666667
+    },
+    "steps": 3
+   },
+   "passive": {
+    "changed": true,
+    "newMean": 0.13033333333333277,
+    "oldMean": 0.10016666666666647,
+    "z": 6.804426510056349,
+    "newWinRate": 0,
+    "oldWinRate": 0,
+    "newBankrupt": 0.255,
+    "oldBankrupt": 0.2866666666666667,
+    "games": 600,
+    "used": {
+     "buy-card": 6.520833333333331
+    },
+    "steps": 3
+   },
+   "flipper": {
+    "changed": true,
+    "newMean": 0.8792199999999986,
+    "oldMean": 0.7988633333333315,
+    "z": 8.203044792005086,
+    "newWinRate": 0.76,
+    "oldWinRate": 0.7033333333333334,
+    "newBankrupt": 0.21833333333333332,
+    "oldBankrupt": 0.23,
+    "games": 600,
+    "used": {
+     "buy-card": 22.145833333333336,
+     "buy-pension": 4.166666666666666,
+     "sell-buyer": 2.5833333333333344,
+     "buy-course": 1.1041666666666665,
+     "sell-step-up": 0.16666666666666666,
+     "sell-window": 1.0625000000000002,
+     "sell-to-clear-loan": 0.37499999999999994,
+     "repay-bank-loan": 0.08333333333333333
+    },
+    "steps": 3
+   },
+   "scholar": {
+    "changed": true,
+    "newMean": 0.8606066666666649,
+    "oldMean": 0.7927099999999988,
+    "z": 6.874427772887297,
+    "newWinRate": 0.7516666666666667,
+    "oldWinRate": 0.7083333333333334,
+    "newBankrupt": 0.225,
+    "oldBankrupt": 0.23166666666666666,
+    "games": 600,
+    "used": {
+     "buy-card": 20.062499999999996,
+     "buy-pension": 6.020833333333334,
+     "sell-buyer": 2.7083333333333326,
+     "buy-course": 1.3333333333333333,
+     "sell-to-clear-loan": 0.6041666666666666,
+     "repay-bank-loan": 0.25
+    },
+    "steps": 3
+   }
+  },
+  "tournament": {
+   "easy": {
+    "tables": 3000,
+    "top": [
+     {
+      "botId": "tree",
+      "rating": 1674,
+      "games": 215
+     },
+     {
+      "botId": "sapling",
+      "rating": 1661,
+      "games": 215
+     },
+     {
+      "botId": "expert",
+      "rating": 1654,
+      "games": 212
+     },
+     {
+      "botId": "tree--strong",
+      "rating": 1647,
+      "games": 215
+     },
+     {
+      "botId": "expert--strong",
+      "rating": 1636,
+      "games": 215
+     },
+     {
+      "botId": "gambler--strong",
+      "rating": 1625,
+      "games": 214
+     },
+     {
+      "botId": "tree--casual",
+      "rating": 1613,
+      "games": 214
+     },
+     {
+      "botId": "flipper",
+      "rating": 1605,
+      "games": 215
+     },
+     {
+      "botId": "dividend",
+      "rating": 1601,
+      "games": 215
+     },
+     {
+      "botId": "dividend--strong",
+      "rating": 1593,
+      "games": 214
+     },
+     {
+      "botId": "flipper--strong",
+      "rating": 1583,
+      "games": 215
+     },
+     {
+      "botId": "etf",
+      "rating": 1581,
+      "games": 214
+     }
+    ],
+    "moved": [
+     {
+      "botId": "expert",
+      "change": -73
+     },
+     {
+      "botId": "tree",
+      "change": -63
+     },
+     {
+      "botId": "tree--beginner",
+      "change": 53
+     },
+     {
+      "botId": "etf",
+      "change": 51
+     },
+     {
+      "botId": "dreamer--strong",
+      "change": -47
+     },
+     {
+      "botId": "passive",
+      "change": 45
+     }
+    ],
+    "newBots": 8
+   },
+   "medium": {
+    "tables": 3000,
+    "top": [
+     {
+      "botId": "gambler",
+      "rating": 1631,
+      "games": 214
+     },
+     {
+      "botId": "tree",
+      "rating": 1624,
+      "games": 215
+     },
+     {
+      "botId": "expert",
+      "rating": 1620,
+      "games": 214
+     },
+     {
+      "botId": "sapling",
+      "rating": 1617,
+      "games": 214
+     },
+     {
+      "botId": "expert--strong",
+      "rating": 1614,
+      "games": 215
+     },
+     {
+      "botId": "etf",
+      "rating": 1611,
+      "games": 215
+     },
+     {
+      "botId": "tree--strong",
+      "rating": 1603,
+      "games": 216
+     },
+     {
+      "botId": "sapling--strong",
+      "rating": 1601,
+      "games": 215
+     },
+     {
+      "botId": "dividend",
+      "rating": 1596,
+      "games": 214
+     },
+     {
+      "botId": "etf--strong",
+      "rating": 1592,
+      "games": 215
+     },
+     {
+      "botId": "flipper",
+      "rating": 1584,
+      "games": 214
+     },
+     {
+      "botId": "gambler--strong",
+      "rating": 1583,
+      "games": 214
+     }
+    ],
+    "moved": [
+     {
+      "botId": "etf",
+      "change": 69
+     },
+     {
+      "botId": "etf--casual",
+      "change": 67
+     },
+     {
+      "botId": "tree--strong",
+      "change": -66
+     },
+     {
+      "botId": "tree",
+      "change": -57
+     },
+     {
+      "botId": "gambler--beginner",
+      "change": -56
+     },
+     {
+      "botId": "property--strong",
+      "change": -52
+     }
+    ],
+    "newBots": 8
+   },
+   "hard": {
+    "tables": 3000,
+    "top": [
+     {
+      "botId": "tree",
+      "rating": 1647,
+      "games": 215
+     },
+     {
+      "botId": "tree--strong",
+      "rating": 1629,
+      "games": 214
+     },
+     {
+      "botId": "expert",
+      "rating": 1625,
+      "games": 212
+     },
+     {
+      "botId": "etf",
+      "rating": 1623,
+      "games": 214
+     },
+     {
+      "botId": "dividend",
+      "rating": 1621,
+      "games": 215
+     },
+     {
+      "botId": "gambler--strong",
+      "rating": 1602,
+      "games": 214
+     },
+     {
+      "botId": "etf--strong",
+      "rating": 1596,
+      "games": 213
+     },
+     {
+      "botId": "expert--strong",
+      "rating": 1586,
+      "games": 215
+     },
+     {
+      "botId": "gambler",
+      "rating": 1586,
+      "games": 214
+     },
+     {
+      "botId": "passive",
+      "rating": 1582,
+      "games": 214
+     },
+     {
+      "botId": "hustler",
+      "rating": 1577,
+      "games": 215
+     },
+     {
+      "botId": "saver",
+      "rating": 1574,
+      "games": 214
+     }
+    ],
+    "moved": [
+     {
+      "botId": "sapling--strong",
+      "change": -86
+     },
+     {
+      "botId": "gambler--beginner",
+      "change": 72
+     },
+     {
+      "botId": "property",
+      "change": 64
+     },
+     {
+      "botId": "dreamer--strong",
+      "change": -56
+     },
+     {
+      "botId": "etf--casual",
+      "change": 55
+     },
+     {
+      "botId": "gambler",
+      "change": -51
+     }
+    ],
+    "newBots": 8
+   }
+  },
+  "gauntlet": {
+   "finalists": [
+    {
+     "botId": "sapling",
+     "winShare": 0.3283333333333333,
+     "games": 1200,
+     "rating": 1617
+    },
+    {
+     "botId": "expert",
+     "winShare": 0.2875,
+     "games": 1200,
+     "rating": 1633
+    },
+    {
+     "botId": "tree",
+     "winShare": 0.25666666666666665,
+     "games": 1200,
+     "rating": 1648
+    },
+    {
+     "botId": "etf",
+     "winShare": 0.24833333333333332,
+     "games": 1200,
+     "rating": 1605
+    },
+    {
+     "botId": "gambler",
+     "winShare": 0.2025,
+     "games": 1200,
+     "rating": 1594
+    },
+    {
+     "botId": "dividend",
+     "winShare": 0.17666666666666667,
+     "games": 1200,
+     "rating": 1606
+    }
+   ],
+   "champion": "sapling"
+  },
+  "minutes": 183.64
+ }
+]
