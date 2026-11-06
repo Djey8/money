@@ -20,8 +20,13 @@ export const DREAM_BOT_LEVELS: Record<DreamBotLevel, number> = {
 
 const SEPARATOR = '--';
 
+/** The bot that plays the guided demo game: sitting down next to it makes the table the demo (demo-setup.ts). */
+export const DREAM_COACH_ID = 'coach';
+
 /** `expert--casual` -> the strategy and the level; a plain id is a master. Null for a strategy or level that does not exist. */
 export function splitDreamBotId(id: string): { base: string; level: DreamBotLevel } | null {
+  // Coach, the bot of the guided demo game: a steady, friendly player of medium strength
+  if (id === DREAM_COACH_ID) return { base: 'steady', level: 'casual' };
   const at = id.lastIndexOf(SEPARATOR);
   const base = at < 0 ? id : id.slice(0, at);
   const level = at < 0 ? 'master' : id.slice(at + SEPARATOR.length);

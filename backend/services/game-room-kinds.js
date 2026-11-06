@@ -63,7 +63,17 @@ const dreamfund = {
     return step ? dreamBots.playBotStep(table, step, ctx) : null;
   },
   /** The strategies a bot of this table may play. */
-  policies: DREAM_POLICIES.map((policy) => ({ id: policy.id, name: policy.name })),
+  policies: [
+    // Coach plays the guided demo game: seating it makes the table the demo (never rated, never on the board)
+    {
+      id: dreamLevels.DREAM_COACH_ID,
+      name: 'Coach',
+      demo: true,
+      description:
+        'Your guide for the first game: sit down with Coach and the table becomes a guided demo with fixed dice and cards, never ranked, never kept.',
+    },
+    ...DREAM_POLICIES.map((policy) => ({ id: policy.id, name: policy.name })),
+  ],
   /** The skill levels of a bot and the chance of a slip at each. */
   levels: Object.entries(dreamLevels.DREAM_BOT_LEVELS).map(([id, mistakes]) => ({ id, mistakes })),
   /** `expert--casual` -> { base, level }; null when it is not a bot of this table. */

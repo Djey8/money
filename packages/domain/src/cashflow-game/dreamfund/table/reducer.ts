@@ -18,6 +18,8 @@ import {
   whyClockBlocks,
 } from '../../table/clock';
 import { shuffled, tableRng } from '../../table/table-rng';
+import { demoRigFor } from './demo';
+import { DEMO_BOT, DEMO_CHARACTER, DEMO_SETTINGS } from './demo-setup';
 import {
   PLAYER_NAME_MAX,
   TABLE_COLORS,
@@ -151,7 +153,11 @@ export function createDreamTable(
   input: CreateDreamTableInput,
   ctx: DreamContext,
 ): DreamCommandResult {
-  const settings = normalizeDreamSettings(input.settings, dreamCharacterIds().length);
+  // a table is the demo only when Coach sits down at it (add_bot), never by asking for it
+  const settings = normalizeDreamSettings(
+    { ...input.settings, demo: undefined },
+    dreamCharacterIds().length,
+  );
   const host = {
     ...newSeat(
       input.hostId,
@@ -307,6 +313,13 @@ function lobbyCommand(
       if (command.professionId && !dreamCharacterIds().includes(command.professionId)) {
         fail('UNKNOWN_PROFESSION', `Unknown character '${command.professionId}'.`);
       }
+      // Coach is the bot of the guided demo game: seating it makes the table the demo, for one person and no other bot
+      const coach = command.policyId === DEMO_BOT;
+      if (coach) {
+        if (table.players.some((p) => p.bot) || table.players.filter((p) => !p.bot).length !== 1) {
+          fail('INVALID_SETTINGS', 'Coach plays the guided demo with one person and no other bot.');
+        }
+      }
       const n = table.players.filter((p) => p.bot).length + 1;
       const id = `bot:${n}`;
       const seat: DreamSeat = {
@@ -322,6 +335,22 @@ function lobbyCommand(
         },
       };
       emit('bot_added', id, { name: seat.name, policyId: command.policyId });
+      if (coach) {
+        // the table is the demo: its fixed settings (the person keeps the name of the table) and the character of the story
+        const settings = normalizeDreamSettings(
+          { ...DEMO_SETTINGS, name: table.settings.name },
+          dreamCharacterIds().length,
+        );
+        emit('settings_updated', playerId);
+        return {
+          ...table,
+          settings,
+          players: [
+            ...table.players.map((p) => (p.bot ? p : { ...p, pick: DEMO_CHARACTER })),
+            { ...seat, bot: { policyId: command.policyId, professionId: DEMO_CHARACTER } },
+          ],
+        };
+      }
       return { ...table, players: [...table.players, seat] };
     }
     case 'set_ready': {
@@ -348,6 +377,7 @@ function lobbyCommand(
       if (playerId !== table.hostId) fail('NOT_HOST', 'Only the host can change the settings.');
       if (table.phase !== 'lobby')
         fail('WRONG_PHASE', 'The settings are frozen once the game starts.');
+      if (table.settings.demo) fail('INVALID_SETTINGS', 'The guided demo game has fixed settings.');
       const merged = normalizeDreamSettings(
         {
           ...table.settings,
@@ -453,8 +483,9 @@ function start(table: DreamTable, playerId: string, ctx: DreamContext, emit: Emi
       ...table,
       players: table.players.map((p) => ({
         ...p,
-        pick:
-          p.bot && table.settings.professions !== 'unique'
+        pick: table.settings.demo
+          ? DEMO_CHARACTER
+          : p.bot && table.settings.professions !== 'unique'
             ? (p.bot.professionId ?? 'random')
             : 'random',
       })),
@@ -581,6 +612,7 @@ function changeCharacter(
   if (table.phase !== 'playing' || !table.briefing) {
     fail('WRONG_PHASE', 'The game has begun: the character cannot be changed now.');
   }
+  if (table.settings.demo) fail('ILLEGAL_MOVE', 'In the guided demo game you are Jonas.');
   if (table.settings.professions === 'random') {
     fail('ILLEGAL_MOVE', 'At this table the characters are drawn.');
   }
@@ -706,7 +738,9 @@ function play(
   if (!harvestOption && table.activePlayerId !== playerId) {
     fail('NOT_YOUR_TURN', 'It is not your turn.');
   }
-  const rng = tableRng(table.rngState);
+  // the guided demo game plays the number its story needs for this move (demo.ts); every other table its own
+  const rigged = internal ? null : demoRigFor(table, playerId, command);
+  const rng = tableRng(rigged ?? table.rngState);
   // every die an effect of the card rolls is written down: the card shows them until it is done
   const dice: number[] = [];
   const logged = loggedRng(rng.rng, dice);
@@ -725,7 +759,16 @@ function play(
       `That move is not possible: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  let current = sleep({ ...table, rngState: rng.state() }, playerId, player, patch);
+  let current = sleep(
+    {
+      ...table,
+      rngState: rng.state(),
+      ...(rigged !== null ? { demoStep: (table.demoStep ?? 0) + 1 } : {}),
+    },
+    playerId,
+    player,
+    patch,
+  );
   if (command.type === 'roll' || command.type === 'debug_load' || command.type === 'debug_career') {
     current = { ...current, turnRolled: true };
   }

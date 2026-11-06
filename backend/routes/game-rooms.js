@@ -248,7 +248,9 @@ router.get(
       let rated = {};
       try {
         rated = await dreamStats().botRatings(
-          dreamfund.policies.flatMap((p) => skills.map((skill) => idOf(p.id, skill))),
+          dreamfund.policies
+            .filter((p) => !p.demo)
+            .flatMap((p) => skills.map((skill) => idOf(p.id, skill))),
         );
       } catch (error) {
         logger.warn('Dreamfund bot ratings could not be read', { error: error.message });
@@ -258,6 +260,7 @@ router.get(
           id: policy.id,
           name: policy.name,
           policyId: policy.id,
+          ...(policy.demo ? { demo: true, description: policy.description } : {}),
           ratings: Object.fromEntries(
             skills
               .filter((skill) => rated[idOf(policy.id, skill)] !== undefined)
@@ -644,6 +647,14 @@ lobbyRoute('post', '/:roomId/bots', (body) => {
     }
     if (body.level !== undefined && !dreamfund.levels.some((l) => l.id === body.level)) {
       return `level must be one of: ${dreamfund.levels.map((l) => l.id).join(', ')}.`;
+    }
+    // Coach has one level of its own: it is the guided demo's bot
+    if (dreamId === 'coach') {
+      return {
+        type: 'add_bot',
+        name: body.name !== undefined ? body.name : 'Coach',
+        policyId: 'coach',
+      };
     }
     const dreamPolicy = dreamfund.policies.find((policy) => policy.id === dreamParts.base);
     // a level given on its own applies to a plain strategy id; an id that already carries one keeps it

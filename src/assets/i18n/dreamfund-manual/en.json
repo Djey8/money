@@ -80,9 +80,8 @@
           "type": "list",
           "items": [
             "the **button at the top of this page** and the button in the section \"Your first game\";",
-            "the **Dreamfund lobby**, on the card \"Learn the game\";",
-            "**the demo bot**: when you add the bot called **Coach** to a table, the table is the demo;",
-            "the **Help** entry of the table menu inside a game."
+            "the **Dreamfund lobby**, on the entry **Learn the game**;",
+            "**the demo bot**: when you add the bot called **Coach** to a table, the table is the demo;"
           ]
         },
         {
@@ -1904,7 +1903,7 @@
             },
             {
               "term": "Where is the demo game?",
-              "text": "The button on top of this manual, the card \"Learn the game\" in the lobby, the bot **Coach**, and the Help entry in the table menu. It is never ranked and never kept in your history."
+              "text": "The button on top of this manual, the entry **Learn the game** in the Dreamfund lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history."
             },
             {
               "term": "Can I change a booking?",

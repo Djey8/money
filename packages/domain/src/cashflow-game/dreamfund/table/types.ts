@@ -62,6 +62,8 @@ export interface DreamTableSettings {
   showProgress: boolean;
   /** Whether the game may count for the leaderboard (decided by the ranked rules when it ends). */
   ranked: boolean;
+  /** The guided demo game (JFK, 2026-11-06): a fixed map and character, the dice and cards of a story, never ranked, never kept (demo-setup.ts). */
+  demo?: 'basics';
   /** A game for finding what is wrong with the cards (JFK, 2026-11-03): the host picks the card of every tile they land on. Never ranked. */
   debug?: boolean;
   leaveFreeRounds: number;
@@ -263,6 +265,8 @@ export interface DreamTable {
   seed: number;
   /** The dice and card stream's position. */
   rngState: number;
+  /** A demo table: how many of the story's forced throws have been made (demo.ts). */
+  demoStep?: number;
   createdAt: string;
 }
 
@@ -373,6 +377,8 @@ export type DreamCommand =
 
 export interface DreamSettingsInput {
   name?: string;
+  /** The guided demo game: the server fills in its fixed table (demo-setup.ts). */
+  demo?: 'basics';
   visibility?: 'public' | 'private';
   maxSeats?: number;
   difficulty?: Difficulty;

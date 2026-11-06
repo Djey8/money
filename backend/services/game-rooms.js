@@ -50,6 +50,9 @@ const number = (name, fallback) => {
 };
 
 /** What one account and the server allow; environment overrides are read at call time so a test can lower them. */
+/** How long a finished guided demo game stays for its end screen before the server forgets it. */
+const DEMO_FORGET_MS = 15 * 60 * 1000;
+
 function limits() {
   return {
     maxHosted: number('GAME_ROOMS_MAX_HOSTED', 3),
@@ -201,6 +204,8 @@ function desiredMarkers(table) {
     }
     return wanted;
   }
+  // The guided demo game is nobody's history: once it is over no list shows it
+  if (table.settings && table.settings.demo) return wanted;
   // A table that is over keeps a marker for everyone who sat at it, flagged closed: the "recent tables" list reads them, the
   // limits do not count them, and they go with the room when it is deleted.
   for (const player of table.players) {
@@ -311,9 +316,16 @@ function createGameRoomService({
           log('game_stats_record_failed', { roomId: doc.roomId, message: error.message }),
         );
     }
-    // a Dreamfund game that has just ended goes onto its own board
+    // a Dreamfund game that has just ended goes onto its own board (the guided demo game goes nowhere and is forgotten soon)
+    if (table.settings && table.settings.demo && ['finished', 'abandoned'].includes(table.phase)) {
+      const forget = setTimeout(() => {
+        store.deleteRoom(db, doc.roomId).catch(() => {});
+      }, DEMO_FORGET_MS);
+      if (forget && typeof forget.unref === 'function') forget.unref();
+    }
     if (
       dreamStats &&
+      !(table.settings && table.settings.demo) &&
       table.kind === 'dreamfund' &&
       table.phase === 'finished' &&
       (!previous || previous.phase !== 'finished')

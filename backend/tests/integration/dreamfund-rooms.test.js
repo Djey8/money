@@ -620,4 +620,53 @@ describe('a Dreamfund room', () => {
       await call(host, 'delete', `/game/rooms/${made.body.id}?confirm=true`);
     },
   );
+
+  maybe(
+    'becomes the guided demo when Coach sits down: fixed settings, fixed dice, never ranked',
+    async () => {
+      const made = await call(host, 'post', '/game/rooms', {
+        kind: 'dreamfund',
+        nickname: 'Hanna',
+        settings: { name: 'My first table', ranked: true, difficulty: 'hard' },
+      });
+      expect(made.status).toBe(201);
+      roomIds.push(made.body.id);
+      const id = made.body.id;
+      // Coach is in the catalogue, marked as the demo's bot
+      const catalog = await call(host, 'get', '/game/rooms/bots?kind=dreamfund');
+      expect(catalog.body.items.find((i) => i.id === 'coach')).toMatchObject({ demo: true });
+      const seated = await call(host, 'post', `/game/rooms/${id}/bots`, {
+        policyId: 'dream:coach',
+      });
+      expect(seated.status).toBe(200);
+      expect(seated.body.table.settings).toMatchObject({
+        demo: 'basics',
+        ranked: false,
+        difficulty: 'medium',
+        maxSeats: 2,
+      });
+      // the settings of the demo cannot be changed
+      const changed = await call(host, 'put', `/game/rooms/${id}/settings`, {
+        settings: { ranked: true },
+      });
+      expect(changed.status).toBeGreaterThanOrEqual(400);
+      const started = await call(host, 'post', `/game/rooms/${id}/start`, {});
+      expect(started.status).toBe(200);
+      const me = started.body.table.you;
+      expect(started.body.table.players[me].professionId).toBe('dual-student-informatik');
+      const briefed = await call(host, 'post', `/game/rooms/${id}/commands`, {
+        command: { type: 'confirm_briefing' },
+      });
+      expect(briefed.status).toBe(200);
+      // the first roll of the story always lands on the same tile: an Opportunity
+      const rolled = await call(host, 'post', `/game/rooms/${id}/commands`, {
+        command: { type: 'roll' },
+      });
+      expect(rolled.status).toBe(200);
+      const event = (rolled.body.events || []).find((e) => e.type === 'rolled');
+      expect(event.data.to).toBe(2);
+      const removed = await call(host, 'delete', `/game/rooms/${id}?confirm=true&remove=true`);
+      expect(removed.status).toBe(200);
+    },
+  );
 });

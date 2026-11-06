@@ -35,6 +35,7 @@ export function normalizeDreamSettings(
   input: DreamSettingsInput,
   characterCount: number,
 ): DreamTableSettings {
+  if (input.demo !== undefined && input.demo !== 'basics') invalid("demo must be 'basics'.");
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (name.length < 1 || name.length > TABLE_NAME_MAX) {
     invalid(`The table name must be 1 to ${TABLE_NAME_MAX} characters.`);
@@ -124,7 +125,8 @@ export function normalizeDreamSettings(
     pace,
     showProgress: input.showProgress ?? true,
     // a game for debugging the cards is never ranked
-    ranked: input.debug === true ? false : (input.ranked ?? false),
+    ranked: input.debug === true || input.demo ? false : (input.ranked ?? false),
+    ...(input.demo ? { demo: input.demo } : {}),
     ...(input.debug === true ? { debug: true } : {}),
     leaveFreeRounds: whole(input.leaveFreeRounds ?? 0, 'leaveFreeRounds', 0, 1000),
   };
