@@ -19,7 +19,7 @@ let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
 /** The languages the Dreamfund manual is written in; the others read the English one. */
-export const DREAMFUND_MANUAL_LANGUAGES = ['en', 'de'];
+export const DREAMFUND_MANUAL_LANGUAGES = ['en'];
 export const DREAMFUND_MANUAL_FALLBACK = 'en';
 
 /** The manual file: the sections in the order of the page. */
@@ -141,6 +141,13 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
     if (toggle) {
       toggle.checked = false;
     }
+  }
+
+  /** The button of the manual: the guided demo game (a table against the demo bot), started by the lobby. */
+  readonly demoLabel = 'Start the guided demo game';
+
+  startGuidedDemo(): void {
+    void this.router.navigate(['/tables'], { queryParams: { game: 'dreamfund', demo: 'start' } });
   }
 
   launchDemo(): void {

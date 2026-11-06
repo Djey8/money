@@ -1,59 +1,352 @@
 {
-  "title": "Dreamfund (Traumtopf) - the game, the cards and the numbers",
-  "subtitle": "The map, every card type, the goals and how to win - with the statistics of the characters.",
+  "title": "Dreamfund (Traumtopf) - the manual",
+  "subtitle": "The whole game from the screen to the bots: every move, every card, every setting - and a guided demo game that plays the first rounds with you.",
+  "labels": {},
   "order": [
-    "s1",
-    "s2",
-    "s3",
-    "s4",
-    "s5",
-    "s6",
-    "s7",
-    "s8",
-    "s9",
-    "s10",
-    "s11",
-    "s12",
-    "s13",
-    "s14",
-    "s15",
-    "s16"
+    "welcome",
+    "firstgame",
+    "screen",
+    "aim",
+    "money",
+    "characters",
+    "life",
+    "map",
+    "turn",
+    "opportunity",
+    "harvest",
+    "emergency",
+    "lifecards",
+    "career",
+    "dreams",
+    "notes",
+    "selling",
+    "tables",
+    "modes",
+    "ranking",
+    "profile",
+    "bots",
+    "strategy",
+    "agents",
+    "faq",
+    "glossary",
+    "numbers"
   ],
   "sections": {
-    "s1": {
-      "nav": "Overview",
-      "title": "Overview",
+    "welcome": {
+      "nav": "Welcome",
+      "title": "Welcome to Dreamfund",
+      "intro": "Dreamfund (Traumtopf in German) is a money game you play on a map, with dice and cards, **inside your own books**: a salary is a real booking, a share is a real Grow project, a dream is a real Smile project. You live a character through years of money decisions - and when the game is over you know what a reserve, a loan, an index or a payment plan does, because you made them do it.",
       "blocks": [
         {
-          "type": "p",
-          "text": "The game's money is the **Traumtaler (TT)**. Everything in this page is about the **Medium** level, the one that is balanced first. Easy and Hard are prepared but not offered until the numbers hold."
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🎯",
+              "title": "The aim",
+              "text": "Build a life you can afford: repay what you owe, keep a reserve, **live your dream** and let your money work for you until **passive income pays your bills**. When all five goals of your character are true, you have won."
+            },
+            {
+              "icon": "🎲",
+              "title": "How it is played",
+              "text": "You roll the dice, your **totem** walks a map of tiles, and every tile is a pile of cards: Opportunities to invest in, Harvest cards that move the markets, Emergencies, Life, Career, Dreams and Paydays."
+            },
+            {
+              "icon": "👥",
+              "title": "Alone or together",
+              "text": "You always play at a **table**: against bots (as many as you like) or against other people. Everybody lives their own life in parallel; the markets are shared. **The first to reach every goal wins.**"
+            },
+            {
+              "icon": "🏆",
+              "title": "A rating",
+              "text": "Ranked games move your **rating** (everybody starts at 1500) on one leaderboard with people and bots. Unranked games are for learning and for fun."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Who can read this and play",
+          "text": "The game and this manual are for **game accounts** on the self-hosted edition: an account whose email contains the word `cashflow`. Nothing in such an account is real money, and nothing you do reaches a normal account."
+        },
+        {
+          "type": "h3",
+          "text": "The fastest way to understand it"
         },
         {
           "type": "p",
-          "text": "This page is for players. The last part, the statistics, is made from thousands of simulated games and is written by the simulation itself (see `docs/DREAMFUND_SIMULATION.md` for how to run it)."
+          "text": "Do not read this page from the top first. Start the **guided demo game**: a table against a friendly bot with a fixed die and fixed cards, where a coach shows you every place of the screen and every move in about fifteen minutes. You can stop it at any moment and play for real. You find it in four places:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "the **button at the top of this page** and the button in the section \"Your first game\";",
+            "the **Dreamfund lobby**, on the card \"Learn the game\";",
+            "**the demo bot**: when you add the bot called **Coach** to a table, the table is the demo;",
+            "the **Help** entry of the table menu inside a game."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "How this manual is built"
+        },
+        {
+          "type": "p",
+          "text": "It goes from the top of the screen to the bottom of the game: **the screen**, **your money**, **your life**, **the map and a turn**, then **every card type** one by one, **selling**, **playing together**, **ratings**, **the bots**, **strategy**, a **FAQ** and a **glossary**. The last section holds the numbers of thousands of simulated games. Every section stands on its own: use the list on the left (or the menu at the top on a phone) to jump."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Words in this manual",
+          "text": "Money is counted in **Dream Taler** (DT, in German **Traumtaler**, TT) unless the table chose a real currency sign. A **Payday** is a month: your salary comes in and your bills go out. **Fire**, **Smile**, **Grow** and **Mojo** are the places your money lives; the section \"Your money\" explains each."
         }
       ]
     },
-    "s2": {
-      "nav": "In one minute",
-      "title": "In one minute",
+    "firstgame": {
+      "nav": "Your first game",
+      "title": "Your first game, step by step",
+      "intro": "From the lobby to the first Payday. Nothing here can go wrong: the first game is a game against a bot, and you can leave it any time.",
       "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Open the lobby",
+              "text": "In the menu choose **Tables**, and at the top of the lobby switch from **Classic** to **Dreamfund**. You see the open tables, your own tables, the leaderboard and the **Join with a code** field."
+            },
+            {
+              "title": "Open a table",
+              "text": "Press the round **+**. Give the table a name (or take the suggestion), choose the **difficulty** (start on **Normal**; Easy is gentler), leave **Ranked** off for a first game, and press **Open the table**. Every setting is explained in \"Playing together\"."
+            },
+            {
+              "title": "Seat a bot",
+              "text": "In the waiting room press **Add bot**. Choose a strategy and a level, or the bot **Coach** for the guided demo. A table needs at least two seats."
+            },
+            {
+              "title": "Meet your character",
+              "text": "Everybody first reads **who they are**: the story, the goals, the income, the bills and the debts. Choose your insurances (they count at once) and press **I am ready**. Until then you may go back and take another character, unless the table deals the characters."
+            },
+            {
+              "title": "Start and roll",
+              "text": "When everybody is ready the host presses **Start**. On your turn press the golden **dice**. The totem walks and the card of the tile opens."
+            },
+            {
+              "title": "Decide, then press Done",
+              "text": "Read the card, decide (the buttons say what each choice costs) and press **Done**. If a market card touched something you own, Done takes you to **Grow** and marks what changed."
+            },
+            {
+              "title": "Settle the month",
+              "text": "Passing a **Payday** tile pays your salary and takes your bills. What is left is yours: put it into the reserve, a payment plan for the dream, or a card you planned."
+            },
+            {
+              "title": "Keep going until the goals are true",
+              "text": "About **90 turns** make a normal game. You win when your reserve, your debts, your dream and your independence are all done."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "example",
+          "title": "A first Payday, in numbers",
+          "text": "Jonas, the dual student, earns about 1,955 DT net and has bills for the rest; about **500 DT** are left over. He puts 100 into the reserve, plans 50 a month into his dream, and keeps the rest as cash for the next card. After a month or two his **free saving cards** (a cheaper phone plan, cheaper electricity) lift that sum without costing anything."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Where to look when you do not know what to do",
+          "text": "The row of **goals** shows what is still missing, the **strip above the map** shows what is running on your money, and the **info of your character** lists everything again. The demo game and the section \"Strategy\" tell you what to do first."
+        }
+      ]
+    },
+    "screen": {
+      "nav": "The game screen",
+      "title": "The game screen, from top to bottom",
+      "intro": "Everything on the screen has one job. This is the whole tour; the demo game walks you through the same places while you play.",
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "🗺️",
+              "title": "The map",
+              "text": "A closed track of tiles. Your **totem** stands next to the tile you are on and points at it; the other players' totems wear their initials or pictures. A tile is coloured by its kind (gold Payday, purple Opportunity, amber Harvest, green Dream, red Emergency, pink Life, blue Career)."
+            },
+            {
+              "icon": "🏷️",
+              "title": "The badges of your life",
+              "text": "Small badges (relationship, children, home, place, job, pet, car, education, insurances, career). **Tap one** and a card tells what it means. They decide which cards can happen to you."
+            },
+            {
+              "icon": "📊",
+              "title": "The strip: what is running",
+              "text": "Above the map: every effect that works on your money right now and **how many Paydays are left** - a cost that runs for a while, a pause, a gain, a job search."
+            },
+            {
+              "icon": "🎯",
+              "title": "The goals",
+              "text": "The five goals of your character as bars in percent: **debts**, **reserve**, **dream**, **independence** (and dream points where the table asks). A bar turns gold when done."
+            },
+            {
+              "icon": "💶",
+              "title": "The money panel",
+              "text": "Cash, reserve, passive income against the cost of living, monthly cash flow, net worth, the Bank loan. Put money into the reserve or the dream, repay a debt or the loan, here."
+            },
+            {
+              "icon": "🌱",
+              "title": "Grow, Smile and Fire",
+              "text": "The three project pages: **Grow** (your investments), **Smile** (your dreams with their buckets) and **Fire** (what must be paid: the reserve, emergencies). The project pages are the normal pages of the Money Manager."
+            },
+            {
+              "icon": "🧾",
+              "title": "The balance",
+              "text": "The income statement and the balance sheet of your character: income, expenses, assets, liabilities. Every card you take changes them."
+            },
+            {
+              "icon": "📜",
+              "title": "History and feed",
+              "text": "The feed tells what everybody does (\"Anna rolls the dice\", \"Coach buys ...\"). A line opens the card it is about. The history keeps every step; **Undo** takes back the last action of your turn."
+            },
+            {
+              "icon": "👥",
+              "title": "The players",
+              "text": "The queue of players shows who is on the move, who is a bot, who is away, and the clock. Tap a player to **look at their books** (read only) and go back with **Back to my books**."
+            },
+            {
+              "icon": "⚙️",
+              "title": "The table menu",
+              "text": "Settings (pop-ups and messages on or off), **pause**, **autoplay while I am away**, the table's rules, **Resign** and, in the demo, **Stop the tutorial**."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "The buttons you press most"
+        },
+        {
+          "type": "table",
+          "head": ["Button", "What it does"],
+          "rows": [
+            [
+              "**Roll** (golden dice)",
+              "Starts your turn. Every die of the game is yours to throw: when a card says \"a die decides\", you throw it."
+            ],
+            [
+              "**Done**",
+              "Finishes the card you are on. A planned investment stays open until the end of your turn."
+            ],
+            [
+              "**End turn**",
+              "Gives the move to the next player. The table may ask you to settle the month or an emergency first."
+            ],
+            [
+              "**Plan this card**",
+              "Opens the investment as a project in Grow with all its numbers. Nothing is bought yet."
+            ],
+            [
+              "**Buy / Sell**",
+              "In Grow: books a purchase or sells at the standing price. Selling next to a Harvest offer uses the offer's price."
+            ],
+            [
+              "**Pay now / 3 / 6 / 12 Paydays**",
+              "How an emergency is paid: at once, or spread over Paydays (with the plan's surcharge)."
+            ],
+            [
+              "**Undo**",
+              "Takes back the last action of your turn (not a die that was thrown for a card)."
+            ],
+            ["**Resign**", "Gives up your seat. You lose against everybody who stays."]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "You cannot cheat the game",
+          "text": "The server decides everything. The screen only offers what the rules allow, and a move that is not allowed is refused with a sentence that says why."
+        }
+      ]
+    },
+    "aim": {
+      "nav": "The aim and the goals",
+      "title": "The aim: five goals, one win",
+      "intro": "A game ends when somebody wins, goes bankrupt, resigns or runs out of turns. This is what \"winning\" means.",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Every character has a list of goals. For Jonas, **all five must be true**:"
+        },
         {
           "type": "list",
           "ordered": true,
           "items": [
-            "You get a **character** with a salary, bills, a little cash, two debts and a dream (the first one is **Jonas**, a dual student of computer science who dreams of becoming a certified mountain guide).",
-            "You roll the dice and walk a **map** of tiles. Every tile is a stack of cards: an **Opportunity** to invest, a **Harvest** card that moves the markets, an **Emergency**, a **Life** event, a **Dream**, a **Career** chance, or a **Payday**.",
-            "At every **Payday** your salary comes in and your bills go out. What is left is yours to spend, save or invest.",
-            "You win when **all five goals** on your character's list are true. When your passive income alone pays your bills you earn the **Financial independence badge** - but the game goes on until the whole list is done.",
-            "You lose if your monthly cash flow turns negative: you are **bankrupt**."
+            "Pay back the loan from your parents (1,500 TT).",
+            "Pay back the car loan (1,500 TT).",
+            "Fund and live the **dream** - every bucket of the project full.",
+            "Build the **reserve**: three monthly expenses in the Mojo.",
+            "Become **financially independent**: passive income covers all monthly expenses."
           ]
+        },
+        {
+          "type": "p",
+          "text": "**The Financial independence badge** 💎 appears as soon as the passive income covers the expenses (the part of the expenses that comes from your salary - income tax and social insurance - is not counted against your passive income, because it stops when the salary stops). The game goes on: the badge is a milestone, not the end."
+        },
+        {
+          "type": "p",
+          "text": "**When every goal is done** the **win screen** appears, with a trophy, the ticked goals and the numbers of your game; you may keep playing."
+        },
+        {
+          "type": "p",
+          "text": "**Bankruptcy.** If the monthly cash flow turns negative the game ends."
+        },
+        {
+          "type": "p",
+          "text": "**How long is a game?** A normal game is about **90 turns** (roughly 36 months), a fast one 30, a long one 120."
+        },
+        {
+          "type": "h3",
+          "text": "The goals in plain words"
+        },
+        {
+          "type": "table",
+          "head": ["Goal", "What has to be true", "How you get there"],
+          "rows": [
+            [
+              "**Debts**",
+              "The starting debts of your character are repaid (a loan from the parents, a car loan, a credit card).",
+              "Repay from cash when you can; a debt that costs interest first."
+            ],
+            [
+              "**Reserve**",
+              "Three months of living costs sit in the **Mojo**.",
+              "A payment plan from the first Paydays; the reserve is the first goal to finish."
+            ],
+            [
+              "**Dream**",
+              "The life dream of your character is funded in every bucket and **lived**.",
+              "A payment plan per Payday; fund it with what is left, not first."
+            ],
+            [
+              "**Independence**",
+              "Your passive income is at least your cost of living.",
+              "Cards that pay every month: this is the bottleneck of the game."
+            ],
+            [
+              "**Dream points**",
+              "Only where the table asks: a number of points from the dreams you took.",
+              "Take dreams on the Dream tiles, but only when your income is on its way."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "The honest truth about the order",
+          "text": "In thousands of simulated games the reserve and the dream were reached long before the income. A player who funded the dream before there was any income has rarely won. **Income is the bottleneck.**"
         }
       ]
     },
-    "s3": {
-      "nav": "Your money: the five accounts",
-      "title": "Your money: the five accounts",
+    "money": {
+      "nav": "Your money",
+      "title": "Your money: five accounts, Grow, plans and the Bank",
+      "intro": "The game uses the five accounts of the Barefoot Investor method plus an investment tracker called Grow. If you know the Money Manager you know them already; if not, this section is the whole idea.",
       "blocks": [
         {
           "type": "table",
@@ -93,87 +386,307 @@
         {
           "type": "p",
           "text": "**Insurance.** You start with liability and household insurance. An emergency that an insurance covers costs you only the deductible; you can hop in or out of an insurance with the next Payday. Without it, the bill is yours."
+        },
+        {
+          "type": "h3",
+          "text": "Smile: your dream, with buckets"
+        },
+        {
+          "type": "p",
+          "text": "A dream is a **Smile project**. It has **buckets** (the flights, the hotel, the equipment ...) and each bucket has a price. Money goes into a bucket by hand or, much better, by a **payment plan**: \"50 a month into the dream\" moves 50 at every Payday until the bucket is full. A dream you have fully funded is **lived** - it pays out its dream points and ticks the dream goal."
+        },
+        {
+          "type": "h3",
+          "text": "Mojo and Fire: the reserve and what must be paid"
+        },
+        {
+          "type": "p",
+          "text": "The **Mojo** is your reserve: three months of living costs. It is a **Fire project** from the first day and may only be used for emergencies. **Fire** is the account of everything that has to be paid - an emergency, the reserve, a debt, an investment you booked."
+        },
+        {
+          "type": "h3",
+          "text": "Grow: where your investments live"
+        },
+        {
+          "type": "p",
+          "text": "Every card you take becomes a **Grow project** with its numbers, its notes, its tasks and its risk. A share has units and a price, a property has a deposit and a mortgage, a business has a monthly cash flow. In Grow you **buy** and **sell** with the normal buttons; every dice roll, sale and market effect is written into the **notes** of the project with the numbers."
+        },
+        {
+          "type": "h3",
+          "text": "Payment plans"
+        },
+        {
+          "type": "p",
+          "text": "A big goal is never paid at once. A **plan** moves part of every Payday's free money into a project: the reserve, a dream bucket, an emergency you spread over 3, 6 or 12 Paydays. The game never forces a plan; it shows what is **due**. A plan can be raised, lowered or stopped at any time (`0` stops it)."
+        },
+        {
+          "type": "h3",
+          "text": "The Bank loan"
+        },
+        {
+          "type": "p",
+          "text": "If a payment is bigger than your cash the **Bank** lends you the missing amount automatically. It costs **10% of the loan every month** (a table setting). A loan is an emergency tool, not a way to invest: **repay it as soon as the cash allows**. A bot that keeps a loan open when it could repay it loses points in the simulation."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Why 10% a month matters",
+          "text": "Nothing in the game earns 10% a month. Selling a card to repay the Bank is almost always right - the bots do it too (the capability **sell to clear a loan**)."
+        },
+        {
+          "type": "h3",
+          "text": "Insurance"
+        },
+        {
+          "type": "p",
+          "text": "You start with liability and household insurance, paid at every Payday. When an insured emergency hits, you pay only the **deductible** (at most 500 DT on Normal, 300 on Easy, 750 on Hard). Before the first roll a change counts at once; later it counts from the **next Payday**, so nobody insures just before the fire. See \"Your life\" for the car insurances."
         }
       ]
     },
-    "s4": {
-      "nav": "The map",
-      "title": "The map",
+    "characters": {
+      "nav": "Characters and levels",
+      "title": "The ten characters and the three difficulties",
+      "intro": "Ten lives from 23 to 57, from an apprentice's pay to a surgeon's. Everybody plays the same game, but the debts, the dream and what is left of a month differ - and so does the difficulty.",
       "blocks": [
         {
           "type": "p",
-          "text": "A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:"
+          "text": "Ten lives from 23 to 57, from an apprentice's pay to a surgeon's. Everybody plays the same game with the same cards - **the cards are as big as the character's life** (their price level): a share, a property, a dream, a debt and an emergency cost that much more for Dr. Jan than for Jonas, and pay that much more, so what a card is worth in proportion to the life is the same for everybody. What makes one character harder than another is what is left of a month, how big the debts are and how far away the dream is."
         },
         {
           "type": "table",
-          "head": ["Tile", "Count", "Colour", "What happens"],
+          "head": [
+            "Character",
+            "Age",
+            "Life",
+            "Gross (a month)",
+            "Left of a month",
+            "Price level",
+            "Dream"
+          ],
           "rows": [
-            ["💰 Payday", "4", "gold", "Salary in, bills out. About every 2.5 rolls is a month."],
-            ["🌱 Opportunity", "14", "purple", "Choose a pile and an investment to plan."],
             [
-              "🌾 Harvest",
-              "6",
-              "amber",
-              "A market card: the markets move, windows to sell, buyers, hype, scams."
+              "Jonas, dual student IT",
+              "23",
+              "studying, single",
+              "2,833",
+              "500",
+              "1.0",
+              "Mountain guide"
             ],
-            ["😊 Dream", "3", "green", "Dreams to take, and Dream moments."],
-            ["🔥 Emergency", "3", "red", "Something breaks and has to be paid."],
             [
-              "❤ Life",
-              "4",
-              "pink",
-              "A turn of life: love, a baby, a move, a gym membership, a parent who needs help."
+              "Mehmet, journeyman electrician",
+              "26",
+              "single, first own flat",
+              "3,150",
+              "715",
+              "1.1",
+              "Master craftsman + own workshop"
             ],
-            ["🎓 Career", "2", "blue", "A promotion to roll for."]
+            [
+              "Lena, nurse",
+              "29",
+              "single mother, one child",
+              "3,450",
+              "600",
+              "1.2",
+              "A year in a camper van"
+            ],
+            [
+              "Sophie, primary teacher",
+              "33",
+              "civil servant, single",
+              "4,350",
+              "860",
+              "1.5",
+              "A year under sail"
+            ],
+            [
+              "Tobias, freelance designer",
+              "36",
+              "self-employed, irregular",
+              "3,900",
+              "700",
+              "1.4",
+              "Studio and gallery in a loft"
+            ],
+            [
+              "Katrin, head of marketing",
+              "40",
+              "married, two children, house",
+              "6,300",
+              "990",
+              "2.2",
+              "A house by the Baltic Sea"
+            ],
+            [
+              "Frank, mechanical engineer",
+              "44",
+              "married, teenager, house",
+              "7,600",
+              "1,080",
+              "2.7",
+              "The energy-independent house"
+            ],
+            [
+              "Dr. Jan, senior surgeon",
+              "48",
+              "two teenagers, villa, leasing",
+              "11,200",
+              "680",
+              "3.9",
+              "His own practice"
+            ],
+            [
+              "Heike, garage owner",
+              "52",
+              "self-employed, four employees",
+              "5,200",
+              "810",
+              "1.8",
+              "A small vineyard"
+            ],
+            [
+              "Peter, bus driver",
+              "57",
+              "married, grown children",
+              "2,700",
+              "665",
+              "0.95",
+              "A cabin by the lake"
+            ]
           ]
         },
         {
           "type": "p",
-          "text": "Your **totem** stands next to the tile you are on, on the line from the middle of the map through the tile, and points at it. Before the first roll it waits at START."
-        }
-      ]
-    },
-    "s5": {
-      "nav": "Before the first roll",
-      "title": "Before the first roll",
-      "blocks": [
+          "text": "The exact numbers are in the character's sheet in the game (the three panels: income statement, balance sheet, cash). They are built the same way for everyone (`cashflow-professions-builder.ts`): the German tax and social insurance are worked out from the gross salary, so a high earner pays a higher share to the state; the lifestyle, the debts and the dream follow from a few numbers in the description (`cashflow-professions-dreamfund.ts`)."
+        },
+        {
+          "type": "h3",
+          "text": "Easy, Normal, Hard"
+        },
         {
           "type": "p",
-          "text": "At a table every player first reads **who they are**: the story, what matters to them, the goals, the income, the expenses and the debts - and chooses the **insurances**, which count at once. Until you say you are ready you can go back and choose another character (unless the characters are drawn). The game is begun in the background; the first turn starts when everybody is ready."
-        }
-      ]
-    },
-    "s6": {
-      "nav": "A turn",
-      "title": "A turn",
-      "blocks": [
+          "text": "Every character exists three times; the story and the dream are the same, the numbers and the cards are not."
+        },
         {
-          "type": "list",
-          "ordered": true,
-          "items": [
-            "**Roll** the dice (one or two; some cards say which).",
-            "The totem walks. Passing a Payday tile pays you; landing on a tile opens its card.",
-            "Deal with the card - the cards below explain how - and press **Done** (Fertig).",
-            "If a Harvest card touched something you own, **Done** takes you to Grow, where the affected projects are marked and every effect is written into the project's notes."
+          "type": "table",
+          "head": [
+            "What",
+            "Easy - a good place to start, also for children",
+            "Normal - for everyone",
+            "Hard - a challenge that needs a strategy"
+          ],
+          "rows": [
+            [
+              "The budget",
+              "about nine lines with round amounts (50, 100, 500) and round card prices",
+              "about seventeen lines, a realistic budget",
+              "the same lines, tight"
+            ],
+            ["Left of a month", "30 % more", "as designed", "15 % less"],
+            [
+              "Debts, savings, dream",
+              "debts 20 % lower, savings 50 % higher, dream 10 % cheaper",
+              "-",
+              "debts 10 % higher, savings 25 % lower, dream 5 % dearer"
+            ],
+            ["Promotions", "a roll one lower", "-", "a roll one higher"],
+            [
+              "Cards and the rest",
+              "luck +1 on the good dice, two offers a landing, only four traps, selling every Payday, a friendly market",
+              "the cards as described in this document",
+              "one offer a landing, the traps twice, selling only on the sell dates, a falling market, no help from the parents"
+            ]
           ]
         },
         {
-          "type": "p",
-          "text": "**Every die is yours to throw.** Whenever a card is decided by a die you press the golden dice yourself. Before you throw, the card shows **what each number does**, coloured green (good), red (bad) or grey. This is true for Life cards, for Opportunity cards (the purchase waits for your throw and Done is refused until you have thrown) and for the dice of Harvest cards (shown on the card). Harvest cards still roll their own dice when you draw them; the draw is your action."
+          "type": "h3",
+          "text": "The map: characters, strategies and difficulties"
         },
         {
           "type": "p",
-          "text": "**Undo.** The last action of a turn can be undone."
+          "text": "The simulation has played every character, on every difficulty, with every way of playing (200 games each, same seeds): the **map**. It is what the bots of the multiplayer game are drawn from and what the analyst compares a saved game with. `docs/dreamfund-balance/MATRIX.md` has the whole table, `matrix.json` the numbers. Run `npm run matrix:dreamfund` to make it again whenever a card, a character or a number changes. The best strategy of each character and difficulty (share of games won in up to 60 months):"
+        },
+        {
+          "type": "table",
+          "head": ["Character", "Easy", "Normal", "Hard"],
+          "rows": [
+            [
+              "Jonas",
+              "**80%** Sapling business builder",
+              "**45%** Sapling business builder",
+              "**28%** Sapling business builder"
+            ],
+            [
+              "Tobias",
+              "**72%** Sapling business builder",
+              "**26%** Informed investor",
+              "**9%** Sapling business builder"
+            ],
+            [
+              "Sophie",
+              "**71%** Sapling business builder",
+              "**27%** Sapling business builder",
+              "**9%** Sapling business builder"
+            ],
+            [
+              "Mehmet",
+              "**72%** Sapling business builder",
+              "**34%** Informed investor",
+              "**16%** Sapling business builder"
+            ],
+            [
+              "Katrin",
+              "**65%** Sapling business builder",
+              "**27%** Sapling business builder",
+              "**10%** Sapling business builder"
+            ],
+            [
+              "Lena",
+              "**67%** Sapling business builder",
+              "**24%** Sapling business builder",
+              "**11%** Informed investor"
+            ],
+            [
+              "Frank",
+              "**67%** Sapling business builder",
+              "**23%** Sapling business builder",
+              "**11%** Informed investor"
+            ],
+            [
+              "Dr. Jan",
+              "**38%** Sapling business builder",
+              "**9%** Sapling business builder",
+              "**3%** Sapling business builder"
+            ],
+            [
+              "Heike",
+              "**63%** Sapling business builder",
+              "**21%** Sapling business builder",
+              "**4%** Informed investor"
+            ],
+            [
+              "Peter",
+              "**81%** Sapling business builder",
+              "**48%** Sapling business builder",
+              "**18%** Sapling business builder"
+            ]
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "The Yin Yang map"
         },
         {
           "type": "p",
-          "text": "**At a table** an **investment** is first **planned**: its project opens in Grow with the numbers, nothing is bought. You decide there how many units to buy and book it with the **buy** button, or you leave it - then the chance is missed with the end of your turn. Everything another player draws and decides is told to the whole table, with the card, and the history lines open the card."
+          "text": "A circle with an S through it (2026-11-04). Every player walks one whole side: the **white** track is the S and the left half of the circle, the **black** track the right half of the circle and the S walked the other way. The S (with its two ends, where the sides meet) is common ground - the same tiles for both tracks, and all the Paydays except one more on each side of a large map. Each track has the tiles of the size (24, 36 or 48) with the usual mix. The seats take the tracks in turn, white first; with an odd number of players one side has one more. Both start on opposite sides of the circle - each on the first tile of their own half - walk their half, and meet on the S. The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track."
         }
       ]
     },
-    "s7": {
-      "nav": "Your life: the attributes, the insurances and what they do",
-      "title": "Your life: the attributes, the insurances and what they do",
+    "life": {
+      "nav": "Your life",
+      "title": "Your life: attributes and insurances",
+      "intro": "A character is not only a salary: it is a life with a partner or not, children or not, a car or not. The life decides which cards can find you.",
       "blocks": [
         {
           "type": "p",
@@ -404,14 +917,124 @@
         }
       ]
     },
-    "s8": {
-      "nav": "The cards",
-      "title": "The cards",
+    "map": {
+      "nav": "The map",
+      "title": "The map: shapes, sizes and tiles",
       "blocks": [
         {
-          "type": "h3",
-          "text": "🌱 Opportunity - things to invest in (107 cards)"
+          "type": "p",
+          "text": "A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:"
         },
+        {
+          "type": "table",
+          "head": ["Tile", "Count", "Colour", "What happens"],
+          "rows": [
+            ["💰 Payday", "4", "gold", "Salary in, bills out. About every 2.5 rolls is a month."],
+            ["🌱 Opportunity", "14", "purple", "Choose a pile and an investment to plan."],
+            [
+              "🌾 Harvest",
+              "6",
+              "amber",
+              "A market card: the markets move, windows to sell, buyers, hype, scams."
+            ],
+            ["😊 Dream", "3", "green", "Dreams to take, and Dream moments."],
+            ["🔥 Emergency", "3", "red", "Something breaks and has to be paid."],
+            [
+              "❤ Life",
+              "4",
+              "pink",
+              "A turn of life: love, a baby, a move, a gym membership, a parent who needs help."
+            ],
+            ["🎓 Career", "2", "blue", "A promotion to roll for."]
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Your **totem** stands next to the tile you are on, on the line from the middle of the map through the tile, and points at it. Before the first roll it waits at START."
+        },
+        {
+          "type": "h3",
+          "text": "Shapes and sizes at a glance"
+        },
+        {
+          "type": "table",
+          "head": ["Setting", "Choices", "What it changes"],
+          "rows": [
+            [
+              "**Shape**",
+              "Ring, infinity, yin yang, rectangle, square, mountain",
+              "Only the look of the track and where the Paydays sit; the number of tiles is the size."
+            ],
+            [
+              "**Size**",
+              "Small 24, medium 36, large 48 tiles",
+              "A larger map has more Paydays and more tiles between them; a game takes more turns."
+            ],
+            [
+              "**Layout seed**",
+              "A number",
+              "The same number always gives the same map, so friends can play the same board again."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Which map first?",
+          "text": "Start on a **medium ring**: 36 tiles, four Paydays, about two and a half rolls to a month. The demo game uses a fixed one."
+        }
+      ]
+    },
+    "turn": {
+      "nav": "A turn",
+      "title": "A turn, from the roll to the last decision",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "At a table every player first reads **who they are**: the story, what matters to them, the goals, the income, the expenses and the debts - and chooses the **insurances**, which count at once. Until you say you are ready you can go back and choose another character (unless the characters are drawn). The game is begun in the background; the first turn starts when everybody is ready."
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "**Roll** the dice (one or two; some cards say which).",
+            "The totem walks. Passing a Payday tile pays you; landing on a tile opens its card.",
+            "Deal with the card - the cards below explain how - and press **Done** (Fertig).",
+            "If a Harvest card touched something you own, **Done** takes you to Grow, where the affected projects are marked and every effect is written into the project's notes."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "**Every die is yours to throw.** Whenever a card is decided by a die you press the golden dice yourself. Before you throw, the card shows **what each number does**, coloured green (good), red (bad) or grey. This is true for Life cards, for Opportunity cards (the purchase waits for your throw and Done is refused until you have thrown) and for the dice of Harvest cards (shown on the card). Harvest cards still roll their own dice when you draw them; the draw is your action."
+        },
+        {
+          "type": "p",
+          "text": "**Undo.** The last action of a turn can be undone."
+        },
+        {
+          "type": "p",
+          "text": "**At a table** an **investment** is first **planned**: its project opens in Grow with the numbers, nothing is bought. You decide there how many units to buy and book it with the **buy** button, or you leave it - then the chance is missed with the end of your turn. Everything another player draws and decides is told to the whole table, with the card, and the history lines open the card."
+        },
+        {
+          "type": "h3",
+          "text": "Dice rules at a glance"
+        },
+        {
+          "type": "list",
+          "items": [
+            "**Every die is yours to throw.** The golden dice on a card is a button; before you throw, the card shows what each number does (green good, red bad, grey nothing).",
+            "The **move** is one or two dice (some cards say which). Passing a Payday tile pays; landing on a tile opens its card.",
+            "Harvest cards roll their own dice the moment they are drawn; the draw is your action, the dice are shown on the card.",
+            "**Undo** takes back the last action of your turn."
+          ]
+        }
+      ]
+    },
+    "opportunity": {
+      "nav": "Opportunity cards",
+      "title": "🌱 Opportunity: things to invest in",
+      "intro": "The tile that builds your income. You choose a pile, one to three cards are offered, and you **plan** the one you want in Grow.",
+      "blocks": [
         {
           "type": "p",
           "text": "Landing on an Opportunity tile, you first **choose a pile**:"
@@ -492,8 +1115,42 @@
         },
         {
           "type": "h3",
-          "text": "🌾 Harvest - the markets (120 cards)"
+          "text": "Which pile when?"
         },
+        {
+          "type": "table",
+          "head": ["Situation", "Pile", "Why"],
+          "rows": [
+            [
+              "Your first turns, little cash",
+              "🌱 Seed",
+              "Free saving cards, a hustle for a few hundred, a first share."
+            ],
+            [
+              "A reserve and a first income",
+              "🌿 Sapling",
+              "Businesses, bigger shares and hustles; the best pile of the simulation."
+            ],
+            [
+              "Money and a track record",
+              "🌳 Tree",
+              "Rented flats, shops, franchises; a mortgage is part of the deal."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "The card shows its own answers",
+          "text": "Every Opportunity card in Grow carries **how to invest**, **what to do**, **what not to do**, its **risk** from 1 to 5 with the reason, tasks and checked links. Read the risk text before you buy: a scam looks like a normal card, and only the numbers give it away."
+        }
+      ]
+    },
+    "harvest": {
+      "nav": "Harvest cards",
+      "title": "🌾 Harvest: the markets",
+      "intro": "The market moves, every Harvest card says how, and it tells you if it touches something **you own**.",
+      "blocks": [
         {
           "type": "p",
           "text": "Every market has an **index** that starts at 1.00 and drifts at every Payday (World stocks, Bonds, Tech, Gold, Bitcoin, Property...). What you own is worth its card price times the index of its market."
@@ -542,11 +1199,13 @@
         {
           "type": "p",
           "text": "Each Opportunity card has, in its Grow project, how to invest, what to do and what not to do, its risk (1 to 5) with the reason, tasks, and links to read more."
-        },
-        {
-          "type": "h3",
-          "text": "🔥 Emergency (50 cards)"
-        },
+        }
+      ]
+    },
+    "emergency": {
+      "nav": "Emergencies",
+      "title": "🔥 Emergencies",
+      "blocks": [
         {
           "type": "p",
           "text": "Something breaks. Cards come in five tiers - **spark, flame, blaze, wildfire, inferno** - from a broken bike grip to a house fire. An insurance may cover the bill; the rest is paid from your cash, by a payment plan, or by the Bank loan. In the guided and strict modes an emergency has to be dealt with before the game goes on."
@@ -556,9 +1215,17 @@
           "text": "At a **table** the emergency plays as it does alone: you can **pay it now**, spread it over **3, 6 or 12 Paydays** (with the plan's surcharge), or **create the Fire project** - nothing is paid yet, the project opens on the Fire page and you put money into it from there, step by step. In the guided and the strict game the turn is not over before an emergency taken as a Fire project is paid or planned. A fine or a fee that has to be paid at once cannot become a project."
         },
         {
-          "type": "h3",
-          "text": "❤ Life (30 cards)"
-        },
+          "type": "callout",
+          "kind": "tip",
+          "title": "Why the reserve is the first goal",
+          "text": "An emergency without a reserve becomes a **Bank loan at 10% a month**. With the reserve it is paid and forgotten. With insurance you pay only the deductible."
+        }
+      ]
+    },
+    "lifecards": {
+      "nav": "Life cards",
+      "title": "❤ Life",
+      "blocks": [
         {
           "type": "p",
           "text": "Love, a baby, moving in together, a new job, a bad flatmate, a parent who needs help, lifestyle creep. There are four kinds:"
@@ -576,85 +1243,253 @@
         {
           "type": "p",
           "text": "Life leaves **lines** behind: a monthly cost that runs for a number of Paydays (a parent who needs help: 6) or for good (lifestyle creep)."
-        },
-        {
-          "type": "h3",
-          "text": "🎓 Career"
-        },
+        }
+      ]
+    },
+    "career": {
+      "nav": "Career",
+      "title": "🎓 Career",
+      "blocks": [
         {
           "type": "p",
           "text": "Your character climbs a ladder. Jonas starts as a Dual Student (net 1,955 TT a month) and can reach Junior Data Analyst, Data Engineer, Senior Data Engineer, and then split into the technical path (Staff Data Engineer, Chief Data Architect) or the management path (Data Team Lead, Head of Data, Director of Data). A promotion needs a minimum number of Paydays and a successful roll. A promotion raises your salary - and your living costs."
-        },
-        {
-          "type": "h3",
-          "text": "😊 Dream (48 cards) and Dream moments"
-        },
+        }
+      ]
+    },
+    "dreams": {
+      "nav": "Dreams",
+      "title": "😊 Dreams and Dream moments",
+      "blocks": [
         {
           "type": "p",
           "text": "Dreams are cards worth **points**, in tiers from little to legendary, in categories like travel, adventure, vehicles, home, learning, creating and giving. Taking a dream makes a **Smile project** with buckets you fill by payment plans. You can have a few open at once. **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money, points for patience, a dream swap) help a dream along."
         }
       ]
     },
-    "s9": {
-      "nav": "The notes of a project",
-      "title": "The notes of a project",
+    "notes": {
+      "nav": "Notes and effects",
+      "title": "The notes of a project and what is running",
       "blocks": [
         {
           "type": "p",
           "text": "Whatever happens to a Grow, Fire or Smile project is written into its **notes**, with the numbers: what a payment cost, how much cash you had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far."
-        }
-      ]
-    },
-    "s10": {
-      "nav": "What is running on your account",
-      "title": "What is running on your account",
-      "blocks": [
+        },
         {
           "type": "p",
           "text": "A strip above the map shows **every effect that is working on your money right now** and **how many Paydays are left**: costs that run for a while, gains, pauses (\"pays nothing for 2 Paydays\"), money that is locked, a job search, effects that are on their way and what has changed for good. The character's info lists them in full. When an effect ends, the Payday says so and the project's notes record it - so cash flow never comes back \"by magic\"."
         }
       ]
     },
-    "s11": {
-      "nav": "The goals and how a game is won",
-      "title": "The goals and how a game is won",
+    "selling": {
+      "nav": "Selling",
+      "title": "Selling: three exits and a tax",
+      "intro": "Everything you own can be sold except savings, plans and courses. There are three ways, best first - and a tax on the profit that you should count before you press Sell.",
       "blocks": [
         {
+          "type": "table",
+          "head": ["Exit", "Price", "When"],
+          "rows": [
+            [
+              "**A Harvest offer**",
+              "An open market: every share or coin of that market at its price. A buyer: a die decides (a property 0.85-1.3 times its value, a business 24-36 months of its profit, a block of shares +1% to +20%). A hype: ride it or cash out.",
+              "The offer stays open for the table's number of **your own turns** (default 2), even after Done and across a Payday."
+            ],
+            [
+              "**The standing sale**",
+              "The market price less a discount: 5% for a share, 15% for a coin, a collection or a property (the mortgage is paid from the proceeds), a year of the profit for a business or a hustle.",
+              "Any time. Use it when you must have cash."
+            ],
+            [
+              "**A trade with a player**",
+              "The price you both accept.",
+              "You offer a card in hand to the table; the first to take it gets it."
+            ]
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Selling to step up"
+        },
+        {
           "type": "p",
-          "text": "Every character has a list of goals. For Jonas, **all five must be true**:"
+          "text": "The strongest move of the bots is **sell, step up, repeat**: sell a card that has gained and now pays little for what it is worth, and put the money into a bigger card. A small salary reaches a four-figure passive income this way. Count the tax first."
+        },
+        {
+          "type": "h3",
+          "text": "Selling to clear a loan"
+        },
+        {
+          "type": "p",
+          "text": "A Bank loan costs 10% a month. Selling the card that pays least and repaying the loan at once is nearly always better than waiting."
+        },
+        {
+          "type": "h3",
+          "text": "Tax on the profit"
+        },
+        {
+          "type": "p",
+          "text": "A table setting (default **26.375%**, the German flat tax with the solidarity surcharge; `0` switches it off) takes a share of the **profit** of a sale: what the sale brings after its costs and what is owed on it, less what you paid for the part you sell. A sale at a loss pays nothing; pensions pay out untaxed. The Grow project notes the tax."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "Scams have a last exit",
+          "text": "One card says the price of a scam has fallen by 80% while the market stays open one more turn; a claims buyer pays cents on the euro. What you do with the last chance is yours - and a later card closes it for good."
+        }
+      ]
+    },
+    "tables": {
+      "nav": "Playing together",
+      "title": "Tables: opening, joining and playing with others",
+      "intro": "A Dreamfund table is a game with two to eight seats, people and bots in any mix.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Finding a table"
         },
         {
           "type": "list",
-          "ordered": true,
           "items": [
-            "Pay back the loan from your parents (1,500 TT).",
-            "Pay back the car loan (1,500 TT).",
-            "Fund and live the **dream** - every bucket of the project full.",
-            "Build the **reserve**: three monthly expenses in the Mojo.",
-            "Become **financially independent**: passive income covers all monthly expenses."
+            "**Open tables** lists public tables with who sits there (picture and rating; tap a face for their profile) and filters: language, ranked or friendly, with or without a clock, characters, how the game ends.",
+            "**My tables** are the tables you sit at; **Finished tables** are the last ones you played.",
+            "**Join with a code** opens a private table: the host gives you an invite code."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "The settings of a new table"
+        },
+        {
+          "type": "table",
+          "head": ["Setting", "What it does"],
+          "rows": [
+            ["**Table name**", "Shown in the lobby. Leave it empty and a funny one is chosen."],
+            ["**Players**", "How many seats (bots take a seat too)."],
+            ["**Who can find it**", "Everybody, or only people with the invite code."],
+            [
+              "**Difficulty**",
+              "Easy, Normal or Hard: the numbers of the characters and the cards (see \"The characters\"). The difficulty is also the stake of the rating."
+            ],
+            [
+              "**Ranked**",
+              "The result counts for the leaderboard. A ranked table is played under the strict rules, the same for everybody."
+            ],
+            [
+              "**Rules: guided or strict**",
+              "Guided: one random card per tile, buying only with the card in hand. Strict: dice only from the app, no free transactions."
+            ],
+            ["**Map: shape, size, seed**", "See \"The map\"."],
+            ["**Characters**", "Free (the same one twice is fine), unique, or dealt by the table."],
+            ["**Turn order**", "Random, or by seat."],
+            [
+              "**The game ends**",
+              "**First escape** (the first to reach every goal wins), **all escape** (everybody plays until out or bankrupt) or **after rounds**."
+            ],
+            [
+              "**Dream points**",
+              "How many points the table asks for, 0 to 60 (0 turns the goal off)."
+            ],
+            [
+              "**Time limit**",
+              "None, per move or a time bank for the whole game. Time out and your turn is played passively."
+            ],
+            ["**Bot speed**", "Fast, normal or slow: how long the bots wait between moves."],
+            ["**Spectators**", "People who are not seated may watch."],
+            ["**Currency**", "Dream Taler or a real sign (the numbers do not change)."],
+            [
+              "**Advanced rules**",
+              "Tax on the profit of a sale, how long a sell offer stays open (1-5 turns), how many turns a planned card stays buyable (1-3), the Bank loan's interest, undo by vote, leaving, repaying off turn."
+            ]
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "The waiting room"
+        },
+        {
+          "type": "p",
+          "text": "The host sees every seat: a person, a bot (with its strategy and level) or empty. The host can add and remove bots, kick a player, change the settings until the game starts and press **Start**. Everybody picks a character and reads the briefing; the game starts when all are ready."
+        },
+        {
+          "type": "h3",
+          "text": "Playing: the queue, the clock and what you see of the others"
+        },
+        {
+          "type": "list",
+          "items": [
+            "The **queue of players** shows who is on the move, the clock, and who the table waits for.",
+            "Everything another player draws and decides is told to the table, with the card. A history line opens the card.",
+            "You can look at another player's books (read only) at any time.",
+            "If you do not move in time, or lose the connection, your turn is played **passively**. Two missed turns in a row (a setting) mark you **away**; press **I'm back** to return.",
+            "**Autoplay while I am away** lets a bot of your strategy play your turns while you are gone. Switch it off in the table menu.",
+            "The host may **pause** the game and **close** the table."
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Trading cards"
+        },
+        {
+          "type": "p",
+          "text": "Any holding in hand can be offered to the table at a price. The offer panel shows the other players the card, the price per share, the down payment, the mortgage, the cash flow and what it would do to **their** cash and monthly cash flow. They can **buy at the price**, **make a counter offer**, **decline** or **look later**. The first to take it gets it. You can withdraw your offer and accept a counter offer."
+        },
+        {
+          "type": "h3",
+          "text": "Leaving and ending"
+        },
+        {
+          "type": "list",
+          "items": [
+            "A table with a game that has begun that you **leave** counts as a loss against everybody who stayed (a few free rounds can be set).",
+            "A game ends when somebody wins (in first-escape tables), when everybody is done, after the set rounds, or when everybody left.",
+            "The end screen shows the trophy, the ranking, the goals ticked and what the game did to your rating."
+          ]
+        }
+      ]
+    },
+    "modes": {
+      "nav": "Rules and modes",
+      "title": "Rules and settings in detail",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The game's rules are chosen at the start and cannot change during it:"
+        },
+        {
+          "type": "table",
+          "head": ["Mode", "What it means"],
+          "rows": [
+            [
+              "**Free**",
+              "Everything is allowed: open any card, sell any time, add any transaction."
+            ],
+            [
+              "**Guided**",
+              "One random card per tile, buying only with the card in hand, selling only while a market card offers a buyer (for 3 rolls)."
+            ],
+            [
+              "**Strict**",
+              "One card per tile, dice only from the app, no free transactions; made for playing with others."
+            ]
           ]
         },
         {
           "type": "p",
-          "text": "**The Financial independence badge** 💎 appears as soon as the passive income covers the expenses (the part of the expenses that comes from your salary - income tax and social insurance - is not counted against your passive income, because it stops when the salary stops). The game goes on: the badge is a milestone, not the end."
+          "text": "Settings worth knowing: cards offered per Opportunity landing (1-3), side hustles at once (1-5), copies of each savings card (1-3), turns a planned card stays buyable (1-3), the interest of the Bank loan, whether a dream or a life choice may be declined, whether a promotion has to be rolled for."
         },
         {
           "type": "p",
-          "text": "**When every goal is done** the **win screen** appears, with a trophy, the ticked goals and the numbers of your game; you may keep playing."
+          "text": "**Your own settings.** The **Settings** row of the game menu has switches that only you see, kept in your browser: **Notifications** (the small confirmations that pop up; errors always show) and **Messages on the map** (the Payday that just passed, market notices). Turn the notifications off on a phone if they cover buttons."
         },
         {
           "type": "p",
-          "text": "**Bankruptcy.** If the monthly cash flow turns negative the game ends."
-        },
-        {
-          "type": "p",
-          "text": "**How long is a game?** A normal game is about **90 turns** (roughly 36 months), a fast one 30, a long one 120."
+          "text": "**The independence badge** compares the passive income with the **cost of living**: the expenses without the income tax and social insurance that stop with the salary. The badge says both numbers."
         }
       ]
     },
-    "s12": {
-      "nav": "Playing together: your ranking and your points",
-      "title": "Playing together: your ranking and your points",
+    "ranking": {
+      "nav": "Ranking and rating",
+      "title": "Your rating and the leaderboard",
       "blocks": [
         {
           "type": "p",
@@ -752,50 +1587,218 @@
         }
       ]
     },
-    "s13": {
-      "nav": "Rules and settings",
-      "title": "Rules and settings",
+    "profile": {
+      "nav": "Profiles and fact table",
+      "title": "The profile of a player and the fact table",
+      "intro": "Every person and every bot on the leaderboard has a profile. Tap a name to open it.",
       "blocks": [
         {
-          "type": "p",
-          "text": "The game's rules are chosen at the start and cannot change during it:"
+          "type": "cards",
+          "items": [
+            {
+              "icon": "📈",
+              "title": "The rating line",
+              "text": "How the rating moved: **from 1500** (or the bot's base rating) over every ranked game, with the place and the change of each game."
+            },
+            {
+              "icon": "🔢",
+              "title": "The counters",
+              "text": "Games, table wins, average place, goals reached, bankruptcies, best rating."
+            },
+            {
+              "icon": "🧮",
+              "title": "The fact table",
+              "text": "What the games came to in the four places of the method, as a **total** and an **average per game**."
+            }
+          ]
         },
         {
           "type": "table",
-          "head": ["Mode", "What it means"],
+          "head": ["Place", "What it counts"],
           "rows": [
             [
-              "**Free**",
-              "Everything is allowed: open any card, sell any time, add any transaction."
+              "**Grow**",
+              "Cards bought and sold, holdings at the end, share lots, properties, businesses and hustles, pension plans, courses and degrees, money put into cards."
             ],
             [
-              "**Guided**",
-              "One random card per tile, buying only with the card in hand, selling only while a market card offers a buyer (for 3 rolls)."
+              "**Fire**",
+              "Whether the reserve was full and how much it was, debts repaid and left, the Bank loan, emergencies paid and what they cost."
             ],
             [
-              "**Strict**",
-              "One card per tile, dice only from the app, no free transactions; made for playing with others."
+              "**Smile**",
+              "Life dream lived, dreams lived and their money, dreams still open, money saved for dreams, dream points."
+            ],
+            [
+              "**Income**",
+              "Independent or not, passive income, salary, cash flow, living costs, what the cards earned, net worth."
+            ]
+          ],
+          "note": "Games played before the fact table existed have none and are not counted in it."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Use it",
+          "text": "Open the profile of the best bot and compare its fact table with yours: it shows what a winning life looks like - how many cards, how early a full reserve, how much the cards earned."
+        }
+      ]
+    },
+    "bots": {
+      "nav": "The bots",
+      "title": "The bots: who they are and how they were made",
+      "intro": "The bots are not scripted. Each one is a **strategy** at a **skill level**, its numbers were found by simulation, and it is rated like a person.",
+      "blocks": [
+        {
+          "type": "h3",
+          "text": "Strategies"
+        },
+        {
+          "type": "table",
+          "head": ["Strategy", "In one line"],
+          "rows": [
+            [
+              "**Expert**",
+              "Reserve first, then cards that pay every month, sells into good windows. The best all-rounder."
+            ],
+            [
+              "**Sapling**",
+              "Lives on businesses and hustles from the middle pile; never property. The champion of the champions of the first calibration."
+            ],
+            [
+              "**Tree**",
+              "Free savings first, then only Trees. Slow but strong at the top of the tournament."
+            ],
+            ["**ETF**", "A world ETF and bonds for the steady part."],
+            ["**Property**", "Rented flats and a mortgage."],
+            ["**Dividend**", "Dividend shares from all piles, reinvested."],
+            ["**Hustler**", "One side hustle after the other, reinvesting every month."],
+            ["**Steady**", "Three months of cash, no risky card."],
+            ["**Dreamer**", "Puts the dream and its points first."],
+            ["**Saver**", "Savings and the employer's money; few risks."],
+            [
+              "**Gambler**",
+              "Crypto, hype and hot tips. Almost never wins, but it makes the table lively."
+            ],
+            ["**Passive**", "Takes almost no decision. A baseline for the others."],
+            [
+              "**Flipper**",
+              "**Sell, step up, repeat**: sells what has gained to buy something bigger, and clears a loan by selling."
+            ],
+            ["**Scholar**", "The employer's money, the pension and the courses first."],
+            [
+              "**Coach**",
+              "The demo bot: plays a fixed, friendly game so the guided tour is always the same."
             ]
           ]
         },
         {
-          "type": "p",
-          "text": "Settings worth knowing: cards offered per Opportunity landing (1-3), side hustles at once (1-5), copies of each savings card (1-3), turns a planned card stays buyable (1-3), the interest of the Bank loan, whether a dream or a life choice may be declined, whether a promotion has to be rolled for."
+          "type": "h3",
+          "text": "Skill levels"
         },
         {
           "type": "p",
-          "text": "**Your own settings.** The **Settings** row of the game menu has switches that only you see, kept in your browser: **Notifications** (the small confirmations that pop up; errors always show) and **Messages on the map** (the Payday that just passed, market notices). Turn the notifications off on a phone if they cover buttons."
+          "text": "The same strategy at four levels: **master** (plays it cleanly), **strong** (slips 10% of the decisions), **casual** (25%) and **beginner** (45%). A bot is called `strategy` or `strategy--level`. A beginner sits low on the leaderboard, a master near the top."
+        },
+        {
+          "type": "h3",
+          "text": "Everything the bots can do"
         },
         {
           "type": "p",
-          "text": "**The independence badge** compares the passive income with the **cost of living**: the expenses without the income tax and social insurance that stop with the salary. The badge says both numbers."
+          "text": "The bots know **every capability of the game**: choosing a pile and a card, planning and buying, taking free savings and pensions, courses, funding the reserve and dreams, payment plans, insurances, repaying debts and the Bank loan, selling into market windows, to buyers and on hypes, riding or cashing out a hype, selling to step up, selling to clear a loan, trading with other players, and emergencies and life cards. One capability, **planning a purchase for later**, no bot uses yet."
+        },
+        {
+          "type": "h3",
+          "text": "How the strategies were found"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Capabilities",
+              "text": "A list of everything a player can do is checked by a test: a new move cannot be forgotten."
+            },
+            {
+              "title": "Relearn",
+              "text": "For every strategy a search moves one to three knobs at a time (how much cash to keep, how fast to plan, how much to risk, when to sell ...) and plays thousands of solo games on random characters, difficulties and maps. A change is kept only when it is better **by a clear margin on fresh games**, so a run that finds nothing leaves everything as it was."
+            },
+            {
+              "title": "Tournament",
+              "text": "All bots, every strategy at every level, play thousands of tables of four against each other on each difficulty and are rated with the same Elo as the leaderboard. A new bot starts at 1500 and travels to its place."
+            },
+            {
+              "title": "Gauntlet",
+              "text": "The six best masters meet again on fresh seeds; the one that wins most tables is the **champion of the champions**."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "The first full calibration (2026-11-06)",
+          "text": "183 minutes; 13 of 14 strategies found a stronger version (ETF 27% to 66% wins, Tree 22% to 50%, Dreamer 32% to 57%, Saver 7% to 31%). On the tables the top was Tree, Sapling and Expert; **Sapling** is the champion of the champions with 33% of the gauntlet tables. The numbers are in the last section."
         }
       ]
     },
-    "s14": {
-      "nav": "Ways to win",
-      "title": "Ways to win",
+    "strategy": {
+      "nav": "Strategy",
+      "title": "Strategy: how the game is won",
+      "intro": "The knowledge of the simulation, in the order a game goes.",
       "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "The first months: free money and a reserve",
+              "text": "Take the **Seed saving cards** (a cheaper phone plan, electricity, a job ticket, an audit of subscriptions): they cost nothing and lift the month. Take the employer's savings plan and a company pension when the month can carry them. Put free money into the **reserve** until it covers three months."
+            },
+            {
+              "title": "A first income",
+              "text": "A side hustle or a small business (Seed and Sapling), a world ETF or dividend shares, a room rented out. Only a few side hustles can run at a time. A card that pays every month beats one that only might rise."
+            },
+            {
+              "title": "The debts",
+              "text": "Repay the starting debts when the cash allows; a debt with interest first."
+            },
+            {
+              "title": "Step up",
+              "text": "Sell a card at a good price and buy a bigger one from the Sapling or Tree pile. **Sell, step up, repeat.**"
+            },
+            {
+              "title": "Raise the pay",
+              "text": "A course or a diploma costs now and raises the pay after a few Paydays by a die. Worth it early; keep the reserve."
+            },
+            {
+              "title": "The dream",
+              "text": "Fund it with what is left, with a plan per Payday. Take dreams for the points only when the income carries part of it."
+            }
+          ]
+        },
+        {
+          "type": "cards",
+          "items": [
+            {
+              "icon": "✅",
+              "title": "Take",
+              "text": "Free savings, employer and state benefits, ETFs and dividend funds for the steady part, businesses and properties whose cash flow covers their loan, anything with a payment you can check."
+            },
+            {
+              "icon": "🚫",
+              "title": "Leave",
+              "text": "A **fixed high return** (a weekly interest), a **hot tip**, a **pre-IPO** share, a **timeshare**, a **trading-signals course**, a coin nobody knows. They look like any card but are scams; the more it promises for how little, the less true it is."
+            },
+            {
+              "icon": "⚠️",
+              "title": "Be careful with",
+              "text": "Crypto, collectibles and hype (they swing and pay nothing monthly), and a Tree card bought with a Bank loan."
+            },
+            {
+              "icon": "⛔",
+              "title": "Never",
+              "text": "Keep a Bank loan open when the cash could repay it."
+            }
+          ]
+        },
         {
           "type": "p",
           "text": "The simulation (below) has tried twelve ways of playing. They are ideas to steal:"
@@ -815,12 +1818,185 @@
         {
           "type": "p",
           "text": "What does not work: living on free cards only, speculating on crypto and hot tips, and putting the dream before everything."
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "Judge in the light of the character",
+          "text": "A surgeon on Hard wins about 3 in 100 simulated games; a bus driver on Easy over 80. A score is not comparable across characters, a **pace** is. See \"The characters\"."
         }
       ]
     },
-    "s15": {
-      "nav": "The statistics of the characters",
-      "title": "The statistics of the characters",
+    "agents": {
+      "nav": "Agents and the API",
+      "title": "For agents: coaching and playing through the API and MCP",
+      "intro": "An AI agent connected to your account (through the MCP server or the API) can watch a table, guide you, explain cards and, if you ask, play your seat.",
+      "blocks": [
+        {
+          "type": "table",
+          "head": ["Job", "Tool", "What you get"],
+          "rows": [
+            [
+              "Watch",
+              "`table_review`",
+              "A small page: who leads, goals in percent, pace against the simulation, dangers, markets that moved."
+            ],
+            [
+              "Guide",
+              "`table_advice`",
+              "Your goals, your money, the moves a strategy would make now and why, what to keep in mind."
+            ],
+            ["Explain", "`dream_cards`", "Every printed card of every pile."],
+            [
+              "Play",
+              "`table_autoplay`, `table_move`",
+              "A strategy plays your seat for a while, or one move you choose, through the rules."
+            ],
+            [
+              "Leaderboard",
+              "`dream_leaderboard`, `dream_my_player`",
+              "The board and your rating and recent games."
+            ]
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "title": "You stay in charge",
+          "text": "An agent plays only when you ask it to. Everything it sends is a normal move that the table sees as yours, and the server refuses what the rules do not allow. Ask it to tell you what it played."
+        }
+      ]
+    },
+    "faq": {
+      "nav": "FAQ",
+      "title": "Questions and answers",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "I am stuck. What should I do now?",
+              "text": "Look at the goals: the lowest bar is your task. Without a reserve, fund the reserve. Without income, take free savings and a first hustle. Then ask for the **demo game** or an agent for advice."
+            },
+            {
+              "term": "Why did the card say \"lucky\" and draw another?",
+              "text": "The card needed something your life does not have (a car, a child, a partner). It is told, put back, and the next one is drawn."
+            },
+            {
+              "term": "Why can I not sell this?",
+              "text": "Savings, plans and courses cannot be sold. A scam can be sold only at the last exit its card gives. Everything else sells at any time at the standing price."
+            },
+            {
+              "term": "I planned a card and lost it.",
+              "text": "A planned card is only buyable while it is in hand: the offer is gone when your turn ends (a setting allows up to 3 turns). The project closes with a note \"Chance missed\"."
+            },
+            {
+              "term": "My cash flow went negative.",
+              "text": "A negative monthly cash flow means **bankruptcy**: the game ends for you. Watch the money panel before a card that adds a cost."
+            },
+            {
+              "term": "Why did my rating not change?",
+              "text": "The game was not ranked, had no person at the table, ended before 8 rounds without a winner, or was not finished. The end screen says why."
+            },
+            {
+              "term": "Can I play without other people?",
+              "text": "Yes: open a table with bots only (a table needs two seats). Pick the bot **Coach** for the guided demo."
+            },
+            {
+              "term": "Where is the demo game?",
+              "text": "The button on top of this manual, the card \"Learn the game\" in the lobby, the bot **Coach**, and the Help entry in the table menu. It is never ranked and never kept in your history."
+            },
+            {
+              "term": "Can I change a booking?",
+              "text": "The category, the time and the account of a booking and the account a payment is paid from can be edited any time; the amount, the date and the comment belong to the game."
+            }
+          ]
+        }
+      ]
+    },
+    "glossary": {
+      "nav": "Glossary",
+      "title": "Glossary",
+      "blocks": [
+        {
+          "type": "glossary",
+          "items": [
+            {
+              "term": "Bank loan",
+              "text": "Money the Bank lends automatically when a payment is bigger than your cash: 10% a month."
+            },
+            {
+              "term": "Bucket",
+              "text": "One price of a Smile project (flights, hotel ...) that you fill."
+            },
+            {
+              "term": "Cash flow",
+              "text": "Income minus expenses per month. Negative means bankruptcy."
+            },
+            {
+              "term": "Cost of living",
+              "text": "The expenses that do not stop with the salary (without income tax and social insurance); independence compares the passive income with it."
+            },
+            {
+              "term": "Dream Taler (DT) / Traumtaler (TT)",
+              "text": "The money of the game."
+            },
+            {
+              "term": "Fire",
+              "text": "The account of what must be paid; home of the reserve and the emergencies."
+            },
+            {
+              "term": "Grow",
+              "text": "Your investments: every card you take is a Grow project."
+            },
+            {
+              "term": "Harvest",
+              "text": "The market cards: indices, windows to sell, buyers, hypes, scams."
+            },
+            {
+              "term": "Index",
+              "text": "A market's price level, 1.00 at the start, drifting at every Payday. A holding is worth its card price times the index."
+            },
+            {
+              "term": "Mojo",
+              "text": "Your reserve of three months of living costs."
+            },
+            {
+              "term": "Passive income",
+              "text": "What your cards pay every month without work."
+            },
+            {
+              "term": "Payday",
+              "text": "A month: salary in, bills out."
+            },
+            {
+              "term": "Plan",
+              "text": "A monthly payment into a project; stopped with 0."
+            },
+            {
+              "term": "Rating",
+              "text": "Your Elo-style rating: 1500 at the start, one list with the bots."
+            },
+            {
+              "term": "Smile",
+              "text": "Your dreams: every dream is a Smile project."
+            },
+            {
+              "term": "Totem",
+              "text": "Your token on the map."
+            },
+            {
+              "term": "Window",
+              "text": "A Harvest card that opens a market for selling for some turns."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "nav": "The numbers",
+      "title": "The numbers: statistics of the simulated games",
+      "intro": "Written by the simulation itself after every run. Everything on this page is for the Normal level unless it says otherwise.",
       "blocks": [
         {
           "type": "p",
@@ -1229,245 +2405,6 @@
         {
           "type": "p",
           "text": "Run `npm run simulate:dreamfund -- --games 100 --shapes ring,infinity --max-turns 150 --out docs/dreamfund-balance/run.md --doc docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md` (build the domain package first). The tables above are rewritten between the markers; the text around them is written by hand. The raw games are saved beside the report as JSON."
-        }
-      ]
-    },
-    "s16": {
-      "nav": "The ten characters and the three difficulties",
-      "title": "The ten characters and the three difficulties",
-      "blocks": [
-        {
-          "type": "p",
-          "text": "Ten lives from 23 to 57, from an apprentice's pay to a surgeon's. Everybody plays the same game with the same cards - **the cards are as big as the character's life** (their price level): a share, a property, a dream, a debt and an emergency cost that much more for Dr. Jan than for Jonas, and pay that much more, so what a card is worth in proportion to the life is the same for everybody. What makes one character harder than another is what is left of a month, how big the debts are and how far away the dream is."
-        },
-        {
-          "type": "table",
-          "head": [
-            "Character",
-            "Age",
-            "Life",
-            "Gross (a month)",
-            "Left of a month",
-            "Price level",
-            "Dream"
-          ],
-          "rows": [
-            [
-              "Jonas, dual student IT",
-              "23",
-              "studying, single",
-              "2,833",
-              "500",
-              "1.0",
-              "Mountain guide"
-            ],
-            [
-              "Mehmet, journeyman electrician",
-              "26",
-              "single, first own flat",
-              "3,150",
-              "715",
-              "1.1",
-              "Master craftsman + own workshop"
-            ],
-            [
-              "Lena, nurse",
-              "29",
-              "single mother, one child",
-              "3,450",
-              "600",
-              "1.2",
-              "A year in a camper van"
-            ],
-            [
-              "Sophie, primary teacher",
-              "33",
-              "civil servant, single",
-              "4,350",
-              "860",
-              "1.5",
-              "A year under sail"
-            ],
-            [
-              "Tobias, freelance designer",
-              "36",
-              "self-employed, irregular",
-              "3,900",
-              "700",
-              "1.4",
-              "Studio and gallery in a loft"
-            ],
-            [
-              "Katrin, head of marketing",
-              "40",
-              "married, two children, house",
-              "6,300",
-              "990",
-              "2.2",
-              "A house by the Baltic Sea"
-            ],
-            [
-              "Frank, mechanical engineer",
-              "44",
-              "married, teenager, house",
-              "7,600",
-              "1,080",
-              "2.7",
-              "The energy-independent house"
-            ],
-            [
-              "Dr. Jan, senior surgeon",
-              "48",
-              "two teenagers, villa, leasing",
-              "11,200",
-              "680",
-              "3.9",
-              "His own practice"
-            ],
-            [
-              "Heike, garage owner",
-              "52",
-              "self-employed, four employees",
-              "5,200",
-              "810",
-              "1.8",
-              "A small vineyard"
-            ],
-            [
-              "Peter, bus driver",
-              "57",
-              "married, grown children",
-              "2,700",
-              "665",
-              "0.95",
-              "A cabin by the lake"
-            ]
-          ]
-        },
-        {
-          "type": "p",
-          "text": "The exact numbers are in the character's sheet in the game (the three panels: income statement, balance sheet, cash). They are built the same way for everyone (`cashflow-professions-builder.ts`): the German tax and social insurance are worked out from the gross salary, so a high earner pays a higher share to the state; the lifestyle, the debts and the dream follow from a few numbers in the description (`cashflow-professions-dreamfund.ts`)."
-        },
-        {
-          "type": "h3",
-          "text": "Easy, Normal, Hard"
-        },
-        {
-          "type": "p",
-          "text": "Every character exists three times; the story and the dream are the same, the numbers and the cards are not."
-        },
-        {
-          "type": "table",
-          "head": [
-            "What",
-            "Easy - a good place to start, also for children",
-            "Normal - for everyone",
-            "Hard - a challenge that needs a strategy"
-          ],
-          "rows": [
-            [
-              "The budget",
-              "about nine lines with round amounts (50, 100, 500) and round card prices",
-              "about seventeen lines, a realistic budget",
-              "the same lines, tight"
-            ],
-            ["Left of a month", "30 % more", "as designed", "15 % less"],
-            [
-              "Debts, savings, dream",
-              "debts 20 % lower, savings 50 % higher, dream 10 % cheaper",
-              "-",
-              "debts 10 % higher, savings 25 % lower, dream 5 % dearer"
-            ],
-            ["Promotions", "a roll one lower", "-", "a roll one higher"],
-            [
-              "Cards and the rest",
-              "luck +1 on the good dice, two offers a landing, only four traps, selling every Payday, a friendly market",
-              "the cards as described in this document",
-              "one offer a landing, the traps twice, selling only on the sell dates, a falling market, no help from the parents"
-            ]
-          ]
-        },
-        {
-          "type": "h3",
-          "text": "The map: characters, strategies and difficulties"
-        },
-        {
-          "type": "p",
-          "text": "The simulation has played every character, on every difficulty, with every way of playing (200 games each, same seeds): the **map**. It is what the bots of the multiplayer game are drawn from and what the analyst compares a saved game with. `docs/dreamfund-balance/MATRIX.md` has the whole table, `matrix.json` the numbers. Run `npm run matrix:dreamfund` to make it again whenever a card, a character or a number changes. The best strategy of each character and difficulty (share of games won in up to 60 months):"
-        },
-        {
-          "type": "table",
-          "head": ["Character", "Easy", "Normal", "Hard"],
-          "rows": [
-            [
-              "Jonas",
-              "**80%** Sapling business builder",
-              "**45%** Sapling business builder",
-              "**28%** Sapling business builder"
-            ],
-            [
-              "Tobias",
-              "**72%** Sapling business builder",
-              "**26%** Informed investor",
-              "**9%** Sapling business builder"
-            ],
-            [
-              "Sophie",
-              "**71%** Sapling business builder",
-              "**27%** Sapling business builder",
-              "**9%** Sapling business builder"
-            ],
-            [
-              "Mehmet",
-              "**72%** Sapling business builder",
-              "**34%** Informed investor",
-              "**16%** Sapling business builder"
-            ],
-            [
-              "Katrin",
-              "**65%** Sapling business builder",
-              "**27%** Sapling business builder",
-              "**10%** Sapling business builder"
-            ],
-            [
-              "Lena",
-              "**67%** Sapling business builder",
-              "**24%** Sapling business builder",
-              "**11%** Informed investor"
-            ],
-            [
-              "Frank",
-              "**67%** Sapling business builder",
-              "**23%** Sapling business builder",
-              "**11%** Informed investor"
-            ],
-            [
-              "Dr. Jan",
-              "**38%** Sapling business builder",
-              "**9%** Sapling business builder",
-              "**3%** Sapling business builder"
-            ],
-            [
-              "Heike",
-              "**63%** Sapling business builder",
-              "**21%** Sapling business builder",
-              "**4%** Informed investor"
-            ],
-            [
-              "Peter",
-              "**81%** Sapling business builder",
-              "**48%** Sapling business builder",
-              "**18%** Sapling business builder"
-            ]
-          ]
-        },
-        {
-          "type": "h3",
-          "text": "The Yin Yang map"
-        },
-        {
-          "type": "p",
-          "text": "A circle with an S through it (2026-11-04). Every player walks one whole side: the **white** track is the S and the left half of the circle, the **black** track the right half of the circle and the S walked the other way. The S (with its two ends, where the sides meet) is common ground - the same tiles for both tracks, and all the Paydays except one more on each side of a large map. Each track has the tiles of the size (24, 36 or 48) with the usual mix. The seats take the tracks in turn, white first; with an odd number of players one side has one more. Both start on opposite sides of the circle - each on the first tile of their own half - walk their half, and meet on the S. The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track."
         }
       ]
     }

@@ -51,12 +51,12 @@ describe('DreamfundDocsComponent', () => {
   });
 
   it('loads the manual of the language and lists its sections in the order of the page', async () => {
-    const { component, http } = makeComponent('de');
+    const { component, http } = makeComponent('en');
     component.ngOnInit();
     await flush();
-    expect(http.get).toHaveBeenCalledWith('assets/i18n/dreamfund-manual/de.json');
-    expect(component.sections.length).toBeGreaterThan(8);
-    expect(component.navOf(component.sections[0])).toBe('Überblick');
+    expect(http.get).toHaveBeenCalledWith('assets/i18n/dreamfund-manual/en.json');
+    expect(component.sections.length).toBeGreaterThan(20);
+    expect(component.navOf(component.sections[0])).toBe('Welcome');
     expect(component.section?.blocks.length).toBeGreaterThan(0);
     expect(component.usingFallback).toBe(false);
     component.ngOnDestroy();
@@ -84,5 +84,27 @@ describe('DreamfundDocsComponent', () => {
       ' ',
       'c',
     ]);
+  });
+
+  it('writes the guide as the classic manual does: steps, cards, callouts and a glossary', () => {
+    const english = manual('en');
+    const kinds = new Set<string>();
+    for (const id of english.order) {
+      for (const block of english.sections[id].blocks) kinds.add(block.type);
+    }
+    for (const kind of ['p', 'h3', 'list', 'callout', 'steps', 'cards', 'table', 'glossary']) {
+      expect(kinds.has(kind)).toBe(true);
+    }
+    expect(kinds.has('import')).toBe(false);
+  });
+
+  it('starts the guided demo game through the lobby', () => {
+    const router = { navigate: jest.fn().mockResolvedValue(true), navigateByUrl: jest.fn() };
+    const { component } = makeComponent('en');
+    (component as any).router = router;
+    component.startGuidedDemo();
+    expect(router.navigate).toHaveBeenCalledWith(['/tables'], {
+      queryParams: { game: 'dreamfund', demo: 'start' },
+    });
   });
 });

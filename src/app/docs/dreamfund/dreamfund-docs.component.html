@@ -44,7 +44,7 @@
   </ul>
 </div>
 
-<div class="selfhosted-page dreamfund-manual">
+<div class="selfhosted-page cashflow-manual dreamfund-manual">
   <header class="selfhosted-header">
     <a routerLink="/docs" class="back-link">← {{ 'Docs.dreamfundgame.back' | translate }}</a>
     <h1 class="selfhosted-title">
@@ -53,6 +53,14 @@
     <p class="selfhosted-subtitle">
       {{ content?.subtitle || ('Docs.topics.dreamfundgame.desc' | translate) }}
     </p>
+    <button
+      type="button"
+      class="nav-demo-btn manual-demo-btn"
+      *ngIf="isGameAccount"
+      (click)="startGuidedDemo()"
+    >
+      ▶ {{ demoLabel }}
+    </button>
   </header>
 
   <!-- Only a Cashflow game account reads the manual. -->
@@ -167,6 +175,46 @@
                 </ng-container>
               </div>
             </div>
+
+            <!-- Numbered steps -->
+            <div *ngSwitchCase="'steps'">
+              <div class="step-card" *ngFor="let step of $any(block).items; let n = index">
+                <span class="step-number">{{ n + 1 }}</span>
+                <div class="step-body">
+                  <h4>{{ step.title }}</h4>
+                  <p>
+                    <ng-container *ngFor="let part of segments(step.text)">
+                      <strong *ngIf="part.bold">{{ part.text }}</strong>
+                      <code *ngIf="part.code">{{ part.text }}</code>
+                      <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+                    </ng-container>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cards of several kinds side by side -->
+            <div class="option-cards manual-cards" *ngSwitchCase="'cards'">
+              <div class="option-card" *ngFor="let item of $any(block).items">
+                <span class="option-icon" *ngIf="item.icon">{{ item.icon }}</span>
+                <h4>{{ item.title }}</h4>
+                <p>
+                  <ng-container *ngFor="let part of segments(item.text)">
+                    <strong *ngIf="part.bold">{{ part.text }}</strong>
+                    <code *ngIf="part.code">{{ part.text }}</code>
+                    <ng-container *ngIf="!part.bold && !part.code">{{ part.text }}</ng-container>
+                  </ng-container>
+                </p>
+              </div>
+            </div>
+
+            <!-- Glossary -->
+            <dl class="manual-glossary" *ngSwitchCase="'glossary'">
+              <ng-container *ngFor="let item of $any(block).items">
+                <dt>{{ item.term }}</dt>
+                <dd>{{ item.text }}</dd>
+              </ng-container>
+            </dl>
 
             <!-- Hand-written table -->
             <div class="endpoint-table manual-table" *ngSwitchCase="'table'">
