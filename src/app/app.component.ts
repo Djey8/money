@@ -403,7 +403,12 @@ export class AppComponent {
             // Auto-start interactive tour for new users
             if (window.localStorage.getItem('onboarding_pending') === 'true') {
               window.localStorage.removeItem('onboarding_pending');
-              setTimeout(() => this.tourService.startTour(), 600);
+              // a new game account on the self-hosted edition chooses: the normal tour or the guided Dreamfund demo
+              if (this.appMode === 'selfhosted' && CashflowGameService.isCashflowGame()) {
+                void this.router.navigate(['/welcome']);
+              } else {
+                setTimeout(() => this.tourService.startTour(), 600);
+              }
             }
             // Tier 2: Load deferred data in background (non-blocking)
             AppDataService.instance

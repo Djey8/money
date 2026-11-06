@@ -53,14 +53,6 @@
     <p class="selfhosted-subtitle">
       {{ content?.subtitle || ('Docs.topics.dreamfundgame.desc' | translate) }}
     </p>
-    <button
-      type="button"
-      class="nav-demo-btn manual-demo-btn"
-      *ngIf="isGameAccount"
-      (click)="startGuidedDemo()"
-    >
-      ▶ {{ demoLabel }}
-    </button>
   </header>
 
   <!-- Only a Cashflow game account reads the manual. -->

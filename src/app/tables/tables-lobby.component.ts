@@ -170,18 +170,35 @@ function savedFilters(): TableFilters {
           class="tl-nav-item tl-nav-demo"
           type="button"
           data-demo="lobby-learn"
+          [title]="demoTexts.learn"
+          [attr.aria-label]="demoTexts.learn"
           (click)="startDemo()"
         >
-          ▶ {{ demoTexts.learn }}
+          <span class="tl-nav-icon">▶️</span><span class="tl-nav-label">{{ demoTexts.learn }}</span>
         </button>
-        <a class="tl-nav-item" routerLink="/leaderboard">🏆 {{ lb.title }}</a>
-        <button class="tl-nav-item" type="button" (click)="openMyGames()">
-          📒 {{ 'CashflowGame.myGames' | translate }}
+        <a
+          class="tl-nav-item"
+          routerLink="/leaderboard"
+          [title]="lb.title"
+          [attr.aria-label]="lb.title"
+          ><span class="tl-nav-icon">🏆</span><span class="tl-nav-label">{{ lb.title }}</span></a
+        >
+        <button
+          class="tl-nav-item"
+          type="button"
+          [title]="'CashflowGame.myGames' | translate"
+          [attr.aria-label]="'CashflowGame.myGames' | translate"
+          (click)="openMyGames()"
+        >
+          <span class="tl-nav-icon">📒</span
+          ><span class="tl-nav-label">{{ 'CashflowGame.myGames' | translate }}</span>
         </button>
         <a
           class="tl-nav-item"
           [routerLink]="game === 'dreamfund' ? '/docs/dreamfund' : '/docs/cashflow'"
-          >ⓘ {{ t.howItWorks }}</a
+          [title]="t.howItWorks"
+          [attr.aria-label]="t.howItWorks"
+          ><span class="tl-nav-icon">ⓘ</span><span class="tl-nav-label">{{ t.howItWorks }}</span></a
         >
       </nav>
 
@@ -462,10 +479,33 @@ function savedFilters(): TableFilters {
         gap: 14px;
       }
       /* the places to go: three equal buttons in one row */
+      /* all the buttons in one row; when the row is too narrow for the words, only the pictures stay */
       .tl-nav {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        display: flex;
+        flex-wrap: nowrap;
         gap: 8px;
+        container-type: inline-size;
+      }
+      .tl-nav > .tl-nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      .tl-nav-icon {
+        flex: none;
+      }
+      .tl-nav-label {
+        margin-left: 0.4em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @container (max-width: 640px) {
+        .tl-nav-label {
+          display: none;
+        }
+        .tl-nav-icon {
+          font-size: 1.3rem;
+        }
       }
       .tl-nav-item {
         display: flex;

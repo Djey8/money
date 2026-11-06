@@ -143,13 +143,6 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** The button of the manual: the guided demo game (a table against the demo bot), started by the lobby. */
-  readonly demoLabel = 'Start the guided demo game';
-
-  startGuidedDemo(): void {
-    void this.router.navigate(['/tables'], { queryParams: { game: 'dreamfund', demo: 'start' } });
-  }
-
   launchDemo(): void {
     this.demoService.startDemo();
   }

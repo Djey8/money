@@ -55,6 +55,12 @@ export const routes: Routes = [
       ),
   },
   {
+    // The first screen of a new game account: the normal welcome tour or the guided Dreamfund demo.
+    path: 'welcome',
+    loadComponent: () =>
+      import('./tables/welcome-choice.component').then((m) => m.WelcomeChoiceComponent),
+  },
+  {
     path: 'tables/:id',
     loadComponent: () =>
       import('./tables/table-room-switch.component').then((m) => m.TableRoomSwitchComponent),

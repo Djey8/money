@@ -63,7 +63,7 @@ const sections = {
         'Do not read this page from the top first. Start the **guided demo game**: a table against a friendly bot with a fixed die and fixed cards, where a coach shows you every place of the screen and every move in about fifteen minutes. You can stop it at any moment and play for real. You find it in four places:',
       ),
       list([
-        'the **button at the top of this page** and the button in the section "Your first game";',
+        'the **Demo** button at the top right of every page of the app, while you are signed in with a game account (without an account, or with a normal one, it starts the normal demo of the Money Manager);',
         'the **Dreamfund lobby**, on the entry **Learn the game**;',
         '**the demo bot**: when you add the bot called **Coach** to a table, the table is the demo;',
       ]),
@@ -856,7 +856,7 @@ const sections = {
           },
           {
             term: 'Where is the demo game?',
-            text: 'The button on top of this manual, the entry **Learn the game** in the Dreamfund lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history.',
+            text: 'The **Demo** button at the top right (signed in with a game account), the entry **Learn the game** in the Dreamfund lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history.',
           },
           {
             term: 'Can I change a booking?',

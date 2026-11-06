@@ -97,14 +97,4 @@ describe('DreamfundDocsComponent', () => {
     }
     expect(kinds.has('import')).toBe(false);
   });
-
-  it('starts the guided demo game through the lobby', () => {
-    const router = { navigate: jest.fn().mockResolvedValue(true), navigateByUrl: jest.fn() };
-    const { component } = makeComponent('en');
-    (component as any).router = router;
-    component.startGuidedDemo();
-    expect(router.navigate).toHaveBeenCalledWith(['/tables'], {
-      queryParams: { game: 'dreamfund', demo: 'start' },
-    });
-  });
 });
