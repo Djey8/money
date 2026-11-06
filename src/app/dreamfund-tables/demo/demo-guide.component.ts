@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   NgZone,
@@ -167,7 +168,7 @@ interface Hole {
       }
       .dg-shade {
         position: fixed;
-        background: rgba(8, 16, 32, 0.62);
+        background: rgba(8, 16, 32, 0.34);
         pointer-events: auto;
       }
       .dg-shade--all {
@@ -197,6 +198,8 @@ interface Hole {
       .dg-card {
         position: fixed;
         width: min(380px, calc(100vw - 24px));
+        max-height: calc(100vh - 24px);
+        overflow-y: auto;
         box-sizing: border-box;
         padding: 14px 16px 12px;
         background: var(--color-surface, #fff);
@@ -208,8 +211,9 @@ interface Hole {
         line-height: 1.45;
       }
       .dg-card--corner {
-        right: 16px;
-        bottom: 16px;
+        right: 12px;
+        bottom: 12px;
+        width: min(340px, calc(100vw - 24px));
       }
       .dg-card--center {
         top: 50%;
@@ -301,23 +305,31 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
   cardStyle: Record<string, string> = {};
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastLook = '';
+  private lastScrollAt = 0;
+  /** The place is too tall to light up: only the card shows, in the corner. */
+  private tall = false;
 
   constructor(
     private readonly demo: DreamDemoService,
     private readonly translate: TranslateService,
     private readonly cdr: ChangeDetectorRef,
     private readonly zone: NgZone,
+    private readonly host: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
+    // the coach lives on the body: inside the game panel (which is moved and scaled) a fixed overlay would be placed against the panel,
+    // not the screen, and every lit place would be off
+    document.body.appendChild(this.host.nativeElement);
     // outside Angular's zone: the tick checks the page by itself and only draws when something changed
     this.zone.runOutsideAngular(() => {
-      this.timer = setInterval(() => this.tick(), 250);
+      this.timer = setInterval(() => this.tick(), 150);
     });
   }
 
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
+    this.host.nativeElement.remove();
   }
 
   get language(): string {
@@ -423,19 +435,28 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
     }
     const step = this.step;
     let hole: Hole | null = null;
+    this.tall = false;
     if (step && step.screen === context.screen && step.target && step.place !== 'center') {
       const element = this.find(step.target);
       if (element) {
         const rect = element.getBoundingClientRect();
-        const inView = rect.bottom > 0 && rect.top < window.innerHeight;
-        if (!inView) element.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        const pad = 6;
-        hole = {
-          top: Math.max(0, rect.top - pad),
-          left: Math.max(0, rect.left - pad),
-          width: rect.width + 2 * pad,
-          height: rect.height + 2 * pad,
-        };
+        // a place that is taller than most of the screen (a sheet to scroll) is not lit: its card says what to look at
+        this.tall = rect.height > window.innerHeight * 0.62;
+        const inView = rect.top >= 0 && rect.bottom <= window.innerHeight - 8;
+        if (!this.tall && !inView && Date.now() - this.lastScrollAt > 1200) {
+          this.lastScrollAt = Date.now();
+          element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+        if (!this.tall) {
+          const pad = 6;
+          const top = Math.max(0, rect.top - pad);
+          const left = Math.max(0, rect.left - pad);
+          const bottom = Math.min(window.innerHeight, rect.bottom + pad);
+          const right = Math.min(window.innerWidth, rect.right + pad);
+          if (bottom > top && right > left) {
+            hole = { top, left, width: right - left, height: bottom - top };
+          }
+        }
       }
     }
     const look = JSON.stringify([
@@ -444,6 +465,7 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
       hole,
       window.innerWidth,
       window.innerHeight,
+      this.tall,
     ]);
     if (look === this.lastLook && !moved) return;
     this.lastLook = look;
@@ -454,7 +476,9 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
 
   /** A step that waits for the person without lighting a place: only its card shows, in the corner, and the page stays usable. */
   get cornerOnly(): boolean {
-    return this.step?.next === 'event' && !this.hole;
+    return (
+      !this.hole && (this.step?.next === 'event' || this.step?.place === 'corner' || this.tall)
+    );
   }
 
   /** A place of the page: a CSS selector, or `selector@@text` for the one whose text is that. */
@@ -465,18 +489,41 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
     return all.find((element) => (element.textContent ?? '').trim() === text) ?? null;
   }
 
-  /** The card beside the lit place: below it when there is room, else above it, kept inside the screen. */
+  /** The card beside the lit place: below it, above it, or to a side - wherever it fits whole - else in a corner that is free. */
   private placeCard(hole: Hole): Record<string, string> {
-    const width = Math.min(380, window.innerWidth - 24);
-    const left = Math.min(
-      Math.max(12, hole.left + hole.width / 2 - width / 2),
-      window.innerWidth - width - 12,
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const card = document.querySelector('.dg-card') as HTMLElement | null;
+    const width = Math.min(380, vw - 24);
+    const height = (card?.offsetHeight ?? 260) + 8;
+    const gap = 14;
+    const clampX = (x: number) => Math.min(Math.max(12, x), vw - width - 12);
+    const clampY = (y: number) => Math.min(Math.max(12, y), vh - height - 12);
+    const centerX = clampX(hole.left + hole.width / 2 - width / 2);
+    const centerY = clampY(hole.top + hole.height / 2 - height / 2);
+    const below = hole.top + hole.height + gap;
+    if (vh - below >= height + 12) return { top: `${below}px`, left: `${centerX}px` };
+    const above = hole.top - gap - height;
+    if (above >= 12) return { top: `${above}px`, left: `${centerX}px` };
+    const right = hole.left + hole.width + gap;
+    if (vw - right >= width + 12) return { top: `${centerY}px`, left: `${right}px` };
+    const left = hole.left - gap - width;
+    if (left >= 12) return { top: `${centerY}px`, left: `${left}px` };
+    // nowhere beside it: the corner of the screen the lit place does not cover
+    const corners = [
+      { top: vh - height - 12, left: vw - width - 12 },
+      { top: vh - height - 12, left: 12 },
+      { top: 12, left: vw - width - 12 },
+      { top: 12, left: 12 },
+    ];
+    const free = corners.find(
+      (c) =>
+        c.left + width < hole.left ||
+        c.left > hole.left + hole.width ||
+        c.top + height < hole.top ||
+        c.top > hole.top + hole.height,
     );
-    const below = hole.top + hole.height + 12;
-    const room = window.innerHeight - below;
-    if (room >= 230) return { top: `${below}px`, left: `${left}px` };
-    const aboveBottom = window.innerHeight - hole.top + 12;
-    if (hole.top >= 230) return { bottom: `${aboveBottom}px`, left: `${left}px` };
-    return { bottom: '12px', left: `${left}px` };
+    const at = free ?? corners[0];
+    return { top: `${at.top}px`, left: `${at.left}px` };
   }
 }

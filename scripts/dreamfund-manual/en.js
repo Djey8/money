@@ -25,6 +25,8 @@ const imp = (md, sub, extra = {}) => ({
   ...extra,
 });
 
+const shows = require('./en-shows.js');
+
 const sections = {
   welcome: {
     nav: 'Welcome',
@@ -384,6 +386,7 @@ const sections = {
       'The tile that builds your income. You choose a pile, one to three cards are offered, and you **plan** the one you want in Grow.',
     blocks: [
       imp(7, 0),
+      ...shows.opportunity,
       h3('Which pile when?'),
       table(
         ['Situation', 'Pile', 'Why'],
@@ -423,13 +426,7 @@ const sections = {
   emergency: {
     nav: 'Emergencies',
     title: '🔥 Emergencies',
-    blocks: [
-      imp(7, 2),
-      tip(
-        'Why the reserve is the first goal',
-        'An emergency without a reserve becomes a **Bank loan at 10% a month**. With the reserve it is paid and forgotten. With insurance you pay only the deductible.',
-      ),
-    ],
+    blocks: [imp(7, 2), ...shows.emergency],
   },
 
   lifecards: {
@@ -441,13 +438,13 @@ const sections = {
   career: {
     nav: 'Career',
     title: '🎓 Career',
-    blocks: [imp(7, 4)],
+    blocks: [imp(7, 4), ...shows.career],
   },
 
   dreams: {
     nav: 'Dreams',
     title: '😊 Dreams and Dream moments',
-    blocks: [imp(7, 5)],
+    blocks: [imp(7, 5), ...shows.dreams],
   },
 
   notes: {

@@ -858,6 +858,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
                   *ngFor="let pile of piles; trackBy: trackValue"
                   type="button"
                   class="tc-pile"
+                  [attr.data-pile]="pile"
                   [disabled]="busy"
                   (click)="choosePile(pile)"
                 >
@@ -874,6 +875,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 class="tc-offer tc-offer--card"
                 *ngFor="let offer of o.offers; trackBy: trackOffer"
                 [attr.data-kind]="kindOf(offer.card)"
+                [attr.data-card-id]="offer.card.id"
               >
                 <ng-container
                   *ngTemplateOutlet="oppCard; context: { $implicit: offer.card }"
@@ -1054,6 +1056,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
               <div class="tc-offers" [class.tc-offers--one]="shownOffers(d).length === 1">
                 <article
                   class="tc-offer"
+                  [attr.data-card-id]="offer.id"
                   *ngFor="let offer of shownOffers(d); trackBy: trackId"
                   [class.tc-offer--picked]="selectedOffer === offer.id || !!d.taken"
                 >

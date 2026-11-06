@@ -208,6 +208,130 @@
               </ng-container>
             </dl>
 
+            <!-- Example cards, drawn like the cards on the table - only for looking -->
+            <figure class="manual-figure" *ngSwitchCase="'cardfaces'">
+              <div class="df-faces">
+                <div
+                  class="manual-face"
+                  *ngFor="let card of $any(block).items"
+                  [style.--tone]="pileTone(card.pile)"
+                >
+                  <div class="manual-face-head">
+                    <span>{{ card.title }}</span>
+                    <span class="df-kind">{{ card.kind }}</span>
+                  </div>
+                  <p class="manual-face-text">{{ card.text }}</p>
+                  <div class="manual-face-facts">
+                    <div class="manual-face-fact" *ngFor="let fact of card.facts">
+                      <span class="manual-face-fact-label">{{ fact.label }}</span>
+                      <strong>{{ fact.value }}</strong>
+                    </div>
+                  </div>
+                  <p class="df-note" *ngIf="card.note">{{ card.note }}</p>
+                </div>
+              </div>
+              <figcaption class="df-caption" *ngIf="$any(block).caption">
+                {{ $any(block).caption }}
+              </figcaption>
+            </figure>
+
+            <!-- Example projects: click one to read its info window - nothing in it works -->
+            <figure class="manual-figure" *ngSwitchCase="'mockprojects'">
+              <div class="df-projects">
+                <button
+                  type="button"
+                  class="df-project"
+                  *ngFor="let project of $any(block).items"
+                  (click)="openProject = project"
+                >
+                  <span class="df-icon">{{ project.icon }}</span>
+                  <h4>{{ project.title }}</h4>
+                  <small>{{ project.subtitle }}</small>
+                  <div class="df-bar" [ngClass]="'df-bar--' + project.kind">
+                    <span [style.width.%]="project.percent"></span>
+                  </div>
+                  <small>{{ project.progress }}</small>
+                  <span class="df-chip">{{ project.plan.per }}</span>
+                  <span class="df-open-hint">{{ $any(block).open }} ›</span>
+                </button>
+              </div>
+              <figcaption class="df-caption" *ngIf="$any(block).caption">
+                {{ $any(block).caption }}
+              </figcaption>
+              <div class="df-backdrop" *ngIf="openProject as p" (click)="openProject = null">
+                <article
+                  class="df-sheet"
+                  role="dialog"
+                  aria-modal="true"
+                  (click)="$event.stopPropagation()"
+                >
+                  <header>
+                    <span class="df-icon">{{ p.icon }}</span>
+                    <h3>{{ p.title }}</h3>
+                    <button
+                      type="button"
+                      class="df-close"
+                      [attr.aria-label]="$any(block).close"
+                      (click)="openProject = null"
+                    >
+                      ×
+                    </button>
+                  </header>
+                  <p class="df-example">{{ $any(block).banner }}</p>
+                  <p>{{ p.story }}</p>
+                  <div class="df-bar" [ngClass]="'df-bar--' + p.kind">
+                    <span [style.width.%]="p.percent"></span>
+                  </div>
+                  <small>{{ p.progress }}</small>
+                  <div class="df-facts">
+                    <div *ngFor="let fact of p.facts">
+                      <small>{{ fact.label }}</small>
+                      <strong>{{ fact.value }}</strong>
+                    </div>
+                  </div>
+                  <h5>{{ $any(block).bucketsTitle[p.kind] }}</h5>
+                  <div class="df-bucket" *ngFor="let bucket of p.buckets">
+                    <div class="df-bucket-line">
+                      <span>{{ bucket.title }}</span>
+                      <strong>{{ bucket.amount }}</strong>
+                    </div>
+                    <div class="df-bar" [ngClass]="'df-bar--' + p.kind">
+                      <span [style.width.%]="bucket.percent"></span>
+                    </div>
+                    <small *ngIf="bucket.note">{{ bucket.note }}</small>
+                  </div>
+                  <h5>{{ p.plan.title }}</h5>
+                  <div class="df-plan">
+                    <strong>{{ p.plan.per }}</strong>
+                    <small>{{ p.plan.left }}</small>
+                    <p>{{ p.plan.text }}</p>
+                  </div>
+                  <h5>{{ $any(block).notesTitle }}</h5>
+                  <ul>
+                    <li *ngFor="let note of p.notes">{{ note }}</li>
+                  </ul>
+                </article>
+              </div>
+            </figure>
+
+            <!-- A career ladder of a character - only for looking -->
+            <figure class="manual-figure" *ngSwitchCase="'ladder'">
+              <ol class="df-ladder">
+                <li class="df-stage" *ngFor="let stage of $any(block).stages">
+                  <span class="df-stage-n">{{ $any(block).stageWord }} {{ stage.stage }}</span>
+                  <h4>{{ stage.title }}</h4>
+                  <span class="df-pay">{{ stage.net }}</span>
+                  <p>{{ stage.gross }} · {{ stage.living }}</p>
+                  <p>{{ stage.story }}</p>
+                  <p *ngIf="stage.oneTime">{{ stage.oneTime }}</p>
+                  <p class="df-up">{{ stage.next }}</p>
+                </li>
+              </ol>
+              <figcaption class="df-caption" *ngIf="$any(block).more">
+                {{ $any(block).more }}
+              </figcaption>
+            </figure>
+
             <!-- Hand-written table -->
             <div class="endpoint-table manual-table" *ngSwitchCase="'table'">
               <table>

@@ -50,7 +50,7 @@ export interface DemoStep {
   screen: DemoScreen;
   /** What to light up (a CSS selector, usually `[data-demo="..."]`); absent: a card in the middle. */
   target?: string;
-  place?: 'top' | 'bottom' | 'center';
+  place?: 'top' | 'bottom' | 'center' | 'corner';
   /** `button`: Next. `event`: moves on by itself when `done` is true. */
   next: 'button' | 'event';
   done?: (context: DemoContext) => boolean;

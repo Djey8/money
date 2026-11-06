@@ -92,9 +92,44 @@ describe('DreamfundDocsComponent', () => {
     for (const id of english.order) {
       for (const block of english.sections[id].blocks) kinds.add(block.type);
     }
-    for (const kind of ['p', 'h3', 'list', 'callout', 'steps', 'cards', 'table', 'glossary']) {
+    for (const kind of [
+      'p',
+      'h3',
+      'list',
+      'callout',
+      'steps',
+      'cards',
+      'table',
+      'glossary',
+      'cardfaces',
+      'mockprojects',
+      'ladder',
+    ]) {
       expect(kinds.has(kind)).toBe(true);
     }
     expect(kinds.has('import')).toBe(false);
+  });
+
+  it('shows two example projects and the first four stages of Jonas, for looking only', async () => {
+    const english = manual('en');
+    const blocks = english.order.flatMap((id: string) => english.sections[id].blocks);
+    const projects = blocks.find((block: { type: string }) => block.type === 'mockprojects');
+    expect(projects.items.map((item: { kind: string }) => item.kind)).toEqual([
+      'emergency',
+      'dream',
+    ]);
+    expect(projects.items[0].buckets.length).toBeGreaterThan(1);
+    expect(projects.items[1].plan.per).toContain('50');
+    const ladder = blocks.find((block: { type: string }) => block.type === 'ladder');
+    expect(ladder.stages.map((stage: { title: string }) => stage.title)).toEqual([
+      'Dual Student',
+      'Junior Data Analyst',
+      'Data Engineer',
+      'Senior Data Engineer',
+    ]);
+    const { component } = makeComponent('en');
+    component.openProject = projects.items[0];
+    component.selectSection(1);
+    expect(component.openProject).toBeNull();
   });
 });

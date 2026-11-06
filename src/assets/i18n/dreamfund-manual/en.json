@@ -222,7 +222,10 @@
         },
         {
           "type": "table",
-          "head": ["Button", "What it does"],
+          "head": [
+            "Button",
+            "What it does"
+          ],
           "rows": [
             [
               "**Roll** (golden dice)",
@@ -252,7 +255,10 @@
               "**Undo**",
               "Takes back the last action of your turn (not a die that was thrown for a card)."
             ],
-            ["**Resign**", "Gives up your seat. You lose against everybody who stays."]
+            [
+              "**Resign**",
+              "Gives up your seat. You lose against everybody who stays."
+            ]
           ]
         },
         {
@@ -305,7 +311,11 @@
         },
         {
           "type": "table",
-          "head": ["Goal", "What has to be true", "How you get there"],
+          "head": [
+            "Goal",
+            "What has to be true",
+            "How you get there"
+          ],
           "rows": [
             [
               "**Debts**",
@@ -349,13 +359,19 @@
       "blocks": [
         {
           "type": "table",
-          "head": ["Account", "What it is for"],
+          "head": [
+            "Account",
+            "What it is for"
+          ],
           "rows": [
             [
               "**Daily**",
               "Bills and everyday life: rent, food, insurance. Your salary lands here."
             ],
-            ["**Splurge**", "Spending that is only for fun."],
+            [
+              "**Splurge**",
+              "Spending that is only for fun."
+            ],
             [
               "**Smile**",
               "Your dreams. Every dream is a **Smile project** with buckets (flights, hotel, equipment...) that you fill."
@@ -582,14 +598,24 @@
               "about seventeen lines, a realistic budget",
               "the same lines, tight"
             ],
-            ["Left of a month", "30 % more", "as designed", "15 % less"],
+            [
+              "Left of a month",
+              "30 % more",
+              "as designed",
+              "15 % less"
+            ],
             [
               "Debts, savings, dream",
               "debts 20 % lower, savings 50 % higher, dream 10 % cheaper",
               "-",
               "debts 10 % higher, savings 25 % lower, dream 5 % dearer"
             ],
-            ["Promotions", "a roll one lower", "-", "a roll one higher"],
+            [
+              "Promotions",
+              "a roll one lower",
+              "-",
+              "a roll one higher"
+            ],
             [
               "Cards and the rest",
               "luck +1 on the good dice, two offers a landing, only four traps, selling every Payday, a friendly market",
@@ -608,7 +634,12 @@
         },
         {
           "type": "table",
-          "head": ["Character", "Easy", "Normal", "Hard"],
+          "head": [
+            "Character",
+            "Easy",
+            "Normal",
+            "Hard"
+          ],
           "rows": [
             [
               "Jonas",
@@ -693,7 +724,12 @@
         },
         {
           "type": "table",
-          "head": ["Attribute", "Values", "What it does", "How it changes"],
+          "head": [
+            "Attribute",
+            "Values",
+            "What it does",
+            "How it changes"
+          ],
           "rows": [
             [
               "❤️ Relationship",
@@ -799,16 +835,96 @@
             "Insurances (a month)"
           ],
           "rows": [
-            ["Jonas", "single", "0", "shared flat", "no", "yes", "24 TT"],
-            ["Mehmet", "single", "0", "own flat", "yes", "no", "34 TT"],
-            ["Lena", "single", "1", "own flat", "yes", "no", "22 TT"],
-            ["Sophie", "single", "0", "own flat", "yes", "no", "32 TT"],
-            ["Tobias", "single", "0", "own flat", "no", "no", "35 TT"],
-            ["Katrin", "married", "2", "own flat", "yes", "no", "53 TT"],
-            ["Frank", "married", "1", "own flat", "yes", "no", "57 TT"],
-            ["Dr. Jan", "married", "2", "own flat", "yes", "no", "81 TT"],
-            ["Heike", "single", "0", "own flat", "yes", "no", "42 TT"],
-            ["Peter", "married", "0", "own flat", "yes", "no", "21 TT"]
+            [
+              "Jonas",
+              "single",
+              "0",
+              "shared flat",
+              "no",
+              "yes",
+              "24 TT"
+            ],
+            [
+              "Mehmet",
+              "single",
+              "0",
+              "own flat",
+              "yes",
+              "no",
+              "34 TT"
+            ],
+            [
+              "Lena",
+              "single",
+              "1",
+              "own flat",
+              "yes",
+              "no",
+              "22 TT"
+            ],
+            [
+              "Sophie",
+              "single",
+              "0",
+              "own flat",
+              "yes",
+              "no",
+              "32 TT"
+            ],
+            [
+              "Tobias",
+              "single",
+              "0",
+              "own flat",
+              "no",
+              "no",
+              "35 TT"
+            ],
+            [
+              "Katrin",
+              "married",
+              "2",
+              "own flat",
+              "yes",
+              "no",
+              "53 TT"
+            ],
+            [
+              "Frank",
+              "married",
+              "1",
+              "own flat",
+              "yes",
+              "no",
+              "57 TT"
+            ],
+            [
+              "Dr. Jan",
+              "married",
+              "2",
+              "own flat",
+              "yes",
+              "no",
+              "81 TT"
+            ],
+            [
+              "Heike",
+              "single",
+              "0",
+              "own flat",
+              "yes",
+              "no",
+              "42 TT"
+            ],
+            [
+              "Peter",
+              "married",
+              "0",
+              "own flat",
+              "yes",
+              "no",
+              "21 TT"
+            ]
           ]
         },
         {
@@ -817,19 +933,67 @@
         },
         {
           "type": "table",
-          "head": ["Pile", "Card", "Needs"],
+          "head": [
+            "Pile",
+            "Card",
+            "Needs"
+          ],
           "rows": [
-            ["Emergency", "Flashed! (E05)", "a car"],
-            ["Emergency", "Car Battery Dead (E12)", "a car"],
-            ["Emergency", "Washing Machine Breaks (E14)", "Home: own flat or with the partner"],
-            ["Emergency", "Parking Bump (E38)", "a car"],
-            ["Emergency", "Laptop Dies Before Exams (E17)", "Study: studying"],
-            ["Emergency", "Cracked Windscreen (E19)", "a car"],
-            ["Emergency", "Deposit Deductions (E21)", "Home: own flat or shared flat"],
-            ["Emergency", "Vet Emergency (E23)", "a pet"],
-            ["Emergency", "Fridge Dies in Summer (E24)", "Home: own flat or with the partner"],
-            ["Emergency", "Clutch Gone (E25)", "a car"],
-            ["Emergency", "Burglary (E26)", "Home: own flat or shared flat or with the partner"],
+            [
+              "Emergency",
+              "Flashed! (E05)",
+              "a car"
+            ],
+            [
+              "Emergency",
+              "Car Battery Dead (E12)",
+              "a car"
+            ],
+            [
+              "Emergency",
+              "Washing Machine Breaks (E14)",
+              "Home: own flat or with the partner"
+            ],
+            [
+              "Emergency",
+              "Parking Bump (E38)",
+              "a car"
+            ],
+            [
+              "Emergency",
+              "Laptop Dies Before Exams (E17)",
+              "Study: studying"
+            ],
+            [
+              "Emergency",
+              "Cracked Windscreen (E19)",
+              "a car"
+            ],
+            [
+              "Emergency",
+              "Deposit Deductions (E21)",
+              "Home: own flat or shared flat"
+            ],
+            [
+              "Emergency",
+              "Vet Emergency (E23)",
+              "a pet"
+            ],
+            [
+              "Emergency",
+              "Fridge Dies in Summer (E24)",
+              "Home: own flat or with the partner"
+            ],
+            [
+              "Emergency",
+              "Clutch Gone (E25)",
+              "a car"
+            ],
+            [
+              "Emergency",
+              "Burglary (E26)",
+              "Home: own flat or shared flat or with the partner"
+            ],
             [
               "Emergency",
               "Water Damage Downstairs (E27)",
@@ -845,14 +1009,46 @@
               "The Flat Burns Down (E30)",
               "Home: own flat or shared flat or with the partner"
             ],
-            ["Emergency", "School Trip and Supplies (E46)", "Children: at least 1"],
-            ["Emergency", "Sick Child, No Daycare (E47)", "Children: at least 1"],
-            ["Emergency", "Braces for the Child (E48)", "Children: at least 1"],
-            ["Emergency", "Semester Fee and Textbooks (E49)", "Study: studying"],
-            ["Emergency", "Partner Needs a Dentist (E50)", "Relationship: a partner"],
-            ["Life", "Falling in Love (L01)", "Relationship: single"],
-            ["Life", "Moving In Together (L02)", "Relationship: in a relationship"],
-            ["Life", "The Proposal (L03)", "Relationship: in a relationship or living together"],
+            [
+              "Emergency",
+              "School Trip and Supplies (E46)",
+              "Children: at least 1"
+            ],
+            [
+              "Emergency",
+              "Sick Child, No Daycare (E47)",
+              "Children: at least 1"
+            ],
+            [
+              "Emergency",
+              "Braces for the Child (E48)",
+              "Children: at least 1"
+            ],
+            [
+              "Emergency",
+              "Semester Fee and Textbooks (E49)",
+              "Study: studying"
+            ],
+            [
+              "Emergency",
+              "Partner Needs a Dentist (E50)",
+              "Relationship: a partner"
+            ],
+            [
+              "Life",
+              "Falling in Love (L01)",
+              "Relationship: single"
+            ],
+            [
+              "Life",
+              "Moving In Together (L02)",
+              "Relationship: in a relationship"
+            ],
+            [
+              "Life",
+              "The Proposal (L03)",
+              "Relationship: in a relationship or living together"
+            ],
             [
               "Life",
               "Break-Up (L04)",
@@ -868,9 +1064,21 @@
               "It's a Baby! (L06)",
               "Relationship: in a relationship or living together or married"
             ],
-            ["Life", "A Cat Moves In (L09)", "Pet: none"],
-            ["Life", "A Dog Moves In (L10)", "Pet: none"],
-            ["Life", "Grandpa's Old Car (L11)", "Car: false"],
+            [
+              "Life",
+              "A Cat Moves In (L09)",
+              "Pet: none"
+            ],
+            [
+              "Life",
+              "A Dog Moves In (L10)",
+              "Pet: none"
+            ],
+            [
+              "Life",
+              "Grandpa's Old Car (L11)",
+              "Car: false"
+            ],
             [
               "Life",
               "Back to Your Childhood Room (L14)",
@@ -881,16 +1089,56 @@
               "New Flatmate (L15)",
               "Relationship: single or in a relationship; Home: own flat"
             ],
-            ["Life", "The Company Goes Under (L19)", "Job: employed"],
-            ["Life", "Laid Off With Severance (L27)", "Job: employed"],
-            ["Life", "Short-Time Work (L20)", "Job: employed"],
-            ["Dream", "The Big Wedding Party (D38)", "Relationship: a partner"],
-            ["Dream", "An Education Fund for Your Child (D39)", "Children: at least 1"],
-            ["Opportunity", "Rent Out a Room (P17)", "Home: own flat"],
-            ["Opportunity", "Freelance Data Consulting (P18)", "Career stage 3+"],
-            ["Opportunity", "Consolidate Your Debt (P28)", "Debt >= 1,000 TT"],
-            ["Opportunity", "Take Over an IT Service Company (T13)", "Career stage 4+"],
-            ["Opportunity", "Vending Machine Network (T29)", "Owns: P15"]
+            [
+              "Life",
+              "The Company Goes Under (L19)",
+              "Job: employed"
+            ],
+            [
+              "Life",
+              "Laid Off With Severance (L27)",
+              "Job: employed"
+            ],
+            [
+              "Life",
+              "Short-Time Work (L20)",
+              "Job: employed"
+            ],
+            [
+              "Dream",
+              "The Big Wedding Party (D38)",
+              "Relationship: a partner"
+            ],
+            [
+              "Dream",
+              "An Education Fund for Your Child (D39)",
+              "Children: at least 1"
+            ],
+            [
+              "Opportunity",
+              "Rent Out a Room (P17)",
+              "Home: own flat"
+            ],
+            [
+              "Opportunity",
+              "Freelance Data Consulting (P18)",
+              "Career stage 3+"
+            ],
+            [
+              "Opportunity",
+              "Consolidate Your Debt (P28)",
+              "Debt >= 1,000 TT"
+            ],
+            [
+              "Opportunity",
+              "Take Over an IT Service Company (T13)",
+              "Career stage 4+"
+            ],
+            [
+              "Opportunity",
+              "Vending Machine Network (T29)",
+              "Owns: P15"
+            ]
           ]
         },
         {
@@ -926,25 +1174,55 @@
         },
         {
           "type": "table",
-          "head": ["Tile", "Count", "Colour", "What happens"],
+          "head": [
+            "Tile",
+            "Count",
+            "Colour",
+            "What happens"
+          ],
           "rows": [
-            ["💰 Payday", "4", "gold", "Salary in, bills out. About every 2.5 rolls is a month."],
-            ["🌱 Opportunity", "14", "purple", "Choose a pile and an investment to plan."],
+            [
+              "💰 Payday",
+              "4",
+              "gold",
+              "Salary in, bills out. About every 2.5 rolls is a month."
+            ],
+            [
+              "🌱 Opportunity",
+              "14",
+              "purple",
+              "Choose a pile and an investment to plan."
+            ],
             [
               "🌾 Harvest",
               "6",
               "amber",
               "A market card: the markets move, windows to sell, buyers, hype, scams."
             ],
-            ["😊 Dream", "3", "green", "Dreams to take, and Dream moments."],
-            ["🔥 Emergency", "3", "red", "Something breaks and has to be paid."],
+            [
+              "😊 Dream",
+              "3",
+              "green",
+              "Dreams to take, and Dream moments."
+            ],
+            [
+              "🔥 Emergency",
+              "3",
+              "red",
+              "Something breaks and has to be paid."
+            ],
             [
               "❤ Life",
               "4",
               "pink",
               "A turn of life: love, a baby, a move, a gym membership, a parent who needs help."
             ],
-            ["🎓 Career", "2", "blue", "A promotion to roll for."]
+            [
+              "🎓 Career",
+              "2",
+              "blue",
+              "A promotion to roll for."
+            ]
           ]
         },
         {
@@ -957,7 +1235,11 @@
         },
         {
           "type": "table",
-          "head": ["Setting", "Choices", "What it changes"],
+          "head": [
+            "Setting",
+            "Choices",
+            "What it changes"
+          ],
           "rows": [
             [
               "**Shape**",
@@ -1040,7 +1322,12 @@
         },
         {
           "type": "table",
-          "head": ["Pile", "Cards", "What it is", "Money needed"],
+          "head": [
+            "Pile",
+            "Cards",
+            "What it is",
+            "Money needed"
+          ],
           "rows": [
             [
               "🌱 **Seed**",
@@ -1114,11 +1401,131 @@
         },
         {
           "type": "h3",
+          "text": "What an Opportunity card looks like"
+        },
+        {
+          "type": "p",
+          "text": "Four real cards, one of each kind you meet. The coloured bar is the pile (purple Seed, green Sapling, dark green Tree); the small word is the **kind** - Saving, Share, Asset or Investment. Below the story are the numbers that matter before you buy."
+        },
+        {
+          "type": "cardfaces",
+          "caption": "Examples for looking at - the numbers are those of Jonas (price level 1.0) on Normal. In the game the card also carries its risk, tasks and links in its Grow project.",
+          "items": [
+            {
+              "pile": "seed",
+              "kind": "Saving",
+              "title": "AI Subscription Audit",
+              "text": "You let an AI scan your bank statements. It finds three subscriptions you forgot you had.",
+              "facts": [
+                {
+                  "label": "Costs",
+                  "value": "0 DT"
+                },
+                {
+                  "label": "Risk",
+                  "value": "0 of 5"
+                },
+                {
+                  "label": "Saves a month",
+                  "value": "15 / 30 / 50 DT"
+                }
+              ],
+              "note": "A die decides how much you find: 1-2 gives 15, 3-4 gives 30, 5-6 gives 50 DT a month. Free, and it lasts."
+            },
+            {
+              "pile": "seed",
+              "kind": "Share",
+              "title": "World ETF Savings Plan",
+              "text": "Fifty euros a month into the whole world economy. Boring. Exactly the point.",
+              "facts": [
+                {
+                  "label": "Price per unit",
+                  "value": "100 DT"
+                },
+                {
+                  "label": "Units",
+                  "value": "up to 20"
+                },
+                {
+                  "label": "Pays a month",
+                  "value": "1.95 DT per unit"
+                },
+                {
+                  "label": "Risk",
+                  "value": "2 of 5"
+                }
+              ],
+              "note": "You choose how many units to buy. The price moves with its market index (the Harvest cards move it); you can sell only when a window is open - or at the standing price less 5%."
+            },
+            {
+              "pile": "sapling",
+              "kind": "Asset",
+              "title": "Create an Online Course",
+              "text": "'SQL for Marketing People' - 40 videos recorded over three months.",
+              "facts": [
+                {
+                  "label": "Costs",
+                  "value": "3,000 DT"
+                },
+                {
+                  "label": "Takes",
+                  "value": "a side hustle slot"
+                },
+                {
+                  "label": "Ramps up",
+                  "value": "3 Paydays"
+                },
+                {
+                  "label": "Risk",
+                  "value": "3 of 5"
+                }
+              ],
+              "note": "After the ramp a die decides what it earns a month: 1-3 gives 31, 4-5 gives 208, a 6 gives 832 DT. Only a few side hustles can run at once."
+            },
+            {
+              "pile": "tree",
+              "kind": "Investment",
+              "title": "Holiday Flat at the Baltic Sea",
+              "text": "Two rooms, sea view, booked solid in summer and empty in February.",
+              "facts": [
+                {
+                  "label": "Price",
+                  "value": "240,000 DT"
+                },
+                {
+                  "label": "Deposit",
+                  "value": "48,000 DT"
+                },
+                {
+                  "label": "Mortgage",
+                  "value": "192,000 DT"
+                },
+                {
+                  "label": "Risk",
+                  "value": "3 of 5"
+                }
+              ],
+              "note": "A property with a mortgage: the rent comes in and the mortgage payment goes out every month, so the card shows the cash flow that is left. Several Harvest cards can cut the rent."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "How to read a card in five seconds",
+          "text": "Look at the **cost** (can I pay it from cash without the Bank?), the **monthly cash flow or saving** (what does it add to my month?), the **risk** and the **die** (what can it be at worst?). A card that promises a lot for very little is the one to doubt."
+        },
+        {
+          "type": "h3",
           "text": "Which pile when?"
         },
         {
           "type": "table",
-          "head": ["Situation", "Pile", "Why"],
+          "head": [
+            "Situation",
+            "Pile",
+            "Why"
+          ],
           "rows": [
             [
               "Your first turns, little cash",
@@ -1214,10 +1621,210 @@
           "text": "At a **table** the emergency plays as it does alone: you can **pay it now**, spread it over **3, 6 or 12 Paydays** (with the plan's surcharge), or **create the Fire project** - nothing is paid yet, the project opens on the Fire page and you put money into it from there, step by step. In the guided and the strict game the turn is not over before an emergency taken as a Fire project is paid or planned. A fine or a fee that has to be paid at once cannot become a project."
         },
         {
+          "type": "h3",
+          "text": "What an Emergency is"
+        },
+        {
+          "type": "p",
+          "text": "Something breaks or goes wrong, and money has to be found. The 50 cards come in five **tiers** - **spark** (a bike grip), **flame**, **blaze**, **wildfire** and **inferno** (the flat burns down) - and in a few **kinds**: a fixed bill, a die that decides the bill, a card with a choice (repair or replace), or a card made of several parts. Some cards need a life you have (a car, a pet, children, a flat of your own); a card for something you do not have is told, put back, and another is drawn."
+        },
+        {
+          "type": "h3",
+          "text": "Who pays first"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "Insurance",
+              "text": "If an insurance you hold covers the card, you pay only the **deductible** - at most 500 DT on Normal (300 on Easy, 750 on Hard)."
+            },
+            {
+              "title": "Your cash",
+              "text": "What is left is paid from your **cash**."
+            },
+            {
+              "title": "Your reserve",
+              "text": "If the cash is not enough, the **Mojo** - your emergency reserve - pays the rest. This is what it is for."
+            },
+            {
+              "title": "The Bank",
+              "text": "Only when cash and reserve are empty does the **Bank** lend what is missing, in steps of 1,000 DT, at 10% a month."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Three ways to pay"
+        },
+        {
+          "type": "table",
+          "head": [
+            "Way",
+            "What happens",
+            "When to use it"
+          ],
+          "rows": [
+            [
+              "**Pay now**",
+              "The whole bill leaves your cash today.",
+              "When your cash and reserve can carry it. The only way for a fine or a fee that must be paid at once."
+            ],
+            [
+              "**A plan of 3, 6 or 12 Paydays**",
+              "The bill is split in equal parts, one at every Payday, with a **surcharge**: on Normal 10%, 20% or 35% (Easy 5/10/20, Hard 15/30/50).",
+              "When the cash would run dry and you would rather not borrow. It costs less than the Bank (10% **a month**) for a plan up to 12 Paydays."
+            ],
+            [
+              "**Create the Fire project**",
+              "Nothing is paid yet. The emergency opens as a project on the Fire page and you put money into it from there, step by step.",
+              "When you want to pay it with money that comes in over the next turns. In the guided and strict rules the turn is not over until it is paid or planned."
+            ]
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "How it looks in the books"
+        },
+        {
+          "type": "p",
+          "text": "An emergency that is not paid at once lives as a **Fire project**: its parts (what the bill is made of), what is paid, the plan and the notes of every payment. The example below is a real card (**A Chronic Illness: Part Time Only**) paid by a plan of 6 Paydays, next to a dream in Smile. Click either one."
+        },
+        {
+          "type": "mockprojects",
+          "caption": "Two example projects. Click one to open its info window - the same things you read in the game. Nothing here is real and nothing works.",
+          "banner": "Example - for looking only. Nothing in this window works.",
+          "close": "Close",
+          "open": "Open the project",
+          "notesTitle": "Notes of the project",
+          "bucketsTitle": {
+            "emergency": "What the bill is made of",
+            "dream": "Buckets of the dream"
+          },
+          "items": [
+            {
+              "id": "emergency",
+              "kind": "emergency",
+              "icon": "🔥",
+              "title": "A Chronic Illness: Part Time Only",
+              "subtitle": "Emergency · blaze · a Fire project",
+              "story": "The diagnosis has a long name. The treatment works, but it costs strength: you can work only 60 percent now, for the next year at least. You chose to spread the bill over 6 Paydays.",
+              "percent": 33,
+              "progress": "720 of 2,160 DT paid (2 of 6 Paydays)",
+              "facts": [
+                {
+                  "label": "The bill",
+                  "value": "1,800 DT"
+                },
+                {
+                  "label": "Plan surcharge",
+                  "value": "+20% = 360 DT"
+                },
+                {
+                  "label": "In total",
+                  "value": "2,160 DT"
+                },
+                {
+                  "label": "Insurance",
+                  "value": "disability: none held"
+                }
+              ],
+              "buckets": [
+                {
+                  "title": "The income gap in the first year",
+                  "amount": "1,300 DT",
+                  "percent": 33,
+                  "note": "Working 60 percent of your hours means a loss of about 40 percent of the pay."
+                },
+                {
+                  "title": "Treatment and aids",
+                  "amount": "500 DT",
+                  "percent": 33,
+                  "note": "Co-payments, medicines and aids add up over a year."
+                }
+              ],
+              "plan": {
+                "title": "Payment plan",
+                "per": "360 DT every Payday",
+                "left": "4 Paydays left · 1,440 DT to go",
+                "text": "The plan pays itself at every Payday from your cash. A plan that is longer costs a larger surcharge: on Normal 10% for 3, 20% for 6 and 35% for 12 Paydays. If the cash is short, the Bank lends the rest."
+              },
+              "notes": [
+                "Payday 1: 360 DT paid from cash. Cash before 1,080, after 720.",
+                "Payday 2: 360 DT paid from cash. Cash before 1,210, after 850.",
+                "The monthly cash flow is 360 DT lower until the plan ends."
+              ]
+            },
+            {
+              "id": "dream",
+              "kind": "dream",
+              "icon": "🪂",
+              "title": "Paraglide Over the Alps",
+              "subtitle": "Dream · adventure · little · 2 points · a Smile project",
+              "story": "Run off the mountain and the thermals lift you high above the valley, silent as a bird. A dream you take becomes a Smile project: you fill its buckets, and when every bucket is full, the dream is lived.",
+              "percent": 29,
+              "progress": "350 of 1,200 DT saved",
+              "facts": [
+                {
+                  "label": "Total",
+                  "value": "1,200 DT"
+                },
+                {
+                  "label": "Saved",
+                  "value": "350 DT"
+                },
+                {
+                  "label": "Dream points",
+                  "value": "2"
+                },
+                {
+                  "label": "Buckets full",
+                  "value": "2 of 4"
+                }
+              ],
+              "buckets": [
+                {
+                  "title": "Journey to the Alps",
+                  "amount": "150 of 150 DT",
+                  "percent": 100,
+                  "note": "By train or car to Interlaken, Lenggries or the Dolomites."
+                },
+                {
+                  "title": "Tandem thermal flight",
+                  "amount": "200 of 200 DT",
+                  "percent": 100,
+                  "note": "Look for DHV or SHV licensed pilots."
+                },
+                {
+                  "title": "Hotel and food, 3 nights",
+                  "amount": "0 of 450 DT",
+                  "percent": 0
+                },
+                {
+                  "title": "Beginner course day",
+                  "amount": "0 of 400 DT",
+                  "percent": 0
+                }
+              ],
+              "plan": {
+                "title": "Payment plan",
+                "per": "50 DT every Payday",
+                "left": "17 Paydays left · 850 DT to go",
+                "text": "The plan moves 50 DT from your free money into the dream at every Payday, the fullest bucket first. You can raise it, lower it or stop it with 0, and you can put in a lump sum at any time."
+              },
+              "notes": [
+                "Dream taken on the Dream tile. Plan set: 50 DT a month.",
+                "Payday: 50 DT into the dream. Saved so far: 350 DT.",
+                "Points count when the dream is lived: 25 rating points each, and they may be a goal of the table."
+              ]
+            }
+          ]
+        },
+        {
           "type": "callout",
           "kind": "tip",
           "title": "Why the reserve is the first goal",
-          "text": "An emergency without a reserve becomes a **Bank loan at 10% a month**. With the reserve it is paid and forgotten. With insurance you pay only the deductible."
+          "text": "In the example the player held no disability insurance and the reserve was empty, so the bill had to be spread. With a full reserve (three months of costs) the same card is paid on the spot and forgotten."
         }
       ]
     },
@@ -1252,6 +1859,66 @@
         {
           "type": "p",
           "text": "Your character climbs a ladder. Jonas starts as a Dual Student (net 1,955 TT a month) and can reach Junior Data Analyst, Data Engineer, Senior Data Engineer, and then split into the technical path (Staff Data Engineer, Chief Data Architect) or the management path (Data Team Lead, Head of Data, Director of Data). A promotion needs a minimum number of Paydays and a successful roll. A promotion raises your salary - and your living costs."
+        },
+        {
+          "type": "h3",
+          "text": "The career of Jonas: the first four stages"
+        },
+        {
+          "type": "p",
+          "text": "Every character has a ladder of their own. This is the beginning of Jonas's: he starts as a **dual student** and climbs to a **senior data engineer** - the pay in the example is his net a month on Normal."
+        },
+        {
+          "type": "ladder",
+          "character": "Jonas",
+          "stageWord": "Stage",
+          "caption": "For looking at: the printed stages C1 to C4 of Jonas. Stage C2 ends his studies (the Education badge goes away) and costs 300 DT once for the new job.",
+          "more": "From stage 4 the ladder splits into a technical path (Staff Data Engineer, Chief Data Architect) and a management path (Data Team Lead, Head of Data, Director of Data), where the climb is harder: roll 6 and 6 to 8 Paydays between steps.",
+          "stages": [
+            {
+              "stage": 1,
+              "title": "Dual Student",
+              "story": "Three days at the company, two at university. A real salary while you study - and a thesis waiting at the end.",
+              "net": "1,955 DT a month",
+              "gross": "34,000 a year",
+              "living": "living costs ×1.0",
+              "next": "To stage 2: at least 3 Paydays, then roll 4 or more. A failed roll (1-2) costs an exam retake of 150 DT."
+            },
+            {
+              "stage": 2,
+              "title": "Junior Data Analyst",
+              "story": "Your bachelor thesis got a 1.3, and your team wants to keep you. First full-time contract!",
+              "net": "2,952 DT a month",
+              "gross": "56,000 a year",
+              "living": "living costs ×1.1 (+200)",
+              "oneTime": "Once: 300 DT for the move.",
+              "next": "To stage 3: at least 4 Paydays, then roll 4 or more."
+            },
+            {
+              "stage": 3,
+              "title": "Data Engineer",
+              "story": "You automated half the team's reports. Your manager offers you the move into data engineering.",
+              "net": "3,768 DT a month",
+              "gross": "75,000 a year",
+              "living": "living costs ×1.2 (+250)",
+              "next": "To stage 4: at least 4 Paydays, then roll 5 or more."
+            },
+            {
+              "stage": 4,
+              "title": "Senior Data Engineer",
+              "story": "You own the data platform, review everyone's code and mentor two juniors. Five years in, you're senior.",
+              "net": "4,618 DT a month",
+              "gross": "95,000 a year",
+              "living": "living costs ×1.35 (+300)",
+              "next": "To stage 5: at least 5 Paydays, then roll 5 or more - and choose the technical or the management path."
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "tip",
+          "title": "A raise is not all profit",
+          "text": "Every step raises your **living costs** too, so the reserve target grows with it (three months of the new costs). Climb when you can, but look at what is left of the month, not at the salary."
         }
       ]
     },
@@ -1262,6 +1929,187 @@
         {
           "type": "p",
           "text": "Dreams are cards worth **points**, in tiers from little to legendary, in categories like travel, adventure, vehicles, home, learning, creating and giving. Taking a dream makes a **Smile project** with buckets you fill by payment plans. You can have a few open at once. **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money, points for patience, a dream swap) help a dream along."
+        },
+        {
+          "type": "h3",
+          "text": "What a dream is"
+        },
+        {
+          "type": "p",
+          "text": "Your character has one **life dream** from the start (Jonas: a certified mountain guide). It is the first Smile project and the dream goal of the game. Besides it, the Dream tiles offer **dream cards**: small and big wishes you can add to your Smile page - **48 cards** in tiers from **little** to **legendary**, in categories like travel, adventure, vehicles, home, learning, creating and giving. Every dream card is worth **points**; the bigger the dream, the more points and the higher the price."
+        },
+        {
+          "type": "h3",
+          "text": "How a dream is paid"
+        },
+        {
+          "type": "steps",
+          "items": [
+            {
+              "title": "You take it",
+              "text": "On a Dream tile you are offered cards. You can take one (it becomes a Smile project), pass, or - where the table allows it - decline all. On Normal you are offered 2 cards, and up to 3 dreams can be open at once."
+            },
+            {
+              "title": "It is made of buckets",
+              "text": "Every dream has **buckets**: the journey, the hotel, the equipment, the course. Each has a price and a note of what it is for. You fill them one by one."
+            },
+            {
+              "title": "You pay by plan",
+              "text": "A **payment plan** moves a fixed amount into the dream at every Payday - for the example below, 50 DT. You may also put in a lump sum at any time. The plan never forces you; it shows what is due."
+            },
+            {
+              "title": "It is lived",
+              "text": "When every bucket is full, the dream is **lived**: it pays out its points and the project closes. For the life dream this ticks the dream goal of the game."
+            }
+          ]
+        },
+        {
+          "type": "h3",
+          "text": "Dream moments"
+        },
+        {
+          "type": "p",
+          "text": "Some Dream tiles bring a **moment** instead of cards: an early-bird offer, a gift from the family, a last-minute deal, a travel buddy, a stroke of inspiration, money from a side project, points for patience, or a swap of one dream for another. They make a dream cheaper or closer - the project notes say by how much."
+        },
+        {
+          "type": "h3",
+          "text": "A dream in the books"
+        },
+        {
+          "type": "mockprojects",
+          "caption": "Two example projects. Click one to open its info window - the same things you read in the game. Nothing here is real and nothing works.",
+          "banner": "Example - for looking only. Nothing in this window works.",
+          "close": "Close",
+          "open": "Open the project",
+          "notesTitle": "Notes of the project",
+          "bucketsTitle": {
+            "emergency": "What the bill is made of",
+            "dream": "Buckets of the dream"
+          },
+          "items": [
+            {
+              "id": "emergency",
+              "kind": "emergency",
+              "icon": "🔥",
+              "title": "A Chronic Illness: Part Time Only",
+              "subtitle": "Emergency · blaze · a Fire project",
+              "story": "The diagnosis has a long name. The treatment works, but it costs strength: you can work only 60 percent now, for the next year at least. You chose to spread the bill over 6 Paydays.",
+              "percent": 33,
+              "progress": "720 of 2,160 DT paid (2 of 6 Paydays)",
+              "facts": [
+                {
+                  "label": "The bill",
+                  "value": "1,800 DT"
+                },
+                {
+                  "label": "Plan surcharge",
+                  "value": "+20% = 360 DT"
+                },
+                {
+                  "label": "In total",
+                  "value": "2,160 DT"
+                },
+                {
+                  "label": "Insurance",
+                  "value": "disability: none held"
+                }
+              ],
+              "buckets": [
+                {
+                  "title": "The income gap in the first year",
+                  "amount": "1,300 DT",
+                  "percent": 33,
+                  "note": "Working 60 percent of your hours means a loss of about 40 percent of the pay."
+                },
+                {
+                  "title": "Treatment and aids",
+                  "amount": "500 DT",
+                  "percent": 33,
+                  "note": "Co-payments, medicines and aids add up over a year."
+                }
+              ],
+              "plan": {
+                "title": "Payment plan",
+                "per": "360 DT every Payday",
+                "left": "4 Paydays left · 1,440 DT to go",
+                "text": "The plan pays itself at every Payday from your cash. A plan that is longer costs a larger surcharge: on Normal 10% for 3, 20% for 6 and 35% for 12 Paydays. If the cash is short, the Bank lends the rest."
+              },
+              "notes": [
+                "Payday 1: 360 DT paid from cash. Cash before 1,080, after 720.",
+                "Payday 2: 360 DT paid from cash. Cash before 1,210, after 850.",
+                "The monthly cash flow is 360 DT lower until the plan ends."
+              ]
+            },
+            {
+              "id": "dream",
+              "kind": "dream",
+              "icon": "🪂",
+              "title": "Paraglide Over the Alps",
+              "subtitle": "Dream · adventure · little · 2 points · a Smile project",
+              "story": "Run off the mountain and the thermals lift you high above the valley, silent as a bird. A dream you take becomes a Smile project: you fill its buckets, and when every bucket is full, the dream is lived.",
+              "percent": 29,
+              "progress": "350 of 1,200 DT saved",
+              "facts": [
+                {
+                  "label": "Total",
+                  "value": "1,200 DT"
+                },
+                {
+                  "label": "Saved",
+                  "value": "350 DT"
+                },
+                {
+                  "label": "Dream points",
+                  "value": "2"
+                },
+                {
+                  "label": "Buckets full",
+                  "value": "2 of 4"
+                }
+              ],
+              "buckets": [
+                {
+                  "title": "Journey to the Alps",
+                  "amount": "150 of 150 DT",
+                  "percent": 100,
+                  "note": "By train or car to Interlaken, Lenggries or the Dolomites."
+                },
+                {
+                  "title": "Tandem thermal flight",
+                  "amount": "200 of 200 DT",
+                  "percent": 100,
+                  "note": "Look for DHV or SHV licensed pilots."
+                },
+                {
+                  "title": "Hotel and food, 3 nights",
+                  "amount": "0 of 450 DT",
+                  "percent": 0
+                },
+                {
+                  "title": "Beginner course day",
+                  "amount": "0 of 400 DT",
+                  "percent": 0
+                }
+              ],
+              "plan": {
+                "title": "Payment plan",
+                "per": "50 DT every Payday",
+                "left": "17 Paydays left · 850 DT to go",
+                "text": "The plan moves 50 DT from your free money into the dream at every Payday, the fullest bucket first. You can raise it, lower it or stop it with 0, and you can put in a lump sum at any time."
+              },
+              "notes": [
+                "Dream taken on the Dream tile. Plan set: 50 DT a month.",
+                "Payday: 50 DT into the dream. Saved so far: 350 DT.",
+                "Points count when the dream is lived: 25 rating points each, and they may be a goal of the table."
+              ]
+            }
+          ]
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "title": "Dreams and the order of a game",
+          "text": "Dreams are the reason to play, but the simulation shows that a player who funds the dream before any income rarely wins. Take the small dreams for the points when a plan of 50 a month does not hurt; keep the big money for cards that pay every month."
         }
       ]
     },
@@ -1286,7 +2134,11 @@
       "blocks": [
         {
           "type": "table",
-          "head": ["Exit", "Price", "When"],
+          "head": [
+            "Exit",
+            "Price",
+            "When"
+          ],
           "rows": [
             [
               "**A Harvest offer**",
@@ -1360,11 +2212,23 @@
         },
         {
           "type": "table",
-          "head": ["Setting", "What it does"],
+          "head": [
+            "Setting",
+            "What it does"
+          ],
           "rows": [
-            ["**Table name**", "Shown in the lobby. Leave it empty and a funny one is chosen."],
-            ["**Players**", "How many seats (bots take a seat too)."],
-            ["**Who can find it**", "Everybody, or only people with the invite code."],
+            [
+              "**Table name**",
+              "Shown in the lobby. Leave it empty and a funny one is chosen."
+            ],
+            [
+              "**Players**",
+              "How many seats (bots take a seat too)."
+            ],
+            [
+              "**Who can find it**",
+              "Everybody, or only people with the invite code."
+            ],
             [
               "**Difficulty**",
               "Easy, Normal or Hard: the numbers of the characters and the cards (see \"The characters\"). The difficulty is also the stake of the rating."
@@ -1377,9 +2241,18 @@
               "**Rules: guided or strict**",
               "Guided: one random card per tile, buying only with the card in hand. Strict: dice only from the app, no free transactions."
             ],
-            ["**Map: shape, size, seed**", "See \"The map\"."],
-            ["**Characters**", "Free (the same one twice is fine), unique, or dealt by the table."],
-            ["**Turn order**", "Random, or by seat."],
+            [
+              "**Map: shape, size, seed**",
+              "See \"The map\"."
+            ],
+            [
+              "**Characters**",
+              "Free (the same one twice is fine), unique, or dealt by the table."
+            ],
+            [
+              "**Turn order**",
+              "Random, or by seat."
+            ],
             [
               "**The game ends**",
               "**First escape** (the first to reach every goal wins), **all escape** (everybody plays until out or bankrupt) or **after rounds**."
@@ -1392,9 +2265,18 @@
               "**Time limit**",
               "None, per move or a time bank for the whole game. Time out and your turn is played passively."
             ],
-            ["**Bot speed**", "Fast, normal or slow: how long the bots wait between moves."],
-            ["**Spectators**", "People who are not seated may watch."],
-            ["**Currency**", "Dream Taler or a real sign (the numbers do not change)."],
+            [
+              "**Bot speed**",
+              "Fast, normal or slow: how long the bots wait between moves."
+            ],
+            [
+              "**Spectators**",
+              "People who are not seated may watch."
+            ],
+            [
+              "**Currency**",
+              "Dream Taler or a real sign (the numbers do not change)."
+            ],
             [
               "**Advanced rules**",
               "Tax on the profit of a sale, how long a sell offer stays open (1-5 turns), how many turns a planned card stays buyable (1-3), the Bank loan's interest, undo by vote, leaving, repaying off turn."
@@ -1456,7 +2338,10 @@
         },
         {
           "type": "table",
-          "head": ["Mode", "What it means"],
+          "head": [
+            "Mode",
+            "What it means"
+          ],
           "rows": [
             [
               "**Free**",
@@ -1512,14 +2397,23 @@
         },
         {
           "type": "table",
-          "head": ["What", "Points"],
+          "head": [
+            "What",
+            "Points"
+          ],
           "rows": [
             [
               "Each goal, in proportion to how far you got (the reserve, no debts, the dream, independence): a goal reached is 250, one that is 60% done is 150",
               "up to 250"
             ],
-            ["Each dream point", "25"],
-            ["Winning (all the goals)", "1000"]
+            [
+              "Each dream point",
+              "25"
+            ],
+            [
+              "Winning (all the goals)",
+              "1000"
+            ]
           ]
         },
         {
@@ -1557,11 +2451,27 @@
         },
         {
           "type": "table",
-          "head": ["Difficulty", "Points you gain", "What you lose"],
+          "head": [
+            "Difficulty",
+            "Points you gain",
+            "What you lose"
+          ],
           "rows": [
-            ["Easy", "x 0.7", "the same"],
-            ["Normal", "x 1", "the same"],
-            ["Hard", "x 1.5", "the same"]
+            [
+              "Easy",
+              "x 0.7",
+              "the same"
+            ],
+            [
+              "Normal",
+              "x 1",
+              "the same"
+            ],
+            [
+              "Hard",
+              "x 1.5",
+              "the same"
+            ]
           ]
         },
         {
@@ -1613,7 +2523,10 @@
         },
         {
           "type": "table",
-          "head": ["Place", "What it counts"],
+          "head": [
+            "Place",
+            "What it counts"
+          ],
           "rows": [
             [
               "**Grow**",
@@ -1653,7 +2566,10 @@
         },
         {
           "type": "table",
-          "head": ["Strategy", "In one line"],
+          "head": [
+            "Strategy",
+            "In one line"
+          ],
           "rows": [
             [
               "**Expert**",
@@ -1667,23 +2583,50 @@
               "**Tree**",
               "Free savings first, then only Trees. Slow but strong at the top of the tournament."
             ],
-            ["**ETF**", "A world ETF and bonds for the steady part."],
-            ["**Property**", "Rented flats and a mortgage."],
-            ["**Dividend**", "Dividend shares from all piles, reinvested."],
-            ["**Hustler**", "One side hustle after the other, reinvesting every month."],
-            ["**Steady**", "Three months of cash, no risky card."],
-            ["**Dreamer**", "Puts the dream and its points first."],
-            ["**Saver**", "Savings and the employer's money; few risks."],
+            [
+              "**ETF**",
+              "A world ETF and bonds for the steady part."
+            ],
+            [
+              "**Property**",
+              "Rented flats and a mortgage."
+            ],
+            [
+              "**Dividend**",
+              "Dividend shares from all piles, reinvested."
+            ],
+            [
+              "**Hustler**",
+              "One side hustle after the other, reinvesting every month."
+            ],
+            [
+              "**Steady**",
+              "Three months of cash, no risky card."
+            ],
+            [
+              "**Dreamer**",
+              "Puts the dream and its points first."
+            ],
+            [
+              "**Saver**",
+              "Savings and the employer's money; few risks."
+            ],
             [
               "**Gambler**",
               "Crypto, hype and hot tips. Almost never wins, but it makes the table lively."
             ],
-            ["**Passive**", "Takes almost no decision. A baseline for the others."],
+            [
+              "**Passive**",
+              "Takes almost no decision. A baseline for the others."
+            ],
             [
               "**Flipper**",
               "**Sell, step up, repeat**: sells what has gained to buy something bigger, and clears a loan by selling."
             ],
-            ["**Scholar**", "The employer's money, the pension and the courses first."],
+            [
+              "**Scholar**",
+              "The employer's money, the pension and the courses first."
+            ],
             [
               "**Coach**",
               "The demo bot: plays a fixed, friendly game so the guided tour is always the same."
@@ -1833,7 +2776,11 @@
       "blocks": [
         {
           "type": "table",
-          "head": ["Job", "Tool", "What you get"],
+          "head": [
+            "Job",
+            "Tool",
+            "What you get"
+          ],
           "rows": [
             [
               "Watch",
@@ -1845,7 +2792,11 @@
               "`table_advice`",
               "Your goals, your money, the moves a strategy would make now and why, what to keep in mind."
             ],
-            ["Explain", "`dream_cards`", "Every printed card of every pile."],
+            [
+              "Explain",
+              "`dream_cards`",
+              "Every printed card of every pile."
+            ],
             [
               "Play",
               "`table_autoplay`, `table_move`",
@@ -2161,8 +3112,20 @@
             "Passive income covers the expenses"
           ],
           "rows": [
-            ["Cautious saver", "month 45 (77%)", "month 47 (69%)", "month 48 (67%)", "-"],
-            ["ETF investor", "month 31 (94%)", "month 41 (83%)", "month 45 (78%)", "month 54 (2%)"],
+            [
+              "Cautious saver",
+              "month 45 (77%)",
+              "month 47 (69%)",
+              "month 48 (67%)",
+              "-"
+            ],
+            [
+              "ETF investor",
+              "month 31 (94%)",
+              "month 41 (83%)",
+              "month 45 (78%)",
+              "month 54 (2%)"
+            ],
             [
               "Property builder",
               "month 27 (98%)",
@@ -2177,7 +3140,13 @@
               "month 45 (85%)",
               "month 54 (17%)"
             ],
-            ["Gambler", "month 20 (100%)", "month 28 (100%)", "month 46 (77%)", "-"],
+            [
+              "Gambler",
+              "month 20 (100%)",
+              "month 28 (100%)",
+              "month 46 (77%)",
+              "-"
+            ],
             [
               "Informed investor",
               "month 17 (100%)",
@@ -2199,8 +3168,20 @@
               "month 38 (96%)",
               "month 51 (40%)"
             ],
-            ["Tree saver", "month 17 (100%)", "month 22 (100%)", "month 44 (91%)", "month 57 (1%)"],
-            ["Dream chaser", "month 45 (74%)", "month 49 (51%)", "month 48 (67%)", "-"],
+            [
+              "Tree saver",
+              "month 17 (100%)",
+              "month 22 (100%)",
+              "month 44 (91%)",
+              "month 57 (1%)"
+            ],
+            [
+              "Dream chaser",
+              "month 45 (74%)",
+              "month 49 (51%)",
+              "month 48 (67%)",
+              "-"
+            ],
             [
               "Steady builder",
               "month 29 (98%)",
@@ -2208,7 +3189,13 @@
               "month 47 (81%)",
               "month 53 (17%)"
             ],
-            ["Free cards only", "month 48 (67%)", "month 48 (54%)", "month 49 (54%)", "-"]
+            [
+              "Free cards only",
+              "month 48 (67%)",
+              "month 48 (54%)",
+              "month 49 (54%)",
+              "-"
+            ]
           ]
         },
         {
@@ -2230,24 +3217,150 @@
             "Difference in net worth"
           ],
           "rows": [
-            ["Annual Contract Check (S36)", "seed", "100%", "11%", "0%", "+74,613"],
-            ["Free Bank Account (S05)", "seed", "100%", "11%", "0%", "+74,613"],
-            ["Switch Electricity Provider (S02)", "seed", "100%", "11%", "0%", "+74,613"],
-            ["Cheaper Mobile Plan (S04)", "seed", "100%", "11%", "0%", "+74,613"],
-            ["Ask for a Job Ticket (S06)", "seed", "100%", "11%", "0%", "+74,613"],
-            ["AI Subscription Audit (S01)", "seed", "100%", "11%", "0%", "+74,613"],
-            ["Declutter and Sell (S07)", "seed", "98%", "12%", "3%", "+9,775"],
-            ["Meal Prep Sundays (S03)", "seed", "94%", "13%", "3%", "+23,160"],
-            ["Weekend IT Freelancing (S29)", "seed", "83%", "25%", "3%", "+13,150"],
-            ["Tutoring (S31)", "seed", "75%", "22%", "4%", "+11,990"],
-            ["Bike Courier Weekends (S34)", "seed", "59%", "25%", "6%", "+5,518"],
-            ["Phone Flipping (S30)", "seed", "53%", "29%", "7%", "+8,453"],
-            ["Snack Vending Machine (P15)", "sapling", "47%", "49%", "7%", "+18,051"],
-            ["Sell Digital Templates (S33)", "seed", "45%", "27%", "7%", "+6,521"],
-            ["Freelance Data Consulting (P18)", "sapling", "43%", "48%", "7%", "+22,904"],
-            ["Dividend ETF (S12)", "seed", "43%", "21%", "8%", "+14,506"],
-            ["Autowerk AG (Car Maker) (S13)", "seed", "42%", "23%", "8%", "+11,643"],
-            ["Print-on-Demand Shop (S32)", "seed", "41%", "29%", "8%", "+6,271"]
+            [
+              "Annual Contract Check (S36)",
+              "seed",
+              "100%",
+              "11%",
+              "0%",
+              "+74,613"
+            ],
+            [
+              "Free Bank Account (S05)",
+              "seed",
+              "100%",
+              "11%",
+              "0%",
+              "+74,613"
+            ],
+            [
+              "Switch Electricity Provider (S02)",
+              "seed",
+              "100%",
+              "11%",
+              "0%",
+              "+74,613"
+            ],
+            [
+              "Cheaper Mobile Plan (S04)",
+              "seed",
+              "100%",
+              "11%",
+              "0%",
+              "+74,613"
+            ],
+            [
+              "Ask for a Job Ticket (S06)",
+              "seed",
+              "100%",
+              "11%",
+              "0%",
+              "+74,613"
+            ],
+            [
+              "AI Subscription Audit (S01)",
+              "seed",
+              "100%",
+              "11%",
+              "0%",
+              "+74,613"
+            ],
+            [
+              "Declutter and Sell (S07)",
+              "seed",
+              "98%",
+              "12%",
+              "3%",
+              "+9,775"
+            ],
+            [
+              "Meal Prep Sundays (S03)",
+              "seed",
+              "94%",
+              "13%",
+              "3%",
+              "+23,160"
+            ],
+            [
+              "Weekend IT Freelancing (S29)",
+              "seed",
+              "83%",
+              "25%",
+              "3%",
+              "+13,150"
+            ],
+            [
+              "Tutoring (S31)",
+              "seed",
+              "75%",
+              "22%",
+              "4%",
+              "+11,990"
+            ],
+            [
+              "Bike Courier Weekends (S34)",
+              "seed",
+              "59%",
+              "25%",
+              "6%",
+              "+5,518"
+            ],
+            [
+              "Phone Flipping (S30)",
+              "seed",
+              "53%",
+              "29%",
+              "7%",
+              "+8,453"
+            ],
+            [
+              "Snack Vending Machine (P15)",
+              "sapling",
+              "47%",
+              "49%",
+              "7%",
+              "+18,051"
+            ],
+            [
+              "Sell Digital Templates (S33)",
+              "seed",
+              "45%",
+              "27%",
+              "7%",
+              "+6,521"
+            ],
+            [
+              "Freelance Data Consulting (P18)",
+              "sapling",
+              "43%",
+              "48%",
+              "7%",
+              "+22,904"
+            ],
+            [
+              "Dividend ETF (S12)",
+              "seed",
+              "43%",
+              "21%",
+              "8%",
+              "+14,506"
+            ],
+            [
+              "Autowerk AG (Car Maker) (S13)",
+              "seed",
+              "42%",
+              "23%",
+              "8%",
+              "+11,643"
+            ],
+            [
+              "Print-on-Demand Shop (S32)",
+              "seed",
+              "41%",
+              "29%",
+              "8%",
+              "+6,271"
+            ]
           ]
         },
         {
@@ -2281,7 +3394,9 @@
         {
           "type": "list",
           "ordered": false,
-          "items": ["none."]
+          "items": [
+            "none."
+          ]
         },
         {
           "type": "h3",
@@ -2302,18 +3417,102 @@
             "Bankrupt after"
           ],
           "rows": [
-            ["Bike Stolen (E18)", "Emergency", "7% of the games", "5%", "12%", "1%"],
-            ["Family in Need (L24)", "Life", "21% of the games", "6%", "12%", "0%"],
-            ["Thinking About a Baby (L05)", "Life", "8% of the games", "5%", "12%", "0%"],
-            ["Grandpa's Old Car (L11)", "Life", "24% of the games", "6%", "13%", "0%"],
-            ["Break-Up (L04)", "Life", "9% of the games", "5%", "12%", "0%"],
-            ["Storm on the Balcony (E44)", "Emergency", "11% of the games", "6%", "12%", "1%"],
-            ["Fridge Dies in Summer (E24)", "Emergency", "19% of the games", "8%", "12%", "0%"],
-            ["Falling in Love (L01)", "Life", "42% of the games", "9%", "13%", "0%"],
-            ["Forgotten Free Trial (E41)", "Emergency", "14% of the games", "8%", "12%", "1%"],
-            ["Friend's Bike Grip (E01)", "Emergency", "14% of the games", "8%", "12%", "1%"],
-            ["Dunning Letter (E06)", "Emergency", "13% of the games", "8%", "12%", "1%"],
-            ["Broken Glasses (E10)", "Emergency", "20% of the games", "8%", "12%", "0%"]
+            [
+              "Bike Stolen (E18)",
+              "Emergency",
+              "7% of the games",
+              "5%",
+              "12%",
+              "1%"
+            ],
+            [
+              "Family in Need (L24)",
+              "Life",
+              "21% of the games",
+              "6%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Thinking About a Baby (L05)",
+              "Life",
+              "8% of the games",
+              "5%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Grandpa's Old Car (L11)",
+              "Life",
+              "24% of the games",
+              "6%",
+              "13%",
+              "0%"
+            ],
+            [
+              "Break-Up (L04)",
+              "Life",
+              "9% of the games",
+              "5%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Storm on the Balcony (E44)",
+              "Emergency",
+              "11% of the games",
+              "6%",
+              "12%",
+              "1%"
+            ],
+            [
+              "Fridge Dies in Summer (E24)",
+              "Emergency",
+              "19% of the games",
+              "8%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Falling in Love (L01)",
+              "Life",
+              "42% of the games",
+              "9%",
+              "13%",
+              "0%"
+            ],
+            [
+              "Forgotten Free Trial (E41)",
+              "Emergency",
+              "14% of the games",
+              "8%",
+              "12%",
+              "1%"
+            ],
+            [
+              "Friend's Bike Grip (E01)",
+              "Emergency",
+              "14% of the games",
+              "8%",
+              "12%",
+              "1%"
+            ],
+            [
+              "Dunning Letter (E06)",
+              "Emergency",
+              "13% of the games",
+              "8%",
+              "12%",
+              "1%"
+            ],
+            [
+              "Broken Glasses (E10)",
+              "Emergency",
+              "20% of the games",
+              "8%",
+              "12%",
+              "0%"
+            ]
           ]
         },
         {
@@ -2322,20 +3521,85 @@
         },
         {
           "type": "table",
-          "head": ["Market card", "Win chance after", "Win chance otherwise", "Bankrupt after"],
+          "head": [
+            "Market card",
+            "Win chance after",
+            "Win chance otherwise",
+            "Bankrupt after"
+          ],
           "rows": [
-            ["Major Repair (H56)", "25%", "10%", "0%"],
-            ["Collector Hype (H40)", "24%", "10%", "0%"],
-            ["Year of Catastrophes (H15)", "19%", "10%", "1%"],
-            ["Parking Shortage (H61)", "18%", "10%", "1%"],
-            ["Emerging Markets Rally (H24)", "17%", "10%", "1%"],
-            ["Energy Transition Boom (H22)", "17%", "10%", "2%"],
-            ["Bonds Tumble (H27)", "5%", "12%", "0%"],
-            ["Penny Stock Rocket (H41)", "5%", "12%", "0%"],
-            ["Vacancy (H55)", "5%", "12%", "1%"],
-            ["Inflation Spike (H08)", "4%", "12%", "0%"],
-            ["Exchange Collapse (H32)", "3%", "12%", "0%"],
-            ["Hype Fades (H50)", "2%", "12%", "0%"]
+            [
+              "Major Repair (H56)",
+              "25%",
+              "10%",
+              "0%"
+            ],
+            [
+              "Collector Hype (H40)",
+              "24%",
+              "10%",
+              "0%"
+            ],
+            [
+              "Year of Catastrophes (H15)",
+              "19%",
+              "10%",
+              "1%"
+            ],
+            [
+              "Parking Shortage (H61)",
+              "18%",
+              "10%",
+              "1%"
+            ],
+            [
+              "Emerging Markets Rally (H24)",
+              "17%",
+              "10%",
+              "1%"
+            ],
+            [
+              "Energy Transition Boom (H22)",
+              "17%",
+              "10%",
+              "2%"
+            ],
+            [
+              "Bonds Tumble (H27)",
+              "5%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Penny Stock Rocket (H41)",
+              "5%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Vacancy (H55)",
+              "5%",
+              "12%",
+              "1%"
+            ],
+            [
+              "Inflation Spike (H08)",
+              "4%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Exchange Collapse (H32)",
+              "3%",
+              "12%",
+              "0%"
+            ],
+            [
+              "Hype Fades (H50)",
+              "2%",
+              "12%",
+              "0%"
+            ]
           ]
         },
         {

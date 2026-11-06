@@ -1336,6 +1336,7 @@
                 >
                   <button
                     class="btn btn--primary"
+                    data-demo="open-card"
                     [disabled]="isBusy || walking || appState.isSaving || !!diceFirstRefusal"
                     (click)="openSoloDecision()"
                   >
@@ -1392,6 +1393,7 @@
                 >
                   <button
                     class="btn btn--primary"
+                    data-demo="open-card"
                     *ngIf="!stackPlayed || !stackOpened"
                     [disabled]="isBusy || appState.isSaving"
                     (click)="openStackTile()"

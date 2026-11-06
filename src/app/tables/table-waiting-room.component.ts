@@ -310,6 +310,14 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             </div>
           </li>
         </ul>
+        <button
+          type="button"
+          class="tx-btn tx-btn--primary wr-done"
+          data-demo="wr-bots-done"
+          (click)="botsOpen = false"
+        >
+          {{ h.botDone }}
+        </button>
       </div>
     </div>
 
@@ -546,6 +554,10 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
         margin-top: 12px;
       }
       /* the bot picker */
+      .wr-done {
+        width: 100%;
+        margin-top: 12px;
+      }
       .wr-modal {
         position: fixed;
         inset: 0;
@@ -1022,7 +1034,13 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   addBot(bot: BotInfo): void {
     // Coach has one level of its own and makes the table the guided demo
     if (bot.demo) {
-      void this.session.lobby('bots', { policyId: 'dream:coach' });
+      // the table is the demo now: the bot panel closes by itself, the coach goes on at the table
+      void this.session.lobby('bots', { policyId: 'dream:coach' }).then((ok) => {
+        if (ok) {
+          this.botsOpen = false;
+          this.cdr.markForCheck();
+        }
+      });
       return;
     }
     // a Dreamfund bot is a strategy of the simulation, told apart from the classic ones by its prefix

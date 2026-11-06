@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, type Subscription } from 'rxjs';
+import type { ShowProject } from './dreamfund-blocks';
 import { DemoService } from '../../shared/services/demo.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
 import {
@@ -40,6 +41,7 @@ interface DreamfundManual extends ManualContent {
   styleUrls: [
     '../selfhosted/selfhosted-docs.component.css',
     '../cashflow/cashflow-docs.component.css',
+    './dreamfund-docs.component.css',
     '../../landing/landing-page.component.css',
     '../../app.component.css',
   ],
@@ -52,6 +54,8 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
+  /** The example project that is open (a drawing only: nothing in it works). */
+  openProject: ShowProject | null = null;
 
   private langSubscription?: Subscription;
   private segmentCache = new Map<string, RichSegment[]>();
@@ -130,7 +134,13 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** The tone of an example card: the colour of its pile. */
+  pileTone(pile: string): string {
+    return pile === 'tree' ? '#2e7d32' : pile === 'sapling' ? '#558b2f' : '#7b1fa2';
+  }
+
   selectSection(index: number): void {
+    this.openProject = null;
     this.selectedIndex = index;
     document.querySelector('.selfhosted-detail')?.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
