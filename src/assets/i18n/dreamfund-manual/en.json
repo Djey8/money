@@ -222,10 +222,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Button",
-            "What it does"
-          ],
+          "head": ["Button", "What it does"],
           "rows": [
             [
               "**Roll** (golden dice)",
@@ -255,10 +252,7 @@
               "**Undo**",
               "Takes back the last action of your turn (not a die that was thrown for a card)."
             ],
-            [
-              "**Resign**",
-              "Gives up your seat. You lose against everybody who stays."
-            ]
+            ["**Resign**", "Gives up your seat. You lose against everybody who stays."]
           ]
         },
         {
@@ -311,11 +305,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Goal",
-            "What has to be true",
-            "How you get there"
-          ],
+          "head": ["Goal", "What has to be true", "How you get there"],
           "rows": [
             [
               "**Debts**",
@@ -359,19 +349,13 @@
       "blocks": [
         {
           "type": "table",
-          "head": [
-            "Account",
-            "What it is for"
-          ],
+          "head": ["Account", "What it is for"],
           "rows": [
             [
               "**Daily**",
               "Bills and everyday life: rent, food, insurance. Your salary lands here."
             ],
-            [
-              "**Splurge**",
-              "Spending that is only for fun."
-            ],
+            ["**Splurge**", "Spending that is only for fun."],
             [
               "**Smile**",
               "Your dreams. Every dream is a **Smile project** with buckets (flights, hotel, equipment...) that you fill."
@@ -598,24 +582,14 @@
               "about seventeen lines, a realistic budget",
               "the same lines, tight"
             ],
-            [
-              "Left of a month",
-              "30 % more",
-              "as designed",
-              "15 % less"
-            ],
+            ["Left of a month", "30 % more", "as designed", "15 % less"],
             [
               "Debts, savings, dream",
               "debts 20 % lower, savings 50 % higher, dream 10 % cheaper",
               "-",
               "debts 10 % higher, savings 25 % lower, dream 5 % dearer"
             ],
-            [
-              "Promotions",
-              "a roll one lower",
-              "-",
-              "a roll one higher"
-            ],
+            ["Promotions", "a roll one lower", "-", "a roll one higher"],
             [
               "Cards and the rest",
               "luck +1 on the good dice, two offers a landing, only four traps, selling every Payday, a friendly market",
@@ -634,12 +608,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Character",
-            "Easy",
-            "Normal",
-            "Hard"
-          ],
+          "head": ["Character", "Easy", "Normal", "Hard"],
           "rows": [
             [
               "Jonas",
@@ -724,12 +693,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Attribute",
-            "Values",
-            "What it does",
-            "How it changes"
-          ],
+          "head": ["Attribute", "Values", "What it does", "How it changes"],
           "rows": [
             [
               "❤️ Relationship",
@@ -835,96 +799,16 @@
             "Insurances (a month)"
           ],
           "rows": [
-            [
-              "Jonas",
-              "single",
-              "0",
-              "shared flat",
-              "no",
-              "yes",
-              "24 TT"
-            ],
-            [
-              "Mehmet",
-              "single",
-              "0",
-              "own flat",
-              "yes",
-              "no",
-              "34 TT"
-            ],
-            [
-              "Lena",
-              "single",
-              "1",
-              "own flat",
-              "yes",
-              "no",
-              "22 TT"
-            ],
-            [
-              "Sophie",
-              "single",
-              "0",
-              "own flat",
-              "yes",
-              "no",
-              "32 TT"
-            ],
-            [
-              "Tobias",
-              "single",
-              "0",
-              "own flat",
-              "no",
-              "no",
-              "35 TT"
-            ],
-            [
-              "Katrin",
-              "married",
-              "2",
-              "own flat",
-              "yes",
-              "no",
-              "53 TT"
-            ],
-            [
-              "Frank",
-              "married",
-              "1",
-              "own flat",
-              "yes",
-              "no",
-              "57 TT"
-            ],
-            [
-              "Dr. Jan",
-              "married",
-              "2",
-              "own flat",
-              "yes",
-              "no",
-              "81 TT"
-            ],
-            [
-              "Heike",
-              "single",
-              "0",
-              "own flat",
-              "yes",
-              "no",
-              "42 TT"
-            ],
-            [
-              "Peter",
-              "married",
-              "0",
-              "own flat",
-              "yes",
-              "no",
-              "21 TT"
-            ]
+            ["Jonas", "single", "0", "shared flat", "no", "yes", "24 TT"],
+            ["Mehmet", "single", "0", "own flat", "yes", "no", "34 TT"],
+            ["Lena", "single", "1", "own flat", "yes", "no", "22 TT"],
+            ["Sophie", "single", "0", "own flat", "yes", "no", "32 TT"],
+            ["Tobias", "single", "0", "own flat", "no", "no", "35 TT"],
+            ["Katrin", "married", "2", "own flat", "yes", "no", "53 TT"],
+            ["Frank", "married", "1", "own flat", "yes", "no", "57 TT"],
+            ["Dr. Jan", "married", "2", "own flat", "yes", "no", "81 TT"],
+            ["Heike", "single", "0", "own flat", "yes", "no", "42 TT"],
+            ["Peter", "married", "0", "own flat", "yes", "no", "21 TT"]
           ]
         },
         {
@@ -933,67 +817,19 @@
         },
         {
           "type": "table",
-          "head": [
-            "Pile",
-            "Card",
-            "Needs"
-          ],
+          "head": ["Pile", "Card", "Needs"],
           "rows": [
-            [
-              "Emergency",
-              "Flashed! (E05)",
-              "a car"
-            ],
-            [
-              "Emergency",
-              "Car Battery Dead (E12)",
-              "a car"
-            ],
-            [
-              "Emergency",
-              "Washing Machine Breaks (E14)",
-              "Home: own flat or with the partner"
-            ],
-            [
-              "Emergency",
-              "Parking Bump (E38)",
-              "a car"
-            ],
-            [
-              "Emergency",
-              "Laptop Dies Before Exams (E17)",
-              "Study: studying"
-            ],
-            [
-              "Emergency",
-              "Cracked Windscreen (E19)",
-              "a car"
-            ],
-            [
-              "Emergency",
-              "Deposit Deductions (E21)",
-              "Home: own flat or shared flat"
-            ],
-            [
-              "Emergency",
-              "Vet Emergency (E23)",
-              "a pet"
-            ],
-            [
-              "Emergency",
-              "Fridge Dies in Summer (E24)",
-              "Home: own flat or with the partner"
-            ],
-            [
-              "Emergency",
-              "Clutch Gone (E25)",
-              "a car"
-            ],
-            [
-              "Emergency",
-              "Burglary (E26)",
-              "Home: own flat or shared flat or with the partner"
-            ],
+            ["Emergency", "Flashed! (E05)", "a car"],
+            ["Emergency", "Car Battery Dead (E12)", "a car"],
+            ["Emergency", "Washing Machine Breaks (E14)", "Home: own flat or with the partner"],
+            ["Emergency", "Parking Bump (E38)", "a car"],
+            ["Emergency", "Laptop Dies Before Exams (E17)", "Study: studying"],
+            ["Emergency", "Cracked Windscreen (E19)", "a car"],
+            ["Emergency", "Deposit Deductions (E21)", "Home: own flat or shared flat"],
+            ["Emergency", "Vet Emergency (E23)", "a pet"],
+            ["Emergency", "Fridge Dies in Summer (E24)", "Home: own flat or with the partner"],
+            ["Emergency", "Clutch Gone (E25)", "a car"],
+            ["Emergency", "Burglary (E26)", "Home: own flat or shared flat or with the partner"],
             [
               "Emergency",
               "Water Damage Downstairs (E27)",
@@ -1009,46 +845,14 @@
               "The Flat Burns Down (E30)",
               "Home: own flat or shared flat or with the partner"
             ],
-            [
-              "Emergency",
-              "School Trip and Supplies (E46)",
-              "Children: at least 1"
-            ],
-            [
-              "Emergency",
-              "Sick Child, No Daycare (E47)",
-              "Children: at least 1"
-            ],
-            [
-              "Emergency",
-              "Braces for the Child (E48)",
-              "Children: at least 1"
-            ],
-            [
-              "Emergency",
-              "Semester Fee and Textbooks (E49)",
-              "Study: studying"
-            ],
-            [
-              "Emergency",
-              "Partner Needs a Dentist (E50)",
-              "Relationship: a partner"
-            ],
-            [
-              "Life",
-              "Falling in Love (L01)",
-              "Relationship: single"
-            ],
-            [
-              "Life",
-              "Moving In Together (L02)",
-              "Relationship: in a relationship"
-            ],
-            [
-              "Life",
-              "The Proposal (L03)",
-              "Relationship: in a relationship or living together"
-            ],
+            ["Emergency", "School Trip and Supplies (E46)", "Children: at least 1"],
+            ["Emergency", "Sick Child, No Daycare (E47)", "Children: at least 1"],
+            ["Emergency", "Braces for the Child (E48)", "Children: at least 1"],
+            ["Emergency", "Semester Fee and Textbooks (E49)", "Study: studying"],
+            ["Emergency", "Partner Needs a Dentist (E50)", "Relationship: a partner"],
+            ["Life", "Falling in Love (L01)", "Relationship: single"],
+            ["Life", "Moving In Together (L02)", "Relationship: in a relationship"],
+            ["Life", "The Proposal (L03)", "Relationship: in a relationship or living together"],
             [
               "Life",
               "Break-Up (L04)",
@@ -1064,21 +868,9 @@
               "It's a Baby! (L06)",
               "Relationship: in a relationship or living together or married"
             ],
-            [
-              "Life",
-              "A Cat Moves In (L09)",
-              "Pet: none"
-            ],
-            [
-              "Life",
-              "A Dog Moves In (L10)",
-              "Pet: none"
-            ],
-            [
-              "Life",
-              "Grandpa's Old Car (L11)",
-              "Car: false"
-            ],
+            ["Life", "A Cat Moves In (L09)", "Pet: none"],
+            ["Life", "A Dog Moves In (L10)", "Pet: none"],
+            ["Life", "Grandpa's Old Car (L11)", "Car: false"],
             [
               "Life",
               "Back to Your Childhood Room (L14)",
@@ -1089,56 +881,16 @@
               "New Flatmate (L15)",
               "Relationship: single or in a relationship; Home: own flat"
             ],
-            [
-              "Life",
-              "The Company Goes Under (L19)",
-              "Job: employed"
-            ],
-            [
-              "Life",
-              "Laid Off With Severance (L27)",
-              "Job: employed"
-            ],
-            [
-              "Life",
-              "Short-Time Work (L20)",
-              "Job: employed"
-            ],
-            [
-              "Dream",
-              "The Big Wedding Party (D38)",
-              "Relationship: a partner"
-            ],
-            [
-              "Dream",
-              "An Education Fund for Your Child (D39)",
-              "Children: at least 1"
-            ],
-            [
-              "Opportunity",
-              "Rent Out a Room (P17)",
-              "Home: own flat"
-            ],
-            [
-              "Opportunity",
-              "Freelance Data Consulting (P18)",
-              "Career stage 3+"
-            ],
-            [
-              "Opportunity",
-              "Consolidate Your Debt (P28)",
-              "Debt >= 1,000 TT"
-            ],
-            [
-              "Opportunity",
-              "Take Over an IT Service Company (T13)",
-              "Career stage 4+"
-            ],
-            [
-              "Opportunity",
-              "Vending Machine Network (T29)",
-              "Owns: P15"
-            ]
+            ["Life", "The Company Goes Under (L19)", "Job: employed"],
+            ["Life", "Laid Off With Severance (L27)", "Job: employed"],
+            ["Life", "Short-Time Work (L20)", "Job: employed"],
+            ["Dream", "The Big Wedding Party (D38)", "Relationship: a partner"],
+            ["Dream", "An Education Fund for Your Child (D39)", "Children: at least 1"],
+            ["Opportunity", "Rent Out a Room (P17)", "Home: own flat"],
+            ["Opportunity", "Freelance Data Consulting (P18)", "Career stage 3+"],
+            ["Opportunity", "Consolidate Your Debt (P28)", "Debt >= 1,000 TT"],
+            ["Opportunity", "Take Over an IT Service Company (T13)", "Career stage 4+"],
+            ["Opportunity", "Vending Machine Network (T29)", "Owns: P15"]
           ]
         },
         {
@@ -1174,55 +926,25 @@
         },
         {
           "type": "table",
-          "head": [
-            "Tile",
-            "Count",
-            "Colour",
-            "What happens"
-          ],
+          "head": ["Tile", "Count", "Colour", "What happens"],
           "rows": [
-            [
-              "💰 Payday",
-              "4",
-              "gold",
-              "Salary in, bills out. About every 2.5 rolls is a month."
-            ],
-            [
-              "🌱 Opportunity",
-              "14",
-              "purple",
-              "Choose a pile and an investment to plan."
-            ],
+            ["💰 Payday", "4", "gold", "Salary in, bills out. About every 2.5 rolls is a month."],
+            ["🌱 Opportunity", "14", "purple", "Choose a pile and an investment to plan."],
             [
               "🌾 Harvest",
               "6",
               "amber",
               "A market card: the markets move, windows to sell, buyers, hype, scams."
             ],
-            [
-              "😊 Dream",
-              "3",
-              "green",
-              "Dreams to take, and Dream moments."
-            ],
-            [
-              "🔥 Emergency",
-              "3",
-              "red",
-              "Something breaks and has to be paid."
-            ],
+            ["😊 Dream", "3", "green", "Dreams to take, and Dream moments."],
+            ["🔥 Emergency", "3", "red", "Something breaks and has to be paid."],
             [
               "❤ Life",
               "4",
               "pink",
               "A turn of life: love, a baby, a move, a gym membership, a parent who needs help."
             ],
-            [
-              "🎓 Career",
-              "2",
-              "blue",
-              "A promotion to roll for."
-            ]
+            ["🎓 Career", "2", "blue", "A promotion to roll for."]
           ]
         },
         {
@@ -1235,11 +957,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Setting",
-            "Choices",
-            "What it changes"
-          ],
+          "head": ["Setting", "Choices", "What it changes"],
           "rows": [
             [
               "**Shape**",
@@ -1322,12 +1040,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Pile",
-            "Cards",
-            "What it is",
-            "Money needed"
-          ],
+          "head": ["Pile", "Cards", "What it is", "Money needed"],
           "rows": [
             [
               "🌱 **Seed**",
@@ -1534,11 +1247,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Situation",
-            "Pile",
-            "Why"
-          ],
+          "head": ["Situation", "Pile", "Why"],
           "rows": [
             [
               "Your first turns, little cash",
@@ -1672,11 +1381,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Way",
-            "What happens",
-            "When to use it"
-          ],
+          "head": ["Way", "What happens", "When to use it"],
           "rows": [
             [
               "**Pay now**",
@@ -1901,11 +1606,7 @@
       "blocks": [
         {
           "type": "table",
-          "head": [
-            "Exit",
-            "Price",
-            "When"
-          ],
+          "head": ["Exit", "Price", "When"],
           "rows": [
             [
               "**A Harvest offer**",
@@ -1979,23 +1680,11 @@
         },
         {
           "type": "table",
-          "head": [
-            "Setting",
-            "What it does"
-          ],
+          "head": ["Setting", "What it does"],
           "rows": [
-            [
-              "**Table name**",
-              "Shown in the lobby. Leave it empty and a funny one is chosen."
-            ],
-            [
-              "**Players**",
-              "How many seats (bots take a seat too)."
-            ],
-            [
-              "**Who can find it**",
-              "Everybody, or only people with the invite code."
-            ],
+            ["**Table name**", "Shown in the lobby. Leave it empty and a funny one is chosen."],
+            ["**Players**", "How many seats (bots take a seat too)."],
+            ["**Who can find it**", "Everybody, or only people with the invite code."],
             [
               "**Difficulty**",
               "Easy, Normal or Hard: the numbers of the characters and the cards (see \"The characters\"). The difficulty is also the stake of the rating."
@@ -2008,18 +1697,9 @@
               "**Rules: guided or strict**",
               "Guided: one random card per tile, buying only with the card in hand. Strict: dice only from the app, no free transactions."
             ],
-            [
-              "**Map: shape, size, seed**",
-              "See \"The map\"."
-            ],
-            [
-              "**Characters**",
-              "Free (the same one twice is fine), unique, or dealt by the table."
-            ],
-            [
-              "**Turn order**",
-              "Random, or by seat."
-            ],
+            ["**Map: shape, size, seed**", "See \"The map\"."],
+            ["**Characters**", "Free (the same one twice is fine), unique, or dealt by the table."],
+            ["**Turn order**", "Random, or by seat."],
             [
               "**The game ends**",
               "**First escape** (the first to reach every goal wins), **all escape** (everybody plays until out or bankrupt) or **after rounds**."
@@ -2032,18 +1712,9 @@
               "**Time limit**",
               "None, per move or a time bank for the whole game. Time out and your turn is played passively."
             ],
-            [
-              "**Bot speed**",
-              "Fast, normal or slow: how long the bots wait between moves."
-            ],
-            [
-              "**Spectators**",
-              "People who are not seated may watch."
-            ],
-            [
-              "**Currency**",
-              "Dream Taler or a real sign (the numbers do not change)."
-            ],
+            ["**Bot speed**", "Fast, normal or slow: how long the bots wait between moves."],
+            ["**Spectators**", "People who are not seated may watch."],
+            ["**Currency**", "Dream Taler or a real sign (the numbers do not change)."],
             [
               "**Advanced rules**",
               "Tax on the profit of a sale, how long a sell offer stays open (1-5 turns), how many turns a planned card stays buyable (1-3), the Bank loan's interest, undo by vote, leaving, repaying off turn."
@@ -2105,10 +1776,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Mode",
-            "What it means"
-          ],
+          "head": ["Mode", "What it means"],
           "rows": [
             [
               "**Free**",
@@ -2164,23 +1832,14 @@
         },
         {
           "type": "table",
-          "head": [
-            "What",
-            "Points"
-          ],
+          "head": ["What", "Points"],
           "rows": [
             [
               "Each goal, in proportion to how far you got (the reserve, no debts, the dream, independence): a goal reached is 250, one that is 60% done is 150",
               "up to 250"
             ],
-            [
-              "Each dream point",
-              "25"
-            ],
-            [
-              "Winning (all the goals)",
-              "1000"
-            ]
+            ["Each dream point", "25"],
+            ["Winning (all the goals)", "1000"]
           ]
         },
         {
@@ -2218,27 +1877,11 @@
         },
         {
           "type": "table",
-          "head": [
-            "Difficulty",
-            "Points you gain",
-            "What you lose"
-          ],
+          "head": ["Difficulty", "Points you gain", "What you lose"],
           "rows": [
-            [
-              "Easy",
-              "x 0.7",
-              "the same"
-            ],
-            [
-              "Normal",
-              "x 1",
-              "the same"
-            ],
-            [
-              "Hard",
-              "x 1.5",
-              "the same"
-            ]
+            ["Easy", "x 0.7", "the same"],
+            ["Normal", "x 1", "the same"],
+            ["Hard", "x 1.5", "the same"]
           ]
         },
         {
@@ -2290,10 +1933,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Place",
-            "What it counts"
-          ],
+          "head": ["Place", "What it counts"],
           "rows": [
             [
               "**Grow**",
@@ -2333,10 +1973,7 @@
         },
         {
           "type": "table",
-          "head": [
-            "Strategy",
-            "In one line"
-          ],
+          "head": ["Strategy", "In one line"],
           "rows": [
             [
               "**Expert**",
@@ -2350,50 +1987,23 @@
               "**Tree**",
               "Free savings first, then only Trees. Slow but strong at the top of the tournament."
             ],
-            [
-              "**ETF**",
-              "A world ETF and bonds for the steady part."
-            ],
-            [
-              "**Property**",
-              "Rented flats and a mortgage."
-            ],
-            [
-              "**Dividend**",
-              "Dividend shares from all piles, reinvested."
-            ],
-            [
-              "**Hustler**",
-              "One side hustle after the other, reinvesting every month."
-            ],
-            [
-              "**Steady**",
-              "Three months of cash, no risky card."
-            ],
-            [
-              "**Dreamer**",
-              "Puts the dream and its points first."
-            ],
-            [
-              "**Saver**",
-              "Savings and the employer's money; few risks."
-            ],
+            ["**ETF**", "A world ETF and bonds for the steady part."],
+            ["**Property**", "Rented flats and a mortgage."],
+            ["**Dividend**", "Dividend shares from all piles, reinvested."],
+            ["**Hustler**", "One side hustle after the other, reinvesting every month."],
+            ["**Steady**", "Three months of cash, no risky card."],
+            ["**Dreamer**", "Puts the dream and its points first."],
+            ["**Saver**", "Savings and the employer's money; few risks."],
             [
               "**Gambler**",
               "Crypto, hype and hot tips. Almost never wins, but it makes the table lively."
             ],
-            [
-              "**Passive**",
-              "Takes almost no decision. A baseline for the others."
-            ],
+            ["**Passive**", "Takes almost no decision. A baseline for the others."],
             [
               "**Flipper**",
               "**Sell, step up, repeat**: sells what has gained to buy something bigger, and clears a loan by selling."
             ],
-            [
-              "**Scholar**",
-              "The employer's money, the pension and the courses first."
-            ],
+            ["**Scholar**", "The employer's money, the pension and the courses first."],
             [
               "**Coach**",
               "The demo bot: plays a fixed, friendly game so the guided tour is always the same."
@@ -2543,11 +2153,7 @@
       "blocks": [
         {
           "type": "table",
-          "head": [
-            "Job",
-            "Tool",
-            "What you get"
-          ],
+          "head": ["Job", "Tool", "What you get"],
           "rows": [
             [
               "Watch",
@@ -2559,11 +2165,7 @@
               "`table_advice`",
               "Your goals, your money, the moves a strategy would make now and why, what to keep in mind."
             ],
-            [
-              "Explain",
-              "`dream_cards`",
-              "Every printed card of every pile."
-            ],
+            ["Explain", "`dream_cards`", "Every printed card of every pile."],
             [
               "Play",
               "`table_autoplay`, `table_move`",
@@ -2879,20 +2481,8 @@
             "Passive income covers the expenses"
           ],
           "rows": [
-            [
-              "Cautious saver",
-              "month 45 (77%)",
-              "month 47 (69%)",
-              "month 48 (67%)",
-              "-"
-            ],
-            [
-              "ETF investor",
-              "month 31 (94%)",
-              "month 41 (83%)",
-              "month 45 (78%)",
-              "month 54 (2%)"
-            ],
+            ["Cautious saver", "month 45 (77%)", "month 47 (69%)", "month 48 (67%)", "-"],
+            ["ETF investor", "month 31 (94%)", "month 41 (83%)", "month 45 (78%)", "month 54 (2%)"],
             [
               "Property builder",
               "month 27 (98%)",
@@ -2907,13 +2497,7 @@
               "month 45 (85%)",
               "month 54 (17%)"
             ],
-            [
-              "Gambler",
-              "month 20 (100%)",
-              "month 28 (100%)",
-              "month 46 (77%)",
-              "-"
-            ],
+            ["Gambler", "month 20 (100%)", "month 28 (100%)", "month 46 (77%)", "-"],
             [
               "Informed investor",
               "month 17 (100%)",
@@ -2935,20 +2519,8 @@
               "month 38 (96%)",
               "month 51 (40%)"
             ],
-            [
-              "Tree saver",
-              "month 17 (100%)",
-              "month 22 (100%)",
-              "month 44 (91%)",
-              "month 57 (1%)"
-            ],
-            [
-              "Dream chaser",
-              "month 45 (74%)",
-              "month 49 (51%)",
-              "month 48 (67%)",
-              "-"
-            ],
+            ["Tree saver", "month 17 (100%)", "month 22 (100%)", "month 44 (91%)", "month 57 (1%)"],
+            ["Dream chaser", "month 45 (74%)", "month 49 (51%)", "month 48 (67%)", "-"],
             [
               "Steady builder",
               "month 29 (98%)",
@@ -2956,13 +2528,7 @@
               "month 47 (81%)",
               "month 53 (17%)"
             ],
-            [
-              "Free cards only",
-              "month 48 (67%)",
-              "month 48 (54%)",
-              "month 49 (54%)",
-              "-"
-            ]
+            ["Free cards only", "month 48 (67%)", "month 48 (54%)", "month 49 (54%)", "-"]
           ]
         },
         {
@@ -2984,150 +2550,24 @@
             "Difference in net worth"
           ],
           "rows": [
-            [
-              "Annual Contract Check (S36)",
-              "seed",
-              "100%",
-              "11%",
-              "0%",
-              "+74,613"
-            ],
-            [
-              "Free Bank Account (S05)",
-              "seed",
-              "100%",
-              "11%",
-              "0%",
-              "+74,613"
-            ],
-            [
-              "Switch Electricity Provider (S02)",
-              "seed",
-              "100%",
-              "11%",
-              "0%",
-              "+74,613"
-            ],
-            [
-              "Cheaper Mobile Plan (S04)",
-              "seed",
-              "100%",
-              "11%",
-              "0%",
-              "+74,613"
-            ],
-            [
-              "Ask for a Job Ticket (S06)",
-              "seed",
-              "100%",
-              "11%",
-              "0%",
-              "+74,613"
-            ],
-            [
-              "AI Subscription Audit (S01)",
-              "seed",
-              "100%",
-              "11%",
-              "0%",
-              "+74,613"
-            ],
-            [
-              "Declutter and Sell (S07)",
-              "seed",
-              "98%",
-              "12%",
-              "3%",
-              "+9,775"
-            ],
-            [
-              "Meal Prep Sundays (S03)",
-              "seed",
-              "94%",
-              "13%",
-              "3%",
-              "+23,160"
-            ],
-            [
-              "Weekend IT Freelancing (S29)",
-              "seed",
-              "83%",
-              "25%",
-              "3%",
-              "+13,150"
-            ],
-            [
-              "Tutoring (S31)",
-              "seed",
-              "75%",
-              "22%",
-              "4%",
-              "+11,990"
-            ],
-            [
-              "Bike Courier Weekends (S34)",
-              "seed",
-              "59%",
-              "25%",
-              "6%",
-              "+5,518"
-            ],
-            [
-              "Phone Flipping (S30)",
-              "seed",
-              "53%",
-              "29%",
-              "7%",
-              "+8,453"
-            ],
-            [
-              "Snack Vending Machine (P15)",
-              "sapling",
-              "47%",
-              "49%",
-              "7%",
-              "+18,051"
-            ],
-            [
-              "Sell Digital Templates (S33)",
-              "seed",
-              "45%",
-              "27%",
-              "7%",
-              "+6,521"
-            ],
-            [
-              "Freelance Data Consulting (P18)",
-              "sapling",
-              "43%",
-              "48%",
-              "7%",
-              "+22,904"
-            ],
-            [
-              "Dividend ETF (S12)",
-              "seed",
-              "43%",
-              "21%",
-              "8%",
-              "+14,506"
-            ],
-            [
-              "Autowerk AG (Car Maker) (S13)",
-              "seed",
-              "42%",
-              "23%",
-              "8%",
-              "+11,643"
-            ],
-            [
-              "Print-on-Demand Shop (S32)",
-              "seed",
-              "41%",
-              "29%",
-              "8%",
-              "+6,271"
-            ]
+            ["Annual Contract Check (S36)", "seed", "100%", "11%", "0%", "+74,613"],
+            ["Free Bank Account (S05)", "seed", "100%", "11%", "0%", "+74,613"],
+            ["Switch Electricity Provider (S02)", "seed", "100%", "11%", "0%", "+74,613"],
+            ["Cheaper Mobile Plan (S04)", "seed", "100%", "11%", "0%", "+74,613"],
+            ["Ask for a Job Ticket (S06)", "seed", "100%", "11%", "0%", "+74,613"],
+            ["AI Subscription Audit (S01)", "seed", "100%", "11%", "0%", "+74,613"],
+            ["Declutter and Sell (S07)", "seed", "98%", "12%", "3%", "+9,775"],
+            ["Meal Prep Sundays (S03)", "seed", "94%", "13%", "3%", "+23,160"],
+            ["Weekend IT Freelancing (S29)", "seed", "83%", "25%", "3%", "+13,150"],
+            ["Tutoring (S31)", "seed", "75%", "22%", "4%", "+11,990"],
+            ["Bike Courier Weekends (S34)", "seed", "59%", "25%", "6%", "+5,518"],
+            ["Phone Flipping (S30)", "seed", "53%", "29%", "7%", "+8,453"],
+            ["Snack Vending Machine (P15)", "sapling", "47%", "49%", "7%", "+18,051"],
+            ["Sell Digital Templates (S33)", "seed", "45%", "27%", "7%", "+6,521"],
+            ["Freelance Data Consulting (P18)", "sapling", "43%", "48%", "7%", "+22,904"],
+            ["Dividend ETF (S12)", "seed", "43%", "21%", "8%", "+14,506"],
+            ["Autowerk AG (Car Maker) (S13)", "seed", "42%", "23%", "8%", "+11,643"],
+            ["Print-on-Demand Shop (S32)", "seed", "41%", "29%", "8%", "+6,271"]
           ]
         },
         {
@@ -3161,9 +2601,7 @@
         {
           "type": "list",
           "ordered": false,
-          "items": [
-            "none."
-          ]
+          "items": ["none."]
         },
         {
           "type": "h3",
@@ -3184,102 +2622,18 @@
             "Bankrupt after"
           ],
           "rows": [
-            [
-              "Bike Stolen (E18)",
-              "Emergency",
-              "7% of the games",
-              "5%",
-              "12%",
-              "1%"
-            ],
-            [
-              "Family in Need (L24)",
-              "Life",
-              "21% of the games",
-              "6%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Thinking About a Baby (L05)",
-              "Life",
-              "8% of the games",
-              "5%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Grandpa's Old Car (L11)",
-              "Life",
-              "24% of the games",
-              "6%",
-              "13%",
-              "0%"
-            ],
-            [
-              "Break-Up (L04)",
-              "Life",
-              "9% of the games",
-              "5%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Storm on the Balcony (E44)",
-              "Emergency",
-              "11% of the games",
-              "6%",
-              "12%",
-              "1%"
-            ],
-            [
-              "Fridge Dies in Summer (E24)",
-              "Emergency",
-              "19% of the games",
-              "8%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Falling in Love (L01)",
-              "Life",
-              "42% of the games",
-              "9%",
-              "13%",
-              "0%"
-            ],
-            [
-              "Forgotten Free Trial (E41)",
-              "Emergency",
-              "14% of the games",
-              "8%",
-              "12%",
-              "1%"
-            ],
-            [
-              "Friend's Bike Grip (E01)",
-              "Emergency",
-              "14% of the games",
-              "8%",
-              "12%",
-              "1%"
-            ],
-            [
-              "Dunning Letter (E06)",
-              "Emergency",
-              "13% of the games",
-              "8%",
-              "12%",
-              "1%"
-            ],
-            [
-              "Broken Glasses (E10)",
-              "Emergency",
-              "20% of the games",
-              "8%",
-              "12%",
-              "0%"
-            ]
+            ["Bike Stolen (E18)", "Emergency", "7% of the games", "5%", "12%", "1%"],
+            ["Family in Need (L24)", "Life", "21% of the games", "6%", "12%", "0%"],
+            ["Thinking About a Baby (L05)", "Life", "8% of the games", "5%", "12%", "0%"],
+            ["Grandpa's Old Car (L11)", "Life", "24% of the games", "6%", "13%", "0%"],
+            ["Break-Up (L04)", "Life", "9% of the games", "5%", "12%", "0%"],
+            ["Storm on the Balcony (E44)", "Emergency", "11% of the games", "6%", "12%", "1%"],
+            ["Fridge Dies in Summer (E24)", "Emergency", "19% of the games", "8%", "12%", "0%"],
+            ["Falling in Love (L01)", "Life", "42% of the games", "9%", "13%", "0%"],
+            ["Forgotten Free Trial (E41)", "Emergency", "14% of the games", "8%", "12%", "1%"],
+            ["Friend's Bike Grip (E01)", "Emergency", "14% of the games", "8%", "12%", "1%"],
+            ["Dunning Letter (E06)", "Emergency", "13% of the games", "8%", "12%", "1%"],
+            ["Broken Glasses (E10)", "Emergency", "20% of the games", "8%", "12%", "0%"]
           ]
         },
         {
@@ -3288,85 +2642,20 @@
         },
         {
           "type": "table",
-          "head": [
-            "Market card",
-            "Win chance after",
-            "Win chance otherwise",
-            "Bankrupt after"
-          ],
+          "head": ["Market card", "Win chance after", "Win chance otherwise", "Bankrupt after"],
           "rows": [
-            [
-              "Major Repair (H56)",
-              "25%",
-              "10%",
-              "0%"
-            ],
-            [
-              "Collector Hype (H40)",
-              "24%",
-              "10%",
-              "0%"
-            ],
-            [
-              "Year of Catastrophes (H15)",
-              "19%",
-              "10%",
-              "1%"
-            ],
-            [
-              "Parking Shortage (H61)",
-              "18%",
-              "10%",
-              "1%"
-            ],
-            [
-              "Emerging Markets Rally (H24)",
-              "17%",
-              "10%",
-              "1%"
-            ],
-            [
-              "Energy Transition Boom (H22)",
-              "17%",
-              "10%",
-              "2%"
-            ],
-            [
-              "Bonds Tumble (H27)",
-              "5%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Penny Stock Rocket (H41)",
-              "5%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Vacancy (H55)",
-              "5%",
-              "12%",
-              "1%"
-            ],
-            [
-              "Inflation Spike (H08)",
-              "4%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Exchange Collapse (H32)",
-              "3%",
-              "12%",
-              "0%"
-            ],
-            [
-              "Hype Fades (H50)",
-              "2%",
-              "12%",
-              "0%"
-            ]
+            ["Major Repair (H56)", "25%", "10%", "0%"],
+            ["Collector Hype (H40)", "24%", "10%", "0%"],
+            ["Year of Catastrophes (H15)", "19%", "10%", "1%"],
+            ["Parking Shortage (H61)", "18%", "10%", "1%"],
+            ["Emerging Markets Rally (H24)", "17%", "10%", "1%"],
+            ["Energy Transition Boom (H22)", "17%", "10%", "2%"],
+            ["Bonds Tumble (H27)", "5%", "12%", "0%"],
+            ["Penny Stock Rocket (H41)", "5%", "12%", "0%"],
+            ["Vacancy (H55)", "5%", "12%", "1%"],
+            ["Inflation Spike (H08)", "4%", "12%", "0%"],
+            ["Exchange Collapse (H32)", "3%", "12%", "0%"],
+            ["Hype Fades (H50)", "2%", "12%", "0%"]
           ]
         },
         {

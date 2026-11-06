@@ -1,0 +1,165 @@
+[   0.0 min] run 202611061134: full, 14 types, 14 workers, seed 20261106
+[   0.0 min] plan {"generations":10,"mutants":5,"games":80,"verify":600,"tables":3000,"gauntlet":600}
+[   0.0 min] capabilities: 26 listed, 1 no bot makes yet (plan-purchase)
+[   1.1 min] saver gen 1: +0.125 (z 3.7), win 24%
+[   2.0 min] saver gen 2: nothing better (win 30%)
+[   2.8 min] saver gen 3: nothing better (win 18%)
+[   3.8 min] saver gen 4: nothing better (win 19%)
+[   4.7 min] saver gen 5: nothing better (win 24%)
+[   5.5 min] saver gen 6: +0.105 (z 3.6), win 28%
+[   6.3 min] saver gen 7: nothing better (win 35%)
+[   7.1 min] saver gen 8: nothing better (win 24%)
+[   7.9 min] saver gen 9: nothing better (win 29%)
+[   8.8 min] saver gen 10: nothing better (win 36%)
+[  11.1 min] saver: NEW champion - win 7% -> 31%, bankrupt 25% -> 25%, score 0.183 -> 0.382 (z 14.3, 600 games)
+[  12.1 min] etf gen 1: +0.104 (z 2.3), win 44%
+[  12.9 min] etf gen 2: nothing better (win 45%)
+[  13.7 min] etf gen 3: +0.089 (z 2.2), win 46%
+[  14.5 min] etf gen 4: +0.110 (z 2.6), win 57%
+[  15.4 min] etf gen 5: +0.045 (z 2.0), win 59%
+[  16.1 min] etf gen 6: +0.038 (z 1.8), win 59%
+[  17.0 min] etf gen 7: nothing better (win 60%)
+[  17.6 min] etf gen 8: nothing better (win 55%)
+[  18.3 min] etf gen 9: nothing better (win 56%)
+[  19.2 min] etf gen 10: +0.158 (z 2.6), win 66%
+[  21.6 min] etf: NEW champion - win 27% -> 66%, bankrupt 25% -> 18%, score 0.357 -> 0.735 (z 16.8, 600 games)
+[  22.5 min] property gen 1: +0.119 (z 2.7), win 55%
+[  23.4 min] property gen 2: nothing better (win 45%)
+[  24.3 min] property gen 3: +0.039 (z 2.1), win 46%
+[  25.0 min] property gen 4: nothing better (win 54%)
+[  25.8 min] property gen 5: nothing better (win 46%)
+[  26.6 min] property gen 6: nothing better (win 51%)
+[  27.4 min] property gen 7: nothing better (win 45%)
+[  28.1 min] property gen 8: +0.017 (z 1.6), win 44%
+[  28.9 min] property gen 9: nothing better (win 53%)
+[  29.7 min] property gen 10: nothing better (win 41%)
+[  31.5 min] property: NEW champion - win 43% -> 46%, bankrupt 32% -> 28%, score 0.461 -> 0.505 (z 2.4, 600 games)
+[  32.2 min] hustler gen 1: +0.125 (z 3.7), win 70%
+[  32.6 min] hustler gen 2: +0.041 (z 1.8), win 68%
+[  33.1 min] hustler gen 3: nothing better (win 64%)
+[  33.6 min] hustler gen 4: nothing better (win 80%)
+[  34.1 min] hustler gen 5: nothing better (win 76%)
+[  34.6 min] hustler gen 6: nothing better (win 68%)
+[  35.0 min] hustler gen 7: nothing better (win 65%)
+[  35.4 min] hustler gen 8: nothing better (win 66%)
+[  35.9 min] hustler gen 9: +0.042 (z 1.8), win 65%
+[  36.3 min] hustler gen 10: nothing better (win 74%)
+[  37.5 min] hustler: NEW champion - win 59% -> 69%, bankrupt 25% -> 25%, score 0.663 -> 0.773 (z 7.9, 600 games)
+[  38.4 min] gambler gen 1: nothing better (win 1%)
+[  39.2 min] gambler gen 2: nothing better (win 0%)
+[  40.0 min] gambler gen 3: +0.035 (z 1.8), win 0%
+[  41.0 min] gambler gen 4: nothing better (win 0%)
+[  42.0 min] gambler gen 5: nothing better (win 1%)
+[  43.0 min] gambler gen 6: +0.030 (z 2.0), win 1%
+[  44.0 min] gambler gen 7: nothing better (win 1%)
+[  44.8 min] gambler gen 8: nothing better (win 1%)
+[  45.5 min] gambler gen 9: nothing better (win 3%)
+[  46.4 min] gambler gen 10: nothing better (win 0%)
+[  48.5 min] gambler: kept - win 0% -> 2%, bankrupt 32% -> 32%, score 0.109 -> 0.117 (z 0.9, 600 games)
+[  49.0 min] expert gen 1: nothing better (win 70%)
+[  49.5 min] expert gen 2: nothing better (win 80%)
+[  49.9 min] expert gen 3: +0.036 (z 2.5), win 78%
+[  50.2 min] expert gen 4: +0.053 (z 1.8), win 81%
+[  50.6 min] expert gen 5: nothing better (win 79%)
+[  50.9 min] expert gen 6: nothing better (win 86%)
+[  51.2 min] expert gen 7: nothing better (win 68%)
+[  51.6 min] expert gen 8: nothing better (win 73%)
+[  52.0 min] expert gen 9: nothing better (win 71%)
+[  52.3 min] expert gen 10: nothing better (win 81%)
+[  53.2 min] expert: NEW champion - win 72% -> 74%, bankrupt 23% -> 24%, score 0.810 -> 0.851 (z 3.4, 600 games)
+[  54.1 min] dividend gen 1: +0.112 (z 3.6), win 50%
+[  54.8 min] dividend gen 2: nothing better (win 57%)
+[  55.6 min] dividend gen 3: nothing better (win 63%)
+[  56.2 min] dividend gen 4: nothing better (win 51%)
+[  56.8 min] dividend gen 5: nothing better (win 66%)
+[  57.4 min] dividend gen 6: +0.014 (z 1.5), win 63%
+[  58.0 min] dividend gen 7: nothing better (win 56%)
+[  58.6 min] dividend gen 8: nothing better (win 50%)
+[  59.3 min] dividend gen 9: nothing better (win 55%)
+[  59.9 min] dividend gen 10: nothing better (win 57%)
+[  61.5 min] dividend: NEW champion - win 37% -> 55%, bankrupt 28% -> 28%, score 0.426 -> 0.588 (z 12.7, 600 games)
+[  61.9 min] sapling gen 1: +0.056 (z 3.3), win 79%
+[  62.1 min] sapling gen 2: nothing better (win 73%)
+[  62.5 min] sapling gen 3: nothing better (win 73%)
+[  62.8 min] sapling gen 4: +0.003 (z 1.6), win 85%
+[  63.1 min] sapling gen 5: +0.001 (z 1.9), win 80%
+[  63.4 min] sapling gen 6: nothing better (win 75%)
+[  63.7 min] sapling gen 7: nothing better (win 75%)
+[  64.0 min] sapling gen 8: nothing better (win 70%)
+[  64.2 min] sapling gen 9: nothing better (win 69%)
+[  64.5 min] sapling gen 10: nothing better (win 83%)
+[  65.3 min] sapling: NEW champion - win 71% -> 76%, bankrupt 25% -> 24%, score 0.793 -> 0.862 (z 9.0, 600 games)
+[  66.2 min] tree gen 1: nothing better (win 21%)
+[  67.0 min] tree gen 2: +0.040 (z 2.1), win 23%
+[  67.9 min] tree gen 3: +0.305 (z 7.3), win 57%
+[  68.5 min] tree gen 4: nothing better (win 50%)
+[  69.2 min] tree gen 5: nothing better (win 55%)
+[  69.8 min] tree gen 6: nothing better (win 54%)
+[  70.5 min] tree gen 7: +0.036 (z 1.8), win 48%
+[  71.2 min] tree gen 8: nothing better (win 50%)
+[  71.9 min] tree gen 9: nothing better (win 48%)
+[  72.5 min] tree gen 10: nothing better (win 56%)
+[  74.3 min] tree: NEW champion - win 22% -> 50%, bankrupt 27% -> 24%, score 0.311 -> 0.555 (z 16.3, 600 games)
+[  75.0 min] dreamer gen 1: +0.148 (z 4.2), win 55%
+[  75.5 min] dreamer gen 2: nothing better (win 57%)
+[  76.1 min] dreamer gen 3: nothing better (win 49%)
+[  76.7 min] dreamer gen 4: nothing better (win 56%)
+[  77.3 min] dreamer gen 5: nothing better (win 59%)
+[  78.0 min] dreamer gen 6: nothing better (win 46%)
+[  78.5 min] dreamer gen 7: +0.044 (z 1.6), win 57%
+[  79.0 min] dreamer gen 8: nothing better (win 54%)
+[  79.5 min] dreamer gen 9: nothing better (win 51%)
+[  80.1 min] dreamer gen 10: nothing better (win 68%)
+[  81.7 min] dreamer: NEW champion - win 32% -> 57%, bankrupt 30% -> 30%, score 0.365 -> 0.597 (z 14.4, 600 games)
+[  82.4 min] steady gen 1: nothing better (win 60%)
+[  82.9 min] steady gen 2: nothing better (win 74%)
+[  83.4 min] steady gen 3: +0.077 (z 3.5), win 73%
+[  83.8 min] steady gen 4: nothing better (win 70%)
+[  84.2 min] steady gen 5: nothing better (win 71%)
+[  84.8 min] steady gen 6: nothing better (win 75%)
+[  85.1 min] steady gen 7: +0.034 (z 1.5), win 70%
+[  85.6 min] steady gen 8: nothing better (win 71%)
+[  86.1 min] steady gen 9: nothing better (win 71%)
+[  86.5 min] steady gen 10: +0.020 (z 1.6), win 75%
+[  87.7 min] steady: NEW champion - win 63% -> 70%, bankrupt 24% -> 24%, score 0.702 -> 0.784 (z 8.0, 600 games)
+[  88.5 min] passive gen 1: +0.016 (z 2.0), win 0%
+[  89.2 min] passive gen 2: nothing better (win 0%)
+[  90.0 min] passive gen 3: +0.024 (z 2.0), win 0%
+[  90.8 min] passive gen 4: nothing better (win 0%)
+[  91.5 min] passive gen 5: nothing better (win 0%)
+[  92.4 min] passive gen 6: nothing better (win 0%)
+[  93.1 min] passive gen 7: nothing better (win 0%)
+[  93.9 min] passive gen 8: +0.009 (z 1.6), win 0%
+[  94.6 min] passive gen 9: nothing better (win 0%)
+[  95.3 min] passive gen 10: nothing better (win 0%)
+[  97.2 min] passive: NEW champion - win 0% -> 0%, bankrupt 29% -> 26%, score 0.100 -> 0.130 (z 6.8, 600 games)
+[  97.7 min] flipper gen 1: +0.065 (z 2.6), win 79%
+[  98.0 min] flipper gen 2: +0.049 (z 1.7), win 78%
+[  98.4 min] flipper gen 3: nothing better (win 76%)
+[  98.7 min] flipper gen 4: nothing better (win 85%)
+[  99.1 min] flipper gen 5: nothing better (win 88%)
+[  99.4 min] flipper gen 6: nothing better (win 76%)
+[  99.7 min] flipper gen 7: nothing better (win 76%)
+[ 100.0 min] flipper gen 8: nothing better (win 70%)
+[ 100.3 min] flipper gen 9: +0.002 (z 1.5), win 71%
+[ 100.6 min] flipper gen 10: nothing better (win 88%)
+[ 101.5 min] flipper: NEW champion - win 70% -> 76%, bankrupt 23% -> 22%, score 0.799 -> 0.879 (z 8.2, 600 games)
+[ 102.0 min] scholar gen 1: +0.052 (z 2.1), win 74%
+[ 102.3 min] scholar gen 2: nothing better (win 69%)
+[ 102.7 min] scholar gen 3: nothing better (win 79%)
+[ 103.1 min] scholar gen 4: nothing better (win 85%)
+[ 103.5 min] scholar gen 5: nothing better (win 81%)
+[ 103.9 min] scholar gen 6: nothing better (win 75%)
+[ 104.2 min] scholar gen 7: nothing better (win 74%)
+[ 104.5 min] scholar gen 8: +0.005 (z 2.0), win 76%
+[ 104.8 min] scholar gen 9: nothing better (win 71%)
+[ 105.2 min] scholar gen 10: +0.001 (z 1.7), win 80%
+[ 106.1 min] scholar: NEW champion - win 71% -> 75%, bankrupt 23% -> 23%, score 0.793 -> 0.861 (z 6.9, 600 games)
+[ 106.1 min] building the domain with the new champions
+[ 106.2 min] tournament: 3000 tables on each of 3 difficulties, 12 processes
+[ 168.1 min] easy: tree 1674, sapling 1661, expert 1654, tree--strong 1647, expert--strong 1636
+[ 168.1 min] medium: gambler 1631, tree 1624, expert 1620, sapling 1617, expert--strong 1614
+[ 168.1 min] hard: tree 1647, tree--strong 1629, expert 1625, etf 1623, dividend 1621
+[ 168.2 min] gauntlet: tree, expert, sapling, dividend, etf, gambler - 600 tables on each difficulty
+[ 183.6 min] champion of the champions: sapling (33% of its tables)
+[ 183.6 min] done in 183.64 min - docs/dreamfund-balance/CALIBRATION.md

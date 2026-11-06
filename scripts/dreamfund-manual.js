@@ -11,6 +11,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { parse } = require('./dreamfund-manual-parse.js');
 const root = path.join(__dirname, '..');
 
@@ -92,6 +93,8 @@ for (const [language, file] of [
     sections,
   };
   fs.writeFileSync(path.join(outDir, `${language}.json`), `${JSON.stringify(manual, null, 2)}\n`);
+  // the repo's format check (CI: npm run format) reads the generated file as well
+  execSync(`npx prettier --write "${path.join(outDir, language + '.json')}"`, { stdio: 'ignore' });
   console.log(
     `Wrote src/assets/i18n/dreamfund-manual/${language}.json (${manual.order.length} sections)`,
   );

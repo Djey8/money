@@ -6816,7 +6816,8 @@ paths:
         - name: kind
           in: query
           required: false
-          description: '`dreamfund` lists the twelve strategies of the Dreamfund simulation (id, name) instead of the classic personas.'
+          description: >-
+            `dreamfund` lists the strategies of the Dreamfund simulation (id, name, ratings) instead of the classic personas, and **Coach** (`id: coach`, `demo: true`, with a `description`): the bot of the guided demo game. Seating Coach at a Dreamfund table that has one person and no other bot turns the table into the demo - fixed settings (`settings.demo: basics`: medium ring, the character Jonas, never ranked), fixed dice and cards for the first turns, never recorded on the leaderboard, forgotten after the game. Coach has no rating and no level.
           schema:
             type: string
             enum: [classic, dreamfund]

@@ -102,3 +102,20 @@ The profile adds these up over the games that have one and shows the total and t
   calibration - the search will tell whether it helps and for which types.
 - **A new type**: one more `makePolicy(...)` in `BASE_POLICIES`; the next calibration finds its champion and its rating.
 - **A new card or rule**: run `--mode medium`; the champions move by themselves where the cards changed what wins.
+
+## 7. Coach and the guided demo game
+
+**Coach** (`policyId: coach`, an alias of the steady strategy at the casual level, `bot-levels.ts`) is the bot of the guided demo game and is **not rated**:
+it is listed last in the bot panel, has no rating and no level, never reaches the leaderboard, and its games are not recorded. Seating Coach at a table with
+one person and no other bot (`add_bot`) turns the table into the demo: `settings.demo = 'basics'` (`table/demo-setup.ts`: a medium ring with layout seed 12,
+Jonas, never ranked, two seats, fast bots), the settings and the character cannot be changed, and the person's first moves play fixed dice and cards
+(`table/demo.ts`: a stored `rngState` per scripted move, matched by command type in the order of the story). The numbers are searched against the real rules:
+
+```
+npm run build:domain
+node scripts/dreamfund-demo-author.js     # rewrites table/demo-rigs.generated.ts; fails loudly when a card or rule change breaks the story
+```
+
+`table/demo.spec.ts` replays the eight turns of the story through the reducer. Run the author script again after any change of cards, rules or the map.
+The server forgets a finished demo 15 minutes after it ends and never lists it as a recent table. The coach on the screen is in
+`src/app/dreamfund-tables/demo/` (service, steps in English and German, overlay).

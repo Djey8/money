@@ -11,6 +11,7 @@
  * It fails loudly when the story cannot be played any more, so a changed card never silently breaks the demo.
  */
 const fs = require('fs');
+const { execSync } = require('child_process');
 const path = require('path');
 const root = path.join(__dirname, '..');
 require(path.join(root, 'backend/services/game-sets.js'));
@@ -227,4 +228,5 @@ fs.writeFileSync(
     '',
   ].join('\n'),
 );
+execSync(`npx prettier --write "${out}"`, { stdio: 'ignore' });
 console.log(`Wrote ${rigs.length} rigs to demo-rigs.generated.ts`);
