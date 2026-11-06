@@ -66,7 +66,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
   template: `
     <div class="wr" [attr.dir]="rtl ? 'rtl' : 'ltr'">
       <!-- what this table is -->
-      <section class="wr-group">
+      <section class="wr-group" data-demo="wr-settings">
         <header class="wr-group-head">
           <h3>{{ h.settingsTitle }}</h3>
           <button
@@ -112,7 +112,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
       </section>
 
       <!-- who sits here -->
-      <section class="wr-group">
+      <section class="wr-group" data-demo="wr-players">
         <header class="wr-group-head">
           <h3>{{ h.playersTitle }} ({{ table.players.length }}/{{ table.settings.maxSeats }})</h3>
           <button
@@ -183,6 +183,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
                 *ngIf="first && isHost && table.phase === 'lobby'"
                 type="button"
                 class="tx-btn tx-btn--small"
+                data-demo="wr-add-bot"
                 (click)="openBots()"
               >
                 🤖 {{ h.addSeatBot }}
@@ -199,6 +200,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             *ngIf="isHost"
             class="tx-btn tx-btn--primary"
             type="button"
+            data-demo="wr-start"
             [disabled]="session.busy() || !canStart"
             (click)="session.lobby('start')"
           >
@@ -230,6 +232,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
     <!-- the bots the host can seat -->
     <div
       class="wr-modal"
+      data-demo="wr-bots"
       *ngIf="botsOpen"
       role="dialog"
       aria-modal="true"
@@ -269,11 +272,13 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             *ngFor="let bot of sortedBots()"
             class="wr-bot"
             [class.wr-bot--seated]="botSeated(bot)"
+            [attr.data-demo]="bot.demo ? 'bot-coach' : null"
           >
             <app-seat-avatar [bot]="true" [size]="44"></app-seat-avatar>
             <div class="wr-bot-text">
               <strong>{{ bot.name }}</strong>
-              <small
+              <small *ngIf="bot.demo">{{ h.botCoach }}</small>
+              <small *ngIf="!bot.demo"
                 >{{ difficultyText(bot)
                 }}<ng-container *ngIf="bot.ratings?.[botLevel] as rating">
                   {{ dream ? '' : '· ' }}{{ rating }}</ng-container
@@ -948,7 +953,8 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
               id: bot.id,
               name: bot.name,
               difficulty: 'champion',
-              description: '',
+              description: bot.description ?? '',
+              ...(bot.demo ? { demo: true } : {}),
               ...(bot.ratings ? { ratings: bot.ratings } : {}),
             })),
           })),
@@ -974,12 +980,15 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     const level = this.botLevel;
     return [...this.botCatalog].sort(
       (a, b) =>
-        (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) || a.name.localeCompare(b.name),
+        Number(!!b.demo) - Number(!!a.demo) ||
+        (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) ||
+        a.name.localeCompare(b.name),
     );
   }
 
   /** The chosen strategy at the chosen level already sits at the table (it sits once: the leaderboard knows it as one player). */
   botSeated(bot: BotInfo): boolean {
+    if (bot.demo) return this.table.players.some((player) => player.bot?.policyId === 'coach');
     const id = this.botLevel === 'master' ? bot.id : `${bot.id}--${this.botLevel}`;
     return this.table.players.some((player) => player.bot?.policyId === id);
   }
@@ -1011,6 +1020,11 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   }
 
   addBot(bot: BotInfo): void {
+    // Coach has one level of its own and makes the table the guided demo
+    if (bot.demo) {
+      void this.session.lobby('bots', { policyId: 'dream:coach' });
+      return;
+    }
     // a Dreamfund bot is a strategy of the simulation, told apart from the classic ones by its prefix
     void this.session.lobby('bots', {
       policyId: this.dream ? `dream:${bot.id}` : bot.id,

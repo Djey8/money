@@ -4,8 +4,10 @@ import {
   Injector,
   OnDestroy,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -35,6 +37,9 @@ import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { extrasOf, moneyOf, pendingOf } from '../dreamfund-tables/dream-table-view';
 import { DebugPanelComponent } from './debug-panel.component';
+import { DreamDemoGuideComponent } from '../dreamfund-tables/demo/demo-guide.component';
+import { DreamDemoService } from '../dreamfund-tables/demo/demo-guide.service';
+import { demoContext, demoLabels } from '../dreamfund-tables/demo/demo-steps';
 import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
 
 /**
@@ -53,6 +58,7 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
     TradeOfferComponent,
     TableBriefingComponent,
     DebugPanelComponent,
+    DreamDemoGuideComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
@@ -299,6 +305,13 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
           <app-table-stage></app-table-stage>
         </div>
       </div>
+
+      <!-- the guided demo game: the coach lights up the screen and says what comes -->
+      <app-dream-demo-guide
+        *ngIf="demoGuide.active()"
+        [context]="demoContext"
+        (stopRequested)="stopDemo()"
+      ></app-dream-demo-guide>
     </section>
   `,
   styles: [
@@ -647,6 +660,30 @@ export class TableLayerComponent implements OnDestroy {
   private readonly injector = inject(Injector);
 
   readonly view = this.mode.view;
+  /** The guided demo game: the coach follows the person into the game screen. */
+  readonly demoGuide = inject(DreamDemoService);
+  readonly demoContext = () =>
+    demoContext(
+      'game',
+      this.view(),
+      this.mode.session()?.legalActions() ?? [],
+      (selector) => !!document.querySelector(selector),
+    );
+  private readonly adoptDemo = effect(() => {
+    const table = this.view();
+    if ((table?.settings as unknown as { demo?: string } | undefined)?.demo === 'basics') {
+      untracked(() => {
+        if (!this.demoGuide.active()) this.demoGuide.adopt(table!.id);
+        else if (!this.demoGuide.roomId()) this.demoGuide.adopt(table!.id);
+      });
+    }
+  });
+
+  /** "Stop tutorial": the demo table is taken away and the person is back in the lobby, free to play for real. */
+  async stopDemo(): Promise<void> {
+    this.demoGuide.stop();
+    await this.mode.removeTable();
+  }
   /** A move of mine is on its way to the server. */
   readonly busy = computed(() => this.mode.session()?.busy() ?? false);
   readonly presenter = this.mode.presenter;

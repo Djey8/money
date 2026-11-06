@@ -292,6 +292,9 @@ export interface DreamBotCatalog {
   items: {
     id: string;
     name: string;
+    /** Coach, the bot of the guided demo game (never rated). */
+    demo?: boolean;
+    description?: string;
     /** What the bot is rated now, at each skill level. */
     ratings?: Partial<Record<'master' | 'strong' | 'casual' | 'beginner', number>>;
   }[];

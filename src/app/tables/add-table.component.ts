@@ -90,7 +90,7 @@ function accountName(): string {
                 </button>
               </div>
             </div>
-            <div class="at-row">
+            <div class="at-row" data-demo="at-name">
               <div class="at-label">
                 <strong>{{ a.name }}</strong>
                 <small>{{ a.nameHint }}</small>
@@ -206,7 +206,7 @@ function accountName(): string {
           <!-- the game -->
           <section class="at-group">
             <h3>{{ a.groupGame }}</h3>
-            <div class="at-row">
+            <div class="at-row" data-demo="at-ranked">
               <div class="at-label">
                 <strong>{{ a.ranked }}</strong>
                 <small>{{ a.rankedHint }}</small>
@@ -255,7 +255,7 @@ function accountName(): string {
                   </button>
                 </div>
               </div>
-              <div class="at-row at-row--stack">
+              <div class="at-row at-row--stack" data-demo="at-difficulty">
                 <div class="at-label">
                   <strong>{{ d.difficulty }}</strong>
                   <small>{{ difficultyHint() }}</small>
@@ -652,7 +652,12 @@ function accountName(): string {
             </section>
           </ng-container>
 
-          <button class="tx-btn tx-btn--primary at-open" type="submit" [disabled]="busy">
+          <button
+            class="tx-btn tx-btn--primary at-open"
+            type="submit"
+            data-demo="at-open"
+            [disabled]="busy"
+          >
             {{ existing ? h.settingsSave : a.open }}
           </button>
         </form>
@@ -957,6 +962,8 @@ export class AddTableComponent implements OnInit {
 
   /** The game the table is for: the classic Cashflow, or the Dreamfund of this app (the same panel, a few settings more). */
   @Input() game: 'classic' | 'dreamfund' = 'classic';
+  /** The guided demo game is being set up: the table starts unranked (the demo is never ranked) and the coach of the demo points at the settings. */
+  @Input() demo = false;
   readonly levels = ['easy', 'medium', 'hard'] as const;
   readonly shapes = ['ring', 'infinity', 'yinyang', 'rectangle', 'square', 'mountain'] as const;
   readonly sizes = ['small', 'medium', 'large'] as const;
@@ -1082,6 +1089,7 @@ export class AddTableComponent implements OnInit {
     this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
     if (this.existing) this.fillFrom(this.existing);
+    if (this.demo) this.form.ranked = false;
     const own = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
     // only the languages the game is offered in; anything else starts as English
     this.form.language = GAME_LANGUAGES.some((game) => game.code === own) ? own : 'en';

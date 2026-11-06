@@ -38,6 +38,9 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
 import { DreamApiService } from '../dreamfund-tables/dream-session.service';
 import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 import { keepGame, savedGame, type TableGame } from './table-game';
+import { DreamDemoGuideComponent } from '../dreamfund-tables/demo/demo-guide.component';
+import { DreamDemoService } from '../dreamfund-tables/demo/demo-guide.service';
+import { demoContext, demoLabels } from '../dreamfund-tables/demo/demo-steps';
 
 /** The account's own name: the one name at every table (the server uses the account's nickname whatever is sent). */
 function accountName(): string {
@@ -89,6 +92,7 @@ function savedFilters(): TableFilters {
     AddTableComponent,
     SeatAvatarComponent,
     TablePlayerInfoComponent,
+    DreamDemoGuideComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css', '../app.component.css'],
@@ -126,9 +130,15 @@ function savedFilters(): TableFilters {
         +
       </button>
     </div>
+    <app-dream-demo-guide
+      *ngIf="demoGuide.active()"
+      [context]="demoContext"
+      (stopRequested)="stopDemo()"
+    ></app-dream-demo-guide>
     <app-add-table
       *ngIf="showAdd"
       [game]="game"
+      [demo]="demoActive"
       (created)="onCreated($event)"
       (closed)="showAdd = false"
     />
@@ -155,6 +165,15 @@ function savedFilters(): TableFilters {
         </button>
       </div>
       <nav class="tl-nav" aria-label="Multiplayer">
+        <button
+          *ngIf="game === 'dreamfund'"
+          class="tl-nav-item tl-nav-demo"
+          type="button"
+          data-demo="lobby-learn"
+          (click)="startDemo()"
+        >
+          ▶ {{ demoTexts.learn }}
+        </button>
         <a class="tl-nav-item" routerLink="/leaderboard">🏆 {{ lb.title }}</a>
         <button class="tl-nav-item" type="button" (click)="openMyGames()">
           📒 {{ 'CashflowGame.myGames' | translate }}
@@ -804,6 +823,33 @@ export class TablesLobbyComponent implements OnInit {
   initials = savedInitials();
   private route = inject(ActivatedRoute, { optional: true });
   private dreamApi = inject(DreamApiService);
+  readonly demoGuide = inject(DreamDemoService);
+
+  get demoActive(): boolean {
+    return this.demoGuide.active();
+  }
+
+  get demoTexts() {
+    return demoLabels(this.translate.currentLang || this.translate.defaultLang || 'en');
+  }
+
+  readonly demoContext = () =>
+    demoContext('lobby', null, [], (selector) => !!document.querySelector(selector));
+
+  /** The guided demo game starts here: the Dreamfund lobby, and the coach at the first step. */
+  startDemo(): void {
+    this.setGame('dreamfund');
+    this.showAdd = false;
+    this.demoGuide.start();
+    this.cdr.markForCheck();
+  }
+
+  /** "Stop tutorial" in the lobby: nothing to remove yet - the coach is off. */
+  stopDemo(): void {
+    this.demoGuide.stop();
+    this.showAdd = false;
+    this.cdr.markForCheck();
+  }
 
   constructor(
     private api: TablesApiService,
@@ -849,7 +895,9 @@ export class TablesLobbyComponent implements OnInit {
       this.speak(event.lang);
       this.cdr.markForCheck();
     });
+    // the manual and the other entrances start the demo with ?demo=start
     this.reload();
+    if (this.route?.snapshot.queryParamMap.get('demo') === 'start') this.startDemo();
   }
 
   private speak(lang: string): void {

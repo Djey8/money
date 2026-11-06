@@ -118,6 +118,8 @@ export interface BotInfo {
   name: string;
   difficulty: 'easy' | 'medium' | 'hard' | 'champion';
   description: string;
+  /** Coach, the bot of the guided demo game: seating it makes the table the demo (never rated). */
+  demo?: boolean;
   /** What the bot is rated now at each skill level (the leaderboard's rating, or the measured start). */
   ratings?: Partial<Record<BotLevel, number>>;
   /** The leaderboard player of each level: opens the bot's stats. */
