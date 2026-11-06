@@ -167,6 +167,8 @@ export interface CreateTableInput {
       maxOpenDreams?: number;
       /** How many of a player's own turns a sell offer of a Harvest card stays open (1-5). */
       sellValidTurns?: number;
+      /** The tax on the profit of a sale, in percent (0 = none; the default is 26.375). */
+      capitalGainsTaxPercent?: number;
     };
     /** A game for debugging the cards: the host chooses the card of every tile. */
     debug?: boolean;

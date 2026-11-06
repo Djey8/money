@@ -2216,6 +2216,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
     },
     {
+      // the tax on the profit of a sale: none, or a rate (the default is the German flat tax with the solidarity surcharge)
+      key: 'capitalGainsTaxPercent',
+      options: [0, 15, 20, 26.375, 30].map((n) => ({
+        value: n,
+        label: n === 0 ? 'CashflowGame.custom.taxNone' : `${n} %`,
+      })),
+    },
+    {
       key: 'sellValidTurns',
       options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
     },

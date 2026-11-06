@@ -214,7 +214,7 @@ Die zweite Tabelle listet jede Karte, die fragt - so siehst du, welches Merkmal 
 
 ## Die Karten
 
-### 🌱 Chance - Dinge zum Investieren (98 Karten)
+### 🌱 Chance - Dinge zum Investieren (107 Karten)
 
 Wer auf einem Chance-Feld landet, **wählt zuerst einen Stapel**:
 
@@ -255,7 +255,17 @@ schlechtem Start, eine Sammlung, die viel oder wenig wert ist. Die Karte listet 
 **Fallen.** Manche Angebote sehen aus wie normale Investitionen und sind es nicht (eine Verleih-App mit „2 % pro Woche“, ein
 „Pre-IPO“-Tipp, ein Timesharing). Ihre Zahlen werden nicht verraten. Die Ernte-Karten zeigen später, was Betrug war.
 
-### 🌾 Ernte - die Märkte (87 Karten)
+**Altersvorsorge und Leistungen vom Arbeitgeber (S37-S39, P33, T32).** Verträge, in die du einzahlst: Du nimmst die Karte mit der Laufzeit,
+die du willst (Sparvertrag vom Arbeitgeber 12 Zahltage, Betriebsrente 12 oder 24, geförderte Altersvorsorge 24, private Rente 36), sie wird zum
+Grow-Projekt, und bei jedem Zahltag geht die Zahlung vom **Fire**-Konto hinein (es ist zurückgelegtes Geld, keine Ausgabe). Am Ende bekommst du
+das Eingezahlte **plus Bonus** zurück (50 %, 20 %, 45 %, 35 %, 55 %: Zuschuss des Arbeitgebers, Zulage des Staates). Früher beendet, kommt nur das
+Eingezahlte zurück, abzüglich eines Zehntels, ohne Bonus. Das Grow-Projekt sagt, wie viel bisher eingezahlt ist.
+
+**Karriere und Bildung (S40, P34, P35, T31).** Ein Kurs, ein Abendabschluss, ein Meisterbrief, ein berufsbegleitender Master: Du zahlst die
+Gebühren jetzt, das neue Gehalt beginnt, wenn du fertig bist (3, 6, 12 oder 24 Zahltage), und **ein Würfel entscheidet, wie viel es dein Einkommen
+anhebt** - nichts, eine ordentliche Erhöhung oder eine große. Einen Kurs kauft dir keiner ab.
+
+### 🌾 Ernte - die Märkte (120 Karten)
 
 Jeder Markt hat einen **Index**, der bei 1,00 beginnt und bei jedem Zahltag driftet (Weltaktien, Anleihen, Technologie, Gold, Bitcoin,
 Immobilien ...). Was du besitzt, ist so viel wert wie sein Kartenpreis mal dem Index seines Marktes.
@@ -275,14 +285,34 @@ Jede Karte zeigt ihre **Gruppe** (Markt, Aktien, Krypto, Hype, Metalle, Sammlers
 sie für alle tut und was sie für dich bedeutet. Jedes betroffene Grow-Projekt bekommt eine Notiz und eine Markierung.
 
 **Verkaufen, was du bekommen hast.** Was die Chance-Karten dir gebracht haben, verkaufst du zum Preis einer Ernte-Karte: in einem offenen
-Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot bleibt offen (je nach Regeln mehrere Würfe lang), auch nachdem du auf
-**Fertig** gedrückt hast: Der **Verkaufen**-Button des Projekts in Grow verkauft dann zum Preis der Karte.
+Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot **bleibt so viele eigene Züge offen, wie der Tisch erlaubt** (die Einstellung
+_Wie lange ein Verkaufsangebot offen bleibt_, 1 bis 5 Züge, standardmäßig 2), auch nachdem du auf **Fertig** gedrückt hast und über einen Zahltag
+hinweg; dann ist das Geschäft vorbei. Solange es offen ist, ist das Projekt in Grow hervorgehoben und sagt, was es zahlt und wie viele Züge
+bleiben; sein **Verkaufen**-Button verkauft zu diesem Preis.
 
-**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber selten - auf etwa hundert Würfe
-kommt eine Landung, die von einem bestimmten Besitz spricht. Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
+**Wer was kauft.** Jede Art von Besitz hat unter den Ernte-Karten Käufer - etwa jede zehnte Karte spricht von einer Immobilie, einem
+Unternehmen, einem Nebenprojekt, einem Kredit, einer Sammlung, einem Metall oder den Aktien eines Marktes. Der Preis ist ein Würfelwurf: Eine
+junge Familie zahlt etwas unter oder über dem Wert der Wohnung, ein Institut zahlt 1 % bis 20 % über dem Kurs für ein Aktienpaket, ein
+Search-Fund zahlt drei Jahre Gewinn für ein Unternehmen (mindestens einen Teil dessen, was du gezahlt hast), ein Übernahmeangebot zahlt einen
+Aufschlag. Eine Jahresendrally öffnet jeden Markt; eine Welle von Zwangsverkäufen öffnet ihn auch - mit Verlust, du kannst also auch Verluste
+begrenzen.
+
+**Ein Betrug hat einen letzten Ausstieg.** Eine Karte sagt, der Kurs eines Betrugs sei um 80 % gefallen und der Markt noch einen Zug offen; ein
+Forderungskäufer zahlt Cent pro Euro; eine spätere Karte schließt ihn endgültig. Was du mit der letzten Chance tust, ist deine Sache.
+
+**Steuer auf den Gewinn.** Eine Tischeinstellung (_Steuer auf den Gewinn beim Verkauf_, erweiterte Regeln): Verkaufst du etwas für mehr, als du
+bezahlt hast, schuldest du einen Anteil des **Gewinns** - Standard sind 26,375 %, die deutsche Abgeltungsteuer mit Solidaritätszuschlag; 0 schaltet
+sie aus. Der Gewinn ist, was der Verkauf nach seinen Kosten und dem Geschuldeten (einer Hypothek) bringt, abzüglich dessen, was du für den
+verkauften Teil bezahlt hast. Ein Verkauf mit Verlust zahlt nichts, und das Grow-Projekt vermerkt die Steuer. Renten werden steuerfrei ausgezahlt.
+
+**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber sie kommt nicht bei jeder Landung.
+Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
 Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer Münze, einer Sammlung oder einer Immobilie (die Hypothek geht vom
 Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt).
 Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen.
+
+Jede Chance-Karte hat in ihrem Grow-Projekt, wie man investiert, was man tun und was man lassen sollte, ihr Risiko (1 bis 5) mit Begründung,
+Aufgaben und Links zum Weiterlesen.
 
 ### 🔥 Notfall (50 Karten)
 
@@ -295,7 +325,7 @@ Aufschlag des Plans) oder das **Fire-Projekt anlegen** - bezahlt ist dann noch n
 du zahlst dort Schritt für Schritt ein. Im geführten und im strengen Spiel ist der Zug erst vorbei, wenn ein als Fire-Projekt
 genommener Notfall bezahlt oder geplant ist. Ein Bußgeld oder eine Gebühr, die sofort bezahlt werden muss, wird kein Projekt.
 
-### ❤ Leben (27 Karten)
+### ❤ Leben (30 Karten)
 
 Liebe, ein Baby, zusammenziehen, ein neuer Job, ein schwieriger Mitbewohner, ein Elternteil, das Hilfe braucht, Lebensstil-Inflation. Es
 gibt vier Arten:

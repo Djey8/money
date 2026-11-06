@@ -208,7 +208,7 @@ The second table lists every card that asks, so you can see which attribute open
 
 ## The cards
 
-### 🌱 Opportunity - things to invest in (98 cards)
+### 🌱 Opportunity - things to invest in (107 cards)
 
 Landing on an Opportunity tile, you first **choose a pile**:
 
@@ -246,7 +246,17 @@ that is worth much or little. The card lists every number; you throw the die aft
 **Traps.** Some offers look like normal investments and are not (a "2% a week" lending app, a "pre-IPO" tip, a timeshare). Their
 numbers are not given away. The Harvest cards later show which were scams.
 
-### 🌾 Harvest - the markets (87 cards)
+**Pensions and employer benefits (S37-S39, P33, T32).** Plans you pay into: you take the card for the length you want (an employer
+savings plan of 12 Paydays, a company pension of 12 or 24, a state-subsidised pension of 24, a private pension of 36), it becomes a Grow
+project, and at every Payday the payment goes into it from the **Fire** account (it is money put aside, not an expense). At the end you get
+back what you paid in **plus a bonus** (50%, 20%, 45%, 35%, 55%: the employer's share, the state's allowance). Stopped early, only what
+you paid in comes back, less a tenth, and no bonus. The Grow project says how much has gone in so far.
+
+**Career and education (S40, P34, P35, T31).** A course, an evening diploma, a master craftsman's diploma, a part-time master's degree:
+you pay the fees now, the new pay starts when you have finished (3, 6, 12 or 24 Paydays), and **a die decides how much it raises your
+income** - nothing, a fair rise, or a big one. Nobody buys a course from you.
+
+### 🌾 Harvest - the markets (120 cards)
 
 Every market has an **index** that starts at 1.00 and drifts at every Payday (World stocks, Bonds, Tech, Gold, Bitcoin, Property...).
 What you own is worth its card price times the index of its market.
@@ -266,13 +276,31 @@ about - red when you own something with that word -, an **"Affects you / Not abo
 means for you. Every affected Grow project gets a note and a highlight.
 
 **Selling what the cards gave you.** What the Opportunity cards made is sold at the price of a Harvest card: in an open market, to a
-buyer, or on a hype. The offer stays open (for a few rolls, depending on the rules) even after you pressed **Done**: the project's
-**Sell** button in Grow then sells at the card's price.
+buyer, or on a hype. The offer **stays open for as many of your own turns as the table allows** (the setting _How long a sell offer stays
+open_, 1 to 5 turns, 2 by default) even after you pressed **Done** and across a Payday; then the deal is off. While it is open the project
+in Grow is highlighted and says what it pays and how many turns are left, and its **Sell** button sells at that price.
 
-**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it is rare - about one landing in a hundred rolls
-speaks of a given holding. So the **Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
+**Who buys what.** Every kind of holding has buyers among the Harvest cards - about one card in ten speaks of a property, a business, a side
+hustle, a loan, a collection, a metal or the shares of a market. The price is a roll of the die: a young family pays a little under or a
+little over what the flat is worth, an institution pays 1% to 20% over the screen price for a block of shares, a search fund pays three
+years of the profit of a business (at least a share of what you paid), a takeover bid pays a premium. A year-end rally opens every market;
+a wave of forced selling opens it too - at a loss, so you can also cut it.
+
+**A scam has a last exit.** One card says the price of a scam has fallen by 80% and the market is still open for one more turn; a claims
+buyer pays cents on the euro; a later card closes it for good. What you do with the last chance is yours.
+
+**Tax on the profit.** A table setting (_Tax on the profit of a sale_, advanced rules): when you sell something for more than you paid,
+you owe a share of the **profit** - the default is 26.375%, the German flat tax with the solidarity surcharge; 0 switches it off. The
+profit is what the sale brings after its costs and what is owed on it (a mortgage), less what you paid for the part you sell. A sale at a loss
+pays nothing, and the Grow project notes the tax. Pensions pay out untaxed.
+
+**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it does not come on every landing. So the
+**Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
 15% for a coin, a collection or a property (the mortgage comes off the proceeds), and a business or a hustle for a year of what it pays
 (half of what a buyer on a card pays). Nothing is sold below that, and savings and scams cannot be sold at all.
+
+Each Opportunity card has, in its Grow project, how to invest, what to do and what not to do, its risk (1 to 5) with the reason, tasks, and
+links to read more.
 
 ### 🔥 Emergency (50 cards)
 
@@ -285,7 +313,7 @@ surcharge), or **create the Fire project** - nothing is paid yet, the project op
 there, step by step. In the guided and the strict game the turn is not over before an emergency taken as a Fire project is paid or
 planned. A fine or a fee that has to be paid at once cannot become a project.
 
-### ❤ Life (27 cards)
+### ❤ Life (30 cards)
 
 Love, a baby, moving in together, a new job, a bad flatmate, a parent who needs help, lifestyle creep. There are four kinds:
 
@@ -684,3 +712,11 @@ number changes. The best strategy of each character and difficulty (share of gam
 | Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
 
 <!-- matrix:end -->
+
+### The Yin Yang map
+
+A circle with an S through it (2026-11-04). Every player walks one whole side: the **white** track is the S and the left half of the circle,
+the **black** track the right half of the circle and the S walked the other way. The S (with its two ends, where the sides meet) is common
+ground - the same tiles for both tracks, and all the Paydays except one more on each side of a large map. Each track has the tiles of the
+size (24, 36 or 48) with the usual mix. The seats take the tracks in turn, white first; with an odd number of players one side has one more.
+Both start on opposite sides of the circle - each on the first tile of their own half - walk their half, and meet on the S. The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track.

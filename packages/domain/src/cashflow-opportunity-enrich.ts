@@ -7,6 +7,7 @@ import {
   type EnrichAction,
   type EnrichLink,
 } from './cashflow-enrich-kit';
+import { CAREER_PENSION_CARDS } from './cashflow-opportunity-career';
 import { SAPLING_ENRICH } from './cashflow-enrich-sapling';
 import { SEED_ENRICH } from './cashflow-enrich-seed';
 import { TREE_ENRICH } from './cashflow-enrich-tree';
@@ -21,6 +22,9 @@ export const OPPORTUNITY_ENRICH: Record<string, CardEnrichment> = {
   ...SAPLING_ENRICH,
   ...TREE_ENRICH,
 };
+
+/** The cards of the second pass that bring their own words (pensions, career and education), put after the first stack. */
+export { CAREER_PENSION_CARDS };
 
 /** The German of the new texts, by their English text (registered with the German of the first stack). */
 export const OPPORTUNITY_ENRICH_DE = ENRICH_DE;

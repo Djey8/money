@@ -74,6 +74,9 @@ export interface DreamTexts {
   maxOpenTitle: string;
   maxOpenHint: string;
   sellValidTitle: string;
+  taxTitle: string;
+  taxHint: string;
+  taxNone: string;
   sellValidHint: string;
   sellValidTurns: string;
   editRefused: string;
@@ -322,6 +325,10 @@ const EN: DreamTexts = {
   maxOpenHint:
     'How many dreams a player can have open in parallel; no limit lets everybody take as many as they like.',
   maxOpenNoLimit: 'No limit',
+  taxTitle: 'Tax on the profit of a sale',
+  taxHint:
+    'What you owe on the profit when you sell something for more than you paid (a share, a property, a business ...). 26.375 % is the German flat tax with the solidarity surcharge. A sale at a loss pays nothing. Off: you sell without tax.',
+  taxNone: 'No tax',
   sellValidTitle: 'How long a sell offer stays open',
   sellValidHint:
     'A Harvest card that opens the market or brings a buyer makes an offer for the things you own. It stays open for this many of your own turns - then the deal is off and life goes on.',
@@ -580,6 +587,10 @@ const DE: Partial<DreamTexts> = {
   maxOpenHint:
     'Wie viele Träume ein Spieler gleichzeitig offen haben kann; ohne Limit darf jeder so viele nehmen, wie er will.',
   maxOpenNoLimit: 'Kein Limit',
+  taxTitle: 'Steuer auf den Gewinn beim Verkauf',
+  taxHint:
+    'Was du auf den Gewinn zahlst, wenn du etwas für mehr verkaufst, als du bezahlt hast (Aktie, Immobilie, Unternehmen ...). 26,375 % ist die deutsche Abgeltungsteuer mit Solidaritätszuschlag. Ein Verkauf mit Verlust zahlt nichts. Aus: Du verkaufst ohne Steuer.',
+  taxNone: 'Keine Steuer',
   sellValidTitle: 'Wie lange ein Verkaufsangebot offen bleibt',
   sellValidHint:
     'Eine Ernte-Karte, die den Markt öffnet oder einen Käufer bringt, macht ein Angebot für das, was du besitzt. Es bleibt so viele eigene Züge offen - dann ist das Geschäft vorbei und das Leben geht weiter.',

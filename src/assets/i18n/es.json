@@ -1710,6 +1710,8 @@
   "CashflowGame.opportunity.chanceGone": "The chance is gone: this card can only be bought in the turn it is in hand.",
   "CashflowGame.custom.opportunityValidTurns": "Turns a planned card can be bought (1 = only now)",
   "CashflowGame.custom.sellValidTurns": "Turns a sell offer of a Harvest card stays open (1 = only now)",
+  "CashflowGame.custom.capitalGainsTaxPercent": "Tax on the profit of a sale (0 = none)",
+  "CashflowGame.custom.taxNone": "No tax",
   "CashflowGame.opportunity.decline": "Decline the offer",
   "CashflowGame.opportunity.planCard": "Plan this card",
   "CashflowGame.kind.share": "Share",

@@ -67,6 +67,9 @@ export interface OpportunityHolding {
   /** Money that is locked this many Paydays, and what comes back then. */
   lockedLeft?: number;
   lockedReturnMinor?: number;
+  /** A plan paid into: the Paydays still to pay, and what has gone in so far. */
+  contributionLeft?: number;
+  contributedMinor?: number;
   /** Rent that is cut for some Paydays. */
   rentCut?: { percent: number; paydaysLeft: number };
   rentMinor?: number;
@@ -726,6 +729,35 @@ export function buyOpportunity(
       ),
     );
   }
+  if (card.contribution) {
+    const plan = card.contribution;
+    const contributionTitle = `${title} Contribution`;
+    holding.contributionLeft = plan.paydays;
+    holding.contributedMinor = 0;
+    // it is money put aside, not an expense: it is paid from the Fire account and ends with the plan
+    effects.subscriptionUpserts.push({
+      ...line(contributionTitle, -plan.monthlyMinor, date, `@${title}`),
+      account: 'Fire',
+    });
+    holding.subscription = contributionTitle;
+    effects.persist.subscriptions = true;
+    next = {
+      ...next,
+      gameSubscriptionTitles: next.gameSubscriptionTitles.includes(contributionTitle)
+        ? next.gameSubscriptionTitles
+        : [...next.gameSubscriptionTitles, contributionTitle],
+    };
+    notes.push(
+      note(
+        tx(
+          lang,
+          `You pay ${money(plan.monthlyMinor)} into it at every Payday for ${plan.paydays} Paydays; then you get back what you paid in plus ${plan.bonusPercent}%.`,
+          `Du zahlst ${plan.paydays} Zahltage lang bei jedem Zahltag ${money(plan.monthlyMinor)} ein; dann bekommst du das Eingezahlte plus ${plan.bonusPercent} % zurück.`,
+        ),
+        at,
+      ),
+    );
+  }
   if (card.trap?.ponzi) {
     holding.ponziLeft = card.trap.ponzi.paysPaydays;
     effects.subscriptionUpserts.push(
@@ -948,6 +980,47 @@ export function tickOpportunities(
         );
         continue;
       }
+    }
+
+    // a plan that is paid into: one more payment, and at the end what went in with the bonus
+    if (holding.contributionLeft !== undefined && card.contribution) {
+      holding.contributedMinor = (holding.contributedMinor ?? 0) + card.contribution.monthlyMinor;
+      holding.paidMinor = holding.contributedMinor;
+      holding.contributionLeft -= 1;
+      if (holding.contributionLeft <= 0) {
+        const bonus = Math.round((holding.contributedMinor * card.contribution.bonusPercent) / 100);
+        end(
+          holding,
+          tx(
+            lang,
+            `${holding.title}: the plan pays out - ${money(holding.contributedMinor)} paid in plus ${money(bonus)} bonus.`,
+            `${holding.title}: Der Vertrag zahlt aus - ${money(holding.contributedMinor)} eingezahlt plus ${money(bonus)} Bonus.`,
+          ),
+          holding.contributedMinor + bonus,
+        );
+      } else {
+        effects.growUpdates.push({
+          title: holding.title,
+          updatedAt: at,
+          amountMinor: holding.contributedMinor,
+          notes: [
+            ...notes().filter(
+              (n) =>
+                !n.text.startsWith('Paid in so far') && !n.text.startsWith('Bisher eingezahlt'),
+            ),
+            note(
+              tx(
+                lang,
+                `Paid in so far: ${money(holding.contributedMinor)} (${holding.contributionLeft} Paydays to go).`,
+                `Bisher eingezahlt: ${money(holding.contributedMinor)} (noch ${holding.contributionLeft} Zahltage).`,
+              ),
+              at,
+            ),
+          ],
+        });
+        effects.persist.grow = true;
+      }
+      continue;
     }
 
     // money that is locked

@@ -208,7 +208,7 @@ The second table lists every card that asks, so you can see which attribute open
 
 ## The cards
 
-### 🌱 Opportunity - things to invest in (98 cards)
+### 🌱 Opportunity - things to invest in (107 cards)
 
 Landing on an Opportunity tile, you first **choose a pile**:
 
@@ -246,6 +246,16 @@ that is worth much or little. The card lists every number; you throw the die aft
 **Traps.** Some offers look like normal investments and are not (a "2% a week" lending app, a "pre-IPO" tip, a timeshare). Their
 numbers are not given away. The Harvest cards later show which were scams.
 
+**Pensions and employer benefits (S37-S39, P33, T32).** Plans you pay into: you take the card for the length you want (an employer
+savings plan of 12 Paydays, a company pension of 12 or 24, a state-subsidised pension of 24, a private pension of 36), it becomes a Grow
+project, and at every Payday the payment goes into it from the **Fire** account (it is money put aside, not an expense). At the end you get
+back what you paid in **plus a bonus** (50%, 20%, 45%, 35%, 55%: the employer's share, the state's allowance). Stopped early, only what
+you paid in comes back, less a tenth, and no bonus. The Grow project says how much has gone in so far.
+
+**Career and education (S40, P34, P35, T31).** A course, an evening diploma, a master craftsman's diploma, a part-time master's degree:
+you pay the fees now, the new pay starts when you have finished (3, 6, 12 or 24 Paydays), and **a die decides how much it raises your
+income** - nothing, a fair rise, or a big one. Nobody buys a course from you.
+
 ### 🌾 Harvest - the markets (120 cards)
 
 Every market has an **index** that starts at 1.00 and drifts at every Payday (World stocks, Bonds, Tech, Gold, Bitcoin, Property...).
@@ -279,6 +289,11 @@ a wave of forced selling opens it too - at a loss, so you can also cut it.
 **A scam has a last exit.** One card says the price of a scam has fallen by 80% and the market is still open for one more turn; a claims
 buyer pays cents on the euro; a later card closes it for good. What you do with the last chance is yours.
 
+**Tax on the profit.** A table setting (_Tax on the profit of a sale_, advanced rules): when you sell something for more than you paid,
+you owe a share of the **profit** - the default is 26.375%, the German flat tax with the solidarity surcharge; 0 switches it off. The
+profit is what the sale brings after its costs and what is owed on it (a mortgage), less what you paid for the part you sell. A sale at a loss
+pays nothing, and the Grow project notes the tax. Pensions pay out untaxed.
+
 **There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it does not come on every landing. So the
 **Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
 15% for a coin, a collection or a property (the mortgage comes off the proceeds), and a business or a hustle for a year of what it pays
@@ -298,7 +313,7 @@ surcharge), or **create the Fire project** - nothing is paid yet, the project op
 there, step by step. In the guided and the strict game the turn is not over before an emergency taken as a Fire project is paid or
 planned. A fine or a fee that has to be paid at once cannot become a project.
 
-### ❤ Life (27 cards)
+### ❤ Life (30 cards)
 
 Love, a baby, moving in together, a new job, a bad flatmate, a parent who needs help, lifestyle creep. There are four kinds:
 

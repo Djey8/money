@@ -1327,6 +1327,7 @@ export class DreamPlayer {
       rng: this.rng,
       difficulty: this.rules.difficulty,
       validRolls: this.rules.sellValidTurns,
+      taxPercent: this.rules.capitalGainsTaxPercent,
     };
   }
 

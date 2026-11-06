@@ -6,7 +6,14 @@ import { tuneOpportunityCards } from '../cashflow-opportunity-tuning';
 import { applyEffectsToBooks, type GameBooks } from './books';
 import type { BookSubscription } from './effects';
 import { pickCashflowProfession } from './engine';
-import { matchesTarget, playHarvestCard, initialMarkets, unitPriceNow } from './harvest';
+import {
+  matchesTarget,
+  playHarvestCard,
+  initialMarkets,
+  sellHolding,
+  taxOnSale,
+  unitPriceNow,
+} from './harvest';
 import { marketOfTag } from './harvest-deck';
 import { buyOpportunity, type OpportunityContext } from './opportunity';
 import { offerIsOpen } from './rules';
@@ -199,5 +206,53 @@ describe('selling what the Opportunity cards made (JFK, 2026-11-05)', () => {
     const { result } = play(books, 'H114', () => 0);
     const sale = result.pending.sales[0];
     expect(sale.grossMinor).toBe(Math.round(books.state.holdings![0].paidMinor! * 0.15));
+  });
+});
+
+describe('the tax on the profit of a sale (JFK, 2026-11-06)', () => {
+  it('is a share of the profit only: nothing on a loss, nothing when it is off', () => {
+    expect(taxOnSale(12000, 10000, 26.375)).toBe(528); // 2,000 profit
+    expect(taxOnSale(9000, 10000, 26.375)).toBe(0);
+    expect(taxOnSale(12000, 10000, 0)).toBe(0);
+    expect(taxOnSale(12000, 10000, undefined)).toBe(0);
+  });
+
+  const holdWorld = () => {
+    const books = buy(start(), 'S10', { units: 4 });
+    return play(books, 'H05').books; // the world index rises: a profit
+  };
+
+  it('comes off the proceeds of a sale and is told in the notes of the project', () => {
+    const books = holdWorld();
+    const held = books.state.holdings![0];
+    const price = unitPriceNow(opportunity('S10'), held, books.state) * 4;
+    const sale = { grossMinor: price, costsMinor: 0, owedMinor: 0 };
+    const free = sellHolding(books, 'WORLD', sale, { ...harvestContext, rng: seededRng(1) });
+    const taxed = sellHolding(books, 'WORLD', sale, {
+      ...harvestContext,
+      rng: seededRng(1),
+      taxPercent: 25,
+    });
+    const profit = price - held.paidMinor!;
+    expect(profit).toBeGreaterThan(0);
+    expect(free.appendedTransactions[0].amountMinor).toBe(price);
+    expect(taxed.appendedTransactions[0].amountMinor).toBe(price - Math.round(profit * 0.25));
+    const notes = taxed.growUpdates.flatMap((update) => update.notes ?? []).map((n) => n.text);
+    expect(notes.some((text) => text.includes('Tax on the profit (25%)'))).toBe(true);
+  });
+
+  it('is worked out on the units sold only, and the rest keeps its share of what was paid', () => {
+    const books = holdWorld();
+    const held = books.state.holdings![0];
+    const unit = unitPriceNow(opportunity('S10'), held, books.state);
+    const effects = sellHolding(
+      books,
+      'WORLD',
+      { grossMinor: unit * 3, costsMinor: 0, owedMinor: 0, units: 3 },
+      { ...harvestContext, rng: seededRng(1), taxPercent: 25 },
+    );
+    const profit = unit * 3 - Math.round((held.paidMinor! * 3) / 4);
+    expect(effects.appendedTransactions[0].amountMinor).toBe(unit * 3 - Math.round(profit * 0.25));
+    expect(effects.state.holdings![0].paidMinor).toBe(Math.round(held.paidMinor! / 4));
   });
 });

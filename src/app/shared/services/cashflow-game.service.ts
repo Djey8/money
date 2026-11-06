@@ -2719,6 +2719,7 @@ export class CashflowGameService {
       rng: this.rng,
       difficulty: this.customRules?.difficulty,
       validRolls: this.customRules?.sellValidTurns,
+      taxPercent: this.customRules?.capitalGainsTaxPercent,
     };
   }
 

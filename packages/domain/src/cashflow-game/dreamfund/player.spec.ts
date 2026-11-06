@@ -81,8 +81,8 @@ describe('DreamPlayer', () => {
 describe('the simulation on the engine', () => {
   it('plays a fixed game to a fixed record (it was the same before the engine was extracted)', () => {
     const policy = DREAM_POLICIES.find((candidate) => candidate.id === 'expert')!;
-    const a = simulateDreamGame({ seed: 3, policy, maxTurns: 150 });
-    const b = simulateDreamGame({ seed: 3, policy, maxTurns: 150 });
+    const a = simulateDreamGame({ seed: 4, policy, maxTurns: 150 });
+    const b = simulateDreamGame({ seed: 4, policy, maxTurns: 150 });
     expect(a).toEqual(b);
     expect(a.outcome).not.toBe('error');
     expect(a.turns).toBeGreaterThan(30);

@@ -131,6 +131,14 @@ export interface OpportunityCard {
   sideHustle?: boolean;
   rampPaydays?: number;
   lockedPaydays?: number;
+  /**
+   * A plan you pay into (JFK, 2026-11-06: a company pension, a savings contract of the employer): every Payday `monthlyMinor` goes in for
+   * `paydays` Paydays; at the end you get back what you paid in and a bonus (the employer's share, the state's allowance), in percent
+   * of what was paid in. Stopped early, only what was paid in comes back, less a fee.
+   */
+  contribution?: { monthlyMinor: number; paydays: number; bonusPercent: number };
+  /** Nobody buys it from you (a course you took): it has no price on the market and no standing sale. */
+  unsellable?: boolean;
   requires?: OpportunityRequirement;
   setsCar?: boolean;
   note?: string;

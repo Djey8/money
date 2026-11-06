@@ -242,6 +242,22 @@ export interface HarvestContext {
   difficulty?: Difficulty;
   /** How many of the player's own turns a sell offer stays open (the `sellValidTurns` setting); the offers of the card end with the turn when left out. */
   validRolls?: number;
+  /** The tax on the profit of a sale, in percent (the `capitalGainsTaxPercent` setting); none when left out. */
+  taxPercent?: number;
+}
+
+/**
+ * The tax on a sale (JFK, 2026-11-06): the profit - what the sale brings after its costs and what is owed on it, less what was paid
+ * for the part that is sold - times the rate. A sale at a loss pays nothing, and neither does a scam or a saving.
+ */
+export function taxOnSale(
+  proceedsMinor: number,
+  basisMinor: number,
+  taxPercent: number | undefined,
+): number {
+  if (!taxPercent || taxPercent <= 0) return 0;
+  const profit = proceedsMinor - basisMinor;
+  return profit > 0 ? Math.round((profit * taxPercent) / 100) : 0;
 }
 
 export interface HarvestResult {
@@ -313,7 +329,12 @@ export function playHarvestCard(
   };
   const setLines = () => {
     for (const holding of live()) {
-      if (!holding.subscription || holding.ponziLeft !== undefined) continue;
+      if (
+        !holding.subscription ||
+        holding.ponziLeft !== undefined ||
+        holding.contributionLeft !== undefined
+      )
+        continue;
       const monthly = monthlyOf(holding);
       if (monthly !== holding.lineMinor) {
         effects.subscriptionUpserts.push({
@@ -1094,6 +1115,15 @@ export function standingSale(
   holding: OpportunityHolding,
   state: Pick<CashflowGameState, 'markets'>,
 ): StandingSale | null {
+  if (card.unsellable) return null;
+  // a plan paid into can be stopped: what went in comes back, less a fee (the bonus is for those who stay)
+  if (holding.contributionLeft !== undefined) {
+    return {
+      grossMinor: Math.round((holding.contributedMinor ?? 0) * 0.9),
+      owedMinor: 0,
+      discountPercent: 10,
+    };
+  }
   if (holding.monthlySavingsMinor || card.savings || card.trap || holding.ponziLeft !== undefined)
     return null;
   if (card.share) {
@@ -1218,7 +1248,38 @@ export function sellHolding(
       ],
     });
   }
-  const net = sale.grossMinor - sale.costsMinor - sale.owedMinor;
+  const proceeds = sale.grossMinor - sale.costsMinor - sale.owedMinor;
+  // what was paid for the part that is sold: all of it, or its share of the units
+  const soldShare =
+    partial && holding.units && sale.units !== undefined
+      ? sale.units / (holding.units + sale.units)
+      : 1;
+  const tax = card?.trap
+    ? 0
+    : taxOnSale(proceeds, Math.round((holding.paidMinor ?? 0) * soldShare), context.taxPercent);
+  if (tax > 0) {
+    if (holding.paidMinor !== undefined && partial) {
+      holding.paidMinor = Math.round(holding.paidMinor * (1 - soldShare));
+    }
+    effects.growUpdates.push({
+      title: holdingTitle,
+      notes: [
+        ...(effects.growUpdates.find((entry) => entry.title === holdingTitle)?.notes ??
+          books.growProjects.find((project) => project.title === holdingTitle)?.notes ??
+          []),
+        {
+          text:
+            lang === 'de'
+              ? `Steuer auf den Gewinn (${context.taxPercent} %): ${round2(tax / 100).toLocaleString('de-DE')}.`
+              : `Tax on the profit (${context.taxPercent}%): ${round2(tax / 100).toLocaleString('en')}.`,
+          createdAt: at,
+        },
+      ],
+    });
+  } else if (partial && holding.paidMinor !== undefined) {
+    holding.paidMinor = Math.round(holding.paidMinor * (1 - soldShare));
+  }
+  const net = proceeds - tax;
   if (net >= 0) {
     effects.appendedTransactions.push({
       account: 'Fire',

@@ -517,6 +517,24 @@ function accountName(): string {
               <ng-container *ngIf="dream">
                 <div class="at-row at-row--stack">
                   <div class="at-label">
+                    <strong>{{ d.taxTitle }}</strong>
+                    <small>{{ d.taxHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.taxTitle">
+                    <button
+                      *ngFor="let rate of taxChoices"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.tax === rate"
+                      [attr.aria-checked]="form.tax === rate"
+                      (click)="form.tax = rate"
+                    >
+                      {{ rate === 0 ? d.taxNone : rate + ' %' }}
+                    </button>
+                  </div>
+                </div>
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
                     <strong>{{ d.sellValidTitle }}</strong>
                     <small>{{ d.sellValidHint }}</small>
                   </div>
@@ -1010,6 +1028,8 @@ export class AddTableComponent implements OnInit {
     maxOpen: 3,
     // how many of a player's own turns a sell offer of a Harvest card stays open
     sellValid: 2,
+    // the tax on the profit of a sale, in percent (0 = none)
+    tax: 26.375,
     debug: false,
   };
 
@@ -1039,6 +1059,7 @@ export class AddTableComponent implements OnInit {
   }
   readonly pointGoals = [5, 8, 10, 15, 20, 30];
   readonly sellValidChoices = [1, 2, 3, 4, 5];
+  readonly taxChoices = [0, 15, 20, 26.375, 30];
   /** How many dreams a landing on a Smile tile offers: 0 is one or two, by chance. */
   readonly dreamOfferChoices = [0, 1, 2];
   /** How many dreams a player can have open at once: 0 is no limit. */
@@ -1232,6 +1253,7 @@ export class AddTableComponent implements OnInit {
           dreamOffers: f.dreamOffers,
           maxOpenDreams: f.maxOpen,
           sellValidTurns: f.sellValid,
+          capitalGainsTaxPercent: f.tax,
         },
       };
     }
@@ -1296,6 +1318,12 @@ export class AddTableComponent implements OnInit {
     if (rules?.bankLoanStepMinor) f.bankStep = rules.bankLoanStepMinor;
     if ((rules as { dreamOffers?: number } | undefined)?.dreamOffers !== undefined) {
       f.dreamOffers = (rules as { dreamOffers: number }).dreamOffers;
+    }
+    if (
+      (rules as { capitalGainsTaxPercent?: number } | undefined)?.capitalGainsTaxPercent !==
+      undefined
+    ) {
+      f.tax = (rules as { capitalGainsTaxPercent: number }).capitalGainsTaxPercent;
     }
     if ((rules as { sellValidTurns?: number } | undefined)?.sellValidTurns !== undefined) {
       f.sellValid = (rules as { sellValidTurns: number }).sellValidTurns;

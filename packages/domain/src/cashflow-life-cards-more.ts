@@ -615,4 +615,40 @@ export const LIFE_CARDS_MORE: LifeCard[] = [
     { oneTimeMinor: -4000, rewardTurns: 1 },
     { relationship: 'single' },
   ),
+
+  // ── windfalls (JFK, 2026-11-06): money that comes from the family, not from work ──
+  fate(
+    'L77',
+    1,
+    ['An Inheritance', 'Eine Erbschaft'],
+    [
+      'A great-aunt you saw twice in your life remembered you in her will. The letter from the notary is long, the sum is not small.',
+      'Eine Großtante, die du zweimal im Leben gesehen hast, hat dich in ihrem Testament bedacht. Der Brief vom Notar ist lang, die Summe nicht klein.',
+    ],
+    { oneTimePercentOfNet: 200 },
+  ),
+  fate(
+    'L78',
+    2,
+    ['A Gift From the Family', 'Ein Geschenk der Familie'],
+    [
+      'The grandparents want to see you enjoy something while they are around, and slip an envelope into your hand.',
+      'Die Großeltern wollen sehen, wie du dich über etwas freust, solange sie da sind, und stecken dir einen Umschlag zu.',
+    ],
+    { oneTimePercentOfNet: 40 },
+  ),
+  dice(
+    'L79',
+    1,
+    ['The Estate Is Settled', 'Der Nachlass ist geregelt'],
+    [
+      'After months of paperwork a share of an estate is paid out. How much is left after the debts and the fees, the dice will tell.',
+      'Nach Monaten Papierkrieg wird ein Anteil an einem Nachlass ausgezahlt. Wie viel nach Schulden und Gebühren übrig bleibt, sagt der Würfel.',
+    ],
+    [
+      { from: 1, to: 3, value: { oneTimePercentOfNet: 80 } },
+      { from: 4, to: 5, value: { oneTimePercentOfNet: 250 } },
+      { from: 6, to: 6, value: { oneTimePercentOfNet: 600 } },
+    ],
+  ),
 ];

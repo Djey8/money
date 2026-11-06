@@ -1768,6 +1768,8 @@
   "CashflowGame.opportunity.chanceGone": "Die Chance ist vorbei: Diese Karte kann nur in der Runde gekauft werden, in der du sie hast.",
   "CashflowGame.custom.opportunityValidTurns": "Runden, in denen eine geplante Karte kaufbar bleibt (1 = nur jetzt)",
   "CashflowGame.custom.sellValidTurns": "Runden, in denen ein Verkaufsangebot einer Ernte-Karte offen bleibt (1 = nur jetzt)",
+  "CashflowGame.custom.capitalGainsTaxPercent": "Steuer auf den Gewinn beim Verkauf (0 = keine)",
+  "CashflowGame.custom.taxNone": "Keine Steuer",
   "CashflowGame.kind.share": "Aktie",
   "CashflowGame.kind.investment": "Investition",
   "CashflowGame.kind.asset": "Vermögenswert",
