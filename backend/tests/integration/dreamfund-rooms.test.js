@@ -501,6 +501,21 @@ describe('a Dreamfund room', () => {
         difficulty: 'easy',
       });
       expect(JSON.stringify(profile.body)).not.toContain(host.userId);
+      // the rating's way (from the rating before the game to the rating after it) and the fact table of the games
+      expect(profile.body.history.length).toBe(2);
+      expect(profile.body.history[0].endedAt).toBeNull();
+      expect(profile.body.history[1]).toMatchObject({ difficulty: 'easy', players: 3 });
+      expect(profile.body.facts.games).toBe(1);
+      expect(profile.body.facts.totals).toEqual(
+        expect.objectContaining({ turns: expect.any(Number), growBought: expect.any(Number) }),
+      );
+      expect(profile.body.facts.totals.turns).toBeGreaterThan(0);
+      const botFacts = await call(
+        host,
+        'get',
+        `/game/dreamfund/players/${board.body.items.find((r) => r.name === 'Informed investor').playerId}`,
+      );
+      expect(botFacts.body.facts.games).toBeGreaterThanOrEqual(1);
 
       // the game says whether it counted, in the table's own reading: the classic end screen shows it
       const ended = await call(host, 'get', `/game/rooms/${roomId}`);

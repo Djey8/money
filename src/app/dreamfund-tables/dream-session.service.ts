@@ -259,6 +259,35 @@ export interface DreamMyPlayer {
   }[];
 }
 
+/** A player of the Dreamfund board, opened (GET /game/dreamfund/players/{id}): the rating, how it moved, the fact table, the last games. */
+export interface DreamPlayerDetail {
+  playerId: string;
+  name: string;
+  type: 'human' | 'bot';
+  botId?: string;
+  pictureId?: string;
+  pictureVersion?: number;
+  rating: DreamBoardRow & { baseRating?: number };
+  /** The rating after each of the last counted games, oldest first (the first point has no date: the rating before them). */
+  history: {
+    endedAt: string | null;
+    rating: number;
+    delta?: number;
+    place?: number;
+    outcome?: string;
+    difficulty?: string;
+    players?: number;
+  }[];
+  facts: { games: number; totals: Record<string, number> };
+  recent: (DreamMyPlayer['recent'][number] & {
+    tableId: string;
+    outcome?: string;
+    players?: number;
+    why?: string;
+    ratingAfter?: number;
+  })[];
+}
+
 export interface DreamBotCatalog {
   items: {
     id: string;
@@ -328,6 +357,12 @@ export class DreamApiService {
   me(): Observable<DreamMyPlayer> {
     return this.http.get<DreamMyPlayer>(
       `${environment.selfhosted.apiUrl}/v1/game/dreamfund/players/me`,
+    );
+  }
+
+  player(playerId: string): Observable<DreamPlayerDetail> {
+    return this.http.get<DreamPlayerDetail>(
+      `${environment.selfhosted.apiUrl}/v1/game/dreamfund/players/${encodeURIComponent(playerId)}`,
     );
   }
 

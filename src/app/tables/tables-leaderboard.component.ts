@@ -124,6 +124,7 @@ type Filter = 'all' | 'human' | 'bot';
     <app-table-player-info
       *ngIf="selected as chosen"
       [player]="chosen"
+      [game]="game"
       (closed)="selected = null"
     ></app-table-player-info>
   `,
@@ -368,9 +369,9 @@ export class TablesLeaderboardComponent implements OnInit {
     this.load();
   }
 
-  /** A player of the classic board opens their panel (the Dreamfund board has none yet). */
+  /** A player of the board opens their panel: all their numbers, the way the rating moved, and (Dreamfund) the fact table. */
   open(player: GamePlayer): void {
-    if (this.game === 'classic') this.selected = player;
+    this.selected = player;
   }
 
   /** One row of the Dreamfund board in the shape of the classic one, so the same list shows both. */
@@ -379,6 +380,7 @@ export class TablesLeaderboardComponent implements OnInit {
       place: row.place,
       // the picture is fetched by the id it is kept under
       playerId: row.pictureId ?? row.playerId,
+      dreamPlayerId: row.playerId,
       ...(row.pictureVersion ? { pictureVersion: row.pictureVersion } : {}),
       name: row.name,
       type: row.type,

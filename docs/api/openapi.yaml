@@ -7222,7 +7222,7 @@ paths:
       operationId: getMyDreamfundPlayer
       summary: Your own Dreamfund profile
       description: >-
-        Game accounts only; requires `game:r`. Your profile on the Dreamfund board with your rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points), your last results, and whether you are `visible` on the board. Made on first use.
+        Game accounts only; requires `game:r`. Your profile on the Dreamfund board with your rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points), your last results, and whether you are `visible` on the board. Made on first use. `history` is how the rating moved over your last counted games (oldest first; the first point is the rating before the first of them), and `facts` is the fact table of your games - `games` (how many have one) and `totals` (sums over them: Grow bought, sold, held, shares, properties, businesses, pensions, courses; Fire reserve, debts, emergencies paid; Smile dreams lived and dream points; the monthly income, passive income and net worth at the end of each game - money in minor units, yes-or-no as 1 or 0; divide by `games` for an average).
       security:
         - bearerAuth: []
       responses:

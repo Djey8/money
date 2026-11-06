@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const store = require('../repositories/game-dream-stats-store');
 const { uuidV5 } = require('./game-stats');
 const rating = require('@money/domain/dist/cashflow-game/dreamfund/table/rating');
+const { factsOfLife, addFacts } = require('@money/domain/dist/cashflow-game/dreamfund/table/facts');
 const { splitDreamBotId } = require('@money/domain/dist/cashflow-game/dreamfund/table/bot-levels');
 const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-sim/policies');
 
@@ -193,6 +194,8 @@ function createDreamStats({
       playerIds: participants.map((p) => p.profile.playerId),
       participants: participants.map(({ standing, profile, seat, index }) => ({
         seat: index,
+        // the fact table of the game: what this life came to in Grow, Fire, Smile and the income
+        ...(seat.life ? { facts: factsOf(seat, table.tableRound) } : {}),
         playerId: profile.playerId,
         name: profile.displayName,
         type: profile.type,
@@ -212,10 +215,12 @@ function createDreamStats({
       })),
     };
     const created = await store.createResult(db, doc);
+    const factsBy = new Map(doc.participants.map((entry) => [entry.playerId, entry.facts]));
     if (!created) return null;
     if (!verdict.counted) return doc;
     for (const { profile, standing } of participants) {
       const moved = change(profile.playerId);
+      const facts = factsBy.get(profile.playerId);
       await mutate(profile.playerId, (p) => {
         if ((p.applied || []).includes(tableId)) return;
         const l = p.ratings[level];
@@ -232,6 +237,10 @@ function createDreamStats({
         if (standing.outcome === 'left') c.left += 1;
         c.goalsMet += standing.goalsMet;
         c.dreamPoints += standing.dreamPoints;
+        if (facts) {
+          l.facts = addFacts(l.facts || {}, facts);
+          l.factGames = (l.factGames || 0) + 1;
+        }
         p.applied = [...(p.applied || []), tableId].slice(-store.APPLIED_MEMORY);
       });
     }
@@ -309,22 +318,7 @@ function createDreamStats({
   async function player(playerId) {
     const profile = await store.getProfile(db, playerId);
     if (!profile || (!profile.visible && profile.type === 'human')) return null;
-    return {
-      playerId: profile.playerId,
-      name: profile.displayName,
-      type: profile.type,
-      rating: present(profile, OVERALL),
-      recent: (await store.resultsOfPlayer(db, playerId, 15)).map((r) => ({
-        tableId: r.tableId,
-        name: r.name,
-        difficulty: r.difficulty,
-        endedAt: r.endedAt,
-        counted: r.counted,
-        ...(r.why ? { why: r.why } : {}),
-        players: r.participants.length,
-        ...pickOwn(r, playerId),
-      })),
-    };
+    return { ...(await playerOf(profile)), ...(await pictureRef(profile)) };
   }
 
   const pickOwn = (result, playerId) => {
@@ -352,13 +346,49 @@ function createDreamStats({
     };
   }
 
+  /** The fact table of a life, never failing a record (a life that cannot be read gives none). */
+  function factsOf(seat, rounds) {
+    try {
+      return factsOfLife(seat.life, rounds);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** How the rating moved over the last counted games, oldest first (the first point is the rating before the first of them). */
+  function historyOf(results, playerId) {
+    const points = [];
+    for (const r of [...results].reverse()) {
+      if (!r.counted) continue;
+      const own = r.participants.find((p) => p.playerId === playerId);
+      if (!own || own.ratingAfter === undefined) continue;
+      if (points.length === 0) points.push({ endedAt: null, rating: own.ratingBefore });
+      points.push({
+        endedAt: r.endedAt,
+        rating: own.ratingAfter,
+        delta: own.delta,
+        place: own.rank,
+        outcome: own.outcome,
+        difficulty: r.difficulty,
+        players: r.participants.length,
+      });
+    }
+    return points;
+  }
+
   async function playerOf(profile) {
+    const results = await store.resultsOfPlayer(db, profile.playerId, 120);
+    const level = profile.ratings[OVERALL];
     return {
       playerId: profile.playerId,
       name: profile.displayName,
       type: profile.type,
+      ...(profile.botId ? { botId: profile.botId } : {}),
       rating: present(profile, OVERALL),
-      recent: (await store.resultsOfPlayer(db, profile.playerId, 15)).map((r) => ({
+      history: historyOf(results, profile.playerId),
+      // the sums of the fact table over the games that have one, with how many those are
+      facts: { games: level.factGames || 0, totals: level.facts || {} },
+      recent: results.slice(0, 15).map((r) => ({
         tableId: r.tableId,
         name: r.name,
         difficulty: r.difficulty,

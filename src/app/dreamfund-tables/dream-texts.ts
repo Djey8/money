@@ -6,7 +6,22 @@ import type { DreamEventLine } from './dream-session.service';
  * language shows English until it is translated. The cards and the characters come from the game's own content, in the table's language.
  */
 
+export interface DreamProfileTexts {
+  facts: string;
+  factsNote: string;
+  noFacts: string;
+  total: string;
+  perGame: string;
+  groups: Record<string, string>;
+  labels: Record<string, string>;
+  history: string;
+  games: string;
+  strategy: string;
+  start: string;
+}
+
 export interface DreamTexts {
+  profile: DreamProfileTexts;
   title: string;
   newTable: string;
   openTables: string;
@@ -249,6 +264,50 @@ export interface DreamTexts {
 }
 
 const EN: DreamTexts = {
+  profile: {
+    facts: 'The fact table',
+    factsNote:
+      'What the games came to, in the four places of the method. Totals are over the games that have a fact table; per game is the average (a yes-or-no as the share of the games).',
+    noFacts: 'No game with a fact table yet.',
+    total: 'Total',
+    perGame: 'Per game',
+    groups: { grow: 'Grow', fire: 'Fire', smile: 'Smile', income: 'Income' },
+    labels: {
+      growBought: 'Cards bought',
+      growSold: 'Holdings sold',
+      growHeld: 'Held at the end',
+      growShares: 'Share lots',
+      growProperties: 'Properties',
+      growBusinesses: 'Businesses and hustles',
+      growPensions: 'Pension plans',
+      growCourses: 'Courses and degrees',
+      growInvestedMinor: 'Money put into cards',
+      fireReserveFull: 'Reserve full',
+      fireReserveMinor: 'Reserve at the end',
+      fireDebtsRepaid: 'Debts repaid',
+      fireDebtsLeftMinor: 'Debts left',
+      fireBankLoanMinor: 'Bank loan at the end',
+      fireEmergencies: 'Emergencies paid',
+      fireEmergenciesMinor: 'Money for emergencies',
+      smileLifeDreamLived: 'Life dream lived',
+      smileDreamsLived: 'Dreams lived',
+      smileDreamsLivedMinor: 'Money in dreams lived',
+      smileDreamsOpen: 'Dreams still open',
+      smileSavedMinor: 'Saved for dreams',
+      smilePoints: 'Dream points',
+      incomeIndependent: 'Independent',
+      incomePassiveMinor: 'Passive income a month',
+      incomeSalaryMinor: 'Salary a month',
+      incomeCashflowMinor: 'Cash flow a month',
+      incomeExpensesMinor: 'Living costs a month',
+      incomeCardsEarnedMinor: 'Earned by the cards',
+      netWorthMinor: 'Net worth',
+    },
+    history: 'How the rating moved',
+    games: 'Games',
+    strategy: 'Strategy',
+    start: 'Start',
+  },
   title: 'Dreamfund tables',
   newTable: 'Open a table',
   openTables: 'Open tables',
@@ -510,6 +569,50 @@ const EN: DreamTexts = {
 };
 
 const DE: Partial<DreamTexts> = {
+  profile: {
+    facts: 'Die Faktentabelle',
+    factsNote:
+      'Was die Spiele gebracht haben, in den vier Bereichen der Methode. Summen über die Spiele mit Faktentabelle; pro Spiel ist der Durchschnitt (Ja oder Nein als Anteil der Spiele).',
+    noFacts: 'Noch kein Spiel mit Faktentabelle.',
+    total: 'Summe',
+    perGame: 'Pro Spiel',
+    groups: { grow: 'Grow', fire: 'Fire', smile: 'Smile', income: 'Einkommen' },
+    labels: {
+      growBought: 'Karten gekauft',
+      growSold: 'Verkauft',
+      growHeld: 'Am Ende gehalten',
+      growShares: 'Aktienpakete',
+      growProperties: 'Immobilien',
+      growBusinesses: 'Geschäfte und Nebenjobs',
+      growPensions: 'Vorsorgepläne',
+      growCourses: 'Kurse und Abschlüsse',
+      growInvestedMinor: 'In Karten eingesetztes Geld',
+      fireReserveFull: 'Rücklage voll',
+      fireReserveMinor: 'Rücklage am Ende',
+      fireDebtsRepaid: 'Schulden getilgt',
+      fireDebtsLeftMinor: 'Schulden übrig',
+      fireBankLoanMinor: 'Bankkredit am Ende',
+      fireEmergencies: 'Notfälle bezahlt',
+      fireEmergenciesMinor: 'Geld für Notfälle',
+      smileLifeDreamLived: 'Lebenstraum gelebt',
+      smileDreamsLived: 'Träume gelebt',
+      smileDreamsLivedMinor: 'Geld in gelebten Träumen',
+      smileDreamsOpen: 'Träume noch offen',
+      smileSavedMinor: 'Für Träume gespart',
+      smilePoints: 'Traumpunkte',
+      incomeIndependent: 'Unabhängig',
+      incomePassiveMinor: 'Passives Einkommen im Monat',
+      incomeSalaryMinor: 'Gehalt im Monat',
+      incomeCashflowMinor: 'Cashflow im Monat',
+      incomeExpensesMinor: 'Lebenskosten im Monat',
+      incomeCardsEarnedMinor: 'Von den Karten verdient',
+      netWorthMinor: 'Vermögen',
+    },
+    history: 'So hat sich die Wertung bewegt',
+    games: 'Spiele',
+    strategy: 'Strategie',
+    start: 'Start',
+  },
   title: 'Traumtopf-Tische',
   newTable: 'Tisch eröffnen',
   openTables: 'Offene Tische',

@@ -70,6 +70,8 @@ export interface TableSeat {
 export interface GamePlayer {
   place?: number;
   playerId: string;
+  /** On the Dreamfund board: the id of the player there (the picture is kept under another one for a person). */
+  dreamPlayerId?: string;
   name: string;
   type: 'human' | 'bot';
   level?: BotLevel;
