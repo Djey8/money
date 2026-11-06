@@ -81,14 +81,6 @@ interface Hole {
           [style.width.px]="h.width"
           [style.height.px]="h.height"
         ></div>
-        <div
-          class="dg-hole-block"
-          *ngIf="step!.next === 'button'"
-          [style.top.px]="h.top"
-          [style.left.px]="h.left"
-          [style.width.px]="h.width"
-          [style.height.px]="h.height"
-        ></div>
       </ng-container>
       <ng-template #everything>
         <div class="dg-shade dg-shade--all" *ngIf="!cornerOnly"></div>
@@ -169,7 +161,8 @@ interface Hole {
       .dg-shade {
         position: fixed;
         background: rgba(8, 16, 32, 0.34);
-        pointer-events: auto;
+        /* only a dimming: the page under it can be scrolled and pressed (on a phone a layer that took the touches stopped the scrolling) */
+        pointer-events: none;
       }
       .dg-shade--all {
         inset: 0;
@@ -183,10 +176,6 @@ interface Hole {
           0 0 24px rgba(255, 179, 0, 0.6);
         pointer-events: none;
         animation: dg-pulse 1.6s ease-in-out infinite;
-      }
-      .dg-hole-block {
-        position: fixed;
-        pointer-events: auto;
       }
       @keyframes dg-pulse {
         50% {

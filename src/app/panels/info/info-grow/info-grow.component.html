@@ -3,6 +3,7 @@
   role="dialog"
   aria-modal="true"
   appTrapFocus
+  [class.preview]="classReference.preview"
   *ngIf="classReference.isInfo"
   (click)="highlight()"
   [style.z-index]="classReference.zIndex + 1001"

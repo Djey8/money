@@ -1363,3 +1363,11 @@
   color: inherit;
   font: inherit;
 }
+
+/* A project that is only looked at (an example in the manual): the tabs, the links and the close button stay, everything that changes it goes. */
+#infoTransaction-Container.preview button:not(.detail-tab):not(#closebtn),
+#infoTransaction-Container.preview .phase-advance,
+#infoTransaction-Container.preview .phase-stepper,
+#infoTransaction-Container.preview select {
+  display: none !important;
+}

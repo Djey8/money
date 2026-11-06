@@ -637,8 +637,8 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
       }
       .wr-bot {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 4px 12px;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 4px 10px;
         align-items: center;
         padding: 10px;
         border: 1px solid var(--color-border, #d9dde3);
@@ -661,10 +661,16 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
         line-height: 1.25;
       }
       .wr-bot-actions {
-        grid-column: 1 / -1;
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
+        gap: 6px;
+      }
+      .wr-bot-actions .tx-btn {
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+      .wr-bot-desc {
+        grid-column: 2 / -1;
       }
       @media (max-width: 480px) {
         .wr-seats {
@@ -992,7 +998,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     const level = this.botLevel;
     return [...this.botCatalog].sort(
       (a, b) =>
-        Number(!!b.demo) - Number(!!a.demo) ||
+        Number(!!a.demo) - Number(!!b.demo) ||
         (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) ||
         a.name.localeCompare(b.name),
     );

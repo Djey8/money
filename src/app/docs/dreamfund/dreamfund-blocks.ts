@@ -14,24 +14,6 @@ export interface ShowCard {
   note?: string;
 }
 
-/** A project of the game's books (a Fire project for an emergency, a Smile project for a dream), as a small drawing to open. */
-export interface ShowProject {
-  id: string;
-  kind: 'emergency' | 'dream';
-  icon: string;
-  title: string;
-  subtitle: string;
-  story: string;
-  /** Percent of the money in. */
-  percent: number;
-  /** "720 of 2,160 paid" */
-  progress: string;
-  facts: { label: string; value: string }[];
-  buckets: { title: string; amount: string; percent: number; note?: string }[];
-  plan: { title: string; per: string; left: string; text: string };
-  notes: string[];
-}
-
 /** One step of a character's career ladder. */
 export interface ShowStage {
   stage: number;
@@ -48,16 +30,7 @@ export interface ShowStage {
 
 export type DreamfundShowBlock =
   | { type: 'cardfaces'; caption?: string; items: ShowCard[] }
-  | {
-      type: 'mockprojects';
-      caption?: string;
-      items: ShowProject[];
-      banner: string;
-      close: string;
-      open: string;
-      notesTitle: string;
-      bucketsTitle: Record<'emergency' | 'dream', string>;
-    }
+  | { type: 'examples'; kind: 'fire' | 'smile' | 'grow'; caption?: string }
   | {
       type: 'ladder';
       caption?: string;

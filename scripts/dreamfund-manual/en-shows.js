@@ -10,6 +10,7 @@ const list = (items) => ({ type: 'list', items });
 const tip = (title, text) => ({ type: 'callout', kind: 'tip', title, text });
 const note = (title, text) => ({ type: 'callout', kind: 'note', title, text });
 const steps = (items) => ({ type: 'steps', items });
+const examples = (kind, caption) => ({ type: 'examples', kind, caption });
 
 // ── Opportunity: what a card looks like ──
 const opportunity = [
@@ -75,111 +76,19 @@ const opportunity = [
       },
     ],
   },
+  h3('In your books'),
+  p(
+    'A card you take becomes a **Grow project**. Two examples in the grid of the **Grow** page - **click a card** to open the real info panel (read only): its description, strategy, risk, tasks and notes.',
+  ),
+  examples(
+    'grow',
+    'Example projects in the Grow page. Click one to open the real info panel - for looking only, nothing is saved.',
+  ),
   tip(
     'How to read a card in five seconds',
     'Look at the **cost** (can I pay it from cash without the Bank?), the **monthly cash flow or saving** (what does it add to my month?), the **risk** and the **die** (what can it be at worst?). A card that promises a lot for very little is the one to doubt.',
   ),
 ];
-
-// ── the two example projects ──
-const projects = {
-  type: 'mockprojects',
-  caption:
-    'Two example projects. Click one to open its info window - the same things you read in the game. Nothing here is real and nothing works.',
-  banner: 'Example - for looking only. Nothing in this window works.',
-  close: 'Close',
-  open: 'Open the project',
-  notesTitle: 'Notes of the project',
-  bucketsTitle: { emergency: 'What the bill is made of', dream: 'Buckets of the dream' },
-  items: [
-    {
-      id: 'emergency',
-      kind: 'emergency',
-      icon: '🔥',
-      title: 'A Chronic Illness: Part Time Only',
-      subtitle: 'Emergency · blaze · a Fire project',
-      story:
-        'The diagnosis has a long name. The treatment works, but it costs strength: you can work only 60 percent now, for the next year at least. You chose to spread the bill over 6 Paydays.',
-      percent: 33,
-      progress: '720 of 2,160 DT paid (2 of 6 Paydays)',
-      facts: [
-        { label: 'The bill', value: '1,800 DT' },
-        { label: 'Plan surcharge', value: '+20% = 360 DT' },
-        { label: 'In total', value: '2,160 DT' },
-        { label: 'Insurance', value: 'disability: none held' },
-      ],
-      buckets: [
-        {
-          title: 'The income gap in the first year',
-          amount: '1,300 DT',
-          percent: 33,
-          note: 'Working 60 percent of your hours means a loss of about 40 percent of the pay.',
-        },
-        {
-          title: 'Treatment and aids',
-          amount: '500 DT',
-          percent: 33,
-          note: 'Co-payments, medicines and aids add up over a year.',
-        },
-      ],
-      plan: {
-        title: 'Payment plan',
-        per: '360 DT every Payday',
-        left: '4 Paydays left · 1,440 DT to go',
-        text: 'The plan pays itself at every Payday from your cash. A plan that is longer costs a larger surcharge: on Normal 10% for 3, 20% for 6 and 35% for 12 Paydays. If the cash is short, the Bank lends the rest.',
-      },
-      notes: [
-        'Payday 1: 360 DT paid from cash. Cash before 1,080, after 720.',
-        'Payday 2: 360 DT paid from cash. Cash before 1,210, after 850.',
-        'The monthly cash flow is 360 DT lower until the plan ends.',
-      ],
-    },
-    {
-      id: 'dream',
-      kind: 'dream',
-      icon: '🪂',
-      title: 'Paraglide Over the Alps',
-      subtitle: 'Dream · adventure · little · 2 points · a Smile project',
-      story:
-        'Run off the mountain and the thermals lift you high above the valley, silent as a bird. A dream you take becomes a Smile project: you fill its buckets, and when every bucket is full, the dream is lived.',
-      percent: 29,
-      progress: '350 of 1,200 DT saved',
-      facts: [
-        { label: 'Total', value: '1,200 DT' },
-        { label: 'Saved', value: '350 DT' },
-        { label: 'Dream points', value: '2' },
-        { label: 'Buckets full', value: '2 of 4' },
-      ],
-      buckets: [
-        {
-          title: 'Journey to the Alps',
-          amount: '150 of 150 DT',
-          percent: 100,
-          note: 'By train or car to Interlaken, Lenggries or the Dolomites.',
-        },
-        {
-          title: 'Tandem thermal flight',
-          amount: '200 of 200 DT',
-          percent: 100,
-          note: 'Look for DHV or SHV licensed pilots.',
-        },
-        { title: 'Hotel and food, 3 nights', amount: '0 of 450 DT', percent: 0 },
-        { title: 'Beginner course day', amount: '0 of 400 DT', percent: 0 },
-      ],
-      plan: {
-        title: 'Payment plan',
-        per: '50 DT every Payday',
-        left: '17 Paydays left · 850 DT to go',
-        text: 'The plan moves 50 DT from your free money into the dream at every Payday, the fullest bucket first. You can raise it, lower it or stop it with 0, and you can put in a lump sum at any time.',
-      },
-      notes: [
-        'Dream taken on the Dream tile. Plan set: 50 DT a month.',
-        'Payday: 50 DT into the dream. Saved so far: 350 DT.',
-        'Points count when the dream is lived: 25 rating points each, and they may be a goal of the table.',
-      ],
-    },
-  ],
-};
 
 // ── Emergencies: more explained ──
 const emergency = [
@@ -227,9 +136,12 @@ const emergency = [
   },
   h3('How it looks in the books'),
   p(
-    'An emergency that is not paid at once lives as a **Fire project**: its parts (what the bill is made of), what is paid, the plan and the notes of every payment. The example below is a real card (**A Chronic Illness: Part Time Only**) paid by a plan of 6 Paydays, next to a dream in Smile. Click either one.',
+    'An emergency that is not paid at once lives as a **Fire project**: its parts (what the bill is made of), what is paid, the plan and the notes of every payment. Below are two real emergencies in the grid of the **Fire** page: one is paid by a plan of 6 Paydays (the plan is active), one is still planned. **Click a card**: the real info panel of the app opens, read only - the buckets, the payment plan, the tasks and the notes, exactly as in the game.',
   ),
-  projects,
+  examples(
+    'fire',
+    'Example projects in the Fire page. Click one to open the real info panel - for looking only, nothing is saved.',
+  ),
   tip(
     'Why the reserve is the first goal',
     'In the example the player held no disability insurance and the reserve was empty, so the bill had to be spread. With a full reserve (three months of costs) the same card is paid on the spot and forgotten.',
@@ -266,7 +178,13 @@ const dreams = [
     'Some Dream tiles bring a **moment** instead of cards: an early-bird offer, a gift from the family, a last-minute deal, a travel buddy, a stroke of inspiration, money from a side project, points for patience, or a swap of one dream for another. They make a dream cheaper or closer - the project notes say by how much.',
   ),
   h3('A dream in the books'),
-  projects,
+  p(
+    'Two real dreams in the grid of the **Smile** page: a small one with a plan of 50 a month, and the life dream of Jonas. **Click a card** to open the real info panel (read only).',
+  ),
+  examples(
+    'smile',
+    'Example projects in the Smile page. Click one to open the real info panel - for looking only, nothing is saved.',
+  ),
   note(
     'Dreams and the order of a game',
     'Dreams are the reason to play, but the simulation shows that a player who funds the dream before any income rarely wins. Take the small dreams for the points when a plan of 50 a month does not hurt; keep the big money for cards that pay every month.',

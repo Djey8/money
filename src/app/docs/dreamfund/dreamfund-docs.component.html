@@ -235,83 +235,59 @@
               </figcaption>
             </figure>
 
-            <!-- Example projects: click one to read its info window - nothing in it works -->
-            <figure class="manual-figure" *ngSwitchCase="'mockprojects'">
-              <div class="df-projects">
-                <button
-                  type="button"
-                  class="df-project"
-                  *ngFor="let project of $any(block).items"
-                  (click)="openProject = project"
+            <!-- Example projects in the grid of their page; a click opens the app's own info panel, read only -->
+            <figure class="manual-figure" *ngSwitchCase="'examples'">
+              <div class="df-example-grid" [ngClass]="$any(block).kind + '-grid'">
+                <div
+                  *ngFor="let card of examples($any(block).kind)"
+                  class="df-example-card"
+                  [ngClass]="$any(block).kind + '-card'"
+                  role="button"
+                  tabindex="0"
+                  (click)="openExample(card.kind, card.index)"
+                  (keydown.enter)="openExample(card.kind, card.index)"
                 >
-                  <span class="df-icon">{{ project.icon }}</span>
-                  <h4>{{ project.title }}</h4>
-                  <small>{{ project.subtitle }}</small>
-                  <div class="df-bar" [ngClass]="'df-bar--' + project.kind">
-                    <span [style.width.%]="project.percent"></span>
+                  <div class="card-header">
+                    <span class="phase-badge" [ngClass]="'phase-' + card.phase">
+                      {{
+                        (card.kind === 'fire'
+                          ? 'Fire.phase.'
+                          : card.kind === 'smile'
+                            ? 'Smile.phase.'
+                            : 'Grow.phase.') + card.phase | translate
+                      }}
+                    </span>
+                    <span class="points-badge" *ngIf="card.badge">{{ card.badge }}</span>
                   </div>
-                  <small>{{ project.progress }}</small>
-                  <span class="df-chip">{{ project.plan.per }}</span>
-                  <span class="df-open-hint">{{ $any(block).open }} ›</span>
-                </button>
+                  <h3 class="card-title">{{ card.title }}</h3>
+                  <p class="card-sub">{{ card.sub }}</p>
+                  <p class="card-desc">
+                    {{
+                      card.description.length > 110
+                        ? card.description.substring(0, 110) + '...'
+                        : card.description
+                    }}
+                  </p>
+                  <div class="card-buckets" *ngIf="card.buckets">
+                    <span class="bucket-info">{{ card.buckets }}</span>
+                  </div>
+                  <ng-container *ngIf="card.progress !== undefined">
+                    <div class="progress-container">
+                      <div class="progress-bar" [style.width.%]="card.progress"></div>
+                    </div>
+                    <div class="progress-label">{{ card.progress | number: '1.0-1' }}%</div>
+                  </ng-container>
+                  <div class="card-metrics">
+                    <div class="metric" *ngFor="let metric of card.metrics">
+                      <span class="metric-label">{{ metric.label }}</span>
+                      <span class="metric-value">{{ metric.value }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <figcaption class="df-caption" *ngIf="$any(block).caption">
                 {{ $any(block).caption }}
               </figcaption>
-              <div class="df-backdrop" *ngIf="openProject as p" (click)="openProject = null">
-                <article
-                  class="df-sheet"
-                  role="dialog"
-                  aria-modal="true"
-                  (click)="$event.stopPropagation()"
-                >
-                  <header>
-                    <span class="df-icon">{{ p.icon }}</span>
-                    <h3>{{ p.title }}</h3>
-                    <button
-                      type="button"
-                      class="df-close"
-                      [attr.aria-label]="$any(block).close"
-                      (click)="openProject = null"
-                    >
-                      ×
-                    </button>
-                  </header>
-                  <p class="df-example">{{ $any(block).banner }}</p>
-                  <p>{{ p.story }}</p>
-                  <div class="df-bar" [ngClass]="'df-bar--' + p.kind">
-                    <span [style.width.%]="p.percent"></span>
-                  </div>
-                  <small>{{ p.progress }}</small>
-                  <div class="df-facts">
-                    <div *ngFor="let fact of p.facts">
-                      <small>{{ fact.label }}</small>
-                      <strong>{{ fact.value }}</strong>
-                    </div>
-                  </div>
-                  <h5>{{ $any(block).bucketsTitle[p.kind] }}</h5>
-                  <div class="df-bucket" *ngFor="let bucket of p.buckets">
-                    <div class="df-bucket-line">
-                      <span>{{ bucket.title }}</span>
-                      <strong>{{ bucket.amount }}</strong>
-                    </div>
-                    <div class="df-bar" [ngClass]="'df-bar--' + p.kind">
-                      <span [style.width.%]="bucket.percent"></span>
-                    </div>
-                    <small *ngIf="bucket.note">{{ bucket.note }}</small>
-                  </div>
-                  <h5>{{ p.plan.title }}</h5>
-                  <div class="df-plan">
-                    <strong>{{ p.plan.per }}</strong>
-                    <small>{{ p.plan.left }}</small>
-                    <p>{{ p.plan.text }}</p>
-                  </div>
-                  <h5>{{ $any(block).notesTitle }}</h5>
-                  <ul>
-                    <li *ngFor="let note of p.notes">{{ note }}</li>
-                  </ul>
-                </article>
-              </div>
             </figure>
 
             <!-- A career ladder of a character - only for looking -->
@@ -383,3 +359,8 @@
     </main>
   </div>
 </div>
+
+<!-- the app's own info panels: opened read only on the example projects -->
+<app-info-fire></app-info-fire>
+<app-info-smile></app-info-smile>
+<app-info-grow></app-info-grow>

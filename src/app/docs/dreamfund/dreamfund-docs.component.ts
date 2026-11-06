@@ -1,10 +1,19 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import { NgClass, NgFor, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
+import { DecimalPipe, NgClass, NgFor, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, type Subscription } from 'rxjs';
-import type { ShowProject } from './dreamfund-blocks';
+import { InfoFireComponent } from '../../panels/info/info-fire/info-fire.component';
+import { InfoSmileComponent } from '../../panels/info/info-smile/info-smile.component';
+import { InfoGrowComponent } from '../../panels/info/info-grow/info-grow.component';
+import {
+  EXAMPLE_FIRE,
+  EXAMPLE_GROW,
+  EXAMPLE_SMILE,
+  exampleCards,
+  type ExampleCard,
+} from './dreamfund-examples';
 import { DemoService } from '../../shared/services/demo.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
 import {
@@ -36,11 +45,26 @@ interface DreamfundManual extends ManualContent {
 @Component({
   selector: 'app-dreamfund-docs',
   standalone: true,
-  imports: [NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase, RouterLink, TranslateModule],
+  imports: [
+    DecimalPipe,
+    NgIf,
+    NgFor,
+    NgClass,
+    NgSwitch,
+    NgSwitchCase,
+    RouterLink,
+    TranslateModule,
+    InfoFireComponent,
+    InfoSmileComponent,
+    InfoGrowComponent,
+  ],
   templateUrl: './dreamfund-docs.component.html',
   styleUrls: [
     '../selfhosted/selfhosted-docs.component.css',
     '../cashflow/cashflow-docs.component.css',
+    '../../main/fire/fire-emergencies/fire-emergencies.component.css',
+    '../../main/smile/smile-projects/smile-projects.component.css',
+    '../../main/grow/grow.component.css',
     './dreamfund-docs.component.css',
     '../../landing/landing-page.component.css',
     '../../app.component.css',
@@ -54,8 +78,21 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
-  /** The example project that is open (a drawing only: nothing in it works). */
-  openProject: ShowProject | null = null;
+  /** The cards of an example grid (real projects, in a planned phase). */
+  examples(kind: 'fire' | 'smile' | 'grow'): ExampleCard[] {
+    // made once: a new list on every check would draw the cards again under the press
+    return (this.exampleCache[kind] ??= exampleCards(kind));
+  }
+
+  private readonly exampleCache: Partial<Record<'fire' | 'smile' | 'grow', ExampleCard[]>> = {};
+
+  /** Opens the app's own info panel on an example project: read only, not in the account. */
+  openExample(kind: 'fire' | 'smile' | 'grow', index: number): void {
+    const z = 3000;
+    if (kind === 'fire') InfoFireComponent.openPreview(EXAMPLE_FIRE[index], z);
+    else if (kind === 'smile') InfoSmileComponent.openPreview(EXAMPLE_SMILE[index], z);
+    else InfoGrowComponent.openPreview(EXAMPLE_GROW[index], z);
+  }
 
   private langSubscription?: Subscription;
   private segmentCache = new Map<string, RichSegment[]>();
@@ -140,7 +177,6 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
   }
 
   selectSection(index: number): void {
-    this.openProject = null;
     this.selectedIndex = index;
     document.querySelector('.selfhosted-detail')?.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });

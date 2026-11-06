@@ -1,4 +1,8 @@
 import { of, Subject } from 'rxjs';
+import { exampleCards } from './dreamfund-examples';
+import { InfoFireComponent } from '../../panels/info/info-fire/info-fire.component';
+import { InfoSmileComponent } from '../../panels/info/info-smile/info-smile.component';
+import { InfoGrowComponent } from '../../panels/info/info-grow/info-grow.component';
 import { DreamfundDocsComponent } from './dreamfund-docs.component';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
@@ -102,7 +106,7 @@ describe('DreamfundDocsComponent', () => {
       'table',
       'glossary',
       'cardfaces',
-      'mockprojects',
+      'examples',
       'ladder',
     ]) {
       expect(kinds.has(kind)).toBe(true);
@@ -110,16 +114,16 @@ describe('DreamfundDocsComponent', () => {
     expect(kinds.has('import')).toBe(false);
   });
 
-  it('shows two example projects and the first four stages of Jonas, for looking only', async () => {
+  it('shows six real example projects (two each of Grow, Fire and Smile) and the first four stages of Jonas', () => {
     const english = manual('en');
     const blocks = english.order.flatMap((id: string) => english.sections[id].blocks);
-    const projects = blocks.find((block: { type: string }) => block.type === 'mockprojects');
-    expect(projects.items.map((item: { kind: string }) => item.kind)).toEqual([
-      'emergency',
-      'dream',
-    ]);
-    expect(projects.items[0].buckets.length).toBeGreaterThan(1);
-    expect(projects.items[1].plan.per).toContain('50');
+    const kinds = blocks
+      .filter((block: { type: string }) => block.type === 'examples')
+      .map((block: { kind: string }) => block.kind);
+    expect(kinds.sort()).toEqual(['fire', 'grow', 'smile']);
+    for (const kind of ['fire', 'smile', 'grow'] as const) {
+      expect(exampleCards(kind).length).toBe(2);
+    }
     const ladder = blocks.find((block: { type: string }) => block.type === 'ladder');
     expect(ladder.stages.map((stage: { title: string }) => stage.title)).toEqual([
       'Dual Student',
@@ -127,9 +131,17 @@ describe('DreamfundDocsComponent', () => {
       'Data Engineer',
       'Senior Data Engineer',
     ]);
+  });
+
+  it('opens the real info panels on the examples, read only', () => {
     const { component } = makeComponent('en');
-    component.openProject = projects.items[0];
-    component.selectSection(1);
-    expect(component.openProject).toBeNull();
+    component.openExample('fire', 0);
+    expect(InfoFireComponent.preview).toBe(true);
+    expect(InfoFireComponent.title).toBe('A Chronic Illness: Part Time Only');
+    component.openExample('smile', 1);
+    expect(InfoSmileComponent.preview).toBe(true);
+    component.openExample('grow', 1);
+    expect(InfoGrowComponent.preview).toBe(true);
+    expect(InfoGrowComponent.title).toBe('World ETF Savings Plan');
   });
 });

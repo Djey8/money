@@ -126,7 +126,22 @@ export class InfoGrowComponent extends BaseInfoComponent {
   // Current detail tab
   static activeTab: 'overview' | 'actions' | 'notes' | 'financials' = 'overview';
 
+  /** The project is only looked at (an example in the manual): it is not in the account, and nothing can be changed or saved. */
+  static preview = false;
+  private static previewProject: Grow | null = null;
+
+  /** Shows a project that is not in the account, read only, above whatever is open. */
+  static openPreview(project: Grow, zIndex: number) {
+    InfoGrowComponent.setInfoGrowComponent(-1, project);
+    InfoGrowComponent.preview = true;
+    InfoGrowComponent.previewProject = project;
+    InfoGrowComponent.zIndex = zIndex;
+    InfoGrowComponent.isInfo = true;
+  }
+
   static setInfoGrowComponent(id: number, project: Grow) {
+    InfoGrowComponent.preview = false;
+    InfoGrowComponent.previewProject = null;
     InfoGrowComponent.index = id;
     InfoGrowComponent.title = project.title;
     InfoGrowComponent.sub = project.sub;
@@ -238,6 +253,7 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
   /** The project open in this panel. */
   private get openProject(): Grow | undefined {
+    if (InfoGrowComponent.preview) return InfoGrowComponent.previewProject ?? undefined;
     return AppStateService.instance.allGrowProjects[InfoGrowComponent.index];
   }
 
@@ -348,6 +364,8 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
   override closeWindow() {
     this.classReference.isInfo = false;
+    InfoGrowComponent.preview = false;
+    InfoGrowComponent.previewProject = null;
     InfoGrowComponent.isEdit = false;
   }
 
