@@ -7266,6 +7266,224 @@ paths:
           $ref: '#/components/responses/AuthenticationRequired'
         '403':
           $ref: '#/components/responses/NotAGameAccountOrScope'
+  /game/rooms/{roomId}/advice:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getGameRoomAdvice
+      summary: Advice for your own seat at a Dreamfund table
+      description: >-
+        Game accounts only; requires `game:r`. For somebody who sits at a Dreamfund table - a person who asks "what should I do?", or an agent that guides or plays for them. A page, not the table: the four goals in percent (reserve, debts, dream, independence) and the dream points, the money (cash, reserve, passive income against the cost of living, monthly cash flow, net worth, Bank loan), what is open on the seat (`open`), `next` - the moves a strategy of the simulation would send right now, in order, each with a sentence that says why (`command` is exactly what `playGameRoomCommand` takes; send them in order - a step is sometimes a few moves, the plans of a month and then settling it - then read the table and ask again) -, `attention` (an offer to buy that is about to close, a plan you pay into, the tax on a sale, a payment due, the thin month, a Bank loan) and `toWin` (what it takes to win). `strategy` is one of the strategies of the simulation (default `expert`, the best; `strategies` lists them with what each does, a skill level may follow after a colon: `expert:casual`). Only somebody with a seat may ask; nothing is changed. A classic table answers 400 `not_available`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: strategy
+          in: query
+          schema:
+            type: string
+            default: expert
+      responses:
+        '200':
+          description: The advice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  version:
+                    type: integer
+                  yourTurn:
+                    type: boolean
+                  open:
+                    type: string
+                  goals:
+                    type: object
+                  money:
+                    type: object
+                  next:
+                    type: array
+                    items:
+                      type: object
+                  attention:
+                    type: array
+                    items:
+                      type: string
+                  toWin:
+                    type: array
+                    items:
+                      type: string
+              example:
+                id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                version: 212
+                yourTurn: true
+                open: your roll
+                goals: { reserve: 40, debts: 10, dream: 5, independence: 12 }
+                next:
+                  - { command: { type: roll }, says: Roll the dice and walk the map. }
+                attention:
+                  ['A sale at a profit pays 26.375% tax on the profit: count it before you sell.']
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /game/rooms/{roomId}/autoplay:
+    parameters:
+      - name: roomId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: autoplayGameRoom
+      summary: Play your own seat at a Dreamfund table for a while with a strategy
+      description: >-
+        Game accounts only; requires `game:w`. The owner of the seat has asked an agent to play for them: this sends, one after the other and through the rules, the very moves a bot of the chosen `strategy` (default `expert`; see `getGameRoomAdvice` for the list) would send for the seat, until `maxTurns` of your turns are played (default 1, at most 10), `maxMoves` moves are sent (default 25, at most 80), it is not your turn, the game is over, or no move is accepted. With `waitSeconds` (at most 25) it waits for the others to play and goes on when it is your turn again. Everything is a normal move of the player: the table, the log and the other players see it as yours. Answers `played` (each command with the events it caused, or the refusal), `stopped` (`turns_limit`, `moves_limit`, `not_your_turn`, `waiting_for_others`, `game_over`, `refused`), `turnsPlayed`, `movesPlayed` and the `advice` for what comes next. Only play a seat for its owner when they asked you to, and tell them what was played. A classic table answers 400 `not_available`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strategy:
+                  type: string
+                  default: expert
+                maxTurns:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  default: 1
+                maxMoves:
+                  type: integer
+                  minimum: 1
+                  maximum: 80
+                  default: 25
+                waitSeconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 25
+                  default: 0
+      responses:
+        '200':
+          description: What was played
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  version:
+                    type: integer
+                  stopped:
+                    type: string
+                  turnsPlayed:
+                    type: integer
+                  movesPlayed:
+                    type: integer
+                  played:
+                    type: array
+                    items:
+                      type: object
+                  advice:
+                    type: object
+              example:
+                id: 7d1c2c0e-2f0b-4a53-9a77-3f2a6c0f9a11
+                version: 231
+                stopped: turns_limit
+                turnsPlayed: 1
+                movesPlayed: 3
+                played:
+                  - { command: { type: roll }, events: [rolled, opportunity_offers] }
+                  - { command: { type: skip }, events: [opportunity_passed] }
+                  - { command: { type: end_turn }, events: [turn_ended] }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /game/dreamfund/cards:
+    get:
+      operationId: browseDreamfundCards
+      summary: Browse the printed cards of the Dreamfund game
+      description: >-
+        Game accounts only; requires `game:r`. Every card of the Dreamfund game, so an agent knows what exists and what each does: `deck` is `opportunity` (Seed, Sapling and Tree: savings, shares, funds, metals and collectibles, side hustles and businesses, rented properties, pensions and employer benefits you pay into, courses and degrees that raise your pay), `harvest` (the market: a sentence for every thing a card does - moves the markets, opens a window to sell, brings a buyer with a die for the price, a hype, a business event), `life` (fate, choice and dice cards, windfalls such as an inheritance), `emergency` or `dream`. `pile` narrows Opportunity to seed, sapling or tree; `query` finds cards (every word must be in the id, title, category or ticker); `id` reads one. Amounts are minor units (100 = 1 Dream Taler) at the price level of the reference character; a character's own cards are scaled. A scam looks like any other offer - nothing here tells which is which.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deck
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [opportunity, harvest, life, emergency, dream]
+        - name: pile
+          in: query
+          schema:
+            type: string
+            enum: [seed, sapling, tree]
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: id
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 25
+      responses:
+        '200':
+          description: The cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deck:
+                    type: string
+                  total:
+                    type: integer
+                  cards:
+                    type: array
+                    items:
+                      type: object
+              example:
+                deck: opportunity
+                total: 1
+                cards:
+                  - {
+                      id: S37,
+                      pile: seed,
+                      title: { en: Employer Savings Plan },
+                      contribution: { monthlyMinor: 4000, paydays: 12, bonusPercent: 50 },
+                    }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotAGameAccountOrScope'
   /game/rooms/{roomId}/review:
     parameters:
       - name: roomId
@@ -11402,7 +11620,7 @@ components:
       type: object
       required: [type]
       description: >-
-        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMFUND table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}` (it pays what the card came to with the option picked and the dice rolled so far, or the cheapest way when none were), `emergency_choose {choiceId}`, `emergency_roll {key}` (the table rolls the die), `emergency_reroll`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`; `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
+        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMFUND table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}` (it pays what the card came to with the option picked and the dice rolled so far, or the cheapest way when none were), `emergency_choose {choiceId}`, `emergency_roll {key}` (the table rolls the die), `emergency_reroll`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`, `harvest_continue`, `plan_opportunity {cardId, swapOut?}` (plan a card in Grow first), `buy_planned {title, units?}`, `roll_opportunity`, `throw_job_search`, `fund_emergency {id, amountMinor}`, `set_insurance {kind, on}`; what may be changed by hand without changing the game, any time: `edit_transaction {index, patch: {category?, account?, time?}}` (an account only among Daily, Splurge, Smile and Fire; amount, date and comment are the game's), `edit_subscription {title, account}` and `set_phase {kind: grow|smile|fire, id, phase}` (a Smile or Fire project by its id: `life`, a card id, `mojo`; idea, planning, saving or ready - the game completes a project itself); `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
       properties:
         type:
           type: string
@@ -11450,6 +11668,17 @@ components:
             - harvest_sell
             - harvest_accept
             - harvest_ladder
+            - harvest_continue
+            - plan_opportunity
+            - buy_planned
+            - roll_opportunity
+            - throw_job_search
+            - fund_emergency
+            - set_insurance
+            - confirm_briefing
+            - edit_transaction
+            - edit_subscription
+            - set_phase
         yes:
           type: boolean
           description: With `vote_undo`, whether the voter agrees to go back one turn.

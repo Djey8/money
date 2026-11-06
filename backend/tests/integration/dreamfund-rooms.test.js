@@ -237,6 +237,90 @@ describe('a Dreamfund room', () => {
     expect(types).toEqual(expect.arrayContaining(['play_started', 'rolled', 'game_finished']));
   });
 
+  maybe(
+    'is guided and played by an agent: advice for the seat, the cards, autoplay with a strategy, and the hand edits',
+    async () => {
+      const made = await call(host, 'post', '/game/rooms', {
+        kind: 'dreamfund',
+        nickname: 'Hanna',
+        settings: {
+          name: 'Guided',
+          professions: 'random',
+          turnOrder: 'seat',
+          endCondition: 'round-limit',
+          roundLimit: 30,
+          turnGate: false,
+        },
+      });
+      const roomId = made.body.id;
+      roomIds.push(roomId);
+      await call(host, 'post', `/game/rooms/${roomId}/bots`, { policyId: 'dream:saver' });
+      await call(host, 'post', `/game/rooms/${roomId}/start`, {});
+      await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+        command: { type: 'confirm_briefing' },
+      });
+
+      // the cards: every pile, and no scam given away
+      const cards = await call(host, 'get', '/game/dreamfund/cards?deck=opportunity&query=pension');
+      expect(cards.status).toBe(200);
+      expect(cards.body.cards.map((card) => card.id)).toContain('S38');
+      const bad = await call(host, 'get', '/game/dreamfund/cards?deck=nothing');
+      expect(bad.status).toBe(400);
+
+      // advice: the goals, the moves a strategy would send, what to keep in mind
+      const advice = await call(host, 'get', `/game/rooms/${roomId}/advice?strategy=expert`);
+      expect(advice.status).toBe(200);
+      expect(advice.body.goals).toEqual(
+        expect.objectContaining({ reserve: expect.any(Number), independence: expect.any(Number) }),
+      );
+      expect(advice.body.toWin.length).toBeGreaterThan(3);
+      expect(advice.body.strategies.map((strategy) => strategy.id)).toContain('expert');
+      const unknown = await call(host, 'get', `/game/rooms/${roomId}/advice?strategy=nobody`);
+      expect(unknown.status).toBe(400);
+      const stranger = await call(guest, 'get', `/game/rooms/${roomId}/advice`);
+      expect([403, 404]).toContain(stranger.status);
+
+      // autoplay: two turns of the person's seat are played with the strategy, through the rules
+      const bounds = await call(host, 'post', `/game/rooms/${roomId}/autoplay`, { maxTurns: 99 });
+      expect(bounds.status).toBe(400);
+      const played = await call(host, 'post', `/game/rooms/${roomId}/autoplay`, {
+        strategy: 'expert',
+        maxTurns: 2,
+        maxMoves: 40,
+        waitSeconds: 10,
+      });
+      expect(played.status).toBe(200);
+      expect(played.body.turnsPlayed).toBeGreaterThanOrEqual(1);
+      expect(played.body.played.length).toBeGreaterThan(2);
+      expect(played.body.played.every((entry) => !entry.refused)).toBe(true);
+      expect(['turns_limit', 'moves_limit', 'not_your_turn', 'game_over']).toContain(
+        played.body.stopped,
+      );
+
+      // the hand edits: category and account of a booking, any time; the amount is the game's
+      const table = await call(host, 'get', `/game/rooms/${roomId}`);
+      const legal = table.body.legalActions.map((a) => a.type);
+      expect(legal).toEqual(expect.arrayContaining(['edit_transaction', 'set_phase']));
+      const seat = table.body.table.players.find((p) => p.you);
+      expect(seat.life.books.transactions.length).toBeGreaterThan(0);
+      const index = 0;
+      const edited = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+        command: { type: 'edit_transaction', index, patch: { category: '@Edited' } },
+      });
+      expect(edited.status).toBe(200);
+      const refused = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+        command: { type: 'edit_transaction', index, patch: { amount: 1 } },
+      });
+      expect(refused.status).toBe(400);
+      const phased = await call(host, 'post', `/game/rooms/${roomId}/commands`, {
+        command: { type: 'set_phase', kind: 'smile', id: 'life', phase: 'idea' },
+      });
+      expect(phased.status).toBe(200);
+
+      await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
+    },
+  );
+
   maybe('refuses a malformed move and a move out of turn, and changes nothing', async () => {
     const made = await call(host, 'post', '/game/rooms', {
       kind: 'dreamfund',

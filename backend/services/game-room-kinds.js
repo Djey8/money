@@ -7,6 +7,7 @@ const dreamTable = require('@money/domain/dist/cashflow-game/dreamfund/table/red
 const dreamBots = require('@money/domain/dist/cashflow-game/dreamfund/table/bot');
 const dreamView = require('@money/domain/dist/cashflow-game/dreamfund/table/view');
 const dreamReview = require('@money/domain/dist/cashflow-game/dreamfund/table/review');
+const dreamAdvice = require('@money/domain/dist/cashflow-game/dreamfund/table/advice');
 const dreamLevels = require('@money/domain/dist/cashflow-game/dreamfund/table/bot-levels');
 const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-sim/policies');
 
@@ -46,6 +47,16 @@ const dreamfund = {
   deadline: (table) => domain.nextDeadline(table),
   humansOut: dreamHumansOut,
   review: (table) => dreamReview.reviewDreamTable(table),
+  /** What a strategy would do for a seat now, and the advice around it (goals, money, what to keep in mind). */
+  advise: (table, userId, policyId) => dreamAdvice.adviseDreamSeat(table, userId, policyId),
+  policyCommands: (table, userId, policyId) =>
+    dreamBots.dreamPolicyCommands(table, userId, policyId),
+  /** Whether `policyId` (a strategy, with the level of a bot after a colon) is one the table knows. */
+  knowsPolicy: (policyId) =>
+    DREAM_POLICIES.some(
+      (policy) => policy.id === (dreamLevels.splitDreamBotId(policyId)?.base ?? policyId),
+    ),
+  strategies: dreamAdvice.DREAM_STRATEGIES,
   /** The next step of the first bot that has one, played through the rules; null when none has. */
   botStep: (table, ctx) => {
     const step = dreamBots.nextBotStep(table);

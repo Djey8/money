@@ -178,6 +178,37 @@ const DREAMFUND_COMMANDS = {
     check: (c) => amount(c.amountMinor, 'amountMinor'),
     build: (c) => ({ type: 'repay_bank_loan', amountMinor: c.amountMinor }),
   },
+  edit_transaction: {
+    fields: ['index', 'patch'],
+    check: (c) => {
+      if (!Number.isSafeInteger(c.index) || c.index < 0)
+        return 'index must be a booking number from 0.';
+      if (!isObject(c.patch)) return 'patch must be an object.';
+      const keys = Object.keys(c.patch);
+      if (keys.length === 0) return 'patch needs a category, an account or a time.';
+      const bad = keys.filter((key) => !['category', 'account', 'time'].includes(key));
+      if (bad.length > 0) {
+        return `${bad.join(', ')} belong to the game and cannot be changed: only category, account and time can.`;
+      }
+      return keys.every((key) => typeof c.patch[key] === 'string')
+        ? null
+        : 'patch values must be strings.';
+    },
+    build: (c) => ({ type: 'edit_transaction', index: c.index, patch: c.patch }),
+  },
+  edit_subscription: {
+    fields: ['title', 'account'],
+    check: (c) => text(c.title, 'title') || text(c.account, 'account'),
+    build: (c) => ({ type: 'edit_subscription', title: c.title, account: c.account }),
+  },
+  set_phase: {
+    fields: ['kind', 'id', 'phase'],
+    check: (c) =>
+      !['grow', 'smile', 'fire'].includes(c.kind)
+        ? 'kind must be grow, smile or fire.'
+        : text(c.id, 'id') || text(c.phase, 'phase'),
+    build: (c) => ({ type: 'set_phase', kind: c.kind, id: c.id, phase: c.phase }),
+  },
   set_insurance: {
     fields: ['kind', 'on'],
     check: (c) =>

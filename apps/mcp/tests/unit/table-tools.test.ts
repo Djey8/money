@@ -101,7 +101,7 @@ describe('what an agent sees in tools/list', () => {
         ).actions,
       ),
     ].filter(([name]) => name.startsWith('table'));
-    expect(actions.length).toBe(20);
+    expect(actions.length).toBe(22);
     for (const [, action] of actions) expect(OPERATIONS[action.operationId]).toBeDefined();
     expect(OPERATIONS.streamGameRoomEvents).toBeUndefined();
     expect(JSON.stringify(TOOLS)).not.toContain('streamGameRoomEvents');
@@ -280,5 +280,25 @@ describe('watching a Dreamfund table', () => {
     expect(JSON.stringify(create)).toContain('dreamfund');
     const topics = loadExplainTopics();
     expect(Object.keys(topics)).toContain('dreamfund_table_guide');
+  });
+});
+
+describe('guiding and playing a Dreamfund table (JFK, 2026-11-06)', () => {
+  it('has the advice and the card catalogue among the reads, and the autoplay among the moves', () => {
+    expect(read.description).toContain('table_advice');
+    expect(read.description).toContain('dream_cards');
+    expect(read.description).toContain('dreamfund_strategy');
+    expect(play.description).toContain('table_autoplay');
+    expect(play.description).toContain('only when they asked you to');
+    expect(play.description).toContain('edit_transaction');
+  });
+
+  it('has the strategy guide as a topic, and the guide says how to guide and play', () => {
+    const topics = loadExplainTopics();
+    expect(topics['dreamfund_strategy'].content).toContain('sell, step up, repeat');
+    const guide = topics['dreamfund_table_guide'].content;
+    expect(guide).toContain('table_advice');
+    expect(guide).toContain('table_autoplay');
+    expect(guide).toContain('edit_transaction');
   });
 });

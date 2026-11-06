@@ -443,6 +443,143 @@ function createGameRoomService({
     return { id: doc.roomId, version: doc.table.version, ...kindOf(doc.table).review(doc.table) };
   }
 
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function dreamOnly(doc, what) {
+    if (doc.table.kind !== 'dreamfund') {
+      throw new RoomError('not_available', 400, `${what} is for Dreamfund tables.`);
+    }
+  }
+
+  /**
+   * Advice for the reader's own seat at a Dreamfund table (JFK, 2026-11-06): the goals, the money, what a strategy would do now with a
+   * sentence for each move, and what to keep in mind. Only somebody who sits at the table can ask; nothing is saved.
+   */
+  async function adviseRoom(userId, roomId, { policyId = 'expert' } = {}) {
+    const doc = await loadFor(userId, roomId);
+    dreamOnly(doc, 'Advice');
+    if (!doc.table.players.some((p) => p.id === userId)) {
+      throw new RoomError('not_seated', 403, 'You have no seat at this table.');
+    }
+    if (!kindOf(doc.table).knowsPolicy(policyId)) {
+      throw new RoomError('unknown_strategy', 400, `There is no strategy called ${policyId}.`);
+    }
+    return {
+      id: doc.roomId,
+      version: doc.table.version,
+      ...kindOf(doc.table).advise(doc.table, userId, policyId),
+    };
+  }
+
+  /**
+   * Plays the reader's own seat for a while with a strategy (JFK, 2026-11-06): the very moves a bot of that strategy would send, one
+   * after the other through the rules, until `maxTurns` of the reader's turns are played, `maxMoves` moves are sent, it is not their
+   * turn, the game is over, or no move is accepted. With `waitSeconds` it waits for the others to play and goes on when it is their
+   * turn again. Everything is a normal move: the table, the log and the other players see it as the reader's.
+   */
+  async function autoplayRoom(
+    userId,
+    roomId,
+    { policyId = 'expert', maxMoves = 25, maxTurns = 1, waitSeconds = 0 } = {},
+  ) {
+    let doc = await loadFor(userId, roomId);
+    dreamOnly(doc, 'Autoplay');
+    if (!doc.table.players.some((p) => p.id === userId)) {
+      throw new RoomError('not_seated', 403, 'You have no seat at this table.');
+    }
+    const kind = kindOf(doc.table);
+    if (!kind.knowsPolicy(policyId)) {
+      throw new RoomError('unknown_strategy', 400, `There is no strategy called ${policyId}.`);
+    }
+    const played = [];
+    let turns = 0;
+    let stopped = 'moves_limit';
+    const deadline = Date.now() + Math.min(Math.max(waitSeconds, 0), 25) * 1000;
+    for (let sent = 0; sent < maxMoves;) {
+      doc = await loadFor(userId, roomId);
+      if (doc.table.phase !== 'playing') {
+        stopped = 'game_over';
+        break;
+      }
+      const commands = kind.policyCommands(doc.table, userId, policyId);
+      if (commands.length === 0) {
+        if (turns > 0 && turns >= maxTurns) {
+          stopped = 'turns_limit';
+          break;
+        }
+        if (Date.now() < deadline) {
+          await sleep(500);
+          continue;
+        }
+        stopped = 'not_your_turn';
+        break;
+      }
+      // the strategy's step is a few moves in a row (the plans of a month, then settling it): all of them, as a bot plays it
+      let applied = false;
+      let waiting = false;
+      for (const command of commands) {
+        if (sent >= maxMoves) break;
+        try {
+          const done = await runCommand(userId, roomId, command, {
+            clientCommandId: crypto.randomUUID(),
+          });
+          played.push({
+            command,
+            events: done.events.map((event) => event.type),
+          });
+          applied = true;
+          sent += 1;
+          if (command.type === 'end_turn') turns += 1;
+        } catch (error) {
+          if (!(error instanceof TableCommandError)) throw error;
+          // the turn cannot end before somebody else has read a Harvest card: not a refusal, the others are to move
+          if (/^Waiting for/.test(error.message)) {
+            waiting = true;
+            break;
+          }
+          played.push({ command, refused: error.message });
+          break;
+        }
+      }
+      if (waiting && !applied) {
+        if (Date.now() < deadline) {
+          await sleep(500);
+          continue;
+        }
+        stopped = 'waiting_for_others';
+        break;
+      }
+      if (!applied) {
+        stopped = 'refused';
+        break;
+      }
+      if (turns >= maxTurns) {
+        // the turn is over; with a wait the next one is played when it comes
+        if (Date.now() >= deadline) {
+          stopped = 'turns_limit';
+          break;
+        }
+        const after = kind.policyCommands((await loadFor(userId, roomId)).table, userId, policyId);
+        if (after.length === 0) {
+          stopped = 'turns_limit';
+          break;
+        }
+      }
+    }
+    doc = await loadFor(userId, roomId);
+    return {
+      id: doc.roomId,
+      version: doc.table.version,
+      stopped,
+      turnsPlayed: turns,
+      movesPlayed: played.filter((entry) => !entry.refused).length,
+      played,
+      ...(doc.table.phase === 'playing'
+        ? { advice: kind.advise(doc.table, userId, policyId) }
+        : {}),
+    };
+  }
+
   /** The table, as `userId` may see it (a stranger sees a public table as a spectator). */
   async function getRoom(userId, roomId) {
     return roomView(await loadFor(userId, roomId), userId);
@@ -1212,6 +1349,8 @@ function createGameRoomService({
     createRoom,
     getRoom,
     reviewRoom,
+    adviseRoom,
+    autoplayRoom,
     seatsOfRoom,
     sitTogether,
     runCommand,

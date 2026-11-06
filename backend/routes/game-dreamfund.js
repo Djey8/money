@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { requireScope, problem } = require('../middleware/api-auth');
 const { requireGameAccount } = require('../middleware/game-account-guard');
 const { dreamStats, nicknameOf } = require('./game-rooms');
+const { browseDreamfundCards } = require('../services/dreamfund-cards');
 
 /**
  * The Dreamfund leaderboard (todo/dreamfund-multiplayer.md, slice 8). Mounted by routes/api.js at `/api/v1/game/dreamfund`; game
@@ -32,6 +33,22 @@ const limiter = rateLimit({
 const guard = (level) => [requireScope(`game:${level}`), requireGameAccount, limiter];
 const invalid = (res, detail) =>
   problem(res, 400, 'validation_invalid', 'Invalid leaderboard request', detail);
+
+/**
+ * `GET /game/dreamfund/cards?deck=&pile=&query=&id=&limit=` - the printed cards of the Dreamfund game: the Opportunity, Harvest, Life,
+ * Emergency and Dream piles, with their numbers, what each does and where to read more. What only the engine knows (which offers are
+ * scams) is not part of it.
+ */
+router.get('/cards', ...guard('r'), (req, res, next) => {
+  try {
+    const { deck, pile, query, id, limit } = req.query;
+    const result = browseDreamfundCards({ deck, pile, query, id, limit });
+    if (result.error) return invalid(res, result.error);
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 /** `GET /game/dreamfund/leaderboard` - the board (one rating for everybody), best rating first. */
 router.get('/leaderboard', ...guard('r'), async (req, res, next) => {

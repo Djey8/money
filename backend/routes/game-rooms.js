@@ -428,6 +428,54 @@ router.get(
 );
 
 /**
+ * `GET /game/rooms/{roomId}/advice?strategy=` - advice for the reader's own seat at a Dreamfund table: the goals, the money, the moves a
+ * strategy would send now (each with a sentence), and what to keep in mind. A page, not the table.
+ */
+router.get(
+  '/:roomId/advice',
+  ...guard('r'),
+  handle(async (req, res) => {
+    const policyId = req.query.strategy === undefined ? 'expert' : String(req.query.strategy);
+    res.json(await rooms().adviseRoom(req.userId, req.params.roomId, { policyId }));
+  }),
+);
+
+/**
+ * `POST /game/rooms/{roomId}/autoplay {strategy?, maxTurns?, maxMoves?, waitSeconds?}` - plays the reader's own seat at a Dreamfund
+ * table for a while with a strategy of the simulation, move by move through the rules, and answers what was played and why it stopped.
+ */
+router.post(
+  '/:roomId/autoplay',
+  ...guard('w'),
+  handle(async (req, res) => {
+    const body = isObject(req.body) ? req.body : {};
+    const whole = (value, name, min, max, fallback) => {
+      if (value === undefined) return { value: fallback };
+      return Number.isInteger(value) && value >= min && value <= max
+        ? { value }
+        : { error: `${name} must be a whole number from ${min} to ${max}.` };
+    };
+    if (body.strategy !== undefined && typeof body.strategy !== 'string') {
+      return invalid(res, 'strategy must be the id of a strategy.');
+    }
+    const maxTurns = whole(body.maxTurns, 'maxTurns', 1, 10, 1);
+    const maxMoves = whole(body.maxMoves, 'maxMoves', 1, 80, 25);
+    const waitSeconds = whole(body.waitSeconds, 'waitSeconds', 0, 25, 0);
+    for (const checked of [maxTurns, maxMoves, waitSeconds]) {
+      if (checked.error) return invalid(res, checked.error);
+    }
+    res.json(
+      await rooms().autoplayRoom(req.userId, req.params.roomId, {
+        policyId: body.strategy ?? 'expert',
+        maxTurns: maxTurns.value,
+        maxMoves: maxMoves.value,
+        waitSeconds: waitSeconds.value,
+      }),
+    );
+  }),
+);
+
+/**
  * `GET /game/rooms/{roomId}` - the table as the reader may see it. With `wait` the read is held open (up to `timeoutSeconds`,
  * at most 30) until something happens, so an agent makes one cheap call per turn instead of polling:
  * `wait=my_turn` returns as soon as the reader has a move (their turn, a seat in `holdSeats`, a position to sell, an undo vote)

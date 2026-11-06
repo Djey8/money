@@ -3,7 +3,13 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { join } from 'node:path';
 import { buildServer } from '../../src/index';
 import { loadExplainTopics } from '../../src/tools/explain';
-import { buildTeachPrompt, resolveLanguage, resolveStyle, TEACH_PROMPT } from '../../src/prompts';
+import {
+  buildDreamfundPrompt,
+  buildTeachPrompt,
+  resolveLanguage,
+  resolveStyle,
+  TEACH_PROMPT,
+} from '../../src/prompts';
 
 const docs = join(__dirname, '..', '..', '..', '..', 'docs', 'domain');
 
@@ -96,7 +102,10 @@ describe('the server', () => {
     await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
 
     const listed = await client.listPrompts();
-    expect(listed.prompts.map((prompt) => prompt.name)).toEqual([TEACH_PROMPT.name]);
+    expect(listed.prompts.map((prompt) => prompt.name)).toEqual([
+      TEACH_PROMPT.name,
+      'dreamfund_coach',
+    ]);
     expect(listed.prompts[0].arguments?.map((argument) => argument.name)).toEqual([
       'group',
       'style',
@@ -110,5 +119,28 @@ describe('the server', () => {
     });
     const first = got.messages[0].content;
     expect(first.type === 'text' && first.text).toContain('cashflow_manual_es');
+  });
+});
+
+describe('the Dreamfund coach prompt (JFK, 2026-11-06)', () => {
+  const text = (args: Record<string, string>) =>
+    buildDreamfundPrompt(args).messages[0].content.text;
+
+  it('guides by default: the advice, the strategy and the guide are read, and the user decides', () => {
+    const guide = text({});
+    expect(guide).toContain('table_advice');
+    expect(guide).toContain('dreamfund_strategy');
+    expect(guide).toContain('dreamfund_table_guide');
+    expect(guide).toContain('I decide - do not play');
+  });
+
+  it('plays only when asked, for the turns asked (at most ten), and watches without playing', () => {
+    expect(text({ job: 'play', turns: '4' })).toContain('table_autoplay for 4 of my turns');
+    expect(text({ job: 'play', turns: '99' })).toContain('table_autoplay for 10 of my turns');
+    const watch = text({ job: 'how are we doing?' });
+    expect(watch).toContain('table_review');
+    expect(watch).not.toContain('table_autoplay for');
+    expect(text({ table: 'Friday' })).toContain('the table "Friday"');
+    expect(text({ job: 'get me to the dream first' })).toContain('"get me to the dream first"');
   });
 });

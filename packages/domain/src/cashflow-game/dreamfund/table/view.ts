@@ -391,6 +391,12 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
       add('decline_trade');
     }
   }
+  // how the books are kept can be changed at any time - never the amount, the date or the comment of a booking
+  add('edit_transaction', {
+    fields: ['index', 'patch: category | account (Daily, Splurge, Smile, Fire) | time'],
+  });
+  add('edit_subscription', { fields: ['title', 'account (Daily, Splurge, Smile, Fire)'] });
+  add('set_phase', { fields: ['kind: grow | smile | fire', 'id', 'phase'] });
   if (!mine) return actions;
   if (trade?.sellerId === me.id) {
     add('withdraw_trade');

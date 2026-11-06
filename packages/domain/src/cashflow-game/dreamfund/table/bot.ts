@@ -4,6 +4,7 @@ import { DREAM_POLICIES } from '../../dreamfund-sim/policies';
 import { DREAM_BOT_LEVELS, splitDreamBotId, withDreamMistakes } from './bot-levels';
 import { DreamBot, type MoneyActor } from '../bot';
 import { DreamPlayer } from '../player';
+import { needsHarvestAck } from './harvest-ack';
 import {
   applyDreamCommand,
   passiveCommands,
@@ -162,20 +163,34 @@ function pendingCommand(
  */
 export function dreamBotCommands(table: DreamTable, botId: string): DreamCommand[] {
   const seat = table.players.find((p) => p.id === botId);
-  if (!seat?.bot || table.phase !== 'playing' || !seat.life) return [];
-  if (seat.status !== 'active' || table.finishers.some((f) => f.playerId === botId)) return [];
+  if (!seat?.bot) return [];
+  return dreamPolicyCommands(table, botId, seat.bot.policyId);
+}
+
+/**
+ * What a strategy would do for any seat now (JFK, 2026-11-06): the moves a bot plays, asked for a person's seat - to advise them, or to
+ * play for them while they are away. `policyId` is a strategy of the simulation, with the level of the bots after a colon
+ * (`expert:strong`); without a level it plays at its best. Nothing is changed.
+ */
+export function dreamPolicyCommands(
+  table: DreamTable,
+  seatId: string,
+  policyId: string,
+): DreamCommand[] {
+  const seat = table.players.find((p) => p.id === seatId);
+  if (!seat || table.phase !== 'playing' || !seat.life) return [];
+  if (seat.status !== 'active' || table.finishers.some((f) => f.playerId === seatId)) return [];
+  const botId = seatId;
   const luck = luckOf(table, botId);
-  const level = splitDreamBotId(seat.bot.policyId)?.level ?? 'master';
+  const level = splitDreamBotId(policyId)?.level ?? 'master';
   // a bot of a lower level slips now and then (its own luck decides, never the table's dice)
   const bot = new DreamBot(
-    withDreamMistakes(
-      botPolicy(seat.bot.policyId),
-      DREAM_BOT_LEVELS[level],
-      luckOf(table, `${botId}:slip`),
-    ),
+    withDreamMistakes(botPolicy(policyId), DREAM_BOT_LEVELS[level], luckOf(table, `${botId}:slip`)),
   );
   const p = wake(table, seat);
   const harvest = harvestCommands(bot, p, seat);
+  // a person is waited for until they have read what a Harvest card did to them (bots are not): say Continue after the options
+  if (!seat.bot && needsHarvestAck(seat)) return [...harvest, { type: 'harvest_continue' }];
   if (harvest.length > 0) return harvest;
   const answer = answerOffer(table, bot, p, botId);
   if (answer.length > 0) return answer;
