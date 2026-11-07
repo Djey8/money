@@ -1,3 +1,101 @@
+## [1.32.0] - 2026-11-07
+
+### Features
+
+- feat(stats): the charts call the Smile account Dream; the account charts of a Dreamer game mark Opportunity, Harvest, Life, Emergency and Career events beside the Bank loan and Doodad markers
+- feat(ui): the Smile account and its projects are called Dream everywhere on screen, in all six languages; the game Dreamfund (Traumtopf) is renamed Dreamer (Träumer)
+- feat(game): the person throws the career die themselves, with the same tumbling die as every other card (roll_career); the demo coach guides the throw
+- feat(game): the coach follows the person through the whole app - Grow, Fire, Smile, Subscriptions, Menu - waits for the page, ends with Finish or one Stop
+- feat(game): the manual's example projects are the real Grow, Fire and Smile info panels, read only, in the grid of their page; the bot list shows Coach last in one compact row; the demo overlay no longer takes touches (phone scrolling)
+- feat(game): the manual shows example cards, two example projects to open and Jonas's career ladder, and explains emergencies and dreams more; the demo coach is lighter, lit places fit the screen, the bot panel closes by itself and has a Done button, and the first two turns highlight the real buttons
+- feat(game): a new game account chooses between the normal welcome tour and the guided demo; the Demo button starts the guided demo for a game account; the lobby buttons stay in one row and shrink to their pictures
+- feat(game): the coach of the guided Dreamfund demo - a lit-up walk through the lobby, the new-table panel, the waiting room (seat Coach), meeting Jonas, the game screen and the first rolls, with Do it for me, skip and Stop tutorial
+- feat(game): the guided demo game on the server - Coach, a bot that turns a table of one person into a fixed, never ranked, never kept demo whose dice and cards come out the same every time
+- feat(game): first full calibration - champions for the 13 types that gained, ratings of every bot, sapling the champion of the champions
+- feat(game): a player's profile on the Dreamfund board shows how the rating moved from the start and a fact table of Grow, Fire, Smile and income
+- feat(game): the Dreamfund bots know every capability and are tuned by a search that relearns from the last champion
+- feat(mcp): an agent can guide and play a Dreamfund seat - advice with the next moves and why, every printed card, a strategy plays the seat for a while, the hand edits, a coach prompt and a strategy guide
+- feat(game): a tax on the profit of a sale (a table setting, 26.375% by default, off with 0), pensions and employer benefits you pay into, courses and degrees that raise your pay, and windfalls in the Life stack
+- feat(game): at a Dreamfund table a player can change what does not change the game - a booking's category, time and account, the account a payment is paid from, the phase of a project (back, any phase, forward) - and Done on an Opportunity nobody took is the same as passing
+- feat(game): every Opportunity card gets how to invest, a tip with a do and a don't, its risk with the reason, checked links and tasks; Grow shows an open sell offer with its price and the turns left
+- feat(game): every holding gets buyers on the Harvest cards, with dice for the price, offers that stay open for a table setting, and scams with a last exit before they close
+- feat(game): the Yin Yang map - a circle with an S through it; every player walks a whole side (white: the S and the left half, black: the right half and the S the other way), the S and its Paydays are common ground, the two dots show the players of each side with their pictures; offered after the infinity
+- feat(game): the map choice is one row that scrolls sideways, in the table setup and the solo setup, so more map types never make a second row
+- feat(game): the Life stack grows from 27 to 75 cards and is balanced - love, family, work, money, home, pets, cars, study; as many lifts as blows, a way out of a job loss, and the money of a card is felt by the character's price level in both directions
+- feat(game): a map for the life dream alone has one Emergency tile more in place of an Opportunity tile, so playing without the Smile tiles is not easier
+- feat(game): the host of a table sees the map dealt and can deal the tiles again (Another layout), as in a solo game; the layout seed is a table setting and everybody plays that map
+- feat(game): every die rolled for a card flies into the card: it lies on its number for a couple of seconds, then moves smoothly to a small die beside the result line and stays there while the card is open (also after Grow/Fire projects), for Emergency, Life, Career, Opportunity and Harvest, solo and at tables
+- feat(game): the table setting has the currency (the game's own, or €, $, £, ¥, CHF) beside the language; it follows the table's language into the screen's currency
+- feat(game): a solo game has the options and the full catalogue of a table: all eight insurances on offer (chosen for the start, or hopped in later; a game saved before is given them), the dream points goal (or the life dream alone, a map without dream tiles), one or two dreams at a landing, the Bank loan step; the insurance dialog before the start lists the choices
+- feat(game): two more insurances - disability (40 a month) and travel (8) - with their cards (the Emergency stack has 114), more cards for the legal protection and the dental top-up, and a measure of what each premium saves: every insurance saves more than it costs for every life it applies to
+- feat(game): the Emergency stack doubles to 100 cards: the first 50 get descriptions, bucket notes, links, actions and a tip, the insurances are corrected (dental, bike, tiers); 50 new cards for the car, the law, health, income and every kind of life - fixed, dice, choice and several costs, to pay at once or on a plan - with a fairness spec
+- feat(game): the Mojo project names the finance books (Barefoot, Ramsey, Orman, Housel) and German advisers, with a note and a link for every month of the reserve
+- feat(game): the Fire project of an Emergency card is filled in as the project of a dream (description, bucket notes and links, actions, a tip or fun fact), in the solo game and at a table; the card shows how its cost is found, when it is paid and which insurance limits it; a card can set its own deductible and cost more without its insurance
+- feat(game): every one of the 96 dreams ends its notes with a tip against a known trap or a fun fact, in English and German
+- feat(game): a Dreams block in the advanced settings of a table: dreams at a Smile tile moved there, and a new setting for how many dreams a player can have open at once (no limit, 1-6, 8, 10; default 3)
+- feat(game): 48 more dreams (D49-D96) in all nine categories, from small to huge (up to 480,000), each with description, bucket notes and links, actions and notes in English and German; the deck has 96 dreams
+- feat(game): all 48 dreams and the life dreams of all nine characters carry description, notes and links per bucket, links, action items and notes (English and German)
+- feat(game): Add on the grid card of a Smile or Fire project prefills the remaining amount like Pay; the dream points badge sits in the upper left corner of the info panel
+- feat(game): dream points shown on the info panel and the card of a project and as a badge of the character (points of the goal); the add button of a Smile or Fire project stays in a game with others; a project made from a dream card is filled in with description, notes and links per bucket, links, action items and notes (first eight dreams)
+- feat(game): a game can be played for the life dream alone (no Smile tiles, the Opportunity tiles take their place) or for dream points as well (default 10, a lobby setting) which is a goal of the win; a landing offers one, two, or one or two by chance
+- feat(game): where the character may be chosen the first decision is the list of characters of the game on its own (name, who, cashflow, lowest first); a click shows the details, Choose another character goes back to the list
+- feat(game): the popup of another player's card is a small version of it (pile, the numbers that matter, the first sentence); the card that opens from it, the latest line or the history is the full card with the player's own costs, insurance and the chances of its dice; no month strip; player names with room for their frames
+- feat(game): every player is dealt a character at the start and reads it first; another can be chosen there from a list (not where the characters are drawn), Back from the insurances always returns to it; no picking in the lobby; the insurances stand alone at the start
+- feat(game): insurances as one list with details that open below (price before the switch, total, Done), only liability, household, legal, dental and the car covers offered to everybody; debug panel as a content-sized dialog with tile symbols, card grid with key facts, quick filters and stacks; loading a card cancels what is left of the card before; buttons of the new screens centred
+- feat(game): insurances are a decision of their own (catalogue by priority with cost, cover and effect on cards; reopened any time from a button; hop in or out at once on the bill of the next Payday; one car insurance only); debug game loads any card from a button on the card or the debug button of the screen, mocks a Payday and a career step; a Harvest card holds the end of the turn until each affected player says Continue; lobby: debug last, Bank loan step 1000 default, no turn gate; centered briefing buttons
+- feat(game): an active payment plan of a project is listed as an active subscription at a table and counts as saving; pausing or deleting the plan removes it
+- feat(game): debug games where the host chooses the card of a tile; the player throws the dice of a bought card and of the job search; the Bank loan step and interest are settings and a refused repayment says why; emergencies become Fire projects only and the payment plans of the app run at a table; transparent popups and history links for the cards of others; shuffle at a table; life choices are sometimes forced
+- feat(game): the card keeps its full text after it is taken, a card with a die waits for the throw, the Grow project carries what the card tells (type, risks, links, tasks, the saving) and its notes are worded in the language of the screen; cat and dog happen; no buying more from the balance sheet; the briefing follows the theme
+- feat(game): every player reads their character and chooses the insurances before the first roll; tokens stay where they stand (a life that did not change is not sent again); payback button for debts at a table; Jonas starts without a car; badges Car and Study with a closable card and an insurance summary; the budget lines in the language of the screen
+- feat(game): an emergency at a Dreamfund table can become a Fire project that is paid from its page, as alone; the turn waits for it in the guided and strict game
+- feat(game): Dreamfund tables play like solo - investments are planned in Grow first and bought from there, every draw and decision of a player is told with its card (history and popups open the card), ranked comes before the rules
+- feat(game): the life attributes and the insurances at a Dreamfund table - Jonas in a shared flat and in education (ends at career stage 2), per-character starts, five cards bound to children / partner / study, flat emergencies bound to the home, per-character insurance prices, car insurances offered with a car, the choice before the first roll, the attributes explained in the app and in the manual
+- feat(game): Dreamfund table fixes - the die card shows what each number does and keeps the result, opponent tokens on the map, ranked is always strict, characters read before choosing, one Payday line per round, the money moves through the app's own pages instead of the money panel
+- feat(game): one Dreamfund ranking for people and bots, the difficulty as the stake (gains x0.7 / x1 / x1.5), the leaderboard with the lobby's game switch and no difficulty tabs, the points explained in the manual; fix: the account picture at Dreamfund seats and in the lobby
+- feat(game): the end of a Dreamfund table on the classic end screen - the ranking and what it meant for the rating, and the game filed in the saved games with the Mojo, the dreams and the reserve (slice R6)
+- feat(game): the table things at a Dreamfund table - the other players' moves told in popups and the history, the right map for their tokens, trading and the Harvest options from the money panel (slice R5)
+- feat(game): the player's own money at a Dreamfund table - fund the reserve and the dream, repay debts, plans per Payday, settle the month, from a panel on the table layer (slice R4f)
+- feat(game): the Opportunity and Harvest tiles at a Dreamfund table on the solo screen - pile and cards, buying with the dice thrown by the table, the Harvest card drawn for everybody with what may be sold (slices R4d and R4e)
+- feat(game): the Career and Dream tiles at a Dreamfund table on the solo screen - the die and the promotion, the branch to choose, the dreams on offer, a dream taken or left (slice R4c)
+- feat(game): the Emergency and Life cards at a Dreamfund table on the solo screen - the table rolls the dice and keeps the choices, the card pays now or on a plan, a dealt card stays on screen with what came of it (slice R4b)
+- feat(game): rolling at a Dreamfund table on the solo screen - the roll tells its dice and the token's way, the Dreamfund driver, the stack tiles on, the drawn card written into the turn (slice R4a)
+- feat(game): a Dreamfund table opens on the solo screen - one room page for both games, the table followed in the classic shape, every seat's life on screen through the bridge (slice R3 of the Dreamfund on the solo screen)
+- feat(game): the bridge from a Dreamfund life to the app - Mojo, the dream and the dreams taken as Smile projects, the reserve and the emergencies on a plan as Fire projects (slice R2 of the Dreamfund on the solo screen)
+- feat(game): one multiplayer flow for both games - the classic lobby, create-table panel, waiting room and leaderboard now take the Dreamfund as a game choice; Dreamfund bots rated around 1500 with the best near 1700; profile pictures at Dreamfund seats
+- feat(game): bot tournaments for the Dreamfund - headless tables of bots rated with the board's Elo, the starting rating of every strategy at every skill level and difficulty from 1300 tables each, bots known to the board at startup (slice 9 of the multiplayer)
+- feat(game): the Dreamfund leaderboard - a board of its own with one rating per difficulty, bots seeded from the map, goals and dream points in the result (slice 8 of the multiplayer)
+- feat(game): the Dreamfund tables screen - a lobby with the solo game's settings and the table's own, a waiting room with bots of four levels, the table with every life in numbers, your turn's decisions, your money, trades and the result (slice 7 of the multiplayer)
+- feat(game): the four skill levels of a Dreamfund bot - master, strong, casual, beginner - as in the classic bots
+- feat(game): an agent can watch a Dreamfund table on demand - a small review page (goals, pace against the simulation, what to watch), the table kinds in the API and the MCP, and a guide for agents (slice 6 of the multiplayer)
+- feat(game): the Dreamfund as a room - the lobby, clock, log and live channel of the classic table serve both kinds, with the Dreamfund's commands, view, strategy bots and legal actions (slice 5 of the multiplayer)
+- feat(game): trading at a Dreamfund table - an Opportunity card offered to the others for a fee, counter offers, a standing sale, and bots that answer and offer (slice 4 of the multiplayer)
+- feat(game): bots at a Dreamfund table - the simulation's judgement is shared, a bot plays with the commands a person sends (slice 3 of the multiplayer)
+- feat(game): the Dreamfund table - lobby, settings, seats, characters, turns on a clock, a shared Harvest market, goals and ranking (pure rules, slice 2 of the multiplayer)
+- feat(game): the final map of the Dreamfund (200 games per strategy, character and difficulty), balanced characters, and the map as a topic for the MCP
+- feat(game): nine new characters in three difficulties, a difficulty choice, the map of every character, strategy and difficulty, and an analyst that compares a game with its own character
+- feat(game): a character's price level scales the Opportunity, Harvest and Dream cards, and the German pay of a salary is worked out from its gross
+- feat(game): the character grid offers only the edition's own characters, the old test professions are gone from it
+
+### Bug Fixes
+
+- fix(game): on the Yin Yang map the tokens stay on their own side of the S all the way (white on the white side, black on the black side) instead of jumping from one side of the tiles to the other where the S bends
+- fix(game): on the Yin Yang map the two players start on opposite sides, each on the first tile of their own half of the circle, walk it, and meet on the S
+- fix(game): the Paydays of the Yin Yang map are spread evenly round each track (some on the common S, some on the own half), and the pictures in the two dots are 20% smaller so the colour shows
+- fix(game): the buttons of a decision panel share the row by what is shown, so a single button (no Pass) uses the full width
+- fix(game): a Life, Fire or Harvest card cannot be left without opening it: Done and End turn wait until it was opened (and dealt with)
+- fix(game): money for a dream goes to the dream asked for and is booked under its name; a short account takes the Bank loan for dreams, emergencies and the reserve; paid projects stay as completed (planning, saving, completed); the Add dialog of a project never keeps the last amount; tile pictures cut to their circle
+- fix(game): the insurance badge and its card count what the player has chosen; a chosen character goes straight to the insurances, only a drawn one is read first; debug symbol above the card
+- fix(game): loading a card in a debug game puts the turn at the card of that tile (token on the tile, card open) so the screen jumps to it and no roll is asked for
+
+### Performance
+
+- perf(api): every query of the leaderboards, the audit trail, the community and the saved games is answered from an index or a view (boards and results by player as views, threads and posts and audit entries newest first from time indexes); a test fails on any query that reads every document
+- perf(game): housekeeping of the game database runs on its own timer in small batches, not in a request; the history of finished tables is compacted after a while; every query of the game store is tested to use an index; debug symbol of a card at the height of the back button
+- perf(game): an index for the rooms by phase: the clocks and bots and the count of open tables no longer scan the whole game database (2-3 s each, 30 s to create a table)
+- perf(game): a move of a table no longer scans the whole database for seat markers (2 s to 40 ms): markers are indexed and only written when somebody sits down or leaves; pages and panels are preloaded at a table; the shuffle plays once per card; bank loan and time are advanced rules, bot speed fast; insurance as a small switch; no passing of Harvest, Life and Emergency cards
+- perf(game): a Payday re-encrypts only the moved dates of the transactions, not every field of every row
+- perf(game): a long Dreamfund game no longer chokes on its own history - a Payday's moved dates are stored once, the plan is kept as a list, steps are encoded once, the browser's copy is bounded and unchanged books are not encrypted again
+
 ## [1.31.0] - 2026-10-26
 
 ### Features
