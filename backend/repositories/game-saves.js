@@ -343,7 +343,7 @@ async function fileFinishedGame(deps, userId, { books, name, multiplayer, extras
       schema: SAVED_GAME_SCHEMA,
       summary,
       steps: [],
-      // a Dreamfund game also keeps what the solo game keeps in the app: the Mojo, the Smile and the Fire projects
+      // a Dreamer game also keeps what the solo game keeps in the app: the Mojo, the Smile and the Fire projects
       snapshot: extras
         ? {
             ...snapshotFromBooks(named),

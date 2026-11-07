@@ -38,7 +38,7 @@ export function toSyncSubscription(subscription: Subscription): SyncSubscription
 })
 /**
  * Generates transactions from active subscriptions and manages
- * fund allocations (Mojo, Smile projects, Fire emergencies).
+ * fund allocations (Mojo, Dream projects, Fire emergencies).
  */
 export class SubscriptionProcessingService {
   static instance: SubscriptionProcessingService;

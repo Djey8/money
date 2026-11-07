@@ -386,7 +386,7 @@ export class DatabaseService {
   private readonly encryptedRowCache = new WeakMap<object, { signature: string; row: any }>();
   /**
    * The leaves of the last encrypted form of each transaction, by its id: a Payday of a game moves the date of every transaction, and
-   * of each row only that one field changed - the other six keep their ciphertext (JFK, 2026-10-27: a Payday of a long Dreamfund game
+   * of each row only that one field changed - the other six keep their ciphertext (JFK, 2026-10-27: a Payday of a long Dreamer game
    * re-encrypted 12,000 values). The same field of the same row keeps its ciphertext, which it already had on the server.
    */
   private readonly encryptedLeaves = new Map<

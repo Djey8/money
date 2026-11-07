@@ -20,7 +20,7 @@ function started(): DreamTable {
   return briefAll(applyDreamCommand(t, 'host', { type: 'start' }, ctx).table, ctx);
 }
 
-describe('what a viewer of a Dreamfund table is shown', () => {
+describe('what a viewer of a Dreamer table is shown', () => {
   it('has seats and numbers, never account ids or the dice, and a summary of every life', () => {
     const t = started();
     const view = projectDreamFor(t, 'ann');

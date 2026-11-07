@@ -38,7 +38,7 @@ function startedTable() {
   return table;
 }
 
-describe('a Dreamfund table in the classic shape', () => {
+describe('a Dreamer table in the classic shape', () => {
   const table = startedTable();
   const raw = projectDreamFor(table, 'host') as unknown as DreamTableView;
   const shown = dreamViewAsTable(raw);

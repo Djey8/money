@@ -2,7 +2,7 @@ import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { dreamMoney } from './dream-texts';
 
 /**
- * What a card of a Dreamfund pile is, in a few lines (JFK, 2026-11-04): the small popup that tells what another player drew and the
+ * What a card of a Dreamer pile is, in a few lines (JFK, 2026-11-04): the small popup that tells what another player drew and the
  * card that opens from it say the same things - the numbers that matter, not the whole text. Pure; amounts are the card's own (a
  * player's price level changes what they pay - the full card says so).
  */
@@ -57,7 +57,7 @@ const WORDS = {
     piles: {
       emergency: 'Fire (Emergency)',
       life: 'Life',
-      dream: 'Smile (Dream)',
+      dream: 'Dream',
       opportunity: 'Opportunity',
       harvest: 'Harvest',
     },
@@ -85,7 +85,7 @@ const WORDS = {
     piles: {
       emergency: 'Fire (Notfall)',
       life: 'Leben',
-      dream: 'Smile (Traum)',
+      dream: 'Traum',
       opportunity: 'Chance',
       harvest: 'Ernte',
     },

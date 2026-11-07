@@ -2,7 +2,7 @@ import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import type { DreamEventLine } from './dream-session.service';
 
 /**
- * The words of the Dreamfund tables (like the classic tables' own: not the app's i18n JSON). English and German are written; another
+ * The words of the Dreamer tables (like the classic tables' own: not the app's i18n JSON). English and German are written; another
  * language shows English until it is translated. The cards and the characters come from the game's own content, in the table's language.
  */
 
@@ -271,7 +271,7 @@ const EN: DreamTexts = {
     noFacts: 'No game with a fact table yet.',
     total: 'Total',
     perGame: 'Per game',
-    groups: { grow: 'Grow', fire: 'Fire', smile: 'Smile', income: 'Income' },
+    groups: { grow: 'Grow', fire: 'Fire', smile: 'Dream', income: 'Income' },
     labels: {
       growBought: 'Cards bought',
       growSold: 'Holdings sold',
@@ -308,7 +308,7 @@ const EN: DreamTexts = {
     strategy: 'Strategy',
     start: 'Start',
   },
-  title: 'Dreamfund tables',
+  title: 'Dreamer tables',
   newTable: 'Open a table',
   openTables: 'Open tables',
   myTables: 'My tables',
@@ -370,13 +370,13 @@ const EN: DreamTexts = {
   characterRandom: 'A random character',
   dreamPointsTitle: 'Play for dream points',
   dreamPointsHint:
-    'Besides your life dream you have to live other dreams until you have the points: small dreams are worth little, big ones a lot. The map has Smile tiles to find them.',
+    'Besides your life dream you have to live other dreams until you have the points: small dreams are worth little, big ones a lot. The map has Dream tiles to find them.',
   dreamPointsOffHint:
-    'A short game for the life dream alone: nothing else to collect, and the map has no Smile tiles.',
+    'A short game for the life dream alone: nothing else to collect, and the map has no Dream tiles.',
   dreamPointsGoal: 'Dream points to win',
   dreamPointsUnit: 'dream points',
   dreamPointsAlone: 'Life dream only',
-  dreamOffersTitle: 'Dreams at a Smile tile',
+  dreamOffersTitle: 'Dreams at a Dream tile',
   dreamOffersHint: 'How many dreams a landing offers: one, two, or one or two by chance.',
   dreamOffersChance: '1 or 2',
   groupDreams: 'Dreams',
@@ -542,10 +542,10 @@ const EN: DreamTexts = {
   classicLink: 'Classic tables',
   gameChoice: 'Game',
   gameClassic: 'Classic',
-  gameDream: 'Dreamfund',
+  gameDream: 'Dreamer',
   gameClassicHint: 'The Cashflow game on the classic board.',
   gameDreamHint:
-    'The Dreamfund: your dream, the card stacks and the maps of the solo game, played together.',
+    'The Dreamer: your dream, the card stacks and the maps of the solo game, played together.',
   leaderboard: 'Leaderboard',
   rating: 'Rating',
   games: 'Games',
@@ -576,7 +576,7 @@ const DE: Partial<DreamTexts> = {
     noFacts: 'Noch kein Spiel mit Faktentabelle.',
     total: 'Summe',
     perGame: 'Pro Spiel',
-    groups: { grow: 'Grow', fire: 'Fire', smile: 'Smile', income: 'Einkommen' },
+    groups: { grow: 'Grow', fire: 'Fire', smile: 'Dream', income: 'Einkommen' },
     labels: {
       growBought: 'Karten gekauft',
       growSold: 'Verkauft',
@@ -613,7 +613,7 @@ const DE: Partial<DreamTexts> = {
     strategy: 'Strategie',
     start: 'Start',
   },
-  title: 'Traumtopf-Tische',
+  title: 'Träumer-Tische',
   newTable: 'Tisch eröffnen',
   openTables: 'Offene Tische',
   myTables: 'Meine Tische',
@@ -676,13 +676,13 @@ const DE: Partial<DreamTexts> = {
   characterRandom: 'Ein zufälliger Charakter',
   dreamPointsTitle: 'Um Traumpunkte spielen',
   dreamPointsHint:
-    'Neben deinem Lebenstraum musst du weitere Träume leben, bis du die Punkte hast: kleine Träume zählen wenig, große viel. Auf der Karte findest du sie auf Smile-Feldern.',
+    'Neben deinem Lebenstraum musst du weitere Träume leben, bis du die Punkte hast: kleine Träume zählen wenig, große viel. Auf der Karte findest du sie auf Traum-Feldern.',
   dreamPointsOffHint:
-    'Ein kurzes Spiel nur um den Lebenstraum: nichts weiter zu sammeln, und die Karte hat keine Smile-Felder.',
+    'Ein kurzes Spiel nur um den Lebenstraum: nichts weiter zu sammeln, und die Karte hat keine Traum-Felder.',
   dreamPointsGoal: 'Traumpunkte zum Sieg',
   dreamPointsUnit: 'Traumpunkte',
   dreamPointsAlone: 'Nur der Lebenstraum',
-  dreamOffersTitle: 'Träume auf einem Smile-Feld',
+  dreamOffersTitle: 'Träume auf einem Traum-Feld',
   dreamOffersHint: 'Wie viele Träume ein Feld anbietet: einen, zwei oder zufällig einen oder zwei.',
   dreamOffersChance: '1 oder 2',
   groupDreams: 'Träume',
@@ -847,10 +847,10 @@ const DE: Partial<DreamTexts> = {
   classicLink: 'Klassische Tische',
   gameChoice: 'Spiel',
   gameClassic: 'Klassisch',
-  gameDream: 'Traumtopf',
+  gameDream: 'Träumer',
   gameClassicHint: 'Das Cashflow-Spiel auf dem klassischen Brett.',
   gameDreamHint:
-    'Der Traumtopf: dein Traum, die Kartenstapel und die Karten des Solospiels, zusammen gespielt.',
+    'Der Träumer: dein Traum, die Kartenstapel und die Karten des Solospiels, zusammen gespielt.',
   leaderboard: 'Bestenliste',
   rating: 'Wertung',
   games: 'Spiele',

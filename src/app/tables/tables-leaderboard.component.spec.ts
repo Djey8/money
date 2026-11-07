@@ -55,7 +55,7 @@ describe('TablesLeaderboardComponent', () => {
     fixture.detectChanges();
   };
 
-  it('shows the Dreamfund board, one rating for everybody, in the same list', () => {
+  it('shows the Dreamer board, one rating for everybody, in the same list', () => {
     board([]);
     me(player({ playerId: 'me', type: 'human' }));
     fixture.componentInstance.setGame('dreamfund');
@@ -109,7 +109,7 @@ describe('TablesLeaderboardComponent', () => {
     expect(localStorage.getItem('mm.tables.game')).toBe('dreamfund');
   });
 
-  it('opens a Dreamfund player: the way the rating moved and the fact table of the games', () => {
+  it('opens a Dreamer player: the way the rating moved and the fact table of the games', () => {
     board([]);
     me(player({ playerId: 'me', type: 'human' }));
     fixture.componentInstance.setGame('dreamfund');
@@ -142,7 +142,7 @@ describe('TablesLeaderboardComponent', () => {
     fixture.detectChanges();
     (element.querySelector('.lb-row') as HTMLButtonElement).click();
     fixture.detectChanges();
-    // the panel asks the Dreamfund board for the player, by the player's own id
+    // the panel asks the Dreamer board for the player, by the player's own id
     http
       .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/dream-b1'))
       .flush({
@@ -178,7 +178,7 @@ describe('TablesLeaderboardComponent', () => {
     // Grow, Fire, Smile and Income, each with a total and an average per game
     expect(
       Array.from(panel.querySelectorAll('.pi-fact-group h5')).map((h) => h.textContent),
-    ).toEqual(['Grow', 'Fire', 'Smile', 'Income']);
+    ).toEqual(['Grow', 'Fire', 'Dream', 'Income']);
     const bought = Array.from(panel.querySelectorAll('.pi-fact')).find((row) =>
       row.textContent?.includes('Cards bought'),
     ) as HTMLElement;

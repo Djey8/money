@@ -188,7 +188,7 @@ import { factGroups, type FactGroup } from '../dreamfund-tables/dream-player-fac
         <p class="pi-axis-note">{{ t.axisNote }}</p>
       </section>
 
-      <!-- the fact table of a Dreamfund player: what the games came to in Grow, Fire, Smile and the income -->
+      <!-- the fact table of a Dreamer player: what the games came to in Grow, Fire, Smile and the income -->
       <section class="pi-facts" *ngIf="game === 'dreamfund' && loaded">
         <h4>{{ d.profile.facts }}</h4>
         <p class="pi-empty" *ngIf="!facts.length">{{ d.profile.noFacts }}</p>
@@ -586,13 +586,13 @@ import { factGroups, type FactGroup } from '../dreamfund-tables/dream-player-fac
 })
 export class TablePlayerInfoComponent implements OnChanges {
   @Input({ required: true }) player!: GamePlayer;
-  /** The board the player is of: the classic Cashflow's, or the Dreamfund's (more: how the rating moved, the fact table). */
+  /** The board the player is of: the classic Cashflow's, or the Dreamer's (more: how the rating moved, the fact table). */
   @Input() game: 'classic' | 'dreamfund' = 'classic';
   @Output() closed = new EventEmitter<void>();
 
   t: LeaderboardTexts;
   d: DreamTexts;
-  /** A Dreamfund player: the fact table, and the rating after each of the last games. */
+  /** A Dreamer player: the fact table, and the rating after each of the last games. */
   facts: FactGroup[] = [];
   private history: DreamPlayerDetail['history'] = [];
   rtl: boolean;
@@ -717,7 +717,7 @@ export class TablePlayerInfoComponent implements OnChanges {
   }
 
   get chart(): Chart | null {
-    // the Dreamfund keeps the whole line (up to 120 games); the classic board's panel has the last games it listed
+    // the Dreamer keeps the whole line (up to 120 games); the classic board's panel has the last games it listed
     const dreamGames = this.history
       .filter((point) => point.endedAt)
       .map((point) => ({

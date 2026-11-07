@@ -8,7 +8,7 @@ import { DreamPlayer } from '../dreamfund/player';
 import type { DreamPolicy, DreamView } from './policies';
 
 /**
- * One whole Dreamfund game played in memory (JFK, 2026-10-26): the same rules the app runs - `playTurn`, the stacks of cards, the
+ * One whole Dreamer game played in memory (JFK, 2026-10-26): the same rules the app runs - `playTurn`, the stacks of cards, the
  * Opportunity purchases, the Harvest market - decided by a `DreamPolicy`, from a seed. The money the app keeps in Mojo and Smile
  * projects is kept here as plain numbers (the reserve and the dream), moved at every Payday the way the player would move it.
  * Thousands of games take seconds, and the same seed always plays the same game. This is for the balance of the cards, not a

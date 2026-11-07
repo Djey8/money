@@ -9,7 +9,7 @@ const { splitDreamBotId } = require('@money/domain/dist/cashflow-game/dreamfund/
 const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-sim/policies');
 
 /**
- * The Dreamfund leaderboard's service (todo/dreamfund-multiplayer.md, slice 8): when a Dreamfund table finishes, its result is filed
+ * The Dreamer leaderboard's service (todo/dreamfund-multiplayer.md, slice 8): when a Dreamer table finishes, its result is filed
  * once and - if it counts - every player's rating moves (`rateTable`, the domain's pure scoring; a harder game pays more for a gain). A
  * person has one rating; so has each bot (a strategy at a skill level), starting where the tournaments put it. Humans are listed only when they switched "show me" on; bots always, once they have played. A world of its own: nothing is read
  * from or written to the classic board.
@@ -126,7 +126,7 @@ function createDreamStats({
   }
 
   /**
-   * A finished Dreamfund table (the saved room document): its result is filed, and the ratings move when it counts. Safe to call twice
+   * A finished Dreamer table (the saved room document): its result is filed, and the ratings move when it counts. Safe to call twice
    * (the result is written once). `tournament: true` counts a table of bots only (the tournaments of slice 9).
    */
   function record(room, { tournament = false } = {}) {
@@ -308,7 +308,7 @@ function createDreamStats({
     return ref ? { playerId: ref.playerId, pictureVersion: ref.pictureVersion } : {};
   }
 
-  /** Whether a person is on the Dreamfund board (the picture of such a person may be seen by everybody). */
+  /** Whether a person is on the Dreamer board (the picture of such a person may be seen by everybody). */
   async function isListed(accountId) {
     const profile = await store.findHumanProfile(db, accountId);
     return !!profile && profile.visible === true;
@@ -453,7 +453,7 @@ function createDreamStats({
   }
 
   /**
-   * Who sits at a Dreamfund table, for the lobby (the same shape as the classic board's `seatsOf`): the rating of each seat at the
+   * Who sits at a Dreamer table, for the lobby (the same shape as the classic board's `seatsOf`): the rating of each seat at the
    * table's difficulty. A person who has not played yet shows the starting rating; no pictures, no stats panel for now.
    */
   async function seatsOf(table) {

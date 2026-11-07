@@ -52,9 +52,9 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
 };
 
 /**
- * The solo screen's moves at a Dreamfund table (todo/dreamfund-tables-solo-ui.md, R4): the same driver as the classic table's, with the
- * Dreamfund's commands. The server rolls the dice, draws the cards and books them; this sends what the player decided. Moves the
- * Dreamfund has no use for (the classic deals) are answered with a refusal, so a stale button costs nothing.
+ * The solo screen's moves at a Dreamer table (todo/dreamfund-tables-solo-ui.md, R4): the same driver as the classic table's, with the
+ * Dreamer's commands. The server rolls the dice, draws the cards and books them; this sends what the player decided. Moves the
+ * Dreamer has no use for (the classic deals) are answered with a refusal, so a stale button costs nothing.
  */
 export class DreamTableGameDriver extends TableGameDriver {
   override readonly dreamfund = true;
@@ -63,7 +63,7 @@ export class DreamTableGameDriver extends TableGameDriver {
   /** A debt as the screen names it, as the table knows it (the screen shows the words of its language). */
   originalTag: (shown: string) => string = (shown) => shown;
 
-  private static readonly NOT_HERE = 'This move is not part of the Dreamfund.';
+  private static readonly NOT_HERE = 'This move is not part of the Dreamer.';
   private notHere = (..._args: unknown[]): Promise<RemoteOutcome> =>
     Promise.resolve({ ok: false, message: DreamTableGameDriver.NOT_HERE, events: [] });
 
@@ -75,7 +75,7 @@ export class DreamTableGameDriver extends TableGameDriver {
     return this.move(command);
   }
 
-  /** The plan of a project of the app: the reserve (a Fire project), the character's dream, or a dream taken (Smile projects). */
+  /** The plan of a project of the app: the reserve (a Fire project), the character's dream, or a dream taken (Dream projects). */
   projectPlan(project: {
     kind: 'smile' | 'fire';
     title: string;

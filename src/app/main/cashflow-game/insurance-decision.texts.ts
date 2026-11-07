@@ -1,6 +1,6 @@
 /**
  * The words of the Insurances decision (JFK, 2026-11-03). English and German are written; another language shows English until it is
- * translated, as the other Dreamfund texts do.
+ * translated, as the other Dreamer texts do.
  */
 export interface InsuranceTexts {
   title: string;

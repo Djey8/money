@@ -198,7 +198,7 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   const hadOffers = (next.marketOffers ?? []).length > 0;
   const growUpdates: BookGrowUpdate[] = [];
   if (hadOffers) {
-    // a Harvest card's offer of the Dreamfund game outlives the Payday for as many turns as the table allows; the others end here
+    // a Harvest card's offer of the Dreamer game outlives the Payday for as many turns as the table allows; the others end here
     const staying = (next.marketOffers ?? []).filter(
       (offer) => offer.validRolls !== undefined && offerIsOpen(next, offer),
     );

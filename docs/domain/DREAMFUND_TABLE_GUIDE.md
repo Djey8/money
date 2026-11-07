@@ -1,6 +1,6 @@
-# Dreamfund tables - for an agent
+# Dreamer tables - for an agent
 
-A Dreamfund table is the Dreamfund game played by several people and bots at once: everybody lives their own life (a character, a
+A Dreamer table is the Dreamer game played by several people and bots at once: everybody lives their own life (a character, a
 difficulty, a map) in parallel, the Harvest market is shared and a card can be traded for a fee. An agent has four jobs here, from the
 cheapest to the dearest:
 
@@ -18,7 +18,7 @@ with `review`; its moves cannot be sent through the API. To play a game yourself
 ## Watching a table (the cheap way)
 
 1. Find the table: `get_cashflow_game` action `tables` (scope `mine` for the tables the user sits at, `open` for the public ones). A
-   Dreamfund table says `kind: dreamfund`, its `difficulty`, map and mode.
+   Dreamer table says `kind: dreamfund`, its `difficulty`, map and mode.
 2. Ask for the review on demand: `get_cashflow_game` action `table_review` with the `roomId`. It is one small page:
    - `summary` - the lines to start with (who leads, who won or went bankrupt, who is far behind),
    - per player: `rank`, `score`, `goals` in percent (`reserve` of three months of expenses, `debts` repaid, `dream` lived,
@@ -110,9 +110,9 @@ then `table_start`.
 
 ## In the app
 
-A person plays a Dreamfund table on the solo Dreamfund screen, inside the same multiplayer flow as the classic game: the lobby, the create-table panel
-and the leaderboard have a Classic / Dreamfund choice, the table opens on the one room page, and once it is played the app shows the books of the seat
-on screen (the map with every token, the cards, the Smile, Fire and Mojo pages) with the table layer on top - the players in the queue, the popups of
+A person plays a Dreamer table on the solo Dreamer screen, inside the same multiplayer flow as the classic game: the lobby, the create-table panel
+and the leaderboard have a Classic / Dreamer choice, the table opens on the one room page, and once it is played the app shows the books of the seat
+on screen (the map with every token, the cards, the Dream, Fire and Mojo pages) with the table layer on top - the players in the queue, the popups of
 what the others do, a panel for your own money - and the classic end screen with the ranking and what it meant for the rating. An agent does not need
 any of that: it reads the table with `table_review` and plays with the moves in `legalActions`.
 

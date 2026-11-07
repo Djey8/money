@@ -8,7 +8,7 @@ import {
   lifeCardOf,
 } from './dream-texts';
 
-describe('the words and the content of the Dreamfund tables', () => {
+describe('the words and the content of the Dreamer tables', () => {
   it('has the ten characters, their names and the money of the game', () => {
     expect(characters('en')).toHaveLength(10);
     expect(characterName('jan-oberarzt', 'en')).toBe('Dr. Jan');

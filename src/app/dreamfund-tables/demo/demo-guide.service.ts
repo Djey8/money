@@ -4,7 +4,7 @@ import type { TableSessionService } from '../../tables/table-session.service';
 /**
  * The state of the guided demo game (JFK, 2026-11-06): is the coach on, and which step it is at. Kept in this tab's session so that the
  * coach follows the person from the lobby into the table and into the game screen, and a reload does not lose it. Only ever imported
- * from the lazy Dreamfund chunk (docs/adr/0004), so none of it reaches the Firebase build.
+ * from the lazy Dreamer chunk (docs/adr/0004), so none of it reaches the Firebase build.
  */
 const KEY = 'mm.dreamDemo';
 

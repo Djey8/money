@@ -1,6 +1,6 @@
-# Dreamfund simulation
+# Dreamer simulation
 
-Many whole games of the Dreamfund edition played by bots, to find the balance: how often a strategy wins, how long it takes, how
+Many whole games of the Dreamer edition played by bots, to find the balance: how often a strategy wins, how long it takes, how
 often it goes bankrupt, and which cards are worth taking. The first target is the Dual Student on the **Medium** difficulty; Easy and
 Hard are prepared in `packages/domain/src/cashflow-game/difficulty.ts` and are not offered to players until the Medium numbers hold.
 

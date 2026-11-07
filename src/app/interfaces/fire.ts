@@ -56,7 +56,7 @@ export interface Fire {
 
   /** The emergency reserve of a character of the game (JFK, 2026-10-25): it can be funded and used, but not deleted. */
   reserve?: boolean;
-  /** The Emergency card this project came from (a Dreamfund game): it counts as open until its buckets are full. */
+  /** The Emergency card this project came from (a Dreamer game): it counts as open until its buckets are full. */
   emergencyCardId?: string;
   /** The card said it has to be paid at once (a fine, a fee): it cannot be put on a plan. */
   emergencyPayNow?: boolean;

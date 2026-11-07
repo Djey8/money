@@ -62,7 +62,7 @@ import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
   styleUrl: './tables.css',
   template: `
     <section class="tl-layer" *ngIf="view() as table" [attr.dir]="rtl ? 'rtl' : 'ltr'">
-      <!-- a Dreamfund game before the first roll: who you are, and the insurances -->
+      <!-- a Dreamer game before the first roll: who you are, and the insurances -->
       <button
         type="button"
         class="btn btn--primary tl-brief-back"
@@ -708,7 +708,7 @@ export class TableLayerComponent implements OnDestroy {
         .map((entry) => entry.action as string) ?? [],
   );
 
-  /** At a Dreamfund table before the first roll: the player's own character to read, and the insurances to choose. */
+  /** At a Dreamer table before the first roll: the player's own character to read, and the insurances to choose. */
   readonly briefing = computed(() => {
     const view = this.view() as unknown as {
       kind?: string;

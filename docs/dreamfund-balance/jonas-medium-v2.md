@@ -1,4 +1,4 @@
-# Dreamfund simulation
+# Dreamer simulation
 
 2400 games - {"games":100,"shapes":["ring","infinity"],"maxTurns":150,"rules":{}}
 

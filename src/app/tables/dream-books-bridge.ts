@@ -7,8 +7,8 @@ import type { Mojo } from 'src/app/interfaces/mojo';
 import type { AppStateService } from '../shared/services/app-state.service';
 
 /**
- * The bridge from a Dreamfund table to the app (todo/dreamfund-tables-solo-ui.md, R2): the table keeps a player's life as books plus
- * what the solo game keeps in the app's own entities - the reserve (the Mojo), the dream and the dreams taken (Smile projects), the
+ * The bridge from a Dreamer table to the app (todo/dreamfund-tables-solo-ui.md, R2): the table keeps a player's life as books plus
+ * what the solo game keeps in the app's own entities - the reserve (the Mojo), the dream and the dreams taken (Dream projects), the
  * reserve and the emergencies on a plan (Fire projects). This turns the one into the other, so the solo screen and the app's pages
  * draw from a seat's life at a table exactly as they do in a solo game. Pure: nothing here touches the app's state.
  */
@@ -28,7 +28,7 @@ export function dreamLifeToApp(life: DreamPlayerData, lang: string, nowIso: stri
 }
 
 /**
- * Puts the Dreamfund extras on screen after the books were (`applyBooksToApp` empties Smile, Fire and the Mojo, as the classic table
+ * Puts the Dreamer extras on screen after the books were (`applyBooksToApp` empties Smile, Fire and the Mojo, as the classic table
  * has none): the Mojo, the projects, and the open dreams under the titles of the viewer's language.
  */
 const TABLE_PLAN_MARK = '#tableplan';

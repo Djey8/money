@@ -316,7 +316,7 @@ function createGameRoomService({
           log('game_stats_record_failed', { roomId: doc.roomId, message: error.message }),
         );
     }
-    // a Dreamfund game that has just ended goes onto its own board (the guided demo game goes nowhere and is forgotten soon)
+    // a Dreamer game that has just ended goes onto its own board (the guided demo game goes nowhere and is forgotten soon)
     if (table.settings && table.settings.demo && ['finished', 'abandoned'].includes(table.phase)) {
       const forget = setTimeout(() => {
         store.deleteRoom(db, doc.roomId).catch(() => {});
@@ -439,7 +439,7 @@ function createGameRoomService({
   }
 
   /**
-   * A short review of a Dreamfund table for somebody who watches it (a person, or an agent asked "how are we doing?"): where every
+   * A short review of a Dreamer table for somebody who watches it (a person, or an agent asked "how are we doing?"): where every
    * player stands on the goals, what they have and owe, the pace against the simulation and what to watch. Anybody who may look at the
    * table may ask; nothing is saved. A classic table has no such review.
    */
@@ -449,7 +449,7 @@ function createGameRoomService({
       throw new RoomError(
         'review_not_available',
         400,
-        'Only a Dreamfund table can be reviewed this way.',
+        'Only a Dreamer table can be reviewed this way.',
       );
     }
     return { id: doc.roomId, version: doc.table.version, ...kindOf(doc.table).review(doc.table) };
@@ -459,12 +459,12 @@ function createGameRoomService({
 
   function dreamOnly(doc, what) {
     if (doc.table.kind !== 'dreamfund') {
-      throw new RoomError('not_available', 400, `${what} is for Dreamfund tables.`);
+      throw new RoomError('not_available', 400, `${what} is for Dreamer tables.`);
     }
   }
 
   /**
-   * Advice for the reader's own seat at a Dreamfund table (JFK, 2026-11-06): the goals, the money, what a strategy would do now with a
+   * Advice for the reader's own seat at a Dreamer table (JFK, 2026-11-06): the goals, the money, what a strategy would do now with a
    * sentence for each move, and what to keep in mind. Only somebody who sits at the table can ask; nothing is saved.
    */
   async function adviseRoom(userId, roomId, { policyId = 'expert' } = {}) {
@@ -1077,7 +1077,7 @@ function createGameRoomService({
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await loadFor(userId, roomId);
       const player = doc.table.players.find((p) => p.id === userId);
-      // a Dreamfund seat keeps its life (the books, the reserve, the dreams): filed with what the solo game keeps in the app
+      // a Dreamer seat keeps its life (the books, the reserve, the dreams): filed with what the solo game keeps in the app
       const dream = doc.table.kind === 'dreamfund' && player && player.life;
       const entities = dream
         ? require('@money/domain/dist/cashflow-game/dreamfund/app-entities').dreamAppEntities(

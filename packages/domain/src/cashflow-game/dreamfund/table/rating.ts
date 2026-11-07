@@ -3,7 +3,7 @@ import { DREAM_BOT_RATINGS } from './bot-ratings.generated';
 import { DREAM_BOT_LEVELS, splitDreamBotId, type DreamBotLevel } from './bot-levels';
 
 /**
- * The rating of the Dreamfund leaderboard (todo/dreamfund-multiplayer.md, slice 8; JFK, 2026-10-27): a world of its own - its players, its
+ * The rating of the Dreamer leaderboard (todo/dreamfund-multiplayer.md, slice 8; JFK, 2026-10-27): a world of its own - its players, its
  * results, its numbers - nothing shared with the classic board. Pairwise Elo as in the classic: a table of n players is n*(n-1)/2 duels,
  * decided by the ranking of the game (which counts the goals, the dream points and the win), and everybody's change is the surprise of
  * their duels. What is different:

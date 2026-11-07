@@ -2,7 +2,7 @@ import { reportMarkdown, runBatch } from './batch';
 import { simulateDreamGame } from './world';
 import { DREAM_POLICIES, policyById } from './policies';
 
-describe('the Dreamfund simulation', () => {
+describe('the Dreamer simulation', () => {
   it('plays a whole game: the same seed gives the same game, and no game stops with an error', () => {
     const policy = policyById('saver');
     const a = simulateDreamGame({ seed: 7, policy, maxTurns: 150 });

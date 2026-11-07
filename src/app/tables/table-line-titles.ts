@@ -1,7 +1,7 @@
 import type { GameBooks } from '@money/domain';
 
 /**
- * The lines of a Dreamfund character's budget in the language of the screen (JFK, 2026-11-03). The server makes the books with the
+ * The lines of a Dreamer character's budget in the language of the screen (JFK, 2026-11-03). The server makes the books with the
  * German titles of the character's card; the solo game translates them when it makes a game. A table shows a copy of the books, so the
  * copy is translated here - the title of a line, its key in `lineTitles`, the premium of an insurance, and the category of the
  * transactions filed under it - and the server's own books stay as they are.

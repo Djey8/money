@@ -64,7 +64,7 @@ export interface RemoteGate {
 }
 
 export interface RemoteGame {
-  /** A Dreamfund table: the stack tiles (Emergency, Life, Career, Dream, Opportunity, Harvest) of the solo screen are played at it. */
+  /** A Dreamer table: the stack tiles (Emergency, Life, Career, Dream, Opportunity, Harvest) of the solo screen are played at it. */
   dreamfund?: boolean;
   /**
    * A project of the app (a Smile or a Fire project) can be given a plan at this table - so much set aside at every Payday: what to
@@ -78,11 +78,11 @@ export interface RemoteGame {
     project: { kind: 'smile' | 'fire'; title: string },
     perMinor: number,
   ): Promise<RemoteOutcome>;
-  /** A Dreamfund table: a decision of a stack tile, sent as the table's own command (answer a card, roll its die, pay). */
+  /** A Dreamer table: a decision of a stack tile, sent as the table's own command (answer a card, roll its die, pay). */
   dreamMove?(decision: { decision: string } & Record<string, unknown>): Promise<RemoteOutcome>;
-  /** A Dreamfund table that asks for dream points besides the life dream: the goal and what the player has. Null: none asked for. */
+  /** A Dreamer table that asks for dream points besides the life dream: the goal and what the player has. Null: none asked for. */
   dreamPoints?(): { goal: number; points: number } | null;
-  /** A Dreamfund table: the money of the table ('game' is Dream Taler, else a real currency's sign). */
+  /** A Dreamer table: the money of the table ('game' is Dream Taler, else a real currency's sign). */
   currency?(): string;
   /** Another player's books are on screen: read only, nothing of the game can be done from here. */
   viewOnly(): boolean;

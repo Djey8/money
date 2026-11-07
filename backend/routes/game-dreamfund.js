@@ -9,7 +9,7 @@ const { dreamStats, nicknameOf } = require('./game-rooms');
 const { browseDreamfundCards } = require('../services/dreamfund-cards');
 
 /**
- * The Dreamfund leaderboard (todo/dreamfund-multiplayer.md, slice 8). Mounted by routes/api.js at `/api/v1/game/dreamfund`; game
+ * The Dreamer leaderboard (todo/dreamfund-multiplayer.md, slice 8). Mounted by routes/api.js at `/api/v1/game/dreamfund`; game
  * accounts only. A world of its own - nothing of the classic board is read or shown. A player is known by the public `playerId` of their
  * profile, never by an account id; humans are listed only when they switched "show me" on, bots once they have played. One rating per
  * difficulty: `difficulty` easy, medium (default) or hard.
@@ -35,7 +35,7 @@ const invalid = (res, detail) =>
   problem(res, 400, 'validation_invalid', 'Invalid leaderboard request', detail);
 
 /**
- * `GET /game/dreamfund/cards?deck=&pile=&query=&id=&limit=` - the printed cards of the Dreamfund game: the Opportunity, Harvest, Life,
+ * `GET /game/dreamfund/cards?deck=&pile=&query=&id=&limit=` - the printed cards of the Dreamer game: the Opportunity, Harvest, Life,
  * Emergency and Dream piles, with their numbers, what each does and where to read more. What only the engine knows (which offers are
  * scams) is not part of it.
  */

@@ -1,5 +1,5 @@
 /**
- * The Dreamfund Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): 50 cards in English and German. Amounts are
+ * The Dreamer Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): 50 cards in English and German. Amounts are
  * in minor units of the game money (Dream Taler / Traumtaler, 1 DT = 1 EUR). Generated from the card notes; edit the cards here.
  * Kept out of the domain package's main entry like the other printed content (the Firebase edition ships none of it).
  */

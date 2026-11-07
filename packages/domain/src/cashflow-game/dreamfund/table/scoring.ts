@@ -3,7 +3,7 @@ import type { DreamPlayer } from '../player';
 import type { DreamSeat, DreamStanding } from './types';
 
 /**
- * How a Dreamfund player stands (JFK, 2026-10-27: "the dream points, the debt-free and the Mojo savings and the other missions count
+ * How a Dreamer player stands (JFK, 2026-10-27: "the dream points, the debt-free and the Mojo savings and the other missions count
  * for the ranking and the leaderboard"). Four goals, each a share from 0 to 1 - the reserve of three months, the debts repaid, the
  * dream lived, the passive income against the cost of living - the dream points of every dream lived, and a win (all goals met).
  * Pure: the same life gives the same standing.

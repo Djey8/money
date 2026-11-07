@@ -57,7 +57,7 @@ type SheetId = 'cashflow' | 'income' | 'balance';
             <strong>{{ story.dream.title }}</strong
             ><br />{{ story.dream.summary }}
           </p>
-          <!-- the dream is a Smile project of the app itself: looked at here, and opened in the Smile page once the game runs -->
+          <!-- the dream is a Dream project of the app itself: looked at here, and opened in the Smile page once the game runs -->
           <button
             type="button"
             class="cs-dream-btn"

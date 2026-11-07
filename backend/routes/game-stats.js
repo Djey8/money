@@ -161,7 +161,7 @@ router.get('/players/:playerId/picture', ...guard('r'), async (req, res, next) =
       !mine &&
       typeof req.query.table === 'string' &&
       (await rooms().sitTogether(req.query.table, req.userId, profile.accountId));
-    // a person on the Dreamfund board shows their picture there as well
+    // a person on the Dreamer board shows their picture there as well
     const dreamListed =
       profile &&
       profile.accountId &&

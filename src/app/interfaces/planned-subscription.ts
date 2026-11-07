@@ -11,7 +11,7 @@ export type PlannedSubscriptionStatus = 'planned' | 'active' | 'inactive' | 'com
 
 /**
  * Planned Subscription interface
- * Represents a subscription payment plan for funding Smile Project or Fire Emergency buckets
+ * Represents a subscription payment plan for funding Dream Project or Fire Emergency buckets
  *
  * Multiple payment plans can exist per project, each with different:
  * - Bucket targeting (single, subset, or all buckets)

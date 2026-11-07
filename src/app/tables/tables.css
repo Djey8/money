@@ -130,7 +130,7 @@
   }
 }
 
-/* the choice of game (Classic / Dreamfund): the same switch in the lobby and on the leaderboard */
+/* the choice of game (Classic / Dreamer): the same switch in the lobby and on the leaderboard */
 .tl-games {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

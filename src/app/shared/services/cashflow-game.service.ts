@@ -1080,7 +1080,7 @@ export class CashflowGameService {
   }
 
   /**
-   * A note in a project of the game - a Grow, Fire or Smile project, found by its title - with what happened and the numbers of it
+   * A note in a project of the game - a Grow, Fire or Dream project, found by its title - with what happened and the numbers of it
    * (JFK, 2026-10-26: "when something happens or was diced or decided I want to have a note in that project").
    */
   private noteProject(title: string, en: string, de: string): void {
@@ -1289,7 +1289,7 @@ export class CashflowGameService {
       }),
     );
 
-    // the character's dream is a Smile project from the first day (JFK, 2026-10-25), in the language of the game
+    // the character's dream is a Dream project from the first day (JFK, 2026-10-25), in the language of the game
     const story = result.profession.profile?.texts;
     const dream = (story?.[this.translate.currentLang] ?? story?.['en'])?.dream.project;
     if (dream) {
@@ -3127,7 +3127,7 @@ export class CashflowGameService {
     );
   }
 
-  /** A classic table is played: the stack tiles of the Dreamfund are part of a solo game and of a Dreamfund table, not of this. */
+  /** A classic table is played: the stack tiles of the Dreamer are part of a solo game and of a Dreamer table, not of this. */
   private remote_(): boolean {
     return !!RemoteGameHook.current && !RemoteGameHook.current.dreamfund;
   }
@@ -3532,7 +3532,7 @@ export class CashflowGameService {
     return AppStateService.instance.cashflowGame.dreamSettings ?? DEFAULT_DREAM_SETTINGS;
   }
 
-  /** The Smile projects of the dreams the character has taken, with the card each came from. */
+  /** The Dream projects of the dreams the character has taken, with the card each came from. */
   get openDreams() {
     const state = AppStateService.instance;
     return this.dreamLog.open
@@ -3646,7 +3646,7 @@ export class CashflowGameService {
     this.persistAll('cashflow_dream_draw', { offers, moment }, callbacks, { quiet: true });
   }
 
-  /** A dream is taken: it becomes a Smile project (buckets, links, tasks, notes), to be funded there. */
+  /** A dream is taken: it becomes a Dream project (buckets, links, tasks, notes), to be funded there. */
   takeDream(cardId: string, callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     const game = state.cashflowGame;
@@ -3869,7 +3869,7 @@ export class CashflowGameService {
         addGift(300);
         applied = project
           ? say(`300 went into ${project.title}.`, `300 gingen in ${project.title}.`)
-          : say('300 went to your Smile account.', '300 gingen auf dein Smile-Konto.');
+          : say('300 went to your Dream account.', '300 gingen auf dein Traumkonto.');
         break;
       case 'M06': {
         const net = fromMinorUnits(
@@ -3889,8 +3889,8 @@ export class CashflowGameService {
               `${money(amount)} gingen in ${project.title}.`,
             )
           : say(
-              `${money(amount)} went to your Smile account.`,
-              `${money(amount)} gingen auf dein Smile-Konto.`,
+              `${money(amount)} went to your Dream account.`,
+              `${money(amount)} gingen auf dein Traumkonto.`,
             );
         break;
       }
@@ -4040,13 +4040,13 @@ export class CashflowGameService {
 
   // ── Solo mode: the token walks the rat-race ring (todo/cashflow-game-pro.md, Phase C) ──────────────
 
-  /** The track the token walks: the map of a Dreamfund game (shape, size, seed), or the classic ring. */
+  /** The track the token walks: the map of a Dreamer game (shape, size, seed), or the classic ring. */
   get board(): RatRaceBoard {
     const setup = AppStateService.instance.cashflowGame.boardSetup;
     return setup ? buildDreamfundBoard(setup).board : CLASSIC_RAT_RACE_BOARD;
   }
 
-  /** Where the tiles of a Dreamfund map stand, for the picture; null on the classic ring. */
+  /** Where the tiles of a Dreamer map stand, for the picture; null on the classic ring. */
   get boardMap(): DreamfundBoard | null {
     const setup = AppStateService.instance.cashflowGame.boardSetup;
     return setup ? buildDreamfundBoard(setup) : null;

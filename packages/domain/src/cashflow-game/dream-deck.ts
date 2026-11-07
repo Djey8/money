@@ -3,9 +3,9 @@ import type { EmergencyDeckState, Localized } from './emergency-deck';
 import type { LifeState } from './life-deck';
 
 /**
- * The Dreamfund Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): what a dream is, how the Dream tile offers
+ * The Dreamer Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): what a dream is, how the Dream tile offers
  * them, what living one is worth in points, and what the eight dream moments do. A dream is generic - it belongs to no character -
- * and becomes a Smile project when it is taken; it is never financed with debt.
+ * and becomes a Dream project when it is taken; it is never financed with debt.
  */
 
 export type DreamTier = 'little' | 'big' | 'grand' | 'life' | 'legendary';
@@ -71,7 +71,7 @@ export const DEFAULT_DREAM_SETTINGS: DreamSettings = {
   lifeCanDecline: true,
 };
 
-/** A dream the character has taken: the Smile project it became, and since when. */
+/** A dream the character has taken: the Dream project it became, and since when. */
 export interface OpenDream {
   cardId: string;
   projectTitle: string;
@@ -231,8 +231,8 @@ export const DREAM_MOMENTS: DreamMoment[] = [
     id: 'M02',
     title: { en: 'Gift From Family', de: 'Geschenk der Familie' },
     story: {
-      en: 'A gift: 300 go straight into a bucket of one of your dreams. Without an open dream they go to your Smile account.',
-      de: 'Ein Geschenk: 300 gehen direkt in einen Topf eines deiner Träume. Ohne offenen Traum landen sie auf deinem Smile-Konto.',
+      en: 'A gift: 300 go straight into a bucket of one of your dreams. Without an open dream they go to your Dream account.',
+      de: 'Ein Geschenk: 300 gehen direkt in einen Topf eines deiner Träume. Ohne offenen Traum landen sie auf deinem Traumkonto.',
     },
   },
   {

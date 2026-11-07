@@ -57,7 +57,7 @@ function changedSeats(previous, table) {
 function projectDreamUpdate(previous, table, events, userId) {
   const kind = kindOf(table);
   const view = kind.project(table, userId);
-  // a life is the bulk of a Dreamfund table: it is sent only for the seats whose life changed
+  // a life is the bulk of a Dreamer table: it is sent only for the seats whose life changed
   const changed = table.players
     .map((player, seat) => {
       const before = previous && previous.players.find((p) => p.id === player.id);

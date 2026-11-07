@@ -28,7 +28,7 @@ import {
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
-/** The languages the Dreamfund manual is written in; the others read the English one. */
+/** The languages the Dreamer manual is written in; the others read the English one. */
 export const DREAMFUND_MANUAL_LANGUAGES = ['en'];
 export const DREAMFUND_MANUAL_FALLBACK = 'en';
 
@@ -38,7 +38,7 @@ interface DreamfundManual extends ManualContent {
 }
 
 /**
- * The Dreamfund (Traumtopf) game manual (JFK, 2026-10-26): what the game is, the map, every card type, the goals, and the statistics of
+ * The Dreamer (Träumer) game manual (JFK, 2026-10-26): what the game is, the map, every card type, the goals, and the statistics of
  * the characters. Made from docs/DREAMFUND_GAME.md and docs/DREAMFUND_GAME.de.md by `scripts/dreamfund-manual.js`, so the page and the
  * manual never differ; the statistics in it are written by the simulation. Only for game accounts, like the Cashflow manual.
  */

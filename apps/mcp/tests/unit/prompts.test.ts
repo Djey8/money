@@ -122,7 +122,7 @@ describe('the server', () => {
   });
 });
 
-describe('the Dreamfund coach prompt (JFK, 2026-11-06)', () => {
+describe('the Dreamer coach prompt (JFK, 2026-11-06)', () => {
   const text = (args: Record<string, string>) =>
     buildDreamfundPrompt(args).messages[0].content.text;
 

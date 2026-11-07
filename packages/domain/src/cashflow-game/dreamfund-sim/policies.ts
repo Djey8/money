@@ -6,7 +6,7 @@ import type { Rng } from '../rng';
 import { DREAM_CHAMPION_KNOBS } from './champions.generated';
 
 /**
- * How a bot plays the Dreamfund game (JFK, 2026-10-26): a small set of rules - what to take, what to keep in cash, when to sell, whether
+ * How a bot plays the Dreamer game (JFK, 2026-10-26): a small set of rules - what to take, what to keep in cash, when to sell, whether
  * to ride a hype - written as data, so strategies can be compared and one day become the bots of a table. The decisions are those a
  * player has: money goes to the reserve, the debts and the dream; the Opportunity and Harvest cards are taken or left.
  */
@@ -357,7 +357,7 @@ const roi = (card: OpportunityCard) => {
 const isShare = (card: OpportunityCard, ...tags: string[]) =>
   !!card.share && tags.includes(card.market?.tag ?? '');
 
-/** The five strategies the Dreamfund deck sketch names, plus a baseline that takes only what is free. */
+/** The five strategies the Dreamer deck sketch names, plus a baseline that takes only what is free. */
 /** The strategies as they were written: no knob turned. The search starts from these (or from the last champion). */
 export const BASE_POLICIES: DreamPolicy[] = [
   makePolicy(

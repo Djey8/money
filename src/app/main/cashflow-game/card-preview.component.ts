@@ -20,7 +20,7 @@ interface Row {
 }
 
 /**
- * A card of a Dreamfund pile as it was shown to the player who drew it (JFK, 2026-11-04): the title and what it is, its story, what it
+ * A card of a Dreamer pile as it was shown to the player who drew it (JFK, 2026-11-04): the title and what it is, its story, what it
  * costs or brings - for the player who looks at it, at their own price level and with their own insurances - and the chances of its
  * dice. Read only, with none of the buttons: the card of another player's move, or a line of the history, opens in this.
  */

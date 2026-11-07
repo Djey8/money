@@ -1,4 +1,4 @@
-# Dreamfund bot calibration
+# Dreamer bot calibration
 
 Written by `scripts/dreamfund-calibrate.js` (the runs below, newest last). A run relearns each type of bot from the champion of the run before it, rates all bots on tables of bots only, and plays the best masters against each other. Read `docs/domain/DREAMFUND_BOTS.md` for how it works.
 

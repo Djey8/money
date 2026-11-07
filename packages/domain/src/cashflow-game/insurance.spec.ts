@@ -16,7 +16,7 @@ const insuranceCoverage = (kind: string) => coverageOf(kind, EMERGENCY_CARDS);
 const player = (professionId: string) =>
   DreamPlayer.fromSeed({ seed: 5, professionId, rules: { mode: 'free' } as never });
 
-describe('the insurances of a Dreamfund character', () => {
+describe('the insurances of a Dreamer character', () => {
   it('prices every character on its own, the Dual Student as it was', () => {
     const premium = (id: string) => {
       const books = player(id).books;

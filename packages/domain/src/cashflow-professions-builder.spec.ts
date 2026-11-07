@@ -8,7 +8,7 @@ const professions = set.professions;
 const byId = (id: string) => professions.find((profession) => profession.id === id)!;
 const cashflow = (id: string) => computeCashflowProfessionMonthlyCashflowMinor(byId(id)) / 100;
 
-describe('the Dreamfund characters', () => {
+describe('the Dreamer characters', () => {
   it('are ten, each in three difficulties that share the story', () => {
     const base = professions.filter((profession) => !profession.variantOf);
     expect(base).toHaveLength(10);

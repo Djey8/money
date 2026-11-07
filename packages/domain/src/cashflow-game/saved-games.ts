@@ -74,7 +74,7 @@ export interface CashflowFinanceSummary {
   fundingMinor: number;
   /** What is left of the month after the plans: the cashflow the player lives on. */
   cashflowAfterPlansMinor: number;
-  /** What the salary costs (income tax, social insurances): it stops with the salary, so a Dreamfund game does not count it against the passive income. */
+  /** What the salary costs (income tax, social insurances): it stops with the salary, so a Dreamer game does not count it against the passive income. */
   salaryLinkedMinor: number;
   /** Passive income covers every monthly expense - out of the rat race. */
   escapedRatRace: boolean;
@@ -118,7 +118,7 @@ export function summarizeGameFinances(
     passiveIncomeMinor,
     expensesMinor,
     monthlyCashflowMinor,
-    // in a Dreamfund game independence means the passive income pays for the way of living: what the salary pays to the state and the
+    // in a Dreamer game independence means the passive income pays for the way of living: what the salary pays to the state and the
     // social insurances (a tax that goes with the job) is not part of it (JFK, 2026-10-26)
     escapedRatRace: expensesMinor > 0 && passiveIncomeMinor >= expensesMinor - linkedMinor,
     bankrupt: monthlyCashflowMinor < 0,
@@ -143,7 +143,7 @@ const SALARY_LINKED_KEYS = [
   'unemploymentInsurance',
 ];
 
-/** What a Dreamfund character pays because of the salary: tax and social insurances (zero in a classic game). */
+/** What a Dreamer character pays because of the salary: tax and social insurances (zero in a classic game). */
 export function salaryLinkedMinor(
   state: Partial<Pick<CashflowGameState, 'lineTitles' | 'life'>>,
   owned: { title: string; amountMinor: number }[],

@@ -41,7 +41,7 @@ const SHOWN = new Set([
   'game_finished',
   'paused',
   'resumed',
-  // the Dreamfund's own
+  // the Dreamer's own
   'payday',
   'emergency',
   'life',
@@ -144,7 +144,7 @@ export function historyLines(
         words[event.type] ??
         (dreamEventTitle(event.type, lang, event.data) || event.type.replace(/_/g, ' '));
       let detail = detailOf(event) || dreamEventDetail(event.type, event.data, lang);
-      // a Dreamfund event that names a card can open it
+      // a Dreamer event that names a card can open it
       let cardId: string | undefined = dreamEventCard(event.type, event.data);
       if (event.type === 'card_drawn' && event.seat !== null) {
         cardId = cardIdOf(event.data);

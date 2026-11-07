@@ -960,7 +960,7 @@ export class AddTableComponent implements OnInit {
   /** Why the table refused the changed settings (shown in the panel, which stays open). */
   @Input() problem: string | null = null;
 
-  /** The game the table is for: the classic Cashflow, or the Dreamfund of this app (the same panel, a few settings more). */
+  /** The game the table is for: the classic Cashflow, or the Dreamer of this app (the same panel, a few settings more). */
   @Input() game: 'classic' | 'dreamfund' = 'classic';
   /** The guided demo game is being set up: the table starts unranked (the demo is never ranked) and the coach of the demo points at the settings. */
   @Input() demo = false;
@@ -1164,7 +1164,7 @@ export class AddTableComponent implements OnInit {
     ];
   }
 
-  /** The on/off rules, each with what it does in one line (a Dreamfund table has no undo vote or off-turn repaying yet). */
+  /** The on/off rules, each with what it does in one line (a Dreamer table has no undo vote or off-turn repaying yet). */
   switches() {
     const f = this.form;
     const all = [
@@ -1199,7 +1199,7 @@ export class AddTableComponent implements OnInit {
         hint: this.a.repayOffTurnHint,
       },
     ];
-    // a Dreamfund table has no turn gate: everybody is only asked to continue by a card that is time-sensitive (a Harvest card)
+    // a Dreamer table has no turn gate: everybody is only asked to continue by a card that is time-sensitive (a Harvest card)
     return this.dream
       ? all.filter(
           (rule) =>

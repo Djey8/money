@@ -1,5 +1,5 @@
 /**
- * The blocks of the Dreamfund manual that only show something (JFK, 2026-11-06): nothing in them works - they are drawings of what the
+ * The blocks of the Dreamer manual that only show something (JFK, 2026-11-06): nothing in them works - they are drawings of what the
  * game puts on the screen, with real numbers of the printed cards, for reading and clicking.
  */
 

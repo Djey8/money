@@ -1,5 +1,5 @@
 /**
- * The Dreamfund manual in English: the sections of the page, in order. `{ type: 'import', md: N }` is filled by scripts/dreamfund-manual.js
+ * The Dreamer manual in English: the sections of the page, in order. `{ type: 'import', md: N }` is filled by scripts/dreamfund-manual.js
  * from docs/DREAMFUND_GAME.md (the rule tables and the statistics of the simulation). Everything else is written here, for a person who
  * has never seen the game: what it is, where to click, what every card does and why.
  */
@@ -30,9 +30,9 @@ const shows = require('./en-shows.js');
 const sections = {
   welcome: {
     nav: 'Welcome',
-    title: 'Welcome to Dreamfund',
+    title: 'Welcome to Dreamer',
     intro:
-      'Dreamfund (Traumtopf in German) is a money game you play on a map, with dice and cards, **inside your own books**: a salary is a real booking, a share is a real Grow project, a dream is a real Smile project. You live a character through years of money decisions - and when the game is over you know what a reserve, a loan, an index or a payment plan does, because you made them do it.',
+      'Dreamer (Träumer in German) is a money game you play on a map, with dice and cards, **inside your own books**: a salary is a real booking, a share is a real Grow project, a dream is a real Dream project. You live a character through years of money decisions - and when the game is over you know what a reserve, a loan, an index or a payment plan does, because you made them do it.',
     blocks: [
       cards([
         {
@@ -66,7 +66,7 @@ const sections = {
       ),
       list([
         'the **Demo** button at the top right of every page of the app, while you are signed in with a game account (without an account, or with a normal one, it starts the normal demo of the Money Manager);',
-        'the **Dreamfund lobby**, on the entry **Learn the game**;',
+        'the **Dreamer lobby**, on the entry **Learn the game**;',
         '**the demo bot**: when you add the bot called **Coach** to a table, the table is the demo;',
       ]),
       h3('How this manual is built'),
@@ -75,7 +75,7 @@ const sections = {
       ),
       tip(
         'Words in this manual',
-        'Money is counted in **Dream Taler** (DT, in German **Traumtaler**, TT) unless the table chose a real currency sign. A **Payday** is a month: your salary comes in and your bills go out. **Fire**, **Smile**, **Grow** and **Mojo** are the places your money lives; the section "Your money" explains each.',
+        'Money is counted in **Dream Taler** (DT, in German **Traumtaler**, TT) unless the table chose a real currency sign. A **Payday** is a month: your salary comes in and your bills go out. **Fire**, **Dream**, **Grow** and **Mojo** are the places your money lives; the section "Your money" explains each.',
       ),
     ],
   },
@@ -89,7 +89,7 @@ const sections = {
       steps([
         {
           title: 'Open the lobby',
-          text: 'In the menu choose **Tables**, and at the top of the lobby switch from **Classic** to **Dreamfund**. You see the open tables, your own tables, the leaderboard and the **Join with a code** field.',
+          text: 'In the menu choose **Tables**, and at the top of the lobby switch from **Classic** to **Dreamer**. You see the open tables, your own tables, the leaderboard and the **Join with a code** field.',
         },
         {
           title: 'Open a table',
@@ -165,8 +165,8 @@ const sections = {
         },
         {
           icon: '🌱',
-          title: 'Grow, Smile and Fire',
-          text: 'The three project pages: **Grow** (your investments), **Smile** (your dreams with their buckets) and **Fire** (what must be paid: the reserve, emergencies). The project pages are the normal pages of the Money Manager.',
+          title: 'Grow, Dream and Fire',
+          text: 'The three project pages: **Grow** (your investments), **Dream** (your dreams with their buckets) and **Fire** (what must be paid: the reserve, emergencies). The project pages are the normal pages of the Money Manager.',
         },
         {
           icon: '🧾',
@@ -283,9 +283,9 @@ const sections = {
       'The game uses the five accounts of the Barefoot Investor method plus an investment tracker called Grow. If you know the Money Manager you know them already; if not, this section is the whole idea.',
     blocks: [
       imp(2, undefined),
-      h3('Smile: your dream, with buckets'),
+      h3('Dream: your dream, with buckets'),
       p(
-        'A dream is a **Smile project**. It has **buckets** (the flights, the hotel, the equipment ...) and each bucket has a price. Money goes into a bucket by hand or, much better, by a **payment plan**: "50 a month into the dream" moves 50 at every Payday until the bucket is full. A dream you have fully funded is **lived** - it pays out its dream points and ticks the dream goal.',
+        'A dream is a **Dream project**. It has **buckets** (the flights, the hotel, the equipment ...) and each bucket has a price. Money goes into a bucket by hand or, much better, by a **payment plan**: "50 a month into the dream" moves 50 at every Payday until the bucket is full. A dream you have fully funded is **lived** - it pays out its dream points and ticks the dream goal.',
       ),
       h3('Mojo and Fire: the reserve and what must be paid'),
       p(
@@ -501,7 +501,7 @@ const sections = {
   tables: {
     nav: 'Playing together',
     title: 'Tables: opening, joining and playing with others',
-    intro: 'A Dreamfund table is a game with two to eight seats, people and bots in any mix.',
+    intro: 'A Dreamer table is a game with two to eight seats, people and bots in any mix.',
     blocks: [
       h3('Finding a table'),
       list([
@@ -624,7 +624,7 @@ const sections = {
             'Whether the reserve was full and how much it was, debts repaid and left, the Bank loan, emergencies paid and what they cost.',
           ],
           [
-            '**Smile**',
+            '**Dream**',
             'Life dream lived, dreams lived and their money, dreams still open, money saved for dreams, dream points.',
           ],
           [
@@ -853,7 +853,7 @@ const sections = {
           },
           {
             term: 'Where is the demo game?',
-            text: 'The **Demo** button at the top right (signed in with a game account), the entry **Learn the game** in the Dreamfund lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history.',
+            text: 'The **Demo** button at the top right (signed in with a game account), the entry **Learn the game** in the Dreamer lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history.',
           },
           {
             term: 'Can I change a booking?',
@@ -877,7 +877,7 @@ const sections = {
           },
           {
             term: 'Bucket',
-            text: 'One price of a Smile project (flights, hotel ...) that you fill.',
+            text: 'One price of a Dream project (flights, hotel ...) that you fill.',
           },
           {
             term: 'Cash flow',
@@ -909,7 +909,7 @@ const sections = {
             term: 'Rating',
             text: 'Your Elo-style rating: 1500 at the start, one list with the bots.',
           },
-          { term: 'Smile', text: 'Your dreams: every dream is a Smile project.' },
+          { term: 'Dream', text: 'Your dreams: every dream is a Dream project.' },
           { term: 'Totem', text: 'Your token on the map.' },
           {
             term: 'Window',
@@ -930,7 +930,7 @@ const sections = {
 };
 
 module.exports = {
-  title: 'Dreamfund (Traumtopf) - the manual',
+  title: 'Dreamer (Träumer) - the manual',
   subtitle:
     'The whole game from the screen to the bots: every move, every card, every setting - and a guided demo game that plays the first rounds with you.',
   order: [

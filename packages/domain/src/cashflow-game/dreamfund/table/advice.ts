@@ -5,7 +5,7 @@ import { reviewDreamTable, type PlayerReview } from './review';
 import type { DreamCommand, DreamTable } from './types';
 
 /**
- * Advice for one seat of a Dreamfund table (JFK, 2026-11-06): what the person - or the agent that plays for them - should know and do
+ * Advice for one seat of a Dreamer table (JFK, 2026-11-06): what the person - or the agent that plays for them - should know and do
  * now. The goals in percent, what the table waits for, the moves a strategy of the simulation would send right now with a sentence
  * for each (the very moves a bot plays), and the things to keep in mind (an offer that closes, a plan that is paid into, the tax on a
  * sale, a payment due). Small on purpose: an agent reads this instead of the books. Nothing is changed. Pure.

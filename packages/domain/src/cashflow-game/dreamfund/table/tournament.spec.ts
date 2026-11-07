@@ -1,6 +1,6 @@
 import { playBotTable, runBotTournament } from './tournament';
 
-describe('the bot tournament of the Dreamfund', () => {
+describe('the bot tournament of the Dreamer', () => {
   it('plays a table of bots only, to its end', () => {
     const table = playBotTable({
       id: 't',

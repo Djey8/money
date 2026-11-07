@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The calibration of the Dreamfund bots (JFK, 2026-11-06): find the best way to play for every type of bot, then rate them all against each
+ * The calibration of the Dreamer bots (JFK, 2026-11-06): find the best way to play for every type of bot, then rate them all against each
  * other. It can be run again at any time and learns from the run before it:
  *
  *   node scripts/dreamfund-calibrate.js --mode fast      (minutes: a look at whether anything changed)
@@ -503,7 +503,7 @@ async function main() {
 function reportMarkdown(runs) {
   const last = runs[runs.length - 1];
   const lines = [
-    '# Dreamfund bot calibration',
+    '# Dreamer bot calibration',
     '',
     'Written by `scripts/dreamfund-calibrate.js` (the runs below, newest last). A run relearns each type of bot from the champion of the run before it, rates all bots on tables of bots only, and plays the best masters against each other. Read `docs/domain/DREAMFUND_BOTS.md` for how it works.',
     '',

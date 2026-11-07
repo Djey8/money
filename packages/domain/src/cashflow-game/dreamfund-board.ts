@@ -1,12 +1,12 @@
 import { spaceAt, type RatRaceBoard, type RatRaceSpace, type RatRaceSpaceKind } from './board';
 
 /**
- * The maps of Dreamfund (JFK, 2026-10-25): a closed track of tiles in a shape - ring, infinity, rectangle, square, mountain - and a
+ * The maps of Dreamer (JFK, 2026-10-25): a closed track of tiles in a shape - ring, infinity, rectangle, square, mountain - and a
  * size, with the tiles laid out by a seeded generator under a few rules. The engine only ever sees the ordered list of tiles (the
  * `RatRaceBoard`), exactly as with the classic ring; where a tile is drawn is geometry, and only the picture needs it.
  */
 
-/** The kinds of tile of a Dreamfund map. */
+/** The kinds of tile of a Dreamer map. */
 export type DreamfundTile =
   'payday' | 'dream' | 'emergency' | 'opportunity' | 'harvest' | 'life' | 'career';
 

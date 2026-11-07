@@ -21,7 +21,7 @@ export interface TableSummary {
   joined: boolean;
   /** The game of the table (the classic Cashflow when absent). */
   kind?: 'dreamfund';
-  /** A Dreamfund table: the difficulty and the map. */
+  /** A Dreamer table: the difficulty and the map. */
   difficulty?: 'easy' | 'medium' | 'hard';
   shape?: string;
   size?: string;
@@ -70,7 +70,7 @@ export interface TableSeat {
 export interface GamePlayer {
   place?: number;
   playerId: string;
-  /** On the Dreamfund board: the id of the player there (the picture is kept under another one for a person). */
+  /** On the Dreamer board: the id of the player there (the picture is kept under another one for a person). */
   dreamPlayerId?: string;
   name: string;
   type: 'human' | 'bot';
@@ -152,17 +152,17 @@ export interface CreateTableInput {
     allowRewind?: boolean;
     /** Whether the table waits for everybody to say Continue after each turn. */
     turnGate?: boolean;
-    /** A Dreamfund table: the difficulty, the map and the rules mode of the solo game. */
+    /** A Dreamer table: the difficulty, the map and the rules mode of the solo game. */
     difficulty?: 'easy' | 'medium' | 'hard';
     shape?: string;
     size?: string;
     mode?: 'guided' | 'strict';
-    /** A Dreamfund table: the dream points to collect besides the life dream (0: the life dream alone, no Smile tiles). */
+    /** A Dreamer table: the dream points to collect besides the life dream (0: the life dream alone, no Smile tiles). */
     dreamPoints?: number;
-    /** A Dreamfund table: the money its amounts show ('game' is Dream Taler, else the sign of a real currency). */
+    /** A Dreamer table: the money its amounts show ('game' is Dream Taler, else the sign of a real currency). */
     currency?: string;
     layoutSeed?: number;
-    /** A Dreamfund table: the Bank loan's step and interest, and how many dreams a landing offers (0: one or two). */
+    /** A Dreamer table: the Bank loan's step and interest, and how many dreams a landing offers (0: one or two). */
     customRules?: {
       bankLoanStepMinor?: number;
       bankInterestPercent?: number;

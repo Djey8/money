@@ -1,5 +1,5 @@
 /**
- * The Dreamfund Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): 27 cards, 36 with the copies, in English and
+ * The Dreamer Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): 27 cards, 36 with the copies, in English and
  * German. Amounts are minor units of the game money. Kept out of the domain package's main entry like the other printed content.
  */
 import type { LifeCard } from './cashflow-game/life-deck';

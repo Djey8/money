@@ -1,5 +1,5 @@
 /**
- * The difficulty of a Dreamfund game (JFK, 2026-10-26, temp_cards/dreamfund-difficulty.md): one setting that sets the defaults of
+ * The difficulty of a Dreamer game (JFK, 2026-10-26, temp_cards/dreamfund-difficulty.md): one setting that sets the defaults of
  * everything below - the same cards, with different odds and amounts. Medium is the baseline that is played and tuned first; Easy and
  * Hard are kept here with the values of the sketch and are not offered to players until the simulation has set their numbers.
  */

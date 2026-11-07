@@ -75,7 +75,7 @@ const TOLD = new Set([
   'trade_made',
   'player_escaped',
   'player_bankrupt',
-  // the Dreamfund's own
+  // the Dreamer's own
   'emergency',
   'life',
   'career',
@@ -88,7 +88,7 @@ const TOLD = new Set([
   'player_won',
 ]);
 
-/** The map a table is played on: the classic ring, or the Dreamfund's own (its setup is in every seat's books). */
+/** The map a table is played on: the classic ring, or the Dreamer's own (its setup is in every seat's books). */
 function boardOf(view: TableView): RatRaceBoard {
   if ((view as { kind?: string }).kind !== 'dreamfund') return CLASSIC_RAT_RACE_BOARD;
   for (const player of view.players) {
@@ -411,11 +411,11 @@ export class TablePresenter {
         await this.pause(2000 * this.beat);
         return;
       default: {
-        // the Dreamfund's own events: a headline, and the card or the amount when there is one
+        // the Dreamer's own events: a headline, and the card or the amount when there is one
         const headline = dreamEventTitle(line.type, this.lang(), line.data);
         if (!headline) return;
         const detail = dreamEventDetail(line.type, line.data, this.lang());
-        // a card of a Dreamfund pile: shown by its name, and it can be opened to be read in full
+        // a card of a Dreamer pile: shown by its name, and it can be opened to be read in full
         const cardId = dreamEventCard(line.type, line.data);
         // the card as a small version of itself: its pile, the numbers that matter and the first sentence of its story
         const found = cardId ? findDreamCard(cardId) : null;

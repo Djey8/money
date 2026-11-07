@@ -1,5 +1,5 @@
 /**
- * The nine characters of the Dreamfund edition next to the Dual Student (JFK, 2026-10-27): ten lives from 23 to 57, from an apprentice's
+ * The nine characters of the Dreamer edition next to the Dual Student (JFK, 2026-10-27): ten lives from 23 to 57, from an apprentice's
  * pay to a surgeon's, each with a story, a dream that costs what it really costs, a career with its own ladder - and numbers that make
  * them comparable. A high salary comes with high expenses, bigger debts and a bigger dream (and bigger cards: the price level), so
  * every character plays like the Dual Student at another scale; what makes one harder than another is how much is left of a month,
@@ -68,8 +68,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Der Meisterbrief, ein Transporter, das Werkzeug - und ein Name an der Tür',
       },
       summary: {
-        en: 'Pass the master school part-time, found his own electrical business and equip a first van. In this game it is his first Smile project.',
-        de: 'Die Meisterschule in Teilzeit bestehen, einen eigenen Elektrobetrieb gründen und einen ersten Transporter ausrüsten. Im Spiel ist es sein erstes Smile-Projekt.',
+        en: 'Pass the master school part-time, found his own electrical business and equip a first van. In this game it is his first Dream project.',
+        de: 'Die Meisterschule in Teilzeit bestehen, einen eigenen Elektrobetrieb gründen und einen ersten Transporter ausrüsten. Im Spiel ist es sein erstes Traumprojekt.',
       },
       description: {
         en: 'The way from journeyman to boss: the master school in two parts (the craft, then business and teaching), the exam fees and the master piece, then the founding itself - registering, insurance, the first tools and a used van. Every bucket is one step; the project is done when all of them are full.',
@@ -258,8 +258,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Ein Campingbus, ein halbes Jahr Auszeit und die Küsten Europas',
       },
       summary: {
-        en: 'Buy and fit out a campervan, save for six months without pay and travel Europe with her daughter. In this game it is her first Smile project.',
-        de: 'Einen Campingbus kaufen und ausbauen, für sechs Monate ohne Gehalt sparen und mit ihrer Tochter Europa bereisen. Im Spiel ist es ihr erstes Smile-Projekt.',
+        en: 'Buy and fit out a campervan, save for six months without pay and travel Europe with her daughter. In this game it is her first Dream project.',
+        de: 'Einen Campingbus kaufen und ausbauen, für sechs Monate ohne Gehalt sparen und mit ihrer Tochter Europa bereisen. Im Spiel ist es ihr erstes Traumprojekt.',
       },
       description: {
         en: 'A big trip needs a vehicle, a place to sleep and a cushion for the months without a salary. The buckets are the van, its fitting-out, the months off, the road costs and the insurances that make it safe for a child.',
@@ -436,8 +436,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Die Scheine, die Ausrüstung, ein Sabbatjahr und ein Boot im Mittelmeer',
       },
       summary: {
-        en: 'Get the sailing licences, take a sabbatical and charter a boat for a long voyage in the Mediterranean. In this game it is her first Smile project.',
-        de: 'Die Segelscheine machen, ein Sabbatjahr nehmen und ein Boot für eine lange Reise im Mittelmeer chartern. Im Spiel ist es ihr erstes Smile-Projekt.',
+        en: 'Get the sailing licences, take a sabbatical and charter a boat for a long voyage in the Mediterranean. In this game it is her first Dream project.',
+        de: 'Die Segelscheine machen, ein Sabbatjahr nehmen und ein Boot für eine lange Reise im Mittelmeer chartern. Im Spiel ist es ihr erstes Traumprojekt.',
       },
       description: {
         en: 'A year at sea is a plan with parts: the licences that let her skipper, the gear, the pay she does not get in her sabbatical year, the charter itself and the insurances.',
@@ -620,8 +620,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Ein helles Loft: hinten das Atelier, vorne die Galerie',
       },
       summary: {
-        en: 'Rent and convert a loft, equip the studio, open a gallery with an opening night and keep it running for half a year. In this game it is his first Smile project.',
-        de: 'Ein Loft mieten und umbauen, das Atelier ausstatten, eine Galerie mit einer Vernissage eröffnen und sie ein halbes Jahr tragen. Im Spiel ist es sein erstes Smile-Projekt.',
+        en: 'Rent and convert a loft, equip the studio, open a gallery with an opening night and keep it running for half a year. In this game it is his first Dream project.',
+        de: 'Ein Loft mieten und umbauen, das Atelier ausstatten, eine Galerie mit einer Vernissage eröffnen und sie ein halbes Jahr tragen. Im Spiel ist es sein erstes Traumprojekt.',
       },
       description: {
         en: 'A studio with a gallery is a small company: the deposit and the conversion, the machines, the room for the exhibitions, the opening and the months until it carries itself.',
@@ -801,8 +801,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Ein kleines Haus an der Küste für die Sommer der Familie',
       },
       summary: {
-        en: 'Buy a small house on the Baltic coast: the deposit, the costs of buying, a renovation and the furniture. In this game it is her first Smile project.',
-        de: 'Ein kleines Haus an der Ostseeküste kaufen: die Anzahlung, die Kaufnebenkosten, eine Sanierung und die Einrichtung. Im Spiel ist es ihr erstes Smile-Projekt.',
+        en: 'Buy a small house on the Baltic coast: the deposit, the costs of buying, a renovation and the furniture. In this game it is her first Dream project.',
+        de: 'Ein kleines Haus an der Ostseeküste kaufen: die Anzahlung, die Kaufnebenkosten, eine Sanierung und die Einrichtung. Im Spiel ist es ihr erstes Traumprojekt.',
       },
       description: {
         en: 'A holiday house is bought once and lived in for decades: the deposit that the bank asks for, the costs that come with every purchase, the renovation that every old house needs and the reserve for what breaks.',
@@ -976,8 +976,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Solardach, Speicher, Wärmepumpe und eine gut gedämmte Hülle',
       },
       summary: {
-        en: 'Turn his house into one that makes, stores and saves its own energy. In this game it is his first Smile project.',
-        de: 'Sein Haus zu einem machen, das seine Energie selbst erzeugt, speichert und spart. Im Spiel ist es sein erstes Smile-Projekt.',
+        en: 'Turn his house into one that makes, stores and saves its own energy. In this game it is his first Dream project.',
+        de: 'Sein Haus zu einem machen, das seine Energie selbst erzeugt, speichert und spart. Im Spiel ist es sein erstes Traumprojekt.',
       },
       description: {
         en: 'Independence from the grid has five parts: producing power, storing it, heating without gas, keeping the heat in and driving on it. Each bucket is one of them.',
@@ -1162,8 +1162,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Die Übernahme einer chirurgischen Praxis im Allgäu',
       },
       summary: {
-        en: 'Take over a practice, modernise it, get the licence and carry the first six months. In this game it is his first Smile project.',
-        de: 'Eine Praxis übernehmen, modernisieren, die Zulassung bekommen und die ersten sechs Monate tragen. Im Spiel ist es sein erstes Smile-Projekt.',
+        en: 'Take over a practice, modernise it, get the licence and carry the first six months. In this game it is his first Dream project.',
+        de: 'Eine Praxis übernehmen, modernisieren, die Zulassung bekommen und die ersten sechs Monate tragen. Im Spiel ist es sein erstes Traumprojekt.',
       },
       description: {
         en: 'A practice is bought, not started: the price of the patients and the inventory, the conversion, the licence, the staff before the first bill is paid, and a reserve for the lean months.',
@@ -1335,8 +1335,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Zwei Hektar Reben in der Pfalz und ein eigener Keller',
       },
       summary: {
-        en: 'Buy two hectares of vineyard, learn the craft of the winemaker, equip a cellar and sell the first vintage. In this game it is her first Smile project.',
-        de: 'Zwei Hektar Weinberg kaufen, das Winzerhandwerk lernen, einen Keller ausstatten und den ersten Jahrgang verkaufen. Im Spiel ist es ihr erstes Smile-Projekt.',
+        en: 'Buy two hectares of vineyard, learn the craft of the winemaker, equip a cellar and sell the first vintage. In this game it is her first Dream project.',
+        de: 'Zwei Hektar Weinberg kaufen, das Winzerhandwerk lernen, einen Keller ausstatten und den ersten Jahrgang verkaufen. Im Spiel ist es ihr erstes Traumprojekt.',
       },
       description: {
         en: 'A vineyard takes land, knowledge, a cellar and patience. The buckets are the plot itself, the courses, the cellar technology, the first vintage, the new vines and a place where guests can taste.',
@@ -1504,8 +1504,8 @@ export const DREAMFUND_SPECS: ProfessionSpec[] = [
         de: 'Ein Pachtgrundstück, eine Blockhütte und ein Steg',
       },
       summary: {
-        en: 'Lease a plot at a lake, build a log cabin from a kit, fit it out and build a jetty. In this game it is his first Smile project.',
-        de: 'Ein Grundstück an einem See pachten, eine Blockhütte aus dem Bausatz bauen, sie einrichten und einen Steg bauen. Im Spiel ist es sein erstes Smile-Projekt.',
+        en: 'Lease a plot at a lake, build a log cabin from a kit, fit it out and build a jetty. In this game it is his first Dream project.',
+        de: 'Ein Grundstück an einem See pachten, eine Blockhütte aus dem Bausatz bauen, sie einrichten und einen Steg bauen. Im Spiel ist es sein erstes Traumprojekt.',
       },
       description: {
         en: 'A cabin is simple and takes a few things: the plot with its first payment, the kit, the foundation and the connections, the stove and the furniture, and a little boat.',

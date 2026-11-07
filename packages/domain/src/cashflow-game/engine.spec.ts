@@ -151,7 +151,7 @@ describe('the custom edition: the dual student (JFK, 2026-10-25)', () => {
     expect(taken).toBe(84500);
   });
 
-  it('starts with the dream as a Smile project: eight buckets, about 24.500, with notes, links and tasks, in both languages', () => {
+  it('starts with the dream as a Dream project: eight buckets, about 24.500, with notes, links and tasks, in both languages', () => {
     for (const lang of ['en', 'de']) {
       const project = student.profile!.texts[lang].dream.project!;
       expect(project.buckets).toHaveLength(8);

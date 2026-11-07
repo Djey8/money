@@ -1400,7 +1400,7 @@
                   >
                     {{ 'CashflowGame.solo.openCard' | translate }}
                   </button>
-                  <!-- at a Dreamfund table the card was drawn for the player: it can be read once more -->
+                  <!-- at a Dreamer table the card was drawn for the player: it can be read once more -->
                   <button
                     class="btn btn--sm cf-btn-outlined"
                     *ngIf="stackPlayed && stackOpened && remote?.dreamfund"
@@ -2156,7 +2156,7 @@
             }}</span>
             <ul class="cf-history-transactions" *ngIf="isStepOpen(step.id)">
               <li *ngFor="let tx of step.transactions">
-                {{ tx.date | appDate }} · {{ tx.account
+                {{ tx.date | appDate }} · {{ tx.account | accountLabel
                 }}<ng-container *ngIf="tx.category"> · {{ tx.category }}</ng-container> ·
                 {{ tx.amount | appNumber }} {{ appState.currency }}
               </li>
@@ -2176,7 +2176,7 @@
             <span class="cf-history-date">{{ entry.virtualDateBefore | appDate }}</span>
             <ul class="cf-history-transactions">
               <li *ngFor="let tx of entry.createdTransactions">
-                {{ tx.account
+                {{ tx.account | accountLabel
                 }}<ng-container *ngIf="tx.category"> · {{ tx.category }}</ng-container> ·
                 {{ toDisplayAmount(tx.amountMinor) | appNumber }} {{ appState.currency }}
               </li>
@@ -2185,7 +2185,7 @@
         </ul>
       </div>
 
-      <!-- a card of the Dreamfund stacks, read again from the History -->
+      <!-- a card of the Dreamer stacks, read again from the History -->
       <div
         class="cf-card"
         *ngIf="dashboardView === 'historyTile' && historyTileCard as card"
@@ -2407,7 +2407,7 @@
                 [attr.aria-pressed]="doodadAccountFilter === account"
                 (click)="toggleDoodadAccount(account)"
               >
-                {{ account }}
+                {{ account | accountLabel }}
               </button>
             </div>
             <select
@@ -2419,7 +2419,9 @@
               (ngModelChange)="pickDoodadAccount($event)"
             >
               <option value="">{{ 'CashflowGame.filterAccounts' | translate }}</option>
-              <option *ngFor="let item of doodadAccounts" [value]="item">{{ item }}</option>
+              <option *ngFor="let item of doodadAccounts" [value]="item">
+                {{ item | accountLabel }}
+              </option>
             </select>
             <div class="cf-filter-chips" *ngIf="doodadGroups.length">
               <button
@@ -2622,7 +2624,9 @@
               </div>
               <div class="cf-fact cf-fact--right">
                 <span class="cf-fact-label">{{ 'CashflowGame.doodadAccount' | translate }}</span>
-                <strong class="cf-fact-value">{{ doodad.account || 'Splurge' }}</strong>
+                <strong class="cf-fact-value">{{
+                  doodad.account || 'Splurge' | accountLabel
+                }}</strong>
               </div>
               <div class="cf-fact cf-fact--center">
                 <span class="cf-fact-label">{{ 'CashflowGame.doodadCategory' | translate }}</span>

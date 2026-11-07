@@ -21,7 +21,7 @@ import { pickOne, rollDie, systemRng, type Rng } from './rng';
 import type { CashflowGameState } from './types';
 
 /**
- * The market of the Dreamfund game (JFK, 2026-10-26): what the Harvest cards do to the indices, to what the player owns, and what they
+ * The market of the Dreamer game (JFK, 2026-10-26): what the Harvest cards do to the indices, to what the player owns, and what they
  * offer - a window to sell, a buyer, a hype to ride. Every market starts at an index of 1.00; the value of a share is its card price
  * times the index of its market. Pure rules like all the others: books and a die in, `GameEffects` out.
  */

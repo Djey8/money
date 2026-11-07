@@ -19,7 +19,7 @@ import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 export type BriefingInsurance = InsuranceRow;
 
 /**
- * Before the first roll of a Dreamfund game (JFK, 2026-11-03): every player reads who they are - the story, what matters, the goals, the
+ * Before the first roll of a Dreamer game (JFK, 2026-11-03): every player reads who they are - the story, what matters, the goals, the
  * income, the expenses and the debts - and chooses their insurances. The game is begun in the background; it starts for everybody when
  * everybody has said they are ready. Until then a player can go back to the choice of the character.
  */

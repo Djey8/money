@@ -5,7 +5,7 @@ import { DREAM_POLICIES } from './policies';
 import { simulateDreamGame, type DreamGameRecord } from './world';
 
 /**
- * Many Dreamfund games in a row (JFK, 2026-10-26): the same character on the maps and settings given, played by every strategy, from
+ * Many Dreamer games in a row (JFK, 2026-10-26): the same character on the maps and settings given, played by every strategy, from
  * seeds that count up - so a run can be repeated and two runs compared. The summary answers what the balance needs: how often a
  * strategy wins, how long it takes, how often it goes bankrupt, and which cards were worth taking.
  */
@@ -199,7 +199,7 @@ const tt = (minor: number) => `${Math.round(minor / 100).toLocaleString('en')}`;
 /** The batch as a report: one table of strategies and one of the cards. */
 export function reportMarkdown(result: BatchResult): string {
   const lines: string[] = [];
-  lines.push(`# Dreamfund simulation`);
+  lines.push(`# Dreamer simulation`);
   lines.push('');
   lines.push(
     `${result.records.length} games - ${JSON.stringify({ ...result.config, rules: result.config.rules ?? {} })}`,

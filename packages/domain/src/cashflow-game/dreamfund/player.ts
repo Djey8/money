@@ -85,7 +85,7 @@ import { currentTurn, playTurn, settleDecision } from '../turn';
 import type { CashflowGameSet, CashflowGameState, CashflowProfession } from '../types';
 
 /**
- * One player's Dreamfund life as plain data and the rules that move it (JFK, 2026-10-27): the books, the reserve (Mojo), the dreams
+ * One player's Dreamer life as plain data and the rules that move it (JFK, 2026-10-27): the books, the reserve (Mojo), the dreams
  * and their funding, the payment plans, the points. It is the part of the simulation that is not a strategy - extracted so that the
  * simulation, the bots and the multiplayer table play the very same rules. Every method either draws a card (and says what was
  * drawn) or applies a decision that was taken (a payment, a purchase, an answer); who decides - a policy, a human's command - is not
@@ -98,7 +98,7 @@ export const NOW = '2026-11-15T09:00:00.000Z';
 /** A payment plan of a project: so much every Payday until what is left is paid. */
 export interface DreamPlan {
   kind: 'mojo' | 'life' | 'smile' | 'emergency';
-  /** The dream card of a Smile project; the card of an emergency. */
+  /** The dream card of a Dream project; the card of an emergency. */
   id: string;
   perMinor: number;
   leftMinor: number;
@@ -1136,7 +1136,7 @@ export class DreamPlayer {
     return canTakeDream(this.state.dreams ?? EMPTY_DREAM_LOG, this.dreamSettings());
   }
 
-  /** A dream card taken: its Smile project opens. */
+  /** A dream card taken: its Dream project opens. */
   takeDream(pick: DreamCard): void {
     const log: DreamLog = this.state.dreams ?? EMPTY_DREAM_LOG;
     this.smile.push({

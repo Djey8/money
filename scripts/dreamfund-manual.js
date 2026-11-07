@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Builds the Dreamfund manual of the app (src/assets/i18n/dreamfund-manual/en.json and de.json), the way the Cashflow manual is built:
+ * Builds the Dreamer manual of the app (src/assets/i18n/dreamfund-manual/en.json and de.json), the way the Cashflow manual is built:
  * the pages are authored in scripts/dreamfund-manual/<language>.js (sections of blocks: text, steps, cards, callouts, tables, glossary).
  * What the simulation writes - the rule tables of the game page and the statistics - is not retyped: an authored section says
  * `{ type: 'import', md: 6 }` (a whole section of docs/DREAMFUND_GAME.md, counted from 0 as the parser lists them) or

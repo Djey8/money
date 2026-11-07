@@ -66,7 +66,7 @@ function playOut(t: DreamTable, maxRounds: number): DreamTable {
   return current;
 }
 
-describe('the bots of a Dreamfund table', () => {
+describe('the bots of a Dreamer table', () => {
   it('have nothing to do when it is not their turn and no Harvest card waits for them', () => {
     const t = tableWithBots();
     const waiting = t.players.find((p) => p.bot && p.id !== t.activePlayerId)!;

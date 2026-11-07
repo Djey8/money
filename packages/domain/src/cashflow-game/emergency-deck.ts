@@ -2,7 +2,7 @@ import { pickOne, type Rng, systemRng } from './rng';
 import { meetsRequirement, type LifeRequirement, type LifeState } from './life-deck';
 
 /**
- * The Dreamfund Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): what a card is, how one is drawn,
+ * The Dreamer Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): what a card is, how one is drawn,
  * what it costs a player who is insured or not, and what a payment plan costs on top. Pure rules: the cards themselves live in the
  * game set (`decks.emergency`), the app turns a paid card into a Fire project.
  */

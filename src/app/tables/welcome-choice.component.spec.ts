@@ -20,7 +20,7 @@ describe('WelcomeChoiceComponent', () => {
     });
   });
 
-  it('sends a new game account to the guided Dreamfund demo through the lobby', () => {
+  it('sends a new game account to the guided Dreamer demo through the lobby', () => {
     const component = TestBed.runInInjectionContext(() => new WelcomeChoiceComponent());
     component.demo();
     expect(router.navigate).toHaveBeenCalledWith(['/tables'], {

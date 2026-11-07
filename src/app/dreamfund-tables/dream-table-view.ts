@@ -9,7 +9,7 @@ import type {
   DreamTableView,
 } from './dream-session.service';
 
-/** A Dreamfund table seen as the table screens read a table: its seats carry the life's books, and the life itself beside them. */
+/** A Dreamer table seen as the table screens read a table: its seats carry the life's books, and the life itself beside them. */
 export interface DreamShownTable extends TableView {
   kind: 'dreamfund';
 }
@@ -24,9 +24,9 @@ export function lifeOf(view: TableView, seat: number): DreamPlayerData | null {
 const NO_DECK = { left: 0, discard: [] as string[] };
 
 /**
- * The Dreamfund table in the shape of the classic one (todo/dreamfund-tables-solo-ui.md, R3): the room page, the table mode, the
- * layer with the players' queue and the presenter all read this, so a Dreamfund table is opened, watched and looked through the same
- * way. What the classic table has and the Dreamfund has not (the draw piles, the undo vote, the turn hold) is empty.
+ * The Dreamer table in the shape of the classic one (todo/dreamfund-tables-solo-ui.md, R3): the room page, the table mode, the
+ * layer with the players' queue and the presenter all read this, so a Dreamer table is opened, watched and looked through the same
+ * way. What the classic table has and the Dreamer has not (the draw piles, the undo vote, the turn hold) is empty.
  */
 export function dreamViewAsTable(view: DreamTableView): TableView {
   const settings = view.settings as Record<string, unknown>;
@@ -38,7 +38,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
     phase: view.phase,
     settings: {
       ...view.settings,
-      // the game set the characters come from, and the classic table's own switches that a Dreamfund table does not have
+      // the game set the characters come from, and the classic table's own switches that a Dreamer table does not have
       gameSetId: 'jfk-stories',
       rulesBase: view.settings.mode,
       rules: { sellOfferRolls: 0 },
@@ -70,7 +70,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
         ...('life' in (player as object)
           ? { books: life ? life.books : null, dreamLife: life }
           : {}),
-        // the Dreamfund's extras, for the bridge to the app
+        // the Dreamer's extras, for the bridge to the app
         dreamPending: (player as unknown as { pending?: unknown }).pending ?? null,
         dreamInfo: (player as unknown as { pendingInfo?: unknown }).pendingInfo ?? null,
         dreamResolved: (player as unknown as { resolved?: unknown }).resolved ?? null,
@@ -93,7 +93,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
       banksMs: [],
       timeouts: [],
     },
-    // the classic trade screen is for classic cards: a Dreamfund offer is answered from the money panel
+    // the classic trade screen is for classic cards: a Dreamer offer is answered from the money panel
     trade: null,
     dreamTrade: view.trade,
     holdSeats: [],
@@ -127,7 +127,7 @@ export function dreamViewAsTable(view: DreamTableView): TableView {
   return shown as unknown as TableView;
 }
 
-/** What the seat has to decide at a Dreamfund table, as the table sent it (the viewer's own in full). */
+/** What the seat has to decide at a Dreamer table, as the table sent it (the viewer's own in full). */
 export function pendingOf(view: TableView, seat: number): DreamPending | { kind: string } | null {
   const player = view.players[seat] as unknown as
     { dreamPending?: DreamPending | { kind: string } | null } | undefined;

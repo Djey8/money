@@ -18,7 +18,7 @@ const seat = (over: Partial<RatedSeat> & { playerId: string }): RatedSeat => ({
   ...over,
 });
 
-describe('the rating of the Dreamfund board', () => {
+describe('the rating of the Dreamer board', () => {
   it('makes a hard character stronger-valued than an easy one, from the map', () => {
     const jan = characterStrength('jan-oberarzt', 'hard');
     const peter = characterStrength('peter-busfahrer', 'hard');

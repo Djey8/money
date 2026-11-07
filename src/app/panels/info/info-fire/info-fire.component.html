@@ -344,7 +344,7 @@
                     class="clickable-row"
                   >
                     <td>{{ getTransactionId(tx) }}</td>
-                    <td>{{ tx.account }}</td>
+                    <td>{{ tx.account | accountLabel }}</td>
                     <td
                       class="{{
                         getAllocatedAmountForBucket(tx, bucket.id) >= 0
@@ -399,7 +399,7 @@
                 class="clickable-row"
               >
                 <td>{{ getTransactionId(tx) }}</td>
-                <td>{{ tx.account }}</td>
+                <td>{{ tx.account | accountLabel }}</td>
                 <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                   {{ tx.amount | appNumber }} {{ currency }}
                 </td>
@@ -444,7 +444,7 @@
                   class="clickable-row"
                 >
                   <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
+                  <td>{{ tx.account | accountLabel }}</td>
                   <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                     {{ tx.amount | appNumber }} {{ currency }}
                   </td>
@@ -513,7 +513,7 @@
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Common.account' | translate }}:</span>
-                <span class="plan-value">{{ plan.account }}</span>
+                <span class="plan-value">{{ plan.account | accountLabel }}</span>
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Fire.paymentPlans.period' | translate }}:</span>
@@ -590,7 +590,7 @@
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Common.account' | translate }}:</span>
-                <span class="plan-value">{{ plan.account }}</span>
+                <span class="plan-value">{{ plan.account | accountLabel }}</span>
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Fire.paymentPlans.period' | translate }}:</span>
@@ -658,7 +658,7 @@
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Common.account' | translate }}:</span>
-                <span class="plan-value">{{ plan.account }}</span>
+                <span class="plan-value">{{ plan.account | accountLabel }}</span>
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Fire.paymentPlans.period' | translate }}:</span>

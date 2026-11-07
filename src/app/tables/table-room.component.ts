@@ -81,7 +81,7 @@ const money = (minor: number | null): string =>
   providers: [
     {
       provide: TableSessionService,
-      // the table says which game it is before this page is made (the route asks); a Dreamfund table is followed in the classic shape
+      // the table says which game it is before this page is made (the route asks); a Dreamer table is followed in the classic shape
       useFactory: (http: HttpClient, zone: NgZone) =>
         OpenTableGame.current === 'dreamfund'
           ? new DreamTableSessionService(http, zone)
@@ -501,12 +501,12 @@ export class TableRoomComponent implements OnInit, OnDestroy {
     const view = this.view();
     return !!view && view.youSeat !== null && view.youSeat === view.activeSeat;
   });
-  /** The game of the table: the classic Cashflow, or the Dreamfund. */
+  /** The game of the table: the classic Cashflow, or the Dreamer. */
   get gameKind(): 'classic' | 'dreamfund' {
     return OpenTableGame.current;
   }
 
-  /** The characters of a Dreamfund table, in the language of the screen. */
+  /** The characters of a Dreamer table, in the language of the screen. */
   dreamCharacterList(): { id: string; title: string }[] {
     return this.gameKind === 'dreamfund'
       ? dreamCharacters(this.lang).map((c) => ({ id: c.id, title: c.name }))

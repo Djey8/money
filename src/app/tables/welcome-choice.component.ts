@@ -6,28 +6,28 @@ import { TourService } from '../shared/services/tour.service';
 const TEXTS = {
   en: {
     title: 'Welcome! How do you want to start?',
-    hint: 'You can do the other one any time later: the tour from the help page, the demo from the Dreamfund lobby (Learn the game).',
+    hint: 'You can do the other one any time later: the tour from the help page, the demo from the Dreamer lobby (Learn the game).',
     tour: 'The normal welcome tour',
     tourText: 'A short tour of the app: the accounts, the pages and where to find things.',
-    demo: 'The guided Dreamfund demo',
+    demo: 'The guided Dreamer demo',
     demoText:
-      'Play the first rounds of the Dreamfund against a friendly bot, with a coach that shows every place of the screen. About fifteen minutes; you can stop any time.',
+      'Play the first rounds of the Dreamer against a friendly bot, with a coach that shows every place of the screen. About fifteen minutes; you can stop any time.',
     skip: 'Neither, let me look around',
   },
   de: {
     title: 'Willkommen! Wie möchtest du starten?',
-    hint: 'Das andere kannst du später jederzeit machen: die Tour über die Hilfe, die Demo in der Traumtopf-Lobby (Das Spiel lernen).',
+    hint: 'Das andere kannst du später jederzeit machen: die Tour über die Hilfe, die Demo in der Träumer-Lobby (Das Spiel lernen).',
     tour: 'Die normale Willkommens-Tour',
     tourText: 'Eine kurze Tour durch die App: die Konten, die Seiten und wo man was findet.',
-    demo: 'Die geführte Traumtopf-Demo',
+    demo: 'Die geführte Träumer-Demo',
     demoText:
-      'Spiele die ersten Runden Traumtopf gegen einen freundlichen Bot, mit einem Coach, der jede Stelle des Bildschirms zeigt. Etwa fünfzehn Minuten; du kannst jederzeit aufhören.',
+      'Spiele die ersten Runden Träumer gegen einen freundlichen Bot, mit einem Coach, der jede Stelle des Bildschirms zeigt. Etwa fünfzehn Minuten; du kannst jederzeit aufhören.',
     skip: 'Keins von beiden, ich schaue mich um',
   },
 };
 
 /**
- * The first screen of a new game account (JFK, 2026-11-06): the normal welcome tour, or the guided Dreamfund demo. Registration marks the
+ * The first screen of a new game account (JFK, 2026-11-06): the normal welcome tour, or the guided Dreamer demo. Registration marks the
  * account as new; the app sends a game account here instead of straight into the tour. A route of the self-hosted edition only
  * (app.routes.selfhosted.ts), so the Firebase build carries none of it (docs/adr/0004).
  */

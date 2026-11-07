@@ -32,6 +32,7 @@ import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { RouterModule } from '@angular/router';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 /**
  * Represents the AccountingComponent class.
@@ -40,6 +41,7 @@ import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/s
   selector: 'app-accounting',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     CommonModule,
     FormsModule,
     TranslateModule,

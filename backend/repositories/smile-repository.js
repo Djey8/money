@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Smile projects — see fund-project-repository.js, which implements Smile
+ * Dream projects — see fund-project-repository.js, which implements Smile
  * and Fire once (they differ only in storage key and naming).
  */
 

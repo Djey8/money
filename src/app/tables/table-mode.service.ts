@@ -101,7 +101,7 @@ export class TableModeService {
     const count = books.state.turn?.count ?? 0;
     return (books.state.marketOffers ?? [])
       .map((offer) => {
-        // a Harvest card of the Dreamfund game names its own number of turns (the setting of the table), the classic ones the rules'
+        // a Harvest card of the Dreamer game names its own number of turns (the setting of the table), the classic ones the rules'
         const turns = offer.validRolls ?? rolls;
         return {
           title: offer.title,
@@ -426,7 +426,7 @@ export class TableModeService {
   private editing: Promise<void> = Promise.resolve();
 
   /**
-   * A page wrote something while a Dreamfund table is on screen (JFK, 2026-11-05): what does not change the game is kept - the
+   * A page wrote something while a Dreamer table is on screen (JFK, 2026-11-05): what does not change the game is kept - the
    * category, time and account of a booking, the account a payment is paid from, the phase of a project -, the rest is put back.
    */
   private editedAtTable(tag: string, data: unknown): Promise<void> {
@@ -692,7 +692,7 @@ export class TableModeService {
   gate(): RemoteGate | null {
     const view = this.view();
     const words = tableLayerTexts(this.lang);
-    // a Dreamfund turn ends when the player says so: after the roll, and once every card of the tile is dealt with
+    // a Dreamer turn ends when the player says so: after the roll, and once every card of the tile is dealt with
     if ((view as { kind?: string } | null)?.kind === 'dreamfund') {
       if (!view || view.youSeat === null || view.phase !== 'playing') return null;
       // a Harvest card of this turn affects the player: they say Continue when they have read it and sold what they wanted
@@ -762,7 +762,7 @@ export class TableModeService {
   /** The debts of a table character by the word they are shown with, and the tag of the server (to pay one off). */
   private debtNames = new Map<string, string>();
 
-  /** The starting debts (tag and key) of a Dreamfund seat's character. */
+  /** The starting debts (tag and key) of a Dreamer seat's character. */
   private debtsOf(view: TableView, seat: number): { tag: string; key?: string }[] {
     const id = (view.players[seat] as { professionId?: string | null }).professionId;
     const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
@@ -782,7 +782,7 @@ export class TableModeService {
     const books = player?.books as unknown as GameBooks | null | undefined;
     if (!books) return;
     this.seat.set(seat);
-    // a Dreamfund seat's open decision is written into the turn as the solo screen keeps it (the card the server drew)
+    // a Dreamer seat's open decision is written into the turn as the solo screen keeps it (the card the server drew)
     const shown = lifeOf(view, seat)
       ? withDreamPending(books, pendingOf(view, seat), { ...extrasOf(view, seat), lang: this.lang })
       : books;
@@ -822,7 +822,7 @@ export class TableModeService {
       discardsOf(view),
       this.bankLocationNames(),
     );
-    // a Dreamfund seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen
+    // a Dreamer seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen
     const life = lifeOf(view, seat);
     if (life) {
       applyDreamExtrasToApp(

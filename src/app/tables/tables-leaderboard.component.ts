@@ -324,7 +324,7 @@ export class TablesLeaderboardComponent implements OnInit {
   t: LeaderboardTexts;
   d: DreamTexts;
   rtl: boolean;
-  /** The game of the board: the classic Cashflow's, or the Dreamfund's (shared with the lobby, kept on this device). */
+  /** The game of the board: the classic Cashflow's, or the Dreamer's (shared with the lobby, kept on this device). */
   game: TableGame = savedGame();
   filter: Filter = 'all';
   items: GamePlayer[] = [];
@@ -369,12 +369,12 @@ export class TablesLeaderboardComponent implements OnInit {
     this.load();
   }
 
-  /** A player of the board opens their panel: all their numbers, the way the rating moved, and (Dreamfund) the fact table. */
+  /** A player of the board opens their panel: all their numbers, the way the rating moved, and (Dreamer) the fact table. */
   open(player: GamePlayer): void {
     this.selected = player;
   }
 
-  /** One row of the Dreamfund board in the shape of the classic one, so the same list shows both. */
+  /** One row of the Dreamer board in the shape of the classic one, so the same list shows both. */
   private fromDream(row: DreamBoardRow): GamePlayer {
     return {
       place: row.place,

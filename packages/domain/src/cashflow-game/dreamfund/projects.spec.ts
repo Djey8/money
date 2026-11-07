@@ -24,7 +24,7 @@ function withDream(p: DreamPlayer) {
 
 const app = (p: DreamPlayer) => dreamAppEntities(p.snapshot(), 'en', '2026-11-15T09:00:00.000Z');
 
-describe('the projects of a Dreamfund life', () => {
+describe('the projects of a Dreamer life', () => {
   it('money for a dream goes to the dream asked for, booked under its name, and a short account takes the Bank loan', () => {
     const p = player();
     const { card, total } = withDream(p);

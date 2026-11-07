@@ -90,7 +90,7 @@ const HEAD_EN: Record<string, DemoText> = {
   },
   'meet-sheet': {
     title: 'Who you are',
-    text: 'Scroll through his sheet: his story, what matters to him, and **his dream** - a mountain guide, his first **Smile project**. Further down are his **emergency reserve** (the **Mojo**, three months of expenses), his income, his expenses and his two debts. Take your time, then press **Next**.',
+    text: 'Scroll through his sheet: his story, what matters to him, and **his dream** - a mountain guide, his first **Dream project**. Further down are his **emergency reserve** (the **Mojo**, three months of expenses), his income, his expenses and his two debts. Take your time, then press **Next**.',
   },
   'meet-ready': {
     title: 'I know who I am',
@@ -122,7 +122,7 @@ const HEAD_EN: Record<string, DemoText> = {
   },
   'screen-nav-unused': {
     title: 'Everything else',
-    text: '**History** lists every step, **Settings** and **Menu** are the table menu (pause, autoplay while you are away, pop-ups) and **Resign** gives up your seat. Below, the bottom bar leads to your **Smile** (dreams), **Fire** (reserve, emergencies) and **Grow** (investments) pages - the books of the game.',
+    text: '**History** lists every step, **Settings** and **Menu** are the table menu (pause, autoplay while you are away, pop-ups) and **Resign** gives up your seat. Below, the bottom bar leads to your **Dream** (dreams), **Fire** (reserve, emergencies) and **Grow** (investments) pages - the books of the game.',
   },
 };
 
@@ -133,7 +133,7 @@ const HEAD_DE: Record<string, DemoText> = {
   },
   'meet-sheet': {
     title: 'Wer du bist',
-    text: 'Blättere durch sein Blatt: seine Geschichte, was ihm wichtig ist, und **sein Traum** - Bergführer, sein erstes **Smile-Projekt**. Weiter unten: sein **Notgroschen** (der **Mojo**, drei Monatsausgaben), sein Einkommen, seine Ausgaben und seine zwei Schulden. Lass dir Zeit, dann drücke **Weiter**.',
+    text: 'Blättere durch sein Blatt: seine Geschichte, was ihm wichtig ist, und **sein Traum** - Bergführer, sein erstes **Traumprojekt**. Weiter unten: sein **Notgroschen** (der **Mojo**, drei Monatsausgaben), sein Einkommen, seine Ausgaben und seine zwei Schulden. Lass dir Zeit, dann drücke **Weiter**.',
   },
   'meet-ready': {
     title: 'Ich weiß, wer ich bin',
@@ -165,7 +165,7 @@ const HEAD_DE: Record<string, DemoText> = {
   },
   'screen-nav': {
     title: 'Alles andere',
-    text: '**Verlauf** listet jeden Schritt, **Einstellungen** und **Menü** sind das Tischmenü (Pause, Autospiel bei Abwesenheit, Pop-ups) und **Aufgeben** gibt deinen Platz auf. Unten führt die Leiste zu deinen Seiten **Smile** (Träume), **Fire** (Notgroschen, Notfälle) und **Grow** (Geldanlagen) - den Büchern des Spiels.',
+    text: '**Verlauf** listet jeden Schritt, **Einstellungen** und **Menü** sind das Tischmenü (Pause, Autospiel bei Abwesenheit, Pop-ups) und **Aufgeben** gibt deinen Platz auf. Unten führt die Leiste zu deinen Seiten **Traum** (Träume), **Fire** (Notgroschen, Notfälle) und **Grow** (Geldanlagen) - den Büchern des Spiels.',
   },
 };
 

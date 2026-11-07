@@ -1,8 +1,8 @@
 'use strict';
 
-// The Dreamfund as a room (todo/dreamfund-multiplayer.md slice 5): a table of the new kind is created, filled with strategy bots,
+// The Dreamer as a room (todo/dreamfund-multiplayer.md slice 5): a table of the new kind is created, filled with strategy bots,
 // started and played to its end through the public HTTP API, over a real CouchDB - the same lobby, clock, log and live channel as the
-// classic table, with the Dreamfund's own rules.
+// classic table, with the Dreamer's own rules.
 const crypto = require('crypto');
 const request = require('supertest');
 const { app, checkDb } = require('./setup');
@@ -88,9 +88,9 @@ const maybe = (name, fn) =>
     await fn();
   });
 
-describe('a Dreamfund room', () => {
+describe('a Dreamer room', () => {
   maybe(
-    'is created with the Dreamfund settings, takes a person and bots, and is listed as a Dreamfund table',
+    'is created with the Dreamer settings, takes a person and bots, and is listed as a Dreamer table',
     async () => {
       const made = await call(host, 'post', '/game/rooms', {
         kind: 'dreamfund',
@@ -386,7 +386,7 @@ describe('a Dreamfund room', () => {
         expect(Array.isArray(review.body.players[0].watch)).toBe(true);
         expect(JSON.stringify(review.body).length).toBeLessThan(8000);
       }
-      // the slim table of a Dreamfund table: the seats without their lives
+      // the slim table of a Dreamer table: the seats without their lives
       const slim = await call(guest, 'get', `/game/rooms/${roomId}?slim=true`);
       expect(slim.status).toBe(200);
       expect(slim.body.kind).toBe('dreamfund');
@@ -406,7 +406,7 @@ describe('a Dreamfund room', () => {
   );
 
   maybe(
-    'files a ranked game on the Dreamfund board - bots at their level and difficulty, a person who opts in - and leaves the classic board alone',
+    'files a ranked game on the Dreamer board - bots at their level and difficulty, a person who opts in - and leaves the classic board alone',
     async () => {
       const classicBefore = await call(
         host,
@@ -557,7 +557,7 @@ describe('a Dreamfund room', () => {
     },
   );
   maybe(
-    'lists who sits at a Dreamfund table, with their rating on the Dreamfund board',
+    'lists who sits at a Dreamer table, with their rating on the Dreamer board',
     async () => {
       const made = await call(host, 'post', '/game/rooms', {
         kind: 'dreamfund',
@@ -592,7 +592,7 @@ describe('a Dreamfund room', () => {
     expect(expert.ratings.beginner).toBeLessThan(expert.ratings.master);
   });
   maybe(
-    'shows the account picture at a Dreamfund seat, in the lobby line and on the board profile',
+    'shows the account picture at a Dreamer seat, in the lobby line and on the board profile',
     async () => {
       const png =
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';

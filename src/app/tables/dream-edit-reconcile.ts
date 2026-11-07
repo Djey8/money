@@ -1,5 +1,5 @@
 /**
- * What a player may change by hand at a Dreamfund table (JFK, 2026-11-05). The app's pages let a player edit what they see, and
+ * What a player may change by hand at a Dreamer table (JFK, 2026-11-05). The app's pages let a player edit what they see, and
  * write it; at a table nothing is written (the books are the table's), so the write is caught and worked out here: the parts that do
  * not change the game - a booking's category, time and account, the account a payment is paid from, the phase of a project - become
  * table commands; the parts that belong to the game (an amount, a date, a comment, a booking or a payment deleted) are refused and

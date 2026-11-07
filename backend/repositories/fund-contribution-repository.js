@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Putting money into a Smile project, Fire fund, or Mojo — the only way a
+ * Putting money into a Dream project, Fire fund, or Mojo — the only way a
  * bucket/Mojo amount ever changes, since those amounts are rebuilt from
  * transactions on every write (services/rebuild-derived.js).
  *

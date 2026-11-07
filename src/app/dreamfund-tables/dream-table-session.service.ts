@@ -5,7 +5,7 @@ import type { DreamTableView } from './dream-session.service';
 import { dreamViewAsTable } from './dream-table-view';
 
 /**
- * A Dreamfund table followed like a classic one (todo/dreamfund-tables-solo-ui.md, R3): the same stream, moves and lobby calls, with
+ * A Dreamer table followed like a classic one (todo/dreamfund-tables-solo-ui.md, R3): the same stream, moves and lobby calls, with
  * the table brought into the shape the table screens read. Everything else - the room page, the table mode, the game screen - is the
  * classic table's own.
  */

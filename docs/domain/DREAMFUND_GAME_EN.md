@@ -1,8 +1,8 @@
-# Dreamfund (Traumtopf) - the game, the cards and the numbers
+# Dreamer (Träumer) - the game, the cards and the numbers
 
-Dreamfund is the Money Manager's own money game, played inside your real accounts of the app: you roll the dice, walk a map, and
+Dreamer is the Money Manager's own money game, played inside your real accounts of the app: you roll the dice, walk a map, and
 everything that happens - a salary, a bill, a share you buy, a dream you fund - is booked as a real transaction, a Grow project, a
-Smile or Fire project in the game's books. The aim is to build a life you can afford: pay back what you owe, keep a reserve, live
+Dream or Fire project in the game's books. The aim is to build a life you can afford: pay back what you owe, keep a reserve, live
 your dream and let your money work for you.
 
 The game's money is the **Traumtaler (TT)**. Everything in this page is about the **Medium** level, the one that is balanced first.
@@ -28,7 +28,7 @@ games and is written by the simulation itself (see `docs/DREAMFUND_SIMULATION.md
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | **Daily**   | Bills and everyday life: rent, food, insurance. Your salary lands here.                                                          |
 | **Splurge** | Spending that is only for fun.                                                                                                   |
-| **Smile**   | Your dreams. Every dream is a **Smile project** with buckets (flights, hotel, equipment...) that you fill.                       |
+| **Dream**   | Your dreams. Every dream is a **Dream project** with buckets (flights, hotel, equipment...) that you fill.                       |
 | **Fire**    | What must be paid: emergencies, the reserve, investments. Every payment to an Emergency or a purchase is a **Fire** transaction. |
 | **Mojo**    | Your emergency reserve: three months of expenses. It is a Fire project from day one and may only be used for emergencies.        |
 
@@ -46,7 +46,7 @@ you can hop in or out of an insurance with the next Payday. Without it, the bill
 
 ## The map
 
-A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48
+A Dreamer map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48
 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:
 
 | Tile           | Count | Colour | What happens                                                                     |
@@ -334,13 +334,13 @@ successful roll. A promotion raises your salary - and your living costs.
 ### 😊 Dream (48 cards) and Dream moments
 
 Dreams are cards worth **points**, in tiers from _little_ to _legendary_, in categories like travel, adventure, vehicles, home, learning,
-creating and giving. Taking a dream makes a **Smile project** with buckets you fill by payment plans. You can have a few open at once.
+creating and giving. Taking a dream makes a **Dream project** with buckets you fill by payment plans. You can have a few open at once.
 **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money,
 points for patience, a dream swap) help a dream along.
 
 ## The notes of a project
 
-Whatever happens to a Grow, Fire or Smile project is written into its **notes**, with the numbers: what a payment cost, how much cash you
+Whatever happens to a Grow, Fire or Dream project is written into its **notes**, with the numbers: what a payment cost, how much cash you
 had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would
 receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what
 was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far.

@@ -129,7 +129,7 @@ function relate(older: unknown[], newer: unknown[]): { keep: number; shift: numb
 
 /**
  * `cache` (optional) keeps what was worked out for a pair of snapshots, so a chain that grows by one step is encoded by working out one
- * step and not all of them (JFK, 2026-10-27: a long Dreamfund game spent seconds on its own history). Snapshots are never changed once
+ * step and not all of them (JFK, 2026-10-27: a long Dreamer game spent seconds on its own history). Snapshots are never changed once
  * they are in the chain.
  */
 export function encodeUndoChain<T extends object>(

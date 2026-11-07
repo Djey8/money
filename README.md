@@ -13,7 +13,7 @@ Runs in two modes:
 - **Automatic allocation** — Income splits across accounts by configurable ratios (default 60/10/10/20)
 - **Transactions** — Add, edit, copy, delete with advanced search (AND/OR/NOT, amount, date ranges)
 - **Subscriptions** — Track recurring expenses with 5 frequency types (weekly, biweekly, monthly, quarterly, yearly). Auto-generates transactions with color-coded visual indicators and frequency filtering.
-- **Smile projects** — Savings goals with category-based tracking
+- **Dream projects** — Savings goals with category-based tracking
 - **Fire emergencies** — Emergency fund management
 - **Grow** — Investment tracking (buy/sell, dividends, payback, P&L)
 - **Financial statements** — Auto-generated income statement and balance sheet

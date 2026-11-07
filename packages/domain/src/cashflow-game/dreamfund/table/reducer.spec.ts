@@ -62,7 +62,7 @@ function playRounds(t: DreamTable, rounds: number): DreamTable {
   return current;
 }
 
-describe('the Dreamfund table: the lobby', () => {
+describe('the Dreamer table: the lobby', () => {
   it('seats the host, takes players and bots, and refuses a full table', () => {
     let t = table({ maxSeats: 3 });
     expect(t.phase).toBe('lobby');
@@ -75,7 +75,7 @@ describe('the Dreamfund table: the lobby', () => {
     expect(() => run(t, 'ann', { type: 'add_bot', name: 'X', policyId: 'saver' })).toThrow(/host/);
   });
 
-  it('takes the Dreamfund settings: difficulty, map, rules, end condition - and refuses what a shared table cannot run', () => {
+  it('takes the Dreamer settings: difficulty, map, rules, end condition - and refuses what a shared table cannot run', () => {
     const t = table({
       difficulty: 'hard',
       shape: 'infinity',
@@ -134,7 +134,7 @@ describe('the Dreamfund table: the lobby', () => {
   });
 });
 
-describe('the Dreamfund table: play', () => {
+describe('the Dreamer table: play', () => {
   it('lets only the player on the move act, and plays turns round the table', () => {
     let t = started();
     const first = t.activePlayerId!;
@@ -516,7 +516,7 @@ describe('the Dreamfund table: play', () => {
   });
 });
 
-describe('the Emergency card at a Dreamfund table', () => {
+describe('the Emergency card at a Dreamer table', () => {
   function withEmergency(pick: (cards: import('../../emergency-deck').EmergencyCard[]) => string) {
     let t = started();
     const who = t.activePlayerId!;
@@ -580,7 +580,7 @@ describe('the Emergency card at a Dreamfund table', () => {
   });
 });
 
-describe('the Dream and Career tiles at a Dreamfund table', () => {
+describe('the Dream and Career tiles at a Dreamer table', () => {
   const seatOf = (t: DreamTable, who: string) => t.players.find((p) => p.id === who)!;
 
   it('shows a dream taken, and the dreams left, as what the turn came to', () => {

@@ -135,8 +135,8 @@ export function migrateSmile(raw: any): Smile {
 }
 
 /**
- * Get the last transaction date for a Smile project by searching related transactions.
- * @param projectTitle - The title of the Smile project
+ * Get the last transaction date for a Dream project by searching related transactions.
+ * @param projectTitle - The title of the Dream project
  * @returns ISO date string of the last transaction, or undefined
  */
 function getLastTransactionDate(projectTitle: string): string | undefined {
@@ -170,7 +170,7 @@ function getLastTransactionDate(projectTitle: string): string | undefined {
 }
 
 /**
- * Migrate an array of smile projects, ensuring all have current schema.
+ * Migrate an array of dream projects, ensuring all have current schema.
  */
 export function migrateSmileArray(projects: any[]): Smile[] {
   if (!Array.isArray(projects)) {

@@ -655,7 +655,7 @@ export class AppDataService {
                         NonNullable<CashflowGameState['turn']>['pending']
                       >['kind'],
                       spaceIndex: num(raw.turn.pending.spaceIndex),
-                      // what a tile of a Dreamfund map asks (the card drawn and what was done with it)
+                      // what a tile of a Dreamer map asks (the card drawn and what was done with it)
                       ...revivePendingExtras(raw.turn.pending, str),
                       ...(raw.turn.pending.played != null
                         ? { played: str(raw.turn.pending.played) === 'true' }
@@ -732,7 +732,7 @@ export class AppDataService {
             } as GameRules,
           }
         : {}),
-      // the life, the career, the dreams, the insurances of a Dreamfund game
+      // the life, the career, the dreams, the insurances of a Dreamer game
       ...(reviveGameExtras(raw, str) as Partial<CashflowGameState>),
       ...(raw.gameId != null ? { gameId: optionalStr(raw.gameId) } : {}),
       ...(raw.gameName != null ? { gameName: optionalStr(raw.gameName) } : {}),

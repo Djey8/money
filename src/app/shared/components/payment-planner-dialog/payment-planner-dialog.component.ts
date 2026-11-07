@@ -17,6 +17,7 @@ import { FireBucket } from 'src/app/interfaces/fire';
 import { PaymentPlannerService, BucketAllocation } from '../../services/payment-planner.service';
 import { AppNumberPipe } from '../../pipes/app-number.pipe';
 import { AppStateService } from '../../services/app-state.service';
+import { AccountLabelPipe } from '../../pipes/account-label.pipe';
 
 /**
  * Bucket selection mode for payment plan
@@ -25,12 +26,12 @@ type BucketSelectionMode = 'all' | 'subset' | 'single';
 
 /**
  * Payment Planner Dialog Component
- * Reusable modal for creating/editing payment plans for Smile Projects and Fire Emergencies
+ * Reusable modal for creating/editing payment plans for Dream Projects and Fire Emergencies
  */
 @Component({
   selector: 'app-payment-planner-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, AppNumberPipe],
+  imports: [AccountLabelPipe, CommonModule, FormsModule, TranslateModule, AppNumberPipe],
   templateUrl: './payment-planner-dialog.component.html',
   styleUrls: ['./payment-planner-dialog.component.css'],
 })

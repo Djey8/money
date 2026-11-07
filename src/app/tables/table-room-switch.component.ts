@@ -14,7 +14,7 @@ import { keepGame, OpenTableGame, type TableGame } from './table-game';
 
 /**
  * One address for every table (`/tables/:id`): the table says which game it is, and the one room page opens for it - the classic
- * Cashflow's or the Dreamfund's, with the same lobby, table layer and solo screen.
+ * Cashflow's or the Dreamer's, with the same lobby, table layer and solo screen.
  */
 @Component({
   selector: 'app-table-room-switch',

@@ -4,7 +4,7 @@ import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
-/** The Life, Career and Dream tiles of a Dreamfund game, played through the service (JFK, 2026-10-26). */
+/** The Life, Career and Dream tiles of a Dreamer game, played through the service (JFK, 2026-10-26). */
 describe('CashflowGameService: life, career and dreams', () => {
   let service: CashflowGameService;
   const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
@@ -407,7 +407,7 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(service.careerStatus!.stageNumber).toBe(2);
   });
 
-  it('a Dream landing offers dreams; taking one makes a Smile project with its buckets and the dream is open', () => {
+  it('a Dream landing offers dreams; taking one makes a Dream project with its buckets and the dream is open', () => {
     landOn('dream');
     service.drawDream(ok(), { cardId: 'D16' });
     expect(service.dreamView!.offers.map((o) => o.id)).toEqual(['D16']);

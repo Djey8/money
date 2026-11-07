@@ -6,7 +6,7 @@ import { harvestWaiting, needsHarvestAck } from './harvest-ack';
 import type { DreamCommand, DreamHarvestOpen, DreamPending, DreamSeat, DreamTable } from './types';
 
 /**
- * What a viewer of a Dreamfund table is shown (todo/dreamfund-multiplayer.md, slice 5). Everything about a life is open at the table,
+ * What a viewer of a Dreamer table is shown (todo/dreamfund-multiplayer.md, slice 5). Everything about a life is open at the table,
  * as in the classic game - the books, the dreams, the plans - so what is hidden is only what is the server's: the dice's position, the
  * pile's order, a character picked in secret before the reveal and what a player has still to decide (others see only that they do).
  * The API speaks in seats, never account ids. Pure.
@@ -206,7 +206,7 @@ export interface DreamTableView {
   you: number | null;
   /** The same, under the name the classic table's readers use. */
   youSeat: number | null;
-  /** Seats the table waits for (classic: the turn hold); none at a Dreamfund table. */
+  /** Seats the table waits for (classic: the turn hold); none at a Dreamer table. */
   holdSeats: number[];
   /** Seats a Harvest card of this turn affects who have not said Continue: the turn of the player on the move ends when they have. */
   harvestWaiting: number[];

@@ -833,7 +833,7 @@ export class TablesLobbyComponent implements OnInit {
   h: HallTexts = hallTexts('en');
   lb: LeaderboardTexts = leaderboardTexts('en');
   d: DreamTexts = dreamTexts('en');
-  /** The game the lobby shows: the classic tables, or the Dreamfund ones (kept on this device). */
+  /** The game the lobby shows: the classic tables, or the Dreamer ones (kept on this device). */
   game: TableGame = savedGame();
   rtl = false;
   loading = true;
@@ -867,7 +867,7 @@ export class TablesLobbyComponent implements OnInit {
     return demoLabels(this.translate.currentLang || this.translate.defaultLang || 'en');
   }
 
-  /** The guided demo game starts here: the Dreamfund lobby, and the coach at the first step. */
+  /** The guided demo game starts here: the Dreamer lobby, and the coach at the first step. */
   startDemo(): void {
     this.setGame('dreamfund');
     this.showAdd = false;
@@ -1094,7 +1094,7 @@ export class TablesLobbyComponent implements OnInit {
   }
 
   statsOf(seat: TableSeat, table: TableSummary): GamePlayer | null {
-    // the stats panel is the classic board's: a Dreamfund table shows the picture and the rating only
+    // the stats panel is the classic board's: a Dreamer table shows the picture and the rating only
     return table.kind === 'dreamfund' ? null : seatToPlayer(seat);
   }
 
@@ -1183,7 +1183,7 @@ export class TablesLobbyComponent implements OnInit {
     });
     // my rating and picture: nice to show, never in the way
     if (this.game === 'dreamfund') {
-      // the Dreamfund has one rating, like the classic game
+      // the Dreamer has one rating, like the classic game
       this.dreamApi.me().subscribe({
         next: (me) => {
           this.me = {

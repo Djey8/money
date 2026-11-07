@@ -1,6 +1,6 @@
 /**
  * The words of one Grow trade statement - `Buy Asset <title> 1 x 150;` - with a title of several words kept as one: the Add dialog
- * reads the statement by position (`[kind, what, title, ...numbers]`), and the Dreamfund cards have titles like "Sell Digital
+ * reads the statement by position (`[kind, what, title, ...numbers]`), and the Dreamer cards have titles like "Sell Digital
  * Templates" (JFK, 2026-10-26: a card with a title of three words booked an amount of ∞). The statement is the one that holds
  * `keyword` (`Buy Asset`, `Sell Share`...); the last `tail` words are its numbers.
  */

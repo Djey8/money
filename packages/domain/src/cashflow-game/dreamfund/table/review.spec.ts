@@ -36,7 +36,7 @@ function played(rounds: number): DreamTable {
   return t;
 }
 
-describe('the review of a Dreamfund table', () => {
+describe('the review of a Dreamer table', () => {
   it('is a small page: every player with the goals in percent, the pace against the simulation, what to watch and a summary', () => {
     const review = reviewDreamTable(played(30));
     expect(review.difficulty).toBe('hard');

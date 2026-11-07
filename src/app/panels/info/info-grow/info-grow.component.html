@@ -436,7 +436,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let tx of relatedTransactions" (click)="openTransaction(tx)">
-                <td>{{ tx.account }}</td>
+                <td>{{ tx.account | accountLabel }}</td>
                 <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                   {{ tx.amount | appNumber }} {{ currency }}
                 </td>

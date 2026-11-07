@@ -36,11 +36,13 @@ import { ToastService } from 'src/app/shared/services/toast.service';
 import { SubscriptionProcessingService } from 'src/app/shared/services/subscription-processing.service';
 import { FrontendLoggerService } from 'src/app/shared/services/frontend-logger.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 @Component({
   selector: 'app-subscription',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     CommonModule,
     FormsModule,
     TranslateModule,

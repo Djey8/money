@@ -26,7 +26,7 @@ function started(seed = 7): DreamTable {
   return briefAll(run(t, 'host', { type: 'start' }), ctx);
 }
 
-describe('advice for a seat of a Dreamfund table (JFK, 2026-11-06)', () => {
+describe('advice for a seat of a Dreamer table (JFK, 2026-11-06)', () => {
   it('tells the goals, the money and the move a strategy would make now', () => {
     const t = started();
     const who = t.activePlayerId!;

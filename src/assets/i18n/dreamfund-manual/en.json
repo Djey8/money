@@ -1,5 +1,5 @@
 {
-  "title": "Dreamfund (Traumtopf) - the manual",
+  "title": "Dreamer (Träumer) - the manual",
   "subtitle": "The whole game from the screen to the bots: every move, every card, every setting - and a guided demo game that plays the first rounds with you.",
   "labels": {},
   "order": [
@@ -34,8 +34,8 @@
   "sections": {
     "welcome": {
       "nav": "Welcome",
-      "title": "Welcome to Dreamfund",
-      "intro": "Dreamfund (Traumtopf in German) is a money game you play on a map, with dice and cards, **inside your own books**: a salary is a real booking, a share is a real Grow project, a dream is a real Smile project. You live a character through years of money decisions - and when the game is over you know what a reserve, a loan, an index or a payment plan does, because you made them do it.",
+      "title": "Welcome to Dreamer",
+      "intro": "Dreamer (Träumer in German) is a money game you play on a map, with dice and cards, **inside your own books**: a salary is a real booking, a share is a real Grow project, a dream is a real Dream project. You live a character through years of money decisions - and when the game is over you know what a reserve, a loan, an index or a payment plan does, because you made them do it.",
       "blocks": [
         {
           "type": "cards",
@@ -80,7 +80,7 @@
           "type": "list",
           "items": [
             "the **Demo** button at the top right of every page of the app, while you are signed in with a game account (without an account, or with a normal one, it starts the normal demo of the Money Manager);",
-            "the **Dreamfund lobby**, on the entry **Learn the game**;",
+            "the **Dreamer lobby**, on the entry **Learn the game**;",
             "**the demo bot**: when you add the bot called **Coach** to a table, the table is the demo;"
           ]
         },
@@ -96,7 +96,7 @@
           "type": "callout",
           "kind": "tip",
           "title": "Words in this manual",
-          "text": "Money is counted in **Dream Taler** (DT, in German **Traumtaler**, TT) unless the table chose a real currency sign. A **Payday** is a month: your salary comes in and your bills go out. **Fire**, **Smile**, **Grow** and **Mojo** are the places your money lives; the section \"Your money\" explains each."
+          "text": "Money is counted in **Dream Taler** (DT, in German **Traumtaler**, TT) unless the table chose a real currency sign. A **Payday** is a month: your salary comes in and your bills go out. **Fire**, **Dream**, **Grow** and **Mojo** are the places your money lives; the section \"Your money\" explains each."
         }
       ]
     },
@@ -110,7 +110,7 @@
           "items": [
             {
               "title": "Open the lobby",
-              "text": "In the menu choose **Tables**, and at the top of the lobby switch from **Classic** to **Dreamfund**. You see the open tables, your own tables, the leaderboard and the **Join with a code** field."
+              "text": "In the menu choose **Tables**, and at the top of the lobby switch from **Classic** to **Dreamer**. You see the open tables, your own tables, the leaderboard and the **Join with a code** field."
             },
             {
               "title": "Open a table",
@@ -191,8 +191,8 @@
             },
             {
               "icon": "🌱",
-              "title": "Grow, Smile and Fire",
-              "text": "The three project pages: **Grow** (your investments), **Smile** (your dreams with their buckets) and **Fire** (what must be paid: the reserve, emergencies). The project pages are the normal pages of the Money Manager."
+              "title": "Grow, Dream and Fire",
+              "text": "The three project pages: **Grow** (your investments), **Dream** (your dreams with their buckets) and **Fire** (what must be paid: the reserve, emergencies). The project pages are the normal pages of the Money Manager."
             },
             {
               "icon": "🧾",
@@ -357,8 +357,8 @@
             ],
             ["**Splurge**", "Spending that is only for fun."],
             [
-              "**Smile**",
-              "Your dreams. Every dream is a **Smile project** with buckets (flights, hotel, equipment...) that you fill."
+              "**Dream**",
+              "Your dreams. Every dream is a **Dream project** with buckets (flights, hotel, equipment...) that you fill."
             ],
             [
               "**Fire**",
@@ -388,11 +388,11 @@
         },
         {
           "type": "h3",
-          "text": "Smile: your dream, with buckets"
+          "text": "Dream: your dream, with buckets"
         },
         {
           "type": "p",
-          "text": "A dream is a **Smile project**. It has **buckets** (the flights, the hotel, the equipment ...) and each bucket has a price. Money goes into a bucket by hand or, much better, by a **payment plan**: \"50 a month into the dream\" moves 50 at every Payday until the bucket is full. A dream you have fully funded is **lived** - it pays out its dream points and ticks the dream goal."
+          "text": "A dream is a **Dream project**. It has **buckets** (the flights, the hotel, the equipment ...) and each bucket has a price. Money goes into a bucket by hand or, much better, by a **payment plan**: \"50 a month into the dream\" moves 50 at every Payday until the bucket is full. A dream you have fully funded is **lived** - it pays out its dream points and ticks the dream goal."
         },
         {
           "type": "h3",
@@ -922,7 +922,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:"
+          "text": "A Dreamer map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:"
         },
         {
           "type": "table",
@@ -1521,7 +1521,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Dreams are cards worth **points**, in tiers from little to legendary, in categories like travel, adventure, vehicles, home, learning, creating and giving. Taking a dream makes a **Smile project** with buckets you fill by payment plans. You can have a few open at once. **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money, points for patience, a dream swap) help a dream along."
+          "text": "Dreams are cards worth **points**, in tiers from little to legendary, in categories like travel, adventure, vehicles, home, learning, creating and giving. Taking a dream makes a **Dream project** with buckets you fill by payment plans. You can have a few open at once. **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money, points for patience, a dream swap) help a dream along."
         },
         {
           "type": "h3",
@@ -1529,7 +1529,7 @@
         },
         {
           "type": "p",
-          "text": "Your character has one **life dream** from the start (Jonas: a certified mountain guide). It is the first Smile project and the dream goal of the game. Besides it, the Dream tiles offer **dream cards**: small and big wishes you can add to your Smile page - **48 cards** in tiers from **little** to **legendary**, in categories like travel, adventure, vehicles, home, learning, creating and giving. Every dream card is worth **points**; the bigger the dream, the more points and the higher the price."
+          "text": "Your character has one **life dream** from the start (Jonas: a certified mountain guide). It is the first Dream project and the dream goal of the game. Besides it, the Dream tiles offer **dream cards**: small and big wishes you can add to your Dream page - **48 cards** in tiers from **little** to **legendary**, in categories like travel, adventure, vehicles, home, learning, creating and giving. Every dream card is worth **points**; the bigger the dream, the more points and the higher the price."
         },
         {
           "type": "h3",
@@ -1540,7 +1540,7 @@
           "items": [
             {
               "title": "You take it",
-              "text": "On a Dream tile you are offered cards. You can take one (it becomes a Smile project), pass, or - where the table allows it - decline all. On Normal you are offered 2 cards, and up to 3 dreams can be open at once."
+              "text": "On a Dream tile you are offered cards. You can take one (it becomes a Dream project), pass, or - where the table allows it - decline all. On Normal you are offered 2 cards, and up to 3 dreams can be open at once."
             },
             {
               "title": "It is made of buckets",
@@ -1570,12 +1570,12 @@
         },
         {
           "type": "p",
-          "text": "Two real dreams in the grid of the **Smile** page: a small one with a plan of 50 a month, and the life dream of Jonas. **Click a card** to open the real info panel (read only)."
+          "text": "Two real dreams in the grid of the **Dream** page: a small one with a plan of 50 a month, and the life dream of Jonas. **Click a card** to open the real info panel (read only)."
         },
         {
           "type": "examples",
           "kind": "smile",
-          "caption": "Example projects in the Smile page. Click one to open the real info panel - for looking only, nothing is saved."
+          "caption": "Example projects in the Dream page. Click one to open the real info panel - for looking only, nothing is saved."
         },
         {
           "type": "callout",
@@ -1591,7 +1591,7 @@
       "blocks": [
         {
           "type": "p",
-          "text": "Whatever happens to a Grow, Fire or Smile project is written into its **notes**, with the numbers: what a payment cost, how much cash you had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far."
+          "text": "Whatever happens to a Grow, Fire or Dream project is written into its **notes**, with the numbers: what a payment cost, how much cash you had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far."
         },
         {
           "type": "p",
@@ -1660,7 +1660,7 @@
     "tables": {
       "nav": "Playing together",
       "title": "Tables: opening, joining and playing with others",
-      "intro": "A Dreamfund table is a game with two to eight seats, people and bots in any mix.",
+      "intro": "A Dreamer table is a game with two to eight seats, people and bots in any mix.",
       "blocks": [
         {
           "type": "h3",
@@ -1944,7 +1944,7 @@
               "Whether the reserve was full and how much it was, debts repaid and left, the Bank loan, emergencies paid and what they cost."
             ],
             [
-              "**Smile**",
+              "**Dream**",
               "Life dream lived, dreams lived and their money, dreams still open, money saved for dreams, dream points."
             ],
             [
@@ -2223,7 +2223,7 @@
             },
             {
               "term": "Where is the demo game?",
-              "text": "The **Demo** button at the top right (signed in with a game account), the entry **Learn the game** in the Dreamfund lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history."
+              "text": "The **Demo** button at the top right (signed in with a game account), the entry **Learn the game** in the Dreamer lobby, and the bot **Coach** (seat it at any table of one person). It is never ranked and never kept in your history."
             },
             {
               "term": "Can I change a booking?",
@@ -2246,7 +2246,7 @@
             },
             {
               "term": "Bucket",
-              "text": "One price of a Smile project (flights, hotel ...) that you fill."
+              "text": "One price of a Dream project (flights, hotel ...) that you fill."
             },
             {
               "term": "Cash flow",
@@ -2297,8 +2297,8 @@
               "text": "Your Elo-style rating: 1500 at the start, one list with the bots."
             },
             {
-              "term": "Smile",
-              "text": "Your dreams: every dream is a Smile project."
+              "term": "Dream",
+              "text": "Your dreams: every dream is a Dream project."
             },
             {
               "term": "Totem",

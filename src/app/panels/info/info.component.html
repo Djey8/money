@@ -12,7 +12,7 @@
   <hr class="separator-white" />
   <div *ngIf="!isEdit">
     <div id="info-box">
-      <h4 class="infoLableB">{{ classReference.account }}</h4>
+      <h4 class="infoLableB">{{ classReference.account | accountLabel }}</h4>
       <img
         id="account-pic"
         alt="Account Pic"

@@ -2,7 +2,7 @@ import { DREAM_POLICIES, type DreamPolicy } from '../../dreamfund-sim/policies';
 import type { Rng } from '../../rng';
 
 /**
- * The skill levels of a Dreamfund bot (JFK, 2026-10-27: "4 versions of a bot - master, strong, casual, beginner, see how we did for
+ * The skill levels of a Dreamer bot (JFK, 2026-10-27: "4 versions of a bot - master, strong, casual, beginner, see how we did for
  * the classic bots"): the same strategy, played with a chance per decision of a slip - a card its strategy would take is passed, one it
  * would leave is taken, a sale is made or missed. A level is part of the bot's id: `expert` is a master, `expert--casual` a casual one.
  * The level is the bot's; the difficulty of the game is the table's - a bot has a rating for each difficulty at each level.

@@ -6,8 +6,8 @@ import { dreamProjectParts } from '../dream-project';
 import { emergencyProjectParts } from '../emergency-project';
 
 /**
- * A Dreamfund life as the entities the app keeps it in (todo/dreamfund-tables-solo-ui.md, R2 and R6): the Mojo, the dream and the dreams
- * taken as Smile projects, the reserve and the emergencies on a plan as Fire projects. The table keeps a life as books plus the reserve,
+ * A Dreamer life as the entities the app keeps it in (todo/dreamfund-tables-solo-ui.md, R2 and R6): the Mojo, the dream and the dreams
+ * taken as Dream projects, the reserve and the emergencies on a plan as Fire projects. The table keeps a life as books plus the reserve,
  * the savings and the plans; the solo screen, the app's pages and a saved game keep what the solo game keeps. Pure; the browser puts
  * these on screen, the server files them in a saved game. The shapes are the app's (`Smile`, `Fire`), written out so the domain needs
  * nothing of the app.
@@ -198,7 +198,7 @@ export function dreamAppEntities(
   const planned = (kind: string, id: string) =>
     p.plans.find((plan) => plan.kind === kind && plan.id === id)?.perMinor ?? 0;
 
-  // the character's own dream: a Smile project from the first day
+  // the character's own dream: a Dream project from the first day
   if (text?.dream.project) {
     const project: AppSmile = {
       ...projectOf(text.dream.project, nowIso),

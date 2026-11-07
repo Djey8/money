@@ -6,8 +6,8 @@ import { environment } from '../../environments/environment';
 import { problemText } from '../tables/problem.texts';
 
 /**
- * The Dreamfund tables API (docs/api/openapi.yaml, /v1/game/rooms with `kind: dreamfund`) and the live view of one table. Its own files,
- * only ever imported from the lazy Dreamfund chunk behind app.routes.selfhosted.ts, so none of it reaches the Firebase build
+ * The Dreamer tables API (docs/api/openapi.yaml, /v1/game/rooms with `kind: dreamfund`) and the live view of one table. Its own files,
+ * only ever imported from the lazy Dreamer chunk behind app.routes.selfhosted.ts, so none of it reaches the Firebase build
  * (docs/adr/0004). The server decides everything: this keeps no rules, it shows what it is told and sends only what `legalActions` lists.
  */
 
@@ -260,7 +260,7 @@ export interface DreamMyPlayer {
   }[];
 }
 
-/** A player of the Dreamfund board, opened (GET /game/dreamfund/players/{id}): the rating, how it moved, the fact table, the last games. */
+/** A player of the Dreamer board, opened (GET /game/dreamfund/players/{id}): the rating, how it moved, the fact table, the last games. */
 export interface DreamPlayerDetail {
   playerId: string;
   name: string;
@@ -312,7 +312,7 @@ export interface DreamCreateInput {
 
 const newCommandId = () => `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 
-/** The lobby side: find, open, join and leave Dreamfund tables. */
+/** The lobby side: find, open, join and leave Dreamer tables. */
 @Injectable({ providedIn: 'root' })
 export class DreamApiService {
   private readonly base = `${environment.selfhosted.apiUrl}/v1/game/rooms`;

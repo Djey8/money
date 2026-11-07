@@ -40,7 +40,7 @@ export function mergeTableView(previous: TableView | null, incoming: TableView):
       const before = previous.players[seat] as (typeof previous.players)[number] & {
         dreamLife?: unknown;
       };
-      // a seat whose life did not change keeps what the screen has of it (a Dreamfund life rides along with its books)
+      // a seat whose life did not change keeps what the screen has of it (a Dreamer life rides along with its books)
       return {
         ...player,
         books: before ? before.books : null,
@@ -101,7 +101,7 @@ export class TableSessionService {
     protected zone: NgZone,
   ) {}
 
-  /** A table of another game (the Dreamfund) is brought into the shape the table screens read; the classic table is as it is. */
+  /** A table of another game (the Dreamer) is brought into the shape the table screens read; the classic table is as it is. */
   protected adaptView(view: TableView): TableView {
     return view;
   }

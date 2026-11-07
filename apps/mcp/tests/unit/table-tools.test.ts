@@ -262,7 +262,7 @@ describe('what a table call becomes on the wire', () => {
   });
 });
 
-describe('watching a Dreamfund table', () => {
+describe('watching a Dreamer table', () => {
   it('table_review is one cheap read of the review operation, and the tool says to ask on demand and not to poll', () => {
     const tool = TOOLS.find((t) => t.name === 'get_cashflow_game') as never as {
       description: string;
@@ -275,7 +275,7 @@ describe('watching a Dreamfund table', () => {
     expect(tool.description).toContain('dreamfund_table_guide');
   });
 
-  it('table_create can open a Dreamfund table and the guide for agents is a topic', () => {
+  it('table_create can open a Dreamer table and the guide for agents is a topic', () => {
     const create = OPERATIONS['createGameRoom'] as never as { requestBodySchema?: unknown };
     expect(JSON.stringify(create)).toContain('dreamfund');
     const topics = loadExplainTopics();
@@ -283,7 +283,7 @@ describe('watching a Dreamfund table', () => {
   });
 });
 
-describe('guiding and playing a Dreamfund table (JFK, 2026-11-06)', () => {
+describe('guiding and playing a Dreamer table (JFK, 2026-11-06)', () => {
   it('has the advice and the card catalogue among the reads, and the autoplay among the moves', () => {
     expect(read.description).toContain('table_advice');
     expect(read.description).toContain('dream_cards');

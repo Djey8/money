@@ -50,7 +50,7 @@ describe('AddTableComponent', () => {
     expect(localStorage.getItem('mm.tables.initials')).toBe('AB');
   });
 
-  it('opens a Dreamfund table with the same panel: the game is a choice, the solo settings come with it', () => {
+  it('opens a Dreamer table with the same panel: the game is a choice, the solo settings come with it', () => {
     const component = fixture.componentInstance;
     component.game = 'dreamfund';
     component.form.name = 'Dreams';
@@ -76,7 +76,7 @@ describe('AddTableComponent', () => {
     expect(req.request.body.settings.rules).toBeUndefined();
   });
 
-  it('leaves out the rules only the classic game has when the game is the Dreamfund', () => {
+  it('leaves out the rules only the classic game has when the game is the Dreamer', () => {
     const component = fixture.componentInstance;
     const keys = () => component.switches().map((rule) => rule.key);
     expect(keys()).toContain('allowUndo');

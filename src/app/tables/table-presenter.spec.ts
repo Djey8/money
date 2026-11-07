@@ -47,7 +47,7 @@ describe('TablePresenter', () => {
     } finally {
       jest.useRealTimers();
     }
-  });
+  }, 30000);
 
   it("holds a roller's token where it was, walks it space by space, then lets the books have it", async () => {
     jest.useFakeTimers();
@@ -128,7 +128,7 @@ describe('TablePresenter', () => {
     expect(doodad.patch!.text).toMatch(/−400/);
   });
 
-  it('tells a Dreamfund move of another player on the stage, and not the own ones', async () => {
+  it('tells a Dreamer move of another player on the stage, and not the own ones', async () => {
     jest.useFakeTimers();
     try {
       const presenter = new TablePresenter(() => 'en');

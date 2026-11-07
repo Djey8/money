@@ -66,7 +66,7 @@ describe('historyLines', () => {
     expect(lines[0].who).toBe('');
   });
 
-  it('tells the Dreamfund events in their own words, with the card and the price', () => {
+  it('tells the Dreamer events in their own words, with the card and the price', () => {
     const lines = historyLines(
       view,
       [

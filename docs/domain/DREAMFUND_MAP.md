@@ -1,4 +1,4 @@
-# The Dreamfund map
+# The Dreamer map
 
 Generated 2026-10-27: 200 games per strategy, character and level on the ring medium map, up to 150 rolls (about 60 months).
 Win rates are shares of games won (all five goals); the best strategy of a row is in bold. With this many games a cell is exact to about +/- 7 points.

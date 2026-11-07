@@ -3,7 +3,7 @@ import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
-/** The Emergency tile of a Dreamfund game: the card is drawn, rolled, paid now or on a plan, insured or not (JFK, 2026-10-25). */
+/** The Emergency tile of a Dreamer game: the card is drawn, rolled, paid now or on a plan, insured or not (JFK, 2026-10-25). */
 describe('CashflowGameService: emergencies and insurance', () => {
   let service: CashflowGameService;
   const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });

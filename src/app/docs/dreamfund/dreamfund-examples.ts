@@ -4,7 +4,7 @@ import type { PlannedSubscription } from '../../interfaces/planned-subscription'
 import type { Smile } from '../../interfaces/smile';
 
 /**
- * The example projects of the Dreamfund manual (JFK, 2026-11-06): six real projects - two Grow, two Fire (emergencies) and two Smile
+ * The example projects of the Dreamer manual (JFK, 2026-11-06): six real projects - two Grow, two Fire (emergencies) and two Smile
  * (dreams) - as the game would put them in the books, in a planned phase. The manual draws them in the grid of their page and opens the
  * REAL info panel of the app on them (`openPreview`: read only, not in the account, nothing can be changed or saved).
  */
@@ -187,7 +187,7 @@ export const EXAMPLE_SMILE: Smile[] = [
     points: 0,
     phase: 'planning',
     description:
-      'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. In the game it is his first Smile project.',
+      'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. In the game it is his first Dream project.',
     buckets: [
       { id: 'b1', title: 'Course fees', target: 17000, amount: 0 },
       { id: 'b2', title: 'Equipment', target: 4000, amount: 0 },

@@ -98,7 +98,7 @@ function runWorker(data) {
  * @param options `strategy` (a preset id the games continue with), `rollouts`, `timeBudgetMs`, `money` (formatter)
  */
 async function reviewHistory(stack, live, options) {
-  // a Dreamfund game (it has a life) is read as a story - milestones, purchases, loans, missed chances - against what the simulation
+  // a Dreamer game (it has a life) is read as a story - milestones, purchases, loans, missed chances - against what the simulation
   // of thousands of games found; the classic analyst plays positions on with a strategy, which a game of dice cards and markets
   // does not allow
   if (live.cashflowGame && live.cashflowGame.life) {

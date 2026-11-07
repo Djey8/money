@@ -34,7 +34,7 @@
     "colCategory": "Kategorie",
     "colAverage": "Durchschnitt",
     "colMost": "Teuerste",
-    "noteDoodads": "Insgesamt {count} Schnickschnack-Karten; die durchschnittliche Karte kostet {average}. Smile / Splurge ist das Konto, das die App für die Zahlung vorschlägt.",
+    "noteDoodads": "Insgesamt {count} Schnickschnack-Karten; die durchschnittliche Karte kostet {average}. Dream / Splurge ist das Konto, das die App für die Zahlung vorschlägt.",
     "colPile": "Stapel",
     "pileSmall": "Kleiner Deal",
     "pileBig": "Großer Deal",
@@ -774,7 +774,7 @@
         },
         {
           "type": "p",
-          "text": "Die großen, träumerischen Anschaffungen (ein Boot, eine Küche, das erste Auto fürs Kind) schlägt die App auf deinem **Smile**-Konto vor; die kleinen auf **Splurge**. Keine nimmt Geld von deinem **Fire**- oder **Daily**-Konto. Jede Karte hat eine Kategorie wie Freizeit, Wohnen oder Feiern, damit deine Auswertungen zeigen, wohin ein Spiel voller Schnickschnack ging."
+          "text": "Die großen, träumerischen Anschaffungen (ein Boot, eine Küche, das erste Auto fürs Kind) schlägt die App auf deinem **Dream**-Konto vor; die kleinen auf **Splurge**. Keine nimmt Geld von deinem **Fire**- oder **Daily**-Konto. Jede Karte hat eine Kategorie wie Freizeit, Wohnen oder Feiern, damit deine Auswertungen zeigen, wohin ein Spiel voller Schnickschnack ging."
         },
         {
           "type": "data",
@@ -973,7 +973,7 @@
           "rows": [
             [
               "Bargeld",
-              "Die Summe deiner Konten Daily, Splurge, Smile und Fire. Einnahmen werden nach den Prozentsätzen deines Kontos auf sie verteilt."
+              "Die Summe deiner Konten Daily, Splurge, Dream und Fire. Einnahmen werden nach den Prozentsätzen deines Kontos auf sie verteilt."
             ],
             [
               "Gehalt, Ausgaben, passives Einkommen",
@@ -994,15 +994,15 @@
             ],
             [
               "Dein Spiel im Zeitverlauf",
-              "**Statistik**: Diagramme jedes Kontos, mit Markierungen für Grow-Käufe und -Verkäufe, Smile- und Fire-Zahlungen, das Bankdarlehen und Schnickschnack."
+              "**Statistik**: Diagramme jedes Kontos, mit Markierungen für Grow-Käufe und -Verkäufe, Dream- und Fire-Zahlungen, das Bankdarlehen und Schnickschnack."
             ]
           ]
         },
         {
           "type": "callout",
           "kind": "note",
-          "title": "Fire und Smile im Spiel",
-          "text": "Käufe, Darlehen und Reparaturrechnungen laufen über **Fire**. Träumerischer Schnickschnack läuft über **Smile**, kleiner über **Splurge**. Das ist nur der Vorschlag der App - im Dialog kannst du jede Zahlung von einem anderen Konto buchen."
+          "title": "Fire und Dream im Spiel",
+          "text": "Käufe, Darlehen und Reparaturrechnungen laufen über **Fire**. Träumerischer Schnickschnack läuft über **Dream**, kleiner über **Splurge**. Das ist nur der Vorschlag der App - im Dialog kannst du jede Zahlung von einem anderen Konto buchen."
         },
         {
           "type": "callout",
@@ -1608,8 +1608,8 @@
               "text": "Geld von der Bank in Schritten von 1.000 zu 10 % des Darlehens pro Monat."
             },
             {
-              "term": "Fire / Smile / Splurge / Daily",
-              "text": "Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Smile, kleiner über Splurge."
+              "term": "Fire / Dream / Splurge / Daily",
+              "text": "Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Dream, kleiner über Splurge."
             }
           ]
         }

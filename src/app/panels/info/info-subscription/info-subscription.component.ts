@@ -27,6 +27,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let SmileProjectsComponent: any;
@@ -85,6 +86,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
   selector: 'app-info-subscription',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,

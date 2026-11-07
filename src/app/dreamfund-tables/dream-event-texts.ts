@@ -1,9 +1,9 @@
 import { cardText, dreamMoney } from './dream-texts';
 
 /**
- * What happens at a Dreamfund table, in words (todo/dreamfund-tables-solo-ui.md, R5): the headline of each event for the popups and the
+ * What happens at a Dreamer table, in words (todo/dreamfund-tables-solo-ui.md, R5): the headline of each event for the popups and the
  * history of the table layer, and the detail of the ones that have one (a card, a price). The classic events (a roll, a trade, a
- * player who is away) have their words already; these are the Dreamfund's own.
+ * player who is away) have their words already; these are the Dreamer's own.
  */
 
 const EN: Record<string, string> = {
@@ -56,7 +56,7 @@ const DE: Record<string, string> = {
   turn_started: 'ist am Zug',
 };
 
-/** The headline of a Dreamfund event (empty for an event that is not the Dreamfund's own). */
+/** The headline of a Dreamer event (empty for an event that is not the Dreamer's own). */
 export function dreamEventTitle(
   type: string,
   lang: string,
@@ -117,7 +117,7 @@ export function dreamEventCard(
     : undefined;
 }
 
-/** The detail line of a Dreamfund event: the card, the price, the goal. */
+/** The detail line of a Dreamer event: the card, the price, the goal. */
 export function dreamEventDetail(
   type: string,
   data: Record<string, unknown> | undefined,

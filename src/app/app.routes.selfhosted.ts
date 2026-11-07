@@ -25,7 +25,7 @@ export const routes: Routes = [
       import('./docs/cashflow/cashflow-docs.component').then((m) => m.CashflowDocsComponent),
   },
   {
-    // The Dreamfund (Traumtopf) guide, with the statistics of the characters: self-hosted only like the game.
+    // The Dreamer (Träumer) guide, with the statistics of the characters: self-hosted only like the game.
     path: 'docs/dreamfund',
     loadComponent: () =>
       import('./docs/dreamfund/dreamfund-docs.component').then((m) => m.DreamfundDocsComponent),
@@ -55,7 +55,7 @@ export const routes: Routes = [
       ),
   },
   {
-    // The first screen of a new game account: the normal welcome tour or the guided Dreamfund demo.
+    // The first screen of a new game account: the normal welcome tour or the guided Dreamer demo.
     path: 'welcome',
     loadComponent: () =>
       import('./tables/welcome-choice.component').then((m) => m.WelcomeChoiceComponent),

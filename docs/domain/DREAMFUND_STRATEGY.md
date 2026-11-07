@@ -1,4 +1,4 @@
-# Dreamfund strategy - how the game is won
+# Dreamer strategy - how the game is won
 
 For an agent that guides or plays: what to aim for, what to take, when to sell, what to avoid. It is the knowledge of the simulation
 (200 games per strategy, ten characters, three levels - `dreamfund_map`) in the order a game goes. The rules of every card are in

@@ -34,7 +34,7 @@ import { hallTexts, type HallTexts } from './hall.texts';
 import { DreamApiService } from '../dreamfund-tables/dream-session.service';
 import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 
-/** What the waiting room needs of a table's session: the classic table's and the Dreamfund table's have the same lobby calls. */
+/** What the waiting room needs of a table's session: the classic table's and the Dreamer table's have the same lobby calls. */
 export interface WaitingSession {
   busy(): boolean;
   problem(): string | null;
@@ -690,11 +690,11 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   private readonly api = inject(TablesApiService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  /** The session of the table: the classic room provides its own; a Dreamfund room passes its session in. */
+  /** The session of the table: the classic room provides its own; a Dreamer room passes its session in. */
   @Input() sessionOverride: WaitingSession | null = null;
   /** The game of the table: the same waiting room serves both. */
   @Input() game: 'classic' | 'dreamfund' = 'classic';
-  /** The characters to pick from at a Dreamfund table (the classic table's come from its game set). */
+  /** The characters to pick from at a Dreamer table (the classic table's come from its game set). */
   @Input() characters: { id: string; title: string }[] = [];
   @Input({ required: true }) table!: TableView;
   @Input({ required: true }) roomId!: string;
@@ -780,7 +780,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     return points > 0 ? `🌟 ${points} ${this.d.dreamPointsUnit}` : `🌟 ${this.d.dreamPointsAlone}`;
   }
 
-  /** The Dreamfund's own settings of the table (a Dreamfund room passes its view in the shape of the classic one). */
+  /** The Dreamer's own settings of the table (a Dreamer room passes its view in the shape of the classic one). */
   dreamSettings(): {
     difficulty: 'easy' | 'medium' | 'hard';
     shape: string;
@@ -908,7 +908,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
         isHost: player.seat === t.hostSeat,
         online: this.presentSeats.length === 0 || this.presentSeats.includes(player.seat),
         picture: seat ? this.api.pictureUrl(seat, this.roomId) : null,
-        // the stats panel is the classic board's: a Dreamfund table shows the picture and the rating only
+        // the stats panel is the classic board's: a Dreamer table shows the picture and the rating only
         stats: seat && !this.dream ? seatToPlayer(seat) : null,
         done,
         stateText:
@@ -1049,7 +1049,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
       });
       return;
     }
-    // a Dreamfund bot is a strategy of the simulation, told apart from the classic ones by its prefix
+    // a Dreamer bot is a strategy of the simulation, told apart from the classic ones by its prefix
     void this.session.lobby('bots', {
       policyId: this.dream ? `dream:${bot.id}` : bot.id,
       level: this.botLevel,

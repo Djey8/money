@@ -1,6 +1,6 @@
-# Dreamfund bots - how they play, how they are found and how they are rated
+# Dreamer bots - how they play, how they are found and how they are rated
 
-The bots of the Dreamfund (the seats a host fills, the opponents in the tournaments, the names on the leaderboard) are not scripted. Each is
+The bots of the Dreamer (the seats a host fills, the opponents in the tournaments, the names on the leaderboard) are not scripted. Each is
 a **type** (a way to play), at a **skill level**, and its numbers come from a **calibration** that can be run again at any time. This page
 is the whole system. The latest results are in `docs/dreamfund-balance/CALIBRATION.md`.
 
@@ -83,13 +83,13 @@ and a profile.
 
 ## 5. The profile and the fact table
 
-Opening a player on the Dreamfund leaderboard shows their profile: the rating, the line of how it moved (from 1500, or the bot's base, over
+Opening a player on the Dreamer leaderboard shows their profile: the rating, the line of how it moved (from 1500, or the bot's base, over
 the last games), the counters, and the **fact table**. Every finished table files, for each player, what their life came to
 (`dreamfund/table/facts.ts`), in the four places of the method:
 
 - **Grow** - cards bought, sold, held; share lots, properties, businesses, pension plans, courses; money put in.
 - **Fire** - reserve (and whether it was full), debts left or repaid, the Bank loan, emergencies paid.
-- **Smile** - the life dream lived, dreams lived and their money, dreams still open, saved, dream points.
+- **Dream** - the life dream lived, dreams lived and their money, dreams still open, saved, dream points.
 - **Income** - passive income, salary, cash flow, living costs, what the cards earned, independence, net worth.
 
 The profile adds these up over the games that have one and shows the total and the average per game (`GET /game/dreamfund/players/{id}`:

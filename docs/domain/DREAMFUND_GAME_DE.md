@@ -1,7 +1,7 @@
-# Traumtopf (Dreamfund) - das Spiel, die Karten und die Zahlen
+# Träumer (Träumer) - das Spiel, die Karten und die Zahlen
 
-Traumtopf ist das eigene Geldspiel der Money-Manager-App: Du würfelst, gehst über eine Karte, und alles, was geschieht - ein Gehalt, eine
-Rechnung, eine Aktie, die du kaufst, ein Traum, den du finanzierst - wird als echte Buchung, als Grow-Projekt oder als Smile- oder
+Träumer ist das eigene Geldspiel der Money-Manager-App: Du würfelst, gehst über eine Karte, und alles, was geschieht - ein Gehalt, eine
+Rechnung, eine Aktie, die du kaufst, ein Traum, den du finanzierst - wird als echte Buchung, als Grow-Projekt oder als Traum- oder
 Fire-Projekt in den Büchern des Spiels verbucht. Das Ziel: ein Leben aufbauen, das du dir leisten kannst - Schulden zurückzahlen, eine
 Reserve halten, deinen Traum leben und dein Geld für dich arbeiten lassen.
 
@@ -30,14 +30,14 @@ Spiele und wird von der Simulation selbst geschrieben.
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Daily**   | Rechnungen und Alltag: Miete, Essen, Versicherungen. Dein Gehalt landet hier.                                                            |
 | **Splurge** | Ausgaben nur zum Spaß.                                                                                                                   |
-| **Smile**   | Deine Träume. Jeder Traum ist ein **Smile-Projekt** mit Töpfen (Flüge, Hotel, Ausrüstung ...), die du füllst.                            |
+| **Traum**   | Deine Träume. Jeder Traum ist ein **Traumprojekt** mit Töpfen (Flüge, Hotel, Ausrüstung ...), die du füllst.                             |
 | **Fire**    | Was bezahlt werden muss: Notfälle, die Reserve, Investitionen. Jede Zahlung für einen Notfall oder einen Kauf ist eine **Fire**-Buchung. |
 | **Mojo**    | Deine Notreserve: drei Monatsausgaben. Sie ist vom ersten Tag an ein Fire-Projekt und darf nur für Notfälle genutzt werden.              |
 
 **Grow** ist der Ort der Investitionen: Jede Karte, die du nimmst, wird ein **Grow-Projekt** (eine Aktie, eine Investition oder ein
 Vermögenswert) mit Zahlen, Notizen und Aufgaben. Gekauft und verkauft wird mit den normalen Buttons Kaufen und Verkaufen von Grow.
 
-**Zahlungspläne.** Ein großes Ziel (die Reserve, ein Traumtopf) wird nicht auf einmal bezahlt: Du richtest einen Zahlungsplan ein, der
+**Zahlungspläne.** Ein großes Ziel (die Reserve, ein Träumer) wird nicht auf einmal bezahlt: Du richtest einen Zahlungsplan ein, der
 jeden Monat einen Teil des freien Geldes hineinlegt. Das Spiel zwingt dich nicht; es zeigt dir, was fällig ist.
 
 **Der Bankkredit.** Ist eine Zahlung größer als dein Bargeld, leiht dir die Bank den fehlenden Betrag automatisch. Er kostet **10 % des
@@ -48,7 +48,7 @@ Selbstbehalt; mit dem nächsten Zahltag kannst du in eine Versicherung ein- oder
 
 ## Die Karte
 
-Eine Traumtopf-Karte ist eine geschlossene Strecke aus Feldern in einer Form - **Ring, Unendlichkeit, Rechteck, Quadrat oder Berg** - und
+Eine Träumer-Karte ist eine geschlossene Strecke aus Feldern in einer Form - **Ring, Unendlichkeit, Rechteck, Quadrat oder Berg** - und
 einer Größe (**24, 36 oder 48 Felder**). Die Karte wird beim Spielstart einmal gemacht und ändert sich nie. Eine mittlere Karte mit 36
 Feldern hat:
 
@@ -348,13 +348,13 @@ Mindestzahl an Zahltagen und einen erfolgreichen Wurf. Sie erhöht dein Gehalt -
 ### 😊 Traum (48 Karten) und Traum-Momente
 
 Träume sind **Punkte** wert, in Stufen von _klein_ bis _legendär_, in Kategorien wie Reisen, Abenteuer, Fahrzeuge, Zuhause, Lernen,
-Erschaffen und Geben. Ein Traum macht ein **Smile-Projekt** mit Töpfen, die du mit Zahlungsplänen füllst. Du kannst einige gleichzeitig
+Erschaffen und Geben. Ein Traum macht ein **Traumprojekt** mit Töpfen, die du mit Zahlungsplänen füllst. Du kannst einige gleichzeitig
 offen haben. **Traum-Momente** (ein Frühbucher-Angebot, ein Geschenk der Familie, ein Last-Minute-Angebot, ein Reisepartner,
 Inspiration, Geld für ein Nebenprojekt, Punkte für Geduld, ein Traumtausch) helfen einem Traum weiter.
 
 ## Die Notizen eines Projekts
 
-Alles, was mit einem Grow-, Fire- oder Smile-Projekt geschieht, steht mit den Zahlen in seinen **Notizen**: was eine Zahlung gekostet hat,
+Alles, was mit einem Grow-, Fire- oder Traumprojekt geschieht, steht mit den Zahlen in seinen **Notizen**: was eine Zahlung gekostet hat,
 wie viel Bargeld du hattest und wie viel die Bank dir dafür geliehen hat; was ein Käufer bietet (der Preis, die Verkaufskosten, was noch
 geschuldet ist, was du bekämst) oder was ein Marktfenster je Anteil zahlt; jeder Schritt eines Hypes mit dem gewürfelten Wert und dem Wert
 des Einsatzes; ein Verkauf mit dem Ausgezahlten und dem Bargeld danach; ein Traum-Moment mit den Kosten vorher und nachher und dem, was du

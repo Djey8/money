@@ -1682,7 +1682,7 @@ export function showTransactionDetails(anyTransactions: any[], dateStr: string, 
             .style('margin-top', '6px')
             .style('color', '#1976d2')
             .html(
-              `<strong>Smile Project:</strong> ${smileProject.title}<br/>` +
+              `<strong>Dream Project:</strong> ${smileProject.title}<br/>` +
                 `Target: ${totalTarget.toFixed(2)} ${AppStateService.instance.currency}<br/>` +
                 `Current: ${totalAmount.toFixed(2)} ${AppStateService.instance.currency}`,
             );

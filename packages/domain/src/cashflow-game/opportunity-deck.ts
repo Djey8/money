@@ -2,7 +2,7 @@ import type { Localized } from './emergency-deck';
 import type { DiceBand, LifeRequirement } from './life-deck';
 
 /**
- * The Dreamfund Opportunity stack (JFK, 2026-10-26, temp_cards/dreamfund-opportunity-deck.md v1.0): the cards a player finds on an
+ * The Dreamer Opportunity stack (JFK, 2026-10-26, temp_cards/dreamfund-opportunity-deck.md v1.0): the cards a player finds on an
  * Opportunity tile. Every card becomes a Grow project; what it does to the books follows from its numbers. The cards are data, the rules
  * are in `opportunity.ts`. Amounts are in minor units (1 Traumtaler = 100).
  */

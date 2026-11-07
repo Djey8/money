@@ -62,9 +62,9 @@ export const TEACH_PROMPT: PromptDefinition = {
 
 export const DREAMFUND_PROMPT: PromptDefinition = {
   name: 'dreamfund_coach',
-  title: 'Coach me in my Dreamfund game',
+  title: 'Coach me in my Dreamer game',
   description:
-    'Look at my Dreamfund table (or my solo game), tell me where I stand, and help: watch it, guide me move by move, or play my ' +
+    'Look at my Dreamer table (or my solo game), tell me where I stand, and help: watch it, guide me move by move, or play my ' +
     'seat for a while with the best strategy. Afterwards I can keep asking.',
   arguments: [
     {
@@ -242,7 +242,7 @@ export function buildTeachPrompt(args: Record<string, string | undefined> = {}):
   };
 }
 
-/** The prompt of the Dreamfund coach for the arguments a person gave (all optional). */
+/** The prompt of the Dreamer coach for the arguments a person gave (all optional). */
 export function buildDreamfundPrompt(args: Record<string, string | undefined> = {}): PromptResult {
   const wish = (args['job'] ?? '').trim().toLowerCase();
   const job = /^watch|^review|^how are we|^beobacht/.test(wish)
@@ -263,7 +263,7 @@ export function buildDreamfundPrompt(args: Record<string, string | undefined> = 
     custom: `Do what I asked: "${args['job'] ?? ''}". Use table_advice to know where I stand and dream_cards for the cards; play only if I asked you to (table_autoplay for a strategy, table_move for a move you choose).`,
   }[job];
   const text = [
-    'Help me with my Dreamfund game. Start at once: do not repeat these instructions, do not announce a plan.',
+    'Help me with my Dreamer game. Start at once: do not repeat these instructions, do not announce a plan.',
     '',
     `- **Which game**: ${
       table
@@ -280,7 +280,7 @@ export function buildDreamfundPrompt(args: Record<string, string | undefined> = 
     'Always keep my goals in mind: the reserve, the debts, the dream, the passive income against the cost of living, and the dream points the table asks for. Say what you see in plain words and in my language, short; end with at most three things I could ask next.',
   ].join('\n');
   return {
-    description: `Dreamfund coach - ${job === 'custom' ? 'my wish' : job}.`,
+    description: `Dreamer coach - ${job === 'custom' ? 'my wish' : job}.`,
     messages: [{ role: 'user', content: { type: 'text', text } }],
   };
 }

@@ -1,7 +1,7 @@
 import { CAPABILITIES, unlistedCommands } from './capabilities';
 import { DREAM_POLICIES, KNOB_RANGES } from './policies';
 
-describe('the capabilities of a Dreamfund player', () => {
+describe('the capabilities of a Dreamer player', () => {
   it('lists every command of the table', () => {
     expect(unlistedCommands()).toEqual([]);
   });

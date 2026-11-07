@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The printed cards of the Dreamfund game for readers who are not looking at the screen (JFK, 2026-11-06): an agent that advises or
+ * The printed cards of the Dreamer game for readers who are not looking at the screen (JFK, 2026-11-06): an agent that advises or
  * plays has to know which cards exist and what each does. Language-neutral numbers (minor units: 100 = 1 Dream Taler) with the English
  * and German titles, and for the Harvest cards a plain sentence for every operation. What only the engine may know - which Opportunity
  * cards are scams, what a scam card reveals - is never part of it: a card looks here as it looks to a player.
@@ -193,7 +193,7 @@ const haystack = (card) =>
   ]).toLowerCase();
 
 /**
- * Browses the cards of one Dreamfund pile: `deck`, optional `pile` (opportunity: seed, sapling, tree), `query` (every word must match
+ * Browses the cards of one Dreamer pile: `deck`, optional `pile` (opportunity: seed, sapling, tree), `query` (every word must match
  * the id, title, category or ticker), `id` for one card, `limit` (default 25, at most 200).
  */
 function browseDreamfundCards({ deck, pile, query, id, limit } = {}) {

@@ -17,11 +17,11 @@ describe('DreamTableGameDriver', () => {
     return { driver: new DreamTableGameDriver(session, () => refusal), played };
   };
 
-  it('says it plays the Dreamfund, so the solo screen opens the stack tiles', () => {
+  it('says it plays the Dreamer, so the solo screen opens the stack tiles', () => {
     expect(make().driver.dreamfund).toBe(true);
   });
 
-  it("rolls with the Dreamfund's own command, and hands back what happened", async () => {
+  it("rolls with the Dreamer's own command, and hands back what happened", async () => {
     const { driver, played } = make();
     const outcome = await driver.roll();
     expect(played).toEqual([{ type: 'roll' }]);

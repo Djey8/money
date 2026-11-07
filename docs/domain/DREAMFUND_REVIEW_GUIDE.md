@@ -1,18 +1,18 @@
-# Dreamfund (Traumtopf) - reviewing a game, and what an agent can do
+# Dreamer (Träumer) - reviewing a game, and what an agent can do
 
 For agents (MCP). Read `dreamfund_game_en` (or `dreamfund_game_de`) first: it explains the whole game - the accounts, the map, every card
 type, the goals, and the statistics of the simulation that the review is compared with.
 
 ## What an agent can do today
 
-| Task                                                                            | How                                                                                                                                                                 |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Teach or explain the game                                                       | `explain_concept` topic `dreamfund_game_en` / `dreamfund_game_de`, then answer from it.                                                                             |
-| Judge a game that was played                                                    | `get_cashflow_game` action `review` (the running game) or `review_save` (a saved game, `id`). The game must have its step history: save it in full (not `compact`). |
-| Read the state of the account                                                   | `get_cashflow_game` action `game` (the books: cash, subscriptions, Grow projects with their notes).                                                                 |
-| Play Dreamfund moves (plan a card, buy, sell, roll a die, dreams, life, career) | **Not available through the API yet.** The classic Cashflow moves are; the Dreamfund tiles are played in the app.                                                   |
+| Task                                                                          | How                                                                                                                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Teach or explain the game                                                     | `explain_concept` topic `dreamfund_game_en` / `dreamfund_game_de`, then answer from it.                                                                             |
+| Judge a game that was played                                                  | `get_cashflow_game` action `review` (the running game) or `review_save` (a saved game, `id`). The game must have its step history: save it in full (not `compact`). |
+| Read the state of the account                                                 | `get_cashflow_game` action `game` (the books: cash, subscriptions, Grow projects with their notes).                                                                 |
+| Play Träumer moves (plan a card, buy, sell, roll a die, dreams, life, career) | **Not available through the API yet.** The classic Cashflow moves are; the Träumer tiles are played in the app.                                                     |
 
-## The review of a Dreamfund game
+## The review of a Dreamer game
 
 `review` returns `kind: "dreamfund"` with a `review` object and a `text` in Markdown. It does not play positions on with a strategy (the
 classic analyst does that); it reads the story of the game from the history - the position before every step and the position now:

@@ -30,7 +30,7 @@ This is the first time `PaymentPlannerService`'s logic has been ported anywhere 
 
 ## Worked example
 
-A Smile project has one bucket, "Flights", target 3000.00 (`targetMinor` 300000), currently empty. `POST /smile/{id}/payment-plan` with `{planTitle: "Flight Fund", startDate: "2026-01-01", targetDate: "2026-04-01", frequency: "monthly", account: "Daily"}`:
+A Dream project has one bucket, "Flights", target 3000.00 (`targetMinor` 300000), currently empty. `POST /smile/{id}/payment-plan` with `{planTitle: "Flight Fund", startDate: "2026-01-01", targetDate: "2026-04-01", frequency: "monthly", account: "Daily"}`:
 
 - `missingMinor` = 300000 (the one bucket, unfunded).
 - `periods` = 3 (Apr − Jan, monthly).

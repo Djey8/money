@@ -212,7 +212,7 @@ export class LandingPageComponent implements AfterViewInit, OnDestroy {
         this.smileTab[bucket] = 'overview';
       }
     } else {
-      // For smile project cards, only allow one open at a time
+      // For dream project cards, only allow one open at a time
       if (bucket.startsWith('sp-')) {
         for (const key of Array.from(this.flippedBuckets)) {
           if (key.startsWith('sp-')) {

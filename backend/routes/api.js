@@ -512,7 +512,7 @@ function findDuplicateBucketTitle(titles) {
 }
 
 function validateCreateSmileProjectInput(input) {
-  if (!input || typeof input !== 'object') return 'A Smile project object is required.';
+  if (!input || typeof input !== 'object') return 'A Dream project object is required.';
   if (!isNonEmptyString(input.title)) return 'title must be a non-empty string.';
   const hasTarget = input.targetMinor !== undefined;
   const hasBuckets = Array.isArray(input.buckets) && input.buckets.length > 0;
@@ -594,7 +594,7 @@ const EDITABLE_SMILE_FIELDS = [
 
 function validatePatchSmileProjectInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    return 'A Smile project object is required.';
+    return 'A Dream project object is required.';
   }
   const unknownField = Object.keys(input).find((key) => !EDITABLE_SMILE_FIELDS.includes(key));
   if (unknownField) return `${unknownField} is not an editable field.`;
@@ -2381,7 +2381,7 @@ router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
       res,
       400,
       'validation_invalid',
-      'Invalid Smile project request',
+      'Invalid Dream project request',
       validationError,
     );
   }
@@ -2406,7 +2406,7 @@ router.post('/smile', requireScope('smile:w'), async (req, res, next) => {
         res,
         400,
         'validation_invalid',
-        'Invalid Smile project request',
+        'Invalid Dream project request',
         error.message,
       );
     }
@@ -2426,8 +2426,8 @@ router.get('/smile/:projectId', requireScope('smile:r'), async (req, res, next) 
         res,
         404,
         'not_found',
-        'Smile project not found',
-        'No matching Smile project exists.',
+        'Dream project not found',
+        'No matching Dream project exists.',
       );
     }
     return res.json(project);
@@ -2443,7 +2443,7 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
       res,
       400,
       'validation_invalid',
-      'Invalid Smile project request',
+      'Invalid Dream project request',
       validationError,
     );
   }
@@ -2459,8 +2459,8 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
         res,
         404,
         'not_found',
-        'Smile project not found',
-        'No matching Smile project exists.',
+        'Dream project not found',
+        'No matching Dream project exists.',
       );
     }
     await recordAuditEntry(getAuditDb(), {
@@ -2478,7 +2478,7 @@ router.patch('/smile/:projectId', requireScope('smile:w'), async (req, res, next
         res,
         400,
         'validation_invalid',
-        'Invalid Smile project request',
+        'Invalid Dream project request',
         error.message,
       );
     }
@@ -2499,8 +2499,8 @@ router.delete('/smile/:projectId', requireScope('smile:w'), async (req, res, nex
         res,
         404,
         'not_found',
-        'Smile project not found',
-        'No matching Smile project exists.',
+        'Dream project not found',
+        'No matching Dream project exists.',
       );
     }
     await recordAuditEntry(getAuditDb(), {
@@ -2537,8 +2537,8 @@ router.post('/smile/:projectId/payment-plan', requireScope('smile:w'), async (re
         res,
         404,
         'not_found',
-        'Smile project not found',
-        'No matching Smile project exists.',
+        'Dream project not found',
+        'No matching Dream project exists.',
       );
     }
     await recordAuditEntry(getAuditDb(), {

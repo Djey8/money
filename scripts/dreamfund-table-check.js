@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Does a bot at a table play like the bot of the simulation? (todo/dreamfund-multiplayer.md, slice 3.) A person who only rolls and a
- * bot with a strategy sit at a Dreamfund table; the game is played until the bot has won or the rounds are used up. The share of wins
+ * bot with a strategy sit at a Dreamer table; the game is played until the bot has won or the rounds are used up. The share of wins
  * is compared with the simulation's (`docs/dreamfund-balance/matrix.json`, the same character, strategy and difficulty).
  *
  *   node scripts/dreamfund-table-check.js --policy expert --character dual-student-informatik --difficulty medium --tables 30

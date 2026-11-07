@@ -1,4 +1,4 @@
-/* Example cards, example projects and the career ladder of the Dreamfund manual: drawings only. */
+/* Example cards, example projects and the career ladder of the Dreamer manual: drawings only. */
 .dreamfund-manual .df-faces {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));

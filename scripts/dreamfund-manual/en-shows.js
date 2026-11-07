@@ -1,5 +1,5 @@
 /**
- * The drawings and the longer explanations of the English Dreamfund manual (JFK, 2026-11-06): example cards of the three piles, two example
+ * The drawings and the longer explanations of the English Dreamer manual (JFK, 2026-11-06): example cards of the three piles, two example
  * projects to open (an Emergency in Fire, a Dream in Smile - nothing in them works), and the first four career stages of Jonas. The numbers
  * are the printed ones (Normal level, price level 1.0 - Jonas): the cards S01, S10, P19 and T05, the emergency E108, the dream D64 and
  * Jonas's career C1-C4.
@@ -152,13 +152,13 @@ const emergency = [
 const dreams = [
   h3('What a dream is'),
   p(
-    'Your character has one **life dream** from the start (Jonas: a certified mountain guide). It is the first Smile project and the dream goal of the game. Besides it, the Dream tiles offer **dream cards**: small and big wishes you can add to your Smile page - **48 cards** in tiers from **little** to **legendary**, in categories like travel, adventure, vehicles, home, learning, creating and giving. Every dream card is worth **points**; the bigger the dream, the more points and the higher the price.',
+    'Your character has one **life dream** from the start (Jonas: a certified mountain guide). It is the first Dream project and the dream goal of the game. Besides it, the Dream tiles offer **dream cards**: small and big wishes you can add to your Dream page - **48 cards** in tiers from **little** to **legendary**, in categories like travel, adventure, vehicles, home, learning, creating and giving. Every dream card is worth **points**; the bigger the dream, the more points and the higher the price.',
   ),
   h3('How a dream is paid'),
   steps([
     {
       title: 'You take it',
-      text: 'On a Dream tile you are offered cards. You can take one (it becomes a Smile project), pass, or - where the table allows it - decline all. On Normal you are offered 2 cards, and up to 3 dreams can be open at once.',
+      text: 'On a Dream tile you are offered cards. You can take one (it becomes a Dream project), pass, or - where the table allows it - decline all. On Normal you are offered 2 cards, and up to 3 dreams can be open at once.',
     },
     {
       title: 'It is made of buckets',
@@ -179,11 +179,11 @@ const dreams = [
   ),
   h3('A dream in the books'),
   p(
-    'Two real dreams in the grid of the **Smile** page: a small one with a plan of 50 a month, and the life dream of Jonas. **Click a card** to open the real info panel (read only).',
+    'Two real dreams in the grid of the **Dream** page: a small one with a plan of 50 a month, and the life dream of Jonas. **Click a card** to open the real info panel (read only).',
   ),
   examples(
     'smile',
-    'Example projects in the Smile page. Click one to open the real info panel - for looking only, nothing is saved.',
+    'Example projects in the Dream page. Click one to open the real info panel - for looking only, nothing is saved.',
   ),
   note(
     'Dreams and the order of a game',

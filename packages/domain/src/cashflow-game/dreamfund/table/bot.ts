@@ -14,7 +14,7 @@ import {
 import type { DreamCommand, DreamEvent, DreamSeat, DreamTable } from './types';
 
 /**
- * The bots of a Dreamfund table (todo/dreamfund-multiplayer.md, slice 3): a seat played by one of the strategies of the simulation.
+ * The bots of a Dreamer table (todo/dreamfund-multiplayer.md, slice 3): a seat played by one of the strategies of the simulation.
  * It plays with the very commands a person sends - the same legal moves, the same rules - and decides with the very judgement of the
  * simulation's player (`DreamBot`): the plans and lump sums of a Payday, the answer to a card, which Opportunity to take, when to
  * sell into a Harvest card. Nothing here reads a secret: a bot sees what its own life shows, like a player. Pure: the same table

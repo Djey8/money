@@ -64,7 +64,7 @@ export class CharacterPreviewComponent {
     ];
   }
   @Input() gameSetId = 'jfk-stories';
-  /** The difficulty of the table (a Dreamfund character has its own numbers on Easy and Hard). */
+  /** The difficulty of the table (a Dreamer character has its own numbers on Easy and Hard). */
   @Input() difficulty: 'easy' | 'medium' | 'hard' | undefined;
   @Input() lang = 'en';
   @Input() currency = 'DT';

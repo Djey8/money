@@ -41,7 +41,7 @@ function shown(): ShownBooks {
   );
 }
 
-describe('what a player may change by hand at a Dreamfund table', () => {
+describe('what a player may change by hand at a Dreamer table', () => {
   it('keeps the category, the time and the account of a booking and nothing else', () => {
     const edited = [
       tx({ category: '@Groceries', account: 'Splurge', time: '09:30' }),

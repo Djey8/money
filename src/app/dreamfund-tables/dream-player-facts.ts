@@ -1,5 +1,5 @@
 /**
- * The fact table of a Dreamfund player as the profile shows it (JFK, 2026-11-06): the sums the backend keeps over the games, in the
+ * The fact table of a Dreamer player as the profile shows it (JFK, 2026-11-06): the sums the backend keeps over the games, in the
  * four places of the method, each as a total and per game. Pure: the words come in as `text`.
  */
 

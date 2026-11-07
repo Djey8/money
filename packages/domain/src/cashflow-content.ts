@@ -983,7 +983,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
             dream: {
               title: 'Certified mountain guide',
               summary:
-                'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 DT. In this game it is his first Smile project.',
+                'Become a state-certified mountain and ski guide (VDBS, Germany): a training of about three years with rock, ice, ski and avalanche courses, an entrance exam, equipment and a lot of tours. The course fees alone are around 17,000 DT. In this game it is his first Dream project.',
               project: mountainGuideProject('en'),
             },
             reserve: {
@@ -1019,7 +1019,7 @@ const JFK_STORIES_GAME_SET: CashflowGameSet = {
             dream: {
               title: 'Staatlich geprüfter Berg- und Skiführer',
               summary:
-                'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 TT. Im Spiel ist es sein erstes Smile-Projekt.',
+                'Staatlich geprüfter Berg- und Skiführer werden (VDBS, Deutschland): eine Ausbildung von rund drei Jahren mit Fels-, Eis-, Ski- und Lawinenkursen, Eignungsprüfung, Ausrüstung und vielen Touren. Allein die Kursgebühren liegen bei etwa 17.000 TT. Im Spiel ist es sein erstes Traumprojekt.',
               project: mountainGuideProject('de'),
             },
             reserve: {

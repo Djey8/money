@@ -2,7 +2,7 @@ import type { Localized } from './emergency-deck';
 import type { DiceBand } from './life-deck';
 
 /**
- * The Dreamfund Harvest stack (JFK, 2026-10-26, temp_cards/dreamfund-harvest-deck.md v0.2): the market. A card moves the indices of
+ * The Dreamer Harvest stack (JFK, 2026-10-26, temp_cards/dreamfund-harvest-deck.md v0.2): the market. A card moves the indices of
  * the markets, opens a window to sell, brings a buyer, shakes up businesses, offers a gamble or reveals a trap. The cards are data made
  * of small operations; `harvest.ts` runs them. Amounts are minor units (1 Traumtaler = 100); an index of 1.00 is where a market begins.
  */

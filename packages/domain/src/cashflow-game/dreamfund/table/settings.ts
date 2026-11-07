@@ -10,7 +10,7 @@ import {
 } from './types';
 
 /**
- * The settings of a Dreamfund table: the classic table's (seats, clock, end condition, visibility...) with the Dreamfund's own -
+ * The settings of a Dreamer table: the classic table's (seats, clock, end condition, visibility...) with the Dreamer's own -
  * the difficulty, the map and the Custom JFK rules, the same ones the solo game is set up with. Validated once, frozen when play starts.
  */
 

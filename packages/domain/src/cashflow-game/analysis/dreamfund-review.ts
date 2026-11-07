@@ -12,9 +12,9 @@ import {
 import type { ReviewEntry } from './review';
 
 /**
- * The analyst for a Dreamfund game (JFK, 2026-10-26: "I want to save a game and then ask my chat to judge and analyze my last game and
+ * The analyst for a Dreamer game (JFK, 2026-10-26: "I want to save a game and then ask my chat to judge and analyze my last game and
  * get feedback what I should have done differently"). The classic analyst plays a position on many times with a strategy and compares
- * the chances; a Dreamfund game has dice cards, markets and a long list of goals, so this one reads the story of the game instead:
+ * the chances; a Dreamer game has dice cards, markets and a long list of goals, so this one reads the story of the game instead:
  * the position before every step (the undo history) and the position now give the timeline, the milestones, what was bought and what
  * it paid, the loans, the emergencies and the chances that were missed - and they are set beside what the simulation of thousands of
  * games found (docs/DREAMFUND_GAME.md). Pure: snapshots in, a report out.
@@ -554,7 +554,7 @@ export function describeDreamfundReview(review: DreamfundReview): string {
   const bench = review.benchmark?.months ?? DREAMFUND_BENCHMARK;
   const info = review.benchmark;
   lines.push(
-    `# Dreamfund game review`,
+    `# Dreamer game review`,
     '',
     `Played: ${review.months} months (${review.rolls} rolls, ${review.steps} steps). Outcome: **${review.outcome}**.`,
     '',

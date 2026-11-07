@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Writes the script of the guided Dreamfund demo game (packages/domain/src/cashflow-game/dreamfund/table/demo-rigs.generated.ts).
+ * Writes the script of the guided Dreamer demo game (packages/domain/src/cashflow-game/dreamfund/table/demo-rigs.generated.ts).
  *
  * The demo is a real table: the person plays Jonas against the bot Coach on a fixed map. What makes it a lesson is that the dice and the
  * cards are always the same. A table's randomness is one number (`rngState`); for every move of the story that must come out one way

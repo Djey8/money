@@ -32,7 +32,7 @@ describe('TableRoomSwitchComponent', () => {
     return fixture.componentInstance;
   };
 
-  it('opens the Dreamfund room for a Dreamfund table and remembers the game', () => {
+  it('opens the Dreamer room for a Dreamer table and remembers the game', () => {
     expect(setup('dreamfund').game).toBe('dreamfund');
     expect(localStorage.getItem('mm.tables.game')).toBe('dreamfund');
   });

@@ -24,6 +24,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let AppComponent: any;
@@ -55,6 +56,7 @@ setTimeout(() =>
   selector: 'app-info-location',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,

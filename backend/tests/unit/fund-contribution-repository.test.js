@@ -55,7 +55,7 @@ const vacation = () =>
   ]);
 
 describe('contributeToProject (Smile)', () => {
-  it('splits evenly across buckets by default, as a negative transaction from the Smile account', async () => {
+  it('splits evenly across buckets by default, as a negative transaction from the Dream account', async () => {
     const { deps } = writableDeps({ smile: [vacation()] });
     const result = await contributeToProject(deps, 'user_1', 'smile', 'smile_1', {
       amountMinor: 20000,

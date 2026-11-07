@@ -1747,7 +1747,7 @@ describe('v1 API authentication and PAT management', () => {
       await usersDb.insert(doc);
     }
 
-    it('lists Smile projects with computed bucket totals', async () => {
+    it('lists Dream projects with computed bucket totals', async () => {
       const { token } = await smileToken(['smile:r']);
       await addSmileProjects(firstUser.userId, [
         {
@@ -1893,7 +1893,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(getResponse.body.code).toBe('scope_insufficient');
     });
 
-    it('keeps Smile projects isolated to the authenticated user document', async () => {
+    it('keeps Dream projects isolated to the authenticated user document', async () => {
       const { token } = await smileToken(['smile:r']);
       await addSmileProjects(secondUser.userId, [
         {
@@ -2139,7 +2139,7 @@ describe('v1 API authentication and PAT management', () => {
 
     it('replaces buckets wholesale, preserving an echoed-back id and minting one for a new bucket', async () => {
       const { token } = await smileToken(['smile:r', 'smile:w']);
-      const created = await createProject(token, { title: `Smile Bucket Patch ${Date.now()}` });
+      const created = await createProject(token, { title: `Dream Bucket Patch ${Date.now()}` });
       const existingBucketId = created.buckets[0].id;
       const response = await request(app)
         .patch(`/api/v1/smile/${created.id}`)
@@ -2317,7 +2317,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(deleteResponse.body.code).toBe('scope_insufficient');
     });
 
-    it("does not let one user read, patch, or delete another user's Smile project", async () => {
+    it("does not let one user read, patch, or delete another user's Dream project", async () => {
       const { token: ownerToken } = await smileToken(['smile:w']);
       const created = await createProject(ownerToken);
 
@@ -5572,7 +5572,7 @@ describe('v1 API authentication and PAT management', () => {
       expect(matching[0].amountMinor).toBe(-2000);
     });
 
-    it("stops generating once a Smile project reaches its target, even when it is not the first project (proves the fix for the original app's index-0-only cap bug)", async () => {
+    it("stops generating once a Dream project reaches its target, even when it is not the first project (proves the fix for the original app's index-0-only cap bug)", async () => {
       const { token } = await refreshToken([
         'subscriptions:r',
         'subscriptions:w',

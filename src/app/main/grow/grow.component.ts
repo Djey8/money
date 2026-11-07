@@ -330,7 +330,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Handles the click event on a row in the Smile Projects table.
+   * Handles the click event on a row in the Dream Projects table.
    * @param index - The index of the clicked row.
    */
   clickRow(index: number) {
@@ -410,7 +410,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Adds a new Smile Project.
+   * Adds a new Dream Project.
    */
   addGrowProject() {
     AddGrowComponent.zIndex = 1;
@@ -479,8 +479,8 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Adds an amount to a Smile Project.
-   * @param index - The index of the Smile Project.
+   * Adds an amount to a Dream Project.
+   * @param index - The index of the Dream Project.
    */
   paybackProject(index: number) {
     // find liabilitie index

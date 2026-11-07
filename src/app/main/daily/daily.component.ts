@@ -18,6 +18,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { RouterModule } from '@angular/router';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let AppComponent: any;
@@ -39,6 +40,7 @@ setTimeout(() =>
   selector: 'app-daily',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     CommonModule,
     FormsModule,
     TranslateModule,

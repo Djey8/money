@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Writes the two tables of the Dreamfund manual that come from the cards and the characters (JFK, 2026-11-02): where every character
+ * Writes the two tables of the Dreamer manual that come from the cards and the characters (JFK, 2026-11-02): where every character
  * starts (partner, children, home, car, study, what the insurances cost) and which card needs which attribute of the life. They sit
  * between the markers <!-- attributes:start --> and <!-- attributes:end --> of docs/DREAMFUND_GAME.md and docs/DREAMFUND_GAME.de.md; the
  * text around them is written by hand. Run it again after a card or a character changes (build the domain package first):

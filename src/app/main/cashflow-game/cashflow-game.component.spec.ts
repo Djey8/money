@@ -78,7 +78,7 @@ function makeComponent(overrides: Partial<Record<string, jest.Mock>> = {}) {
     removeData: (key: string) => void stored.delete(key),
   };
 
-  // the account's books have been read (a game saves its Smile project on top of them)
+  // the account's books have been read (a game saves its Dream project on top of them)
   AppStateService.instance.tier2Loaded = true;
   const component = new CashflowGameComponent(
     router as any,

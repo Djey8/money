@@ -70,7 +70,7 @@ export interface CashflowExpenseLine {
   insurance?: InsuranceKind;
 }
 
-/** The Smile project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
+/** The Dream project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
 export interface CashflowDreamProject {
   /** The project's name: also the category its payments carry. */
   title: string;
@@ -110,7 +110,7 @@ export interface CashflowProfileTexts {
   /** What it takes to win: a lead-in line, then the conditions as a checklist (all of them have to come true). */
   goal: string;
   goalItems: { id: CashflowGoalId; text: string }[];
-  /** The dream the character starts with (their first Smile project). */
+  /** The dream the character starts with (their first Dream project). */
   dream: { title: string; summary: string; project?: CashflowDreamProject };
   /** The emergency reserve every character has to build (three monthly expenses): a Fire project from the first day. */
   reserve?: { summary: string; project: CashflowDreamProject };
@@ -262,18 +262,18 @@ export interface CashflowMarketOffer {
   pricePerShareMinor?: number;
   /** The player's roll count when the card was played: with `sellOfferRolls` it decides how long the offer stays open. */
   offeredAtRoll?: number;
-  /** A Harvest card of the Dreamfund game: the offer stays open for this many of the player's own turns (counted from `offeredAtRoll`), across Paydays. */
+  /** A Harvest card of the Dreamer game: the offer stays open for this many of the player's own turns (counted from `offeredAtRoll`), across Paydays. */
   validRolls?: number;
 }
 
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
 
 export interface CashflowDecks {
-  /** The Dream stack of a Dreamfund game: generic dreams to take as Smile projects. */
+  /** The Dream stack of a Dreamer game: generic dreams to take as Dream projects. */
   dream?: DreamCard[];
-  /** The Life stack of a Dreamfund game (the heart tile). */
+  /** The Life stack of a Dreamer game (the heart tile). */
   life?: LifeCard[];
-  /** The Emergency stack of a Dreamfund game (the Fire tile). */
+  /** The Emergency stack of a Dreamer game (the Fire tile). */
   emergency?: EmergencyCard[];
   /** The Opportunity stack (Seed, Sapling, Tree): ways to raise the monthly cash flow, each becoming a Grow project. */
   opportunity?: OpportunityCard[];
@@ -357,7 +357,7 @@ type DreamfundTileKind = 'dream' | 'emergency' | 'opportunity' | 'harvest' | 'li
 
 export interface CashflowPendingDecision {
   /**
-   * `story`: a tile of a Dreamfund map (dream, emergency, opportunity, harvest, life, career) - its card is read and ticked off;
+   * `story`: a tile of a Dreamer map (dream, emergency, opportunity, harvest, life, career) - its card is read and ticked off;
    * what the tiles do comes with their cards (`tile` says which).
    */
   kind: 'deal' | 'market' | 'doodad' | 'story';
@@ -385,7 +385,7 @@ export interface CashflowPendingDecision {
   dream?: {
     offers?: string[];
     moment?: string;
-    /** The Smile project of the dream that was taken. */
+    /** The Dream project of the dream that was taken. */
     taken?: string;
     declined?: boolean;
     /** A moment that has been applied: what it did, in words for the log. */
@@ -504,12 +504,12 @@ export interface CashflowGameState {
   /** Which real Subscription titles belong to this game — Payday only ever acts on these. */
   gameSubscriptionTitles: string[];
   /**
-   * Payment plans that fund a Smile project or a Fire emergency (JFK, 2026-10-25): Payday posts them like the game's own
+   * Payment plans that fund a Dream project or a Fire emergency (JFK, 2026-10-25): Payday posts them like the game's own
    * subscriptions - one payment per Payday, from the plan's start to its end in game dates - but they are savings, not expenses, so
    * they are never part of the monthly picture (`summarizeGameFinances` reads `gameSubscriptionTitles` only).
    */
   fundingSubscriptionTitles?: string[];
-  /** The map of a Dreamfund game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
+  /** The map of a Dreamer game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
   boardSetup?: BoardSetup;
   /** The Emergency stack: what was drawn since the last reshuffle, and what is out of the game for good. */
   emergencyDeck?: EmergencyDeckState;

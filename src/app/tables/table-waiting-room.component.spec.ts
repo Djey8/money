@@ -54,7 +54,7 @@ const lobby = (over: Record<string, unknown> = {}) =>
     ...over,
   }) as unknown as TableView;
 
-describe('TableWaitingRoomComponent at a Dreamfund table', () => {
+describe('TableWaitingRoomComponent at a Dreamer table', () => {
   let fixture: ComponentFixture<TableWaitingRoomComponent>;
   let element: HTMLElement;
   let http: HttpTestingController;
@@ -111,7 +111,7 @@ describe('TableWaitingRoomComponent at a Dreamfund table', () => {
     expect(element.textContent).toContain('Ann');
   });
 
-  it('seats a Dreamfund strategy with its own prefix, at the skill level chosen', () => {
+  it('seats a Dreamer strategy with its own prefix, at the skill level chosen', () => {
     const open = Array.from(element.querySelectorAll<HTMLElement>('button')).find((b) =>
       b.textContent!.includes('Add a bot'),
     )!;

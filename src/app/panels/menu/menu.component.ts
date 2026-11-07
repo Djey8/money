@@ -330,7 +330,7 @@ export class MenuComponent {
   }
 
   /**
-   * Handles the click event on the add smile project button.
+   * Handles the click event on the add dream project button.
    */
   clickedAddSmileProject() {
     AppComponent.gotoTop();

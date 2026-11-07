@@ -2,7 +2,7 @@ import { pickOne, rollDie, systemRng, type Rng } from './rng';
 import type { EmergencyDeckState, EmergencyLang, Localized } from './emergency-deck';
 
 /**
- * The Dreamfund Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): what a life card is, who it can happen to, and
+ * The Dreamer Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): what a life card is, who it can happen to, and
  * what it does to the books. A card never touches the account itself: resolving it gives an outcome (one payment, monthly lines, a new
  * life state, a reward, things that happen at later Paydays) which `applyLifeOutcome` turns into the game's effects.
  */

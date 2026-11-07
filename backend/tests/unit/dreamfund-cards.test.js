@@ -2,7 +2,7 @@
 
 const { browseDreamfundCards, DREAMFUND_DECKS } = require('../../services/dreamfund-cards');
 
-describe('the printed cards of the Dreamfund game for an agent (JFK, 2026-11-06)', () => {
+describe('the printed cards of the Dreamer game for an agent (JFK, 2026-11-06)', () => {
   it('lists every pile', () => {
     expect(DREAMFUND_DECKS).toEqual(['opportunity', 'harvest', 'life', 'emergency', 'dream']);
     for (const deck of DREAMFUND_DECKS) {

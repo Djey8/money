@@ -105,6 +105,7 @@ import { BoardThumbComponent } from './board-thumb.component';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { RatRaceBoardComponent, SPACE_GLYPHS, type BoardToken } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 // Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
 let AppComponent: any;
@@ -171,6 +172,7 @@ const DICE_DECISION_REST_MS = 900;
   selector: 'app-cashflow-game',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     CardPreviewComponent,
     InsuranceDecisionComponent,
     TrapFocusDirective,
@@ -493,7 +495,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.historyTileBack = 'history';
     const decks = this.currentGameSet?.decks;
     if (!decks) return;
-    // a card of the Dreamfund stacks is read as text: its title and its story
+    // a card of the Dreamer stacks is read as text: its title and its story
     const own = this.tileCardOfHistory(cardId);
     if (own) {
       this.historyTileCard = own;
@@ -989,7 +991,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   private winSeenId: string | null = null;
 
-  /** Every goal of the character's list is met in a game with a list (a Dreamfund game). */
+  /** Every goal of the character's list is met in a game with a list (a Dreamer game). */
   get allGoalsDone(): boolean {
     if (!this.hasActiveGame || !this.cashflowGameService.customRules) return false;
     return this.memoized('goalsDone', `${this.appState.allSmileProjects.length}`, () => {
@@ -1119,7 +1121,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /**
-   * The dream of the character, as the app's own Smile project: before the game it is only looked at (every tab, nothing to change),
+   * The dream of the character, as the app's own Dream project: before the game it is only looked at (every tab, nothing to change),
    * in the running game it opens in the Smile page, where it is the real project that is funded.
    */
   /** The Smile info panel, drawn here while a dream is only looked at (before the game). */
@@ -1218,7 +1220,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.boardSeed = Math.floor(Math.random() * 1_000_000_000);
   }
 
-  // ── the tiles of a Dreamfund map ──
+  // ── the tiles of a Dreamer map ──
 
   /** The tile the turn waits on, with the card drawn from its stack (a filler card for now). */
   get pendingStory(): { tile: DreamfundTile; cardId: string } | null {
@@ -1411,7 +1413,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The tile is left without a card (a dream refused, or a free game's choice). */
   passStackTile(): void {
-    // at a Dreamfund table a dream or an Opportunity card that is still open is left with the table's own move first
+    // at a Dreamer table a dream or an Opportunity card that is still open is left with the table's own move first
     const remote = this.remote;
     const pending = this.appState.cashflowGame.turn?.pending;
     const open =
@@ -1732,7 +1734,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.cashflowGameService.endLifeLine(id, this.tileCallbacks);
   }
 
-  /** The Smile project of a dream, open in the Smile page: fund it, plan its payments. */
+  /** The Dream project of a dream, open in the Smile page: fund it, plan its payments. */
   async openDreamProject(projectTitle: string): Promise<void> {
     const { InfoSmileComponent } =
       await import('src/app/panels/info/info-smile/info-smile.component');
@@ -2066,7 +2068,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   startGame(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
-    // the account's Smile projects must have been read before the dream is added to them (saving earlier would replace them)
+    // the account's Dream projects must have been read before the dream is added to them (saving earlier would replace them)
     if (!this.appState.tier2Loaded) {
       this.isBusy = true;
       void this.appData.loadTier2().finally(() => {
@@ -2331,7 +2333,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.cashflowGameService.board;
   }
 
-  /** Where the tiles of a Dreamfund map stand; null on the classic ring. */
+  /** Where the tiles of a Dreamer map stand; null on the classic ring. */
   get boardMap() {
     return this.cashflowGameService.boardMap;
   }
@@ -2509,7 +2511,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** The game being played somewhere else (a shared table), or null for a normal solo game: its moves are sent, not worked out here. */
-  /** A classic table is being played (not the solo game, not a Dreamfund table): the stack tiles are not part of it. */
+  /** A classic table is being played (not the solo game, not a Dreamer table): the stack tiles are not part of it. */
   get classicRemote(): boolean {
     return !!this.remote && !this.remote.dreamfund;
   }

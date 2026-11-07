@@ -358,7 +358,7 @@
                     class="clickable-row"
                   >
                     <td>{{ getTransactionId(tx) }}</td>
-                    <td>{{ tx.account }}</td>
+                    <td>{{ tx.account | accountLabel }}</td>
                     <td
                       class="{{
                         getAllocatedAmountForBucket(tx, bucket.id) >= 0
@@ -412,7 +412,7 @@
                   class="clickable-row"
                 >
                   <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
+                  <td>{{ tx.account | accountLabel }}</td>
                   <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                     {{ tx.amount | appNumber }} {{ currency }}
                   </td>
@@ -458,7 +458,7 @@
                   class="clickable-row"
                 >
                   <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
+                  <td>{{ tx.account | accountLabel }}</td>
                   <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                     {{ tx.amount | appNumber }} {{ currency }}
                   </td>
@@ -899,7 +899,7 @@
   <!-- ── EDIT MODE ── -->
   <div *ngIf="classReference.isEdit">
     <h4 id="infoTransactionTitle">
-      {{ 'Info.edit' | translate }} Smile #{{ classReference.index + 1 }}
+      {{ 'Info.edit' | translate }} Dream #{{ classReference.index + 1 }}
     </h4>
     <hr class="separator-white" />
 

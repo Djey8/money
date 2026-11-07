@@ -405,7 +405,7 @@ export class AppComponent {
             // Auto-start interactive tour for new users
             if (window.localStorage.getItem('onboarding_pending') === 'true') {
               window.localStorage.removeItem('onboarding_pending');
-              // a new game account on the self-hosted edition chooses: the normal tour or the guided Dreamfund demo
+              // a new game account on the self-hosted edition chooses: the normal tour or the guided Dreamer demo
               if (this.appMode === 'selfhosted' && CashflowGameService.isCashflowGame()) {
                 void this.router.navigate(['/welcome']);
               } else {

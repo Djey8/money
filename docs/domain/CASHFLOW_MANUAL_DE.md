@@ -247,7 +247,7 @@ _(Example card: classic-doodad-boat - Ein Schnickschnack: Die App schlägt Konto
 2. **Transaktion hinzufügen** - Der Dialog öffnet sich ausgefüllt: Konto, Betrag, heutiges freies Datum, die Kategorie und ein Kommentar mit einem kleinen Scherz, deinem Bargeld und wie viel Bankdarlehen du bräuchtest, sowie dem Tag `#doodad`. Ändere alles, was du willst.
 3. **Bestätigen** - Fehlt Geld, nimmt die App zuerst das Bankdarlehen (eigener Schritt) und bucht dann die Zahlung. Sonst ändert sich nichts - danach besitzt du nichts.
 
-Die großen, träumerischen Anschaffungen (ein Boot, eine Küche, das erste Auto fürs Kind) schlägt die App auf deinem **Smile**-Konto vor; die kleinen auf **Splurge**. Keine nimmt Geld von deinem **Fire**- oder **Daily**-Konto. Jede Karte hat eine Kategorie wie Freizeit, Wohnen oder Feiern, damit deine Auswertungen zeigen, wohin ein Spiel voller Schnickschnack ging.
+Die großen, träumerischen Anschaffungen (ein Boot, eine Küche, das erste Auto fürs Kind) schlägt die App auf deinem **Dream**-Konto vor; die kleinen auf **Splurge**. Keine nimmt Geld von deinem **Fire**- oder **Daily**-Konto. Jede Karte hat eine Kategorie wie Freizeit, Wohnen oder Feiern, damit deine Auswertungen zeigen, wohin ein Spiel voller Schnickschnack ging.
 
 _(Table: Schnickschnack nach Kategorie - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
 
@@ -326,15 +326,15 @@ Nichts im Spiel ist ein eigenes System. Jede Zahl, die du siehst, ist ein normal
 
 | Im Spiel | In der App |
 | --- | --- |
-| Bargeld | Die Summe deiner Konten Daily, Splurge, Smile und Fire. Einnahmen werden nach den Prozentsätzen deines Kontos auf sie verteilt. |
+| Bargeld | Die Summe deiner Konten Daily, Splurge, Dream und Fire. Einnahmen werden nach den Prozentsätzen deines Kontos auf sie verteilt. |
 | Gehalt, Ausgaben, passives Einkommen | **Abonnements** - eines pro Zeile. Der Zahltag macht daraus Transaktionen. |
 | Jede Karte, die du bezahlst oder spielst | Eine **Transaktion** auf dem Konto, auf dem sie gebucht wurde, mit einem Kommentar. |
 | Häuser, Aktien, Geschäfte, Gold | **Grow**-Projekte und ihre Positionen in der **Bilanz** (Vermögen, Aktien, Investitionen). |
 | Hypotheken und Bankdarlehen | Verbindlichkeiten in der **Bilanz**. |
 | Einnahmen und Ausgaben nach Kategorie | Die **Einkommens**-Übersicht und die Kontoseiten - die Kategorien der Schnickschnack-Karten erscheinen hier. |
-| Dein Spiel im Zeitverlauf | **Statistik**: Diagramme jedes Kontos, mit Markierungen für Grow-Käufe und -Verkäufe, Smile- und Fire-Zahlungen, das Bankdarlehen und Schnickschnack. |
+| Dein Spiel im Zeitverlauf | **Statistik**: Diagramme jedes Kontos, mit Markierungen für Grow-Käufe und -Verkäufe, Dream- und Fire-Zahlungen, das Bankdarlehen und Schnickschnack. |
 
-> **Fire und Smile im Spiel** Käufe, Darlehen und Reparaturrechnungen laufen über **Fire**. Träumerischer Schnickschnack läuft über **Smile**, kleiner über **Splurge**. Das ist nur der Vorschlag der App - im Dialog kannst du jede Zahlung von einem anderen Konto buchen.
+> **Fire und Dream im Spiel** Käufe, Darlehen und Reparaturrechnungen laufen über **Fire**. Träumerischer Schnickschnack läuft über **Dream**, kleiner über **Splurge**. Das ist nur der Vorschlag der App - im Dialog kannst du jede Zahlung von einem anderen Konto buchen.
 
 > **Mit Vorsicht ändern** Du kannst Einträge auf den normalen Seiten ändern (eine Transaktion, ein Abonnement, eine Grow-Notiz). Das Spiel hindert dich nicht daran - aber ein geänderter Betrag ändert deinen monatlichen Cashflow und deine Hamsterrad-Rechnung. Nutze lieber **Rückgängig**, um einen Schritt zurückzunehmen, statt ihn von Hand zu korrigieren.
 
@@ -592,7 +592,7 @@ Die Wörter des Spiels an einem Ort.
 - **Angebot**: Was ein Marktkäufer zahlt. Gilt bis zum nächsten Zahltag.
 - **Aktuelles Spiel**: Das Spiel, das dein Konto gerade spielt. Gespeicherte Spiele sind Kopien, die wieder aktuell werden können.
 - **Bankdarlehen**: Geld von der Bank in Schritten von 1.000 zu 10 % des Darlehens pro Monat.
-- **Fire / Smile / Splurge / Daily**: Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Smile, kleiner über Splurge.
+- **Fire / Dream / Splurge / Daily**: Die vier Ausgabenkonten der Money App. Im Spiel laufen Käufe über Fire, träumerischer Schnickschnack über Dream, kleiner über Splurge.
 
 ## 24. Mit anderen spielen: Tische
 

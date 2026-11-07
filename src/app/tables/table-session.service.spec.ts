@@ -46,7 +46,7 @@ describe('mergeTableView', () => {
     expect(merged.version).toBe(2);
   });
 
-  it('keeps the Dreamfund life of a seat whose life an update does not send again', () => {
+  it('keeps the Dreamer life of a seat whose life an update does not send again', () => {
     const before = view(1, [
       { ...player(0, { n: 'a' }), dreamLife: { l: 1 } },
       { ...player(1, { n: 'b' }), dreamLife: { l: 2 } },

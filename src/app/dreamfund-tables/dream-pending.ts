@@ -8,7 +8,7 @@ import type {
 } from './dream-session.service';
 
 /**
- * What a Dreamfund table wants from a player next, in the shape the solo screen keeps it (todo/dreamfund-tables-solo-ui.md, R4): the
+ * What a Dreamer table wants from a player next, in the shape the solo screen keeps it (todo/dreamfund-tables-solo-ui.md, R4): the
  * card drawn for the tile the token stands on is written into the turn's pending decision, so the solo views (the Emergency card, the
  * Life card, the dreams offered, the Opportunity cards) show it exactly as they do in a solo game - the server drew it, the screen
  * only reads it. Only the player's own decision is known in full; a pending decision of somebody else has just its kind.
@@ -164,7 +164,7 @@ export function withDreamPending(
         offers: (done['offers'] as string[] | undefined) ?? [],
         ...(done['moment'] ? { moment: done['moment'] as string } : {}),
         ...(done['declined'] ? { declined: true } : {}),
-        // the Smile project of the dream taken is named by the bridge, in the language of the screen
+        // the Dream project of the dream taken is named by the bridge, in the language of the screen
         ...(done['taken'] ? { dreamTakenCardId: done['taken'] } : {}),
       } as never,
     };

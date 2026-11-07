@@ -30,7 +30,7 @@ const amount = (value, name) =>
 const none = { fields: [], check: () => null };
 
 /**
- * The moves of the Dreamfund game (todo/dreamfund-multiplayer.md): the table's own - a life's decisions, its money, a Harvest card's
+ * The moves of the Dreamer game (todo/dreamfund-multiplayer.md): the table's own - a life's decisions, its money, a Harvest card's
  * options, a standing sale. (`roll`, the trade commands and the clock's commands are shared with the classic game above.)
  */
 const DREAMFUND_COMMANDS = {

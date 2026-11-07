@@ -1,5 +1,5 @@
 /**
- * The builder of the Dreamfund characters (JFK, 2026-10-27): a character is described by a handful of numbers - gross salary, price
+ * The builder of the Dreamer characters (JFK, 2026-10-27): a character is described by a handful of numbers - gross salary, price
  * level, how much is left of a month, debts, the dream - and the month (taxes and social insurance of the German salary, the rent, the
  * groceries...) is worked out from them the same way for everybody. That keeps the nine new characters comparable with the Dual
  * Student: what a card is worth in proportion to a character's life is the same for all of them, and what makes one character harder
@@ -312,7 +312,7 @@ function buildCareer(spec: ProfessionSpec, tuning: VariantTuning, easy: boolean)
 const fmt = (amount: number, lang: Lang) =>
   amount.toLocaleString(lang === 'de' ? 'de-DE' : 'en-US', { maximumFractionDigits: 0 });
 
-/** The dream as the Smile project of one language. */
+/** The dream as the Dream project of one language. */
 function dreamProject(
   spec: ProfessionSpec,
   lang: Lang,

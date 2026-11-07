@@ -269,7 +269,7 @@
           >{{ 'PaymentPlannerDialog.account' | translate }} <span class="required">*</span></label
         >
         <select id="account" name="account" [(ngModel)]="account" required>
-          <option *ngFor="let acc of accounts" [value]="acc">{{ acc }}</option>
+          <option *ngFor="let acc of accounts" [value]="acc">{{ acc | accountLabel }}</option>
         </select>
       </div>
 

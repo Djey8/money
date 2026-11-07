@@ -1,5 +1,5 @@
 /**
- * Reads a Dreamfund game page (docs/DREAMFUND_GAME.md or .de.md) into its sections as blocks. Used by dreamfund-manual.js, which
+ * Reads a Dreamer game page (docs/DREAMFUND_GAME.md or .de.md) into its sections as blocks. Used by dreamfund-manual.js, which
  * builds the manual of the app from authored sections (scripts/dreamfund-manual/) that import parts of these pages.
  */
 const fs = require('fs');

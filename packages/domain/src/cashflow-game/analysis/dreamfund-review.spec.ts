@@ -8,7 +8,7 @@ import {
   reviewDreamfund,
 } from './dreamfund-review';
 
-/** A small Dreamfund game: a salary, a hustle bought in month 3, a Bank loan in month 5. */
+/** A small Dreamer game: a salary, a hustle bought in month 3, a Bank loan in month 5. */
 function position(
   round: number,
   extra: { hustle?: boolean; loan?: number; reserve?: number; debts?: boolean } = {},
@@ -91,7 +91,7 @@ function position(
   } as unknown as GameSnapshot;
 }
 
-describe('the Dreamfund review', () => {
+describe('the Dreamer review', () => {
   it('reads the story of a game: the milestones, what was bought, the loans, and what to do differently', () => {
     const stack = [
       { ...position(1, { debts: true }), step: { kind: 'start' as const, at: 't' } },
@@ -123,7 +123,7 @@ describe('the Dreamfund review', () => {
     expect(review.findings.some((f) => f.id === 'savings' && f.tone === 'tip')).toBe(true);
     expect(review.findings.some((f) => f.id === 'loans')).toBe(true);
     const text = describeDreamfundReview(review);
-    expect(text).toContain('Dreamfund game review');
+    expect(text).toContain('Dreamer game review');
     expect(text).toContain('Tutoring');
   });
 });

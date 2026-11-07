@@ -34,7 +34,7 @@ setTimeout(() =>
 );
 
 /**
- * Component for managing Smile Projects.
+ * Component for managing Dream Projects.
  */
 @Component({
   selector: 'app-smile-projects',
@@ -109,7 +109,7 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Performs a search across smile projects.
+   * Performs a search across dream projects.
    */
   search() {
     const searchTerms = this.searchTextField.toLowerCase().split(',');
@@ -176,8 +176,8 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Get the filtered smile projects based on current phase filter.
-   * @returns Array of smile projects filtered by current phase.
+   * Get the filtered dream projects based on current phase filter.
+   * @returns Array of dream projects filtered by current phase.
    */
   getFilteredProjects(): Smile[] {
     const projects = SmileProjectsComponent.isSearched
@@ -197,7 +197,7 @@ export class SmileProjectsComponent {
 
   /**
    * Get the total number of buckets in a project.
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns The total number of buckets, or 1 if no buckets exist (legacy format).
    */
   getTotalBucketCount(smile: Smile): number {
@@ -206,7 +206,7 @@ export class SmileProjectsComponent {
 
   /**
    * Get the number of completed buckets in a project.
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns The number of completed buckets.
    */
   getCompletedBucketCount(smile: Smile): number {
@@ -219,7 +219,7 @@ export class SmileProjectsComponent {
 
   /**
    * Get total target amount across all buckets.
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns The total target amount.
    */
   getTotalTarget(smile: Smile): number {
@@ -229,7 +229,7 @@ export class SmileProjectsComponent {
 
   /**
    * Get total saved amount across all buckets.
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns The total saved amount.
    */
   getTotalAmount(smile: Smile): number {
@@ -239,7 +239,7 @@ export class SmileProjectsComponent {
 
   /**
    * Calculate the overall progress percentage of a project based on total amounts.
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns The progress percentage (0-100).
    */
   getBucketProgress(smile: Smile): number {
@@ -249,8 +249,8 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Get the original index of a smile project before filtering.
-   * @param smile - The smile project.
+   * Get the original index of a dream project before filtering.
+   * @param smile - The dream project.
    * @returns The original index in the unfiltered array.
    */
   getOriginalIndex(smile: Smile): number {
@@ -261,7 +261,7 @@ export class SmileProjectsComponent {
 
   /**
    * Check if a project has associated transactions.
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns True if the project has linked transactions.
    */
   hasTransactions(smile: Smile): boolean {
@@ -271,7 +271,7 @@ export class SmileProjectsComponent {
 
   /**
    * Check if all buckets in a project are full (amount >= target).
-   * @param smile - The smile project.
+   * @param smile - The dream project.
    * @returns True if all buckets are at or above their targets.
    */
   areAllBucketsFull(smile: Smile): boolean {
@@ -284,7 +284,7 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Handles the click event on a row in the Smile Projects table.
+   * Handles the click event on a row in the Dream Projects table.
    * @param index - The index of the clicked row.
    */
   clickRow(index: number) {
@@ -296,7 +296,7 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Adds a new Smile Project.
+   * Adds a new Dream Project.
    */
   /** In a strict game the cards bring the projects: none of the player's own (JFK, 2026-10-26). */
   get ownProjectsAllowed(): boolean {
@@ -313,8 +313,8 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Adds an amount to a Smile Project.
-   * @param index - The index of the Smile Project.
+   * Adds an amount to a Dream Project.
+   * @param index - The index of the Dream Project.
    */
   addToProject(index: number) {
     AppComponent.gotoTop();
@@ -338,7 +338,7 @@ export class SmileProjectsComponent {
   }
 
   /**
-   * Opens the AI Assistant panel for Smile projects.
+   * Opens the AI Assistant panel for Dream projects.
    */
   openAiAssistant() {
     AiAssistantComponent.initialPromptType = 'smile-create';

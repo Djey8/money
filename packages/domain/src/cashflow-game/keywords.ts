@@ -9,7 +9,7 @@ import { groupsOf, matchesTarget } from './harvest';
 import type { OpportunityHolding } from './opportunity';
 
 /**
- * The words the cards of the Dreamfund game share (JFK, 2026-10-26): every Opportunity card is a share, an investment or an asset and
+ * The words the cards of the Dreamer game share (JFK, 2026-10-26): every Opportunity card is a share, an investment or an asset and
  * has keywords - its market, its group (business, side hustle, saving, property). A Harvest card names the same words, so a player sees
  * at once whether it is about something they own. Pure: cards and holdings in, words out.
  */

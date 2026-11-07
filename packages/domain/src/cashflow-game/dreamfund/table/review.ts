@@ -4,7 +4,7 @@ import { dreamStandings } from './reducer';
 import type { DreamTable } from './types';
 
 /**
- * A look at a running Dreamfund table for somebody who is watching it - a person, or an agent that has been asked "how are we doing?"
+ * A look at a running Dreamer table for somebody who is watching it - a person, or an agent that has been asked "how are we doing?"
  * (todo/dreamfund-multiplayer.md, slice 6). Small on purpose: an agent pays for every token it reads, so this is the whole picture of a
  * table in a page - where each player stands on the four goals, what they have and what they owe, how they compare with what the
  * best strategies of the simulation reach in the same time, and what to watch - and an agent never has to read the history or the

@@ -70,7 +70,7 @@ export interface DemoContext {
   dreamSavedMinor: number;
   /** The plans I pay into a project every Payday: how many. */
   plans: number;
-  /** The Smile projects (dreams) taken. */
+  /** The Dream projects (dreams) taken. */
   smileCount: number;
   /** Whether something of the page is there (a CSS selector). */
   dom: (selector: string) => boolean;
@@ -241,7 +241,7 @@ const EN: Record<string, DemoText> = {
   ...GAME_EN,
   welcome: {
     title: 'Welcome to the guided demo',
-    text: 'In about fifteen minutes you play the first rounds of Dreamfund against a friendly bot - with fixed dice and fixed cards, so I can tell you exactly what comes next. It is the real game. You can stop any time with **Stop tutorial** and play for real.',
+    text: 'In about fifteen minutes you play the first rounds of Dreamer against a friendly bot - with fixed dice and fixed cards, so I can tell you exactly what comes next. It is the real game. You can stop any time with **Stop tutorial** and play for real.',
   },
   'lobby-open': {
     title: 'Every game starts at a table',
@@ -289,7 +289,7 @@ const DE: Record<string, DemoText> = {
   ...GAME_DE,
   welcome: {
     title: 'Willkommen zur geführten Demo',
-    text: 'In etwa fünfzehn Minuten spielst du die ersten Runden Traumtopf gegen einen freundlichen Bot - mit festen Würfen und festen Karten, damit ich dir genau sagen kann, was kommt. Es ist das echte Spiel. Mit **Tutorial beenden** kannst du jederzeit aufhören und richtig spielen.',
+    text: 'In etwa fünfzehn Minuten spielst du die ersten Runden Träumer gegen einen freundlichen Bot - mit festen Würfen und festen Karten, damit ich dir genau sagen kann, was kommt. Es ist das echte Spiel. Mit **Tutorial beenden** kannst du jederzeit aufhören und richtig spielen.',
   },
   'lobby-open': {
     title: 'Jedes Spiel beginnt an einem Tisch',

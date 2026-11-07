@@ -2613,9 +2613,9 @@ paths:
   /smile:
     get:
       operationId: listSmileProjects
-      summary: List Smile projects
+      summary: List Dream projects
       description: >-
-        Returns every Smile project owned by the caller. Existing projects must first receive stable IDs through
+        Returns every Dream project owned by the caller. Existing projects must first receive stable IDs through
         `mm-admin migrate-fund-project-ids --collection smile` (the legacy storage shape has no project-level id,
         only bucket-level ids). `totals` is a read-side aggregate (`packages/domain`'s `computeProjectTotals`) summed
         across all of a project's buckets — not stored, computed on every read.
@@ -2623,7 +2623,7 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: Smile projects owned by the caller
+          description: Dream projects owned by the caller
           content:
             application/json:
               schema:
@@ -2640,7 +2640,7 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
     post:
       operationId: createSmileProject
-      summary: Create a Smile project
+      summary: Create a Dream project
       description: >-
         Either `targetMinor` (optionally with `amountMinor`, becoming a single default bucket named after the
         project's title) or a non-empty `buckets` array is required — matching the UI's own Add Smile form, which
@@ -2665,7 +2665,7 @@ paths:
                   targetMinor: 80000
       responses:
         '201':
-          description: Created Smile project
+          description: Created Dream project
           content:
             application/json:
               schema:
@@ -2685,12 +2685,12 @@ paths:
           type: string
     get:
       operationId: getSmileProject
-      summary: Get a single Smile project
+      summary: Get a single Dream project
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: The Smile project
+          description: The Dream project
           content:
             application/json:
               schema:
@@ -2703,7 +2703,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: updateSmileProject
-      summary: Update a Smile project
+      summary: Update a Dream project
       description: >-
         Renaming the project or a bucket (kept by its id) carries over, in the same write, to every transaction and
         subscription that counts toward the project (`@<title>` category, Fire's `@<bucket>` category, `#bucket:` tags)
@@ -2714,7 +2714,7 @@ paths:
         one that doesn't match) to add a new bucket — any existing bucket whose `id` isn't present in the new array
         is dropped. For `notes`, echo back an existing note's `createdAt` to preserve it; omit it on a new note to
         get a fresh server timestamp. A changed `title` is checked for an exact-match collision against the
-        caller's other Smile projects (not against itself). Moving `phase` to `completed` stamps `completionDate`
+        caller's other Dream projects (not against itself). Moving `phase` to `completed` stamps `completionDate`
         automatically if one isn't already set; it never overwrites an explicit `completionDate` sent in the same
         request, and moving away from `completed` never clears a previously-set `completionDate`.
       security:
@@ -2729,7 +2729,7 @@ paths:
               phase: ready
       responses:
         '200':
-          description: Updated Smile project
+          description: Updated Dream project
           content:
             application/json:
               schema:
@@ -2744,7 +2744,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteSmileProject
-      summary: Delete a Smile project
+      summary: Delete a Dream project
       description: Not reversible through the API.
       security:
         - bearerAuth: []
@@ -2777,7 +2777,7 @@ paths:
           type: string
     post:
       operationId: createSmilePaymentPlan
-      summary: Create a payment plan for a Smile project's buckets
+      summary: Create a payment plan for a Dream project's buckets
       description: >-
         Ports SMILE-7 (the Payment Planner, shared by Smile and Fire) — computes a suggested per-period contribution
         to fund the project's buckets by `targetDate`, then persists it (`status: "planned"`) onto the project's
@@ -4807,7 +4807,7 @@ paths:
           type: string
     post:
       operationId: contributeSmile
-      summary: Put money into a Smile project (the only way its bucket amounts change)
+      summary: Put money into a Dream project (the only way its bucket amounts change)
       description: >-
         Records one contribution transaction in the app's own convention: money leaves `account` (default
         `Smile`, so the stored amount is negative), category `@<project title>`, and — when `buckets` is
@@ -4850,7 +4850,7 @@ paths:
           type: string
     get:
       operationId: listSmileTransactions
-      summary: List the transactions that count toward a Smile project
+      summary: List the transactions that count toward a Dream project
       description: >-
         Oldest first, each with its parsed `bucketAllocations` (from `#bucket:` tags). These are exactly the
         transactions the bucket amounts are rebuilt from.
@@ -5281,7 +5281,7 @@ paths:
           type: string
     post:
       operationId: settleSmileBucket
-      summary: Settle a Smile bucket — the real bill was paid
+      summary: Settle a Dream bucket — the real bill was paid
       description: >-
         Records one transaction tagged `#settle:<bucket>:<actual>` (plus your receipt text) whose amount is the
         difference to what the bucket had saved: negative = topped up from `account`, positive = surplus released back
@@ -5329,7 +5329,7 @@ paths:
           type: string
     post:
       operationId: unsettleSmileBucket
-      summary: Remove a Smile bucket's settlement (reopen it)
+      summary: Remove a Dream bucket's settlement (reopen it)
       description: Deletes the bucket's settlement transaction; the bucket reopens with the savings it had before.
       security:
         - bearerAuth: []
@@ -6702,7 +6702,7 @@ paths:
                   enum: [classic, dreamfund]
                   default: classic
                   description: >-
-                    Which game the table plays. `dreamfund` is the Dreamfund (Traumtopf): everyone plays their own life on the same map with the same difficulty, the Harvest market is the table's, and Opportunity cards can be traded for a fee. Its `settings` are `name`, `visibility`, `maxSeats`, `difficulty` (easy|medium|hard), `shape` (ring|infinity|yinyang|rectangle|square|mountain), `size` (small|medium|large), `mode` (guided|strict), `customRules`, `professions` (duplicates|unique|random), `turnOrder`, `clock`, `awayAfterTimeouts`, `endCondition` (first-win|all-done|round-limit), `roundLimit`, `spectators`, `pace`, `ranked`. Bots: `listGameBots?kind=dreamfund`; a bot is seated with `policyId` `dream:<id>`.
+                    Which game the table plays. `dreamfund` is the Dreamer (Träumer): everyone plays their own life on the same map with the same difficulty, the Harvest market is the table's, and Opportunity cards can be traded for a fee. Its `settings` are `name`, `visibility`, `maxSeats`, `difficulty` (easy|medium|hard), `shape` (ring|infinity|yinyang|rectangle|square|mountain), `size` (small|medium|large), `mode` (guided|strict), `customRules`, `professions` (duplicates|unique|random), `turnOrder`, `clock`, `awayAfterTimeouts`, `endCondition` (first-win|all-done|round-limit), `roundLimit`, `spectators`, `pace`, `ranked`. Bots: `listGameBots?kind=dreamfund`; a bot is seated with `policyId` `dream:<id>`.
                 settings:
                   $ref: '#/components/schemas/GameRoomSettingsInput'
             example:
@@ -6817,7 +6817,7 @@ paths:
           in: query
           required: false
           description: >-
-            `dreamfund` lists the strategies of the Dreamfund simulation (id, name, ratings) instead of the classic personas, and **Coach** (`id: coach`, `demo: true`, with a `description`): the bot of the guided demo game. Seating Coach at a Dreamfund table that has one person and no other bot turns the table into the demo - fixed settings (`settings.demo: basics`: medium ring, the character Jonas, never ranked), fixed dice and cards for the first turns, never recorded on the leaderboard, forgotten after the game. Coach has no rating and no level.
+            `dreamfund` lists the strategies of the Dreamer simulation (id, name, ratings) instead of the classic personas, and **Coach** (`id: coach`, `demo: true`, with a `description`): the bot of the guided demo game. Seating Coach at a Dreamer table that has one person and no other bot turns the table into the demo - fixed settings (`settings.demo: basics`: medium ring, the character Jonas, never ranked), fixed dice and cards for the first turns, never recorded on the leaderboard, forgotten after the game. Coach has no rating and no level.
           schema:
             type: string
             enum: [classic, dreamfund]
@@ -7149,9 +7149,9 @@ paths:
   /game/dreamfund/leaderboard:
     get:
       operationId: getDreamfundLeaderboard
-      summary: The Dreamfund leaderboard
+      summary: The Dreamer leaderboard
       description: >-
-        Game accounts only; requires `game:r`. The Dreamfund has a leaderboard of its own - nothing of the classic board is in it. There is ONE rating for everybody, people and bots on the same list (start 1500; a bot is a strategy at a skill level - master, strong, casual, beginner - that starts where the bot tournaments put it, the best near 1700, and moves with its games). Pairwise Elo from the placing of each finished, ranked table (the goals reached, the dream points and the win count): you gain from every player you place above and lose to every player below, by how far apart your ratings are. The difficulty of the game is the stake: the points you GAIN are multiplied by 0.7 on Easy, 1 on Normal and 1.5 on Hard (what you lose is not), and a harder character is expected to place lower, so the same place earns more. Players with at least `minGames` rated games (default 1: bots appear as they play); humans are listed only when they switched themselves on (`setMyDreamfundPlayer`). Never an account id - players are known by their `playerId`.
+        Game accounts only; requires `game:r`. The Dreamer has a leaderboard of its own - nothing of the classic board is in it. There is ONE rating for everybody, people and bots on the same list (start 1500; a bot is a strategy at a skill level - master, strong, casual, beginner - that starts where the bot tournaments put it, the best near 1700, and moves with its games). Pairwise Elo from the placing of each finished, ranked table (the goals reached, the dream points and the win count): you gain from every player you place above and lose to every player below, by how far apart your ratings are. The difficulty of the game is the stake: the points you GAIN are multiplied by 0.7 on Easy, 1 on Normal and 1.5 on Hard (what you lose is not), and a harder character is expected to place lower, so the same place earns more. Players with at least `minGames` rated games (default 1: bots appear as they play); humans are listed only when they switched themselves on (`setMyDreamfundPlayer`). Never an account id - players are known by their `playerId`.
       security:
         - bearerAuth: []
       parameters:
@@ -7221,9 +7221,9 @@ paths:
   /game/dreamfund/players/me:
     get:
       operationId: getMyDreamfundPlayer
-      summary: Your own Dreamfund profile
+      summary: Your own Dreamer profile
       description: >-
-        Game accounts only; requires `game:r`. Your profile on the Dreamfund board with your rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points), your last results, and whether you are `visible` on the board. Made on first use. `history` is how the rating moved over your last counted games (oldest first; the first point is the rating before the first of them), and `facts` is the fact table of your games - `games` (how many have one) and `totals` (sums over them: Grow bought, sold, held, shares, properties, businesses, pensions, courses; Fire reserve, debts, emergencies paid; Smile dreams lived and dream points; the monthly income, passive income and net worth at the end of each game - money in minor units, yes-or-no as 1 or 0; divide by `games` for an average).
+        Game accounts only; requires `game:r`. Your profile on the Dreamer board with your rating and the counters (games, table wins, games won outright, bankruptcies, average place, goals and dream points), your last results, and whether you are `visible` on the board. Made on first use. `history` is how the rating moved over your last counted games (oldest first; the first point is the rating before the first of them), and `facts` is the fact table of your games - `games` (how many have one) and `totals` (sums over them: Grow bought, sold, held, shares, properties, businesses, pensions, courses; Fire reserve, debts, emergencies paid; Smile dreams lived and dream points; the monthly income, passive income and net worth at the end of each game - money in minor units, yes-or-no as 1 or 0; divide by `games` for an average).
       security:
         - bearerAuth: []
       responses:
@@ -7239,7 +7239,7 @@ paths:
           $ref: '#/components/responses/NotAGameAccountOrScope'
     put:
       operationId: setMyDreamfundPlayer
-      summary: Show yourself on the Dreamfund board, or not
+      summary: Show yourself on the Dreamer board, or not
       description: >-
         Game accounts only; requires `game:w`. A person is listed on the board only when they switched `visible` on; the rating is kept either way.
       security:
@@ -7276,9 +7276,9 @@ paths:
           type: string
     get:
       operationId: getGameRoomAdvice
-      summary: Advice for your own seat at a Dreamfund table
+      summary: Advice for your own seat at a Dreamer table
       description: >-
-        Game accounts only; requires `game:r`. For somebody who sits at a Dreamfund table - a person who asks "what should I do?", or an agent that guides or plays for them. A page, not the table: the four goals in percent (reserve, debts, dream, independence) and the dream points, the money (cash, reserve, passive income against the cost of living, monthly cash flow, net worth, Bank loan), what is open on the seat (`open`), `next` - the moves a strategy of the simulation would send right now, in order, each with a sentence that says why (`command` is exactly what `playGameRoomCommand` takes; send them in order - a step is sometimes a few moves, the plans of a month and then settling it - then read the table and ask again) -, `attention` (an offer to buy that is about to close, a plan you pay into, the tax on a sale, a payment due, the thin month, a Bank loan) and `toWin` (what it takes to win). `strategy` is one of the strategies of the simulation (default `expert`, the best; `strategies` lists them with what each does, a skill level may follow after a colon: `expert:casual`). Only somebody with a seat may ask; nothing is changed. A classic table answers 400 `not_available`.
+        Game accounts only; requires `game:r`. For somebody who sits at a Dreamer table - a person who asks "what should I do?", or an agent that guides or plays for them. A page, not the table: the four goals in percent (reserve, debts, dream, independence) and the dream points, the money (cash, reserve, passive income against the cost of living, monthly cash flow, net worth, Bank loan), what is open on the seat (`open`), `next` - the moves a strategy of the simulation would send right now, in order, each with a sentence that says why (`command` is exactly what `playGameRoomCommand` takes; send them in order - a step is sometimes a few moves, the plans of a month and then settling it - then read the table and ask again) -, `attention` (an offer to buy that is about to close, a plan you pay into, the tax on a sale, a payment due, the thin month, a Bank loan) and `toWin` (what it takes to win). `strategy` is one of the strategies of the simulation (default `expert`, the best; `strategies` lists them with what each does, a skill level may follow after a colon: `expert:casual`). Only somebody with a seat may ask; nothing is changed. A classic table answers 400 `not_available`.
       security:
         - bearerAuth: []
       parameters:
@@ -7346,7 +7346,7 @@ paths:
           type: string
     post:
       operationId: autoplayGameRoom
-      summary: Play your own seat at a Dreamfund table for a while with a strategy
+      summary: Play your own seat at a Dreamer table for a while with a strategy
       description: >-
         Game accounts only; requires `game:w`. The owner of the seat has asked an agent to play for them: this sends, one after the other and through the rules, the very moves a bot of the chosen `strategy` (default `expert`; see `getGameRoomAdvice` for the list) would send for the seat, until `maxTurns` of your turns are played (default 1, at most 10), `maxMoves` moves are sent (default 25, at most 80), it is not your turn, the game is over, or no move is accepted. With `waitSeconds` (at most 25) it waits for the others to play and goes on when it is your turn again. Everything is a normal move of the player: the table, the log and the other players see it as yours. Answers `played` (each command with the events it caused, or the refusal), `stopped` (`turns_limit`, `moves_limit`, `not_your_turn`, `waiting_for_others`, `game_over`, `refused`), `turnsPlayed`, `movesPlayed` and the `advice` for what comes next. Only play a seat for its owner when they asked you to, and tell them what was played. A classic table answers 400 `not_available`.
       security:
@@ -7421,9 +7421,9 @@ paths:
   /game/dreamfund/cards:
     get:
       operationId: browseDreamfundCards
-      summary: Browse the printed cards of the Dreamfund game
+      summary: Browse the printed cards of the Dreamer game
       description: >-
-        Game accounts only; requires `game:r`. Every card of the Dreamfund game, so an agent knows what exists and what each does: `deck` is `opportunity` (Seed, Sapling and Tree: savings, shares, funds, metals and collectibles, side hustles and businesses, rented properties, pensions and employer benefits you pay into, courses and degrees that raise your pay), `harvest` (the market: a sentence for every thing a card does - moves the markets, opens a window to sell, brings a buyer with a die for the price, a hype, a business event), `life` (fate, choice and dice cards, windfalls such as an inheritance), `emergency` or `dream`. `pile` narrows Opportunity to seed, sapling or tree; `query` finds cards (every word must be in the id, title, category or ticker); `id` reads one. Amounts are minor units (100 = 1 Dream Taler) at the price level of the reference character; a character's own cards are scaled. A scam looks like any other offer - nothing here tells which is which.
+        Game accounts only; requires `game:r`. Every card of the Dreamer game, so an agent knows what exists and what each does: `deck` is `opportunity` (Seed, Sapling and Tree: savings, shares, funds, metals and collectibles, side hustles and businesses, rented properties, pensions and employer benefits you pay into, courses and degrees that raise your pay), `harvest` (the market: a sentence for every thing a card does - moves the markets, opens a window to sell, brings a buyer with a die for the price, a hype, a business event), `life` (fate, choice and dice cards, windfalls such as an inheritance), `emergency` or `dream`. `pile` narrows Opportunity to seed, sapling or tree; `query` finds cards (every word must be in the id, title, category or ticker); `id` reads one. Amounts are minor units (100 = 1 Dream Taler) at the price level of the reference character; a character's own cards are scaled. A scam looks like any other offer - nothing here tells which is which.
       security:
         - bearerAuth: []
       parameters:
@@ -7494,9 +7494,9 @@ paths:
           type: string
     get:
       operationId: getGameRoomReview
-      summary: A short review of a Dreamfund table
+      summary: A short review of a Dreamer table
       description: >-
-        Game accounts only; requires `game:r`. A page for somebody who watches a Dreamfund table - a person, or an agent asked "how are we doing?": where every player stands on the four goals (reserve, debts, dream, independence; in percent), the score and rank, what they have and owe (cash, reserve, passive income against the cost of living, the monthly cash flow, net worth, a Bank loan), their `pace` against the best strategies of the simulation for their character and level (100 is that pace at this month), what to `watch` for each, the markets that have moved most, a card on offer and a `summary`. Anybody who may look at the table may ask (a public table, or a seat at it); nothing is changed. Small on purpose: read this instead of the whole table and its log - an agent pays for every token it reads. A classic table answers 400 `review_not_available`.
+        Game accounts only; requires `game:r`. A page for somebody who watches a Dreamer table - a person, or an agent asked "how are we doing?": where every player stands on the four goals (reserve, debts, dream, independence; in percent), the score and rank, what they have and owe (cash, reserve, passive income against the cost of living, the monthly cash flow, net worth, a Bank loan), their `pace` against the best strategies of the simulation for their character and level (100 is that pace at this month), what to `watch` for each, the markets that have moved most, a card on offer and a `summary`. Anybody who may look at the table may ask (a public table, or a seat at it); nothing is changed. Small on purpose: read this instead of the whole table and its log - an agent pays for every token it reads. A classic table answers 400 `review_not_available`.
       security:
         - bearerAuth: []
       responses:
@@ -11621,7 +11621,7 @@ components:
       type: object
       required: [type]
       description: >-
-        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMFUND table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}` (it pays what the card came to with the option picked and the dice rolled so far, or the cheapest way when none were), `emergency_choose {choiceId}`, `emergency_roll {key}` (the table rolls the die), `emergency_reroll`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`, `harvest_continue`, `plan_opportunity {cardId, swapOut?}` (plan a card in Grow first), `buy_planned {title, units?}`, `roll_opportunity`, `roll_career` (throw the die of the Career tile; then `choose_career_branch` if two paths), `throw_job_search`, `fund_emergency {id, amountMinor}`, `set_insurance {kind, on}`; what may be changed by hand without changing the game, any time: `edit_transaction {index, patch: {category?, account?, time?}}` (an account only among Daily, Splurge, Smile and Fire; amount, date and comment are the game's), `edit_subscription {title, account}` and `set_phase {kind: grow|smile|fire, id, phase}` (a Smile or Fire project by its id: `life`, a card id, `mojo`; idea, planning, saving or ready - the game completes a project itself); `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
+        One move of play. The fields that go with each `type` are listed in `playGameRoomCommand`; any other field is refused. Players are named by seat. The moves from `pay_emergency` on are those of a DREAMER table (`createGameRoom` with `kind: dreamfund`; the legal ones are in `legalActions`): `pay_emergency {pay: now|3|6|12, choiceId?}` (it pays what the card came to with the option picked and the dice rolled so far, or the cheapest way when none were), `emergency_choose {choiceId}`, `emergency_roll {key}` (the table rolls the die), `emergency_reroll`, `answer_life {decision: accept|decline|roll|pass|give|lend|option, option?}`, `choose_career_branch {index}`, `take_dream {cardId}`, `choose_pile {pile: seed|sapling|tree}`, `take_opportunity {cardId, units?, steps?, swapOut?}`, `skip`, `end_turn`, `settle_payday`, `fund_reserve {amountMinor}`, `fund_dream {amountMinor}`, `repay_debt {tag}`, `repay_bank_loan {amountMinor}`, `set_plan {kind: mojo|life|smile, id, perMinor}`, `sell_holding {holding}`, `harvest_sell {holding}`, `harvest_accept {holding}`, `harvest_ladder {holding, action: ride|cash|skip}`, `harvest_continue`, `plan_opportunity {cardId, swapOut?}` (plan a card in Grow first), `buy_planned {title, units?}`, `roll_opportunity`, `roll_career` (throw the die of the Career tile; then `choose_career_branch` if two paths), `throw_job_search`, `fund_emergency {id, amountMinor}`, `set_insurance {kind, on}`; what may be changed by hand without changing the game, any time: `edit_transaction {index, patch: {category?, account?, time?}}` (an account only among Daily, Splurge, Smile and Fire; amount, date and comment are the game's), `edit_subscription {title, account}` and `set_phase {kind: grow|smile|fire, id, phase}` (a Smile or Fire project by its id: `life`, a card id, `mojo`; idea, planning, saving or ready - the game completes a project itself); `roll` and the trade moves are shared (`offer_trade` then also takes `holding`).
       properties:
         type:
           type: string

@@ -17,8 +17,8 @@ import type {
 } from '../../table/types';
 
 /**
- * The Dreamfund table (todo/dreamfund-multiplayer.md, slice 2): the classic table's flow - lobby, seats, picking a character, turns
- * on a clock, a history of events, a result - for the Dreamfund game. Plain data owned by a room on the server; everything changes
+ * The Dreamer table (todo/dreamfund-multiplayer.md, slice 2): the classic table's flow - lobby, seats, picking a character, turns
+ * on a clock, a history of events, a result - for the Dreamer game. Plain data owned by a room on the server; everything changes
  * through `applyDreamCommand` (reducer.ts), which is pure. Everyone plays their own life on the same map (parallel play); the Harvest
  * market is the table's: one card for everybody, one set of indices, anybody may sell into it.
  */

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The bot tournament of the Dreamfund (todo/dreamfund-multiplayer.md, slice 9): tables of bots only, played headless and rated with the
+ * The bot tournament of the Dreamer (todo/dreamfund-multiplayer.md, slice 9): tables of bots only, played headless and rated with the
  * board's own Elo, until every strategy at every skill level has a rating at a difficulty. Run one difficulty per process (they take an
  * hour), then write the table the board starts its bots from:
  *

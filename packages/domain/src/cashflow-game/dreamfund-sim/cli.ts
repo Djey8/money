@@ -10,7 +10,7 @@ import { setDefaultTableGameSets } from '../table/default-game-sets';
 setDefaultTableGameSets(CASHFLOW_GAME_SETS);
 
 /**
- * Runs a batch of Dreamfund games from the command line (JFK, 2026-10-26):
+ * Runs a batch of Dreamer games from the command line (JFK, 2026-10-26):
  *
  *   npm run simulate:dreamfund -- --games 100 --policies saver,etf --shapes ring,infinity --sizes medium --out reports/run.md
  *

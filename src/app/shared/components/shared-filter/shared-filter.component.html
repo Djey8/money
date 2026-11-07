@@ -512,7 +512,7 @@
           [class.active]="isAccountSelected(account)"
           (click)="toggleAccount(account)"
         >
-          {{ account }}
+          {{ account | accountLabel }}
         </button>
       </div>
     </div>

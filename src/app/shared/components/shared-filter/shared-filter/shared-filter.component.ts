@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IncomeFilter } from 'src/app/interfaces/income-filter';
 import { AppStateService } from '../../../services/app-state.service';
+import { AccountLabelPipe } from '../../../pipes/account-label.pipe';
 
 @Component({
   selector: 'app-shared-filter',

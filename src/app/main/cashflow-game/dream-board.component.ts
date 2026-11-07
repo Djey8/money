@@ -71,7 +71,7 @@ const TOKEN_DISTANCE = 74;
 const HEIGHT_TAKEN = 400;
 
 /**
- * The map of a Dreamfund game (JFK, 2026-10-25): the tiles on their track, in the shape of the map, with the token on it. A map
+ * The map of a Dreamer game (JFK, 2026-10-25): the tiles on their track, in the shape of the map, with the token on it. A map
  * that is wider than high stands up on a portrait screen, so the tiles come out as big as the screen allows; the whole picture
  * scales down on a small phone and never needs to scroll. The engine knows the tiles by their order only - this is the picture.
  */
@@ -648,8 +648,8 @@ export class DreamBoardComponent {
 
   get ariaLabel(): string {
     return this.position === null
-      ? `Dreamfund map: token at start`
-      : `Dreamfund map: token on tile ${this.position + 1} of ${this.map.board.length}`;
+      ? `Dreamer map: token at start`
+      : `Dreamer map: token on tile ${this.position + 1} of ${this.map.board.length}`;
   }
 
   trackTile(_: number, tile: DrawnTile): number {

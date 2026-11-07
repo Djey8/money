@@ -247,7 +247,7 @@ _(Example card: classic-doodad-boat - A Doodad: the app suggests the account and
 2. **Add the transaction** - The Add dialog opens filled in: account, amount, today’s free date, the category and a comment with a short joke, what you have in cash and how much bank loan you would need, and the tag `#doodad`. Change anything you like.
 3. **Confirm** - If you are short, the app takes the bank loan first (its own step) and then books the payment. Nothing else changes - you own nothing afterwards.
 
-The big, dreamy purchases (a boat, a kitchen, a first car for a child) are suggested on your **Smile** account; the small things on **Splurge**. Neither takes money from your **Fire** or **Daily** accounts. Every card has a category such as Leisure, Home or Events, so your statements show where a game’s worth of Doodads went.
+The big, dreamy purchases (a boat, a kitchen, a first car for a child) are suggested on your **Dream** account; the small things on **Splurge**. Neither takes money from your **Fire** or **Daily** accounts. Every card has a category such as Leisure, Home or Events, so your statements show where a game’s worth of Doodads went.
 
 _(Table: Doodads by category - the figures are in the topics cashflow_cards, cashflow_card_lab and cashflow_strategy_lab.)_
 
@@ -326,15 +326,15 @@ Nothing in the game is a separate system. Every number you see is a normal entry
 
 | In the game | In the app |
 | --- | --- |
-| Cash | The sum of your Daily, Splurge, Smile and Fire accounts. Income is split between them by the percentages of your account. |
+| Cash | The sum of your Daily, Splurge, Dream and Fire accounts. Income is split between them by the percentages of your account. |
 | Salary, expenses, passive income | **Subscriptions** - one per line. Payday turns them into transactions. |
 | Every card you pay or play | A **transaction** in the account it was booked on, with a comment. |
 | Houses, shares, businesses, gold | **Grow** projects, and their positions in the **Balance** sheet (assets, shares, investments). |
 | Mortgages and bank loan | Liabilities in the **Balance** sheet. |
 | Income and expenses by category | The **Income** statement and the account pages - Doodad categories show up here. |
-| Your game over time | **Stats**: charts of each account, with markers for Grow trades, Smile and Fire payments, the bank loan and Doodads. |
+| Your game over time | **Stats**: charts of each account, with markers for Grow trades, Dream and Fire payments, the bank loan and Doodads. |
 
-> **Fire and Smile in the game** Purchases, loans and repair bills run through **Fire**. Dreamy Doodads run through **Smile**, small ones through **Splurge**. That is only the suggestion of the app - you can always book a payment from another account in the Add dialog.
+> **Fire and Dream in the game** Purchases, loans and repair bills run through **Fire**. Dreamy Doodads run through **Dream**, small ones through **Splurge**. That is only the suggestion of the app - you can always book a payment from another account in the Add dialog.
 
 > **Edit with care** You can change entries in the normal pages (a transaction, a subscription, a Grow note). The game does not stop you - but a changed amount changes your monthly cashflow and your rat-race maths. Use **Undo** to take back a step instead of fixing it by hand.
 
@@ -592,7 +592,7 @@ The words of the game in one place.
 - **Offer**: What a Market buyer pays. Good until the next Payday.
 - **Live game**: The game your account is playing right now. Saved games are copies that can become live again.
 - **Bank loan**: Money from the bank in steps of 1.000 at 10% of the loan per month.
-- **Fire / Smile / Splurge / Daily**: The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Smile, small ones through Splurge.
+- **Fire / Dream / Splurge / Daily**: The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Dream, small ones through Splurge.
 
 ## 24. Playing with others: tables
 

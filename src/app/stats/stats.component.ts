@@ -126,11 +126,18 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { FinancialStatementComponent } from './statement/financial-statement.component';
+import { AccountLabelPipe } from '../shared/pipes/account-label.pipe';
 
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, FinancialStatementComponent],
+  imports: [
+    AccountLabelPipe,
+    CommonModule,
+    FormsModule,
+    TranslateModule,
+    FinancialStatementComponent,
+  ],
   templateUrl: './stats.component.html',
   styleUrls: [
     './stats.component.css',

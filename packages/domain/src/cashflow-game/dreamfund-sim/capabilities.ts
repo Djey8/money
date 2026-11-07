@@ -2,7 +2,7 @@ import type { DreamCommand } from '../dreamfund/table/types';
 import type { DreamKnobs } from './policies';
 
 /**
- * Everything a Dreamfund player can do (JFK, 2026-11-06): the test bed of the bots. A bot is only as good as the moves it knows - the first
+ * Everything a Dreamer player can do (JFK, 2026-11-06): the test bed of the bots. A bot is only as good as the moves it knows - the first
  * strategies never sold a holding to step up, never touched an insurance, never weighed a course against a card - so the list is kept as
  * data, and a test fails when the game gets a command that is not in it. Each capability says who decides it:
  *

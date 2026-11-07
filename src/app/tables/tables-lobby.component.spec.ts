@@ -58,7 +58,7 @@ describe('TablesLobbyComponent', () => {
     fixture.detectChanges();
   };
 
-  it('shows the Dreamfund tables when the game is switched, with their difficulty and map', () => {
+  it('shows the Dreamer tables when the game is switched, with their difficulty and map', () => {
     answer([], []);
     fixture.componentInstance.setGame('dreamfund');
     http

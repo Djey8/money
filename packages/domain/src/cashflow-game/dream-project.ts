@@ -1,7 +1,7 @@
 import type { DreamCard } from './dream-deck';
 
 /**
- * What a Smile project made from a dream card is filled in with (JFK, 2026-11-04): the description, a note and links for every bucket,
+ * What a Dream project made from a dream card is filled in with (JFK, 2026-11-04): the description, a note and links for every bucket,
  * the links, the action items and the notes. One place for the solo game and a table, so both make the same project. Amounts stay in
  * minor units; the caller turns them into the app's.
  */

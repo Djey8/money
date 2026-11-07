@@ -11,7 +11,7 @@ describe('DemoService - the Demo button of a game account', () => {
     sessionStorage.clear();
   });
 
-  it('starts the guided Dreamfund demo for a signed-in game account', () => {
+  it('starts the guided Dreamer demo for a signed-in game account', () => {
     ProfileComponent.mail = 'anna.cashflow@example.com';
     const router = { navigate: jest.fn().mockResolvedValue(true) };
     new DemoService(router as never, {} as never).startDemo();

@@ -1,6 +1,6 @@
 /**
- * The Dreamfund Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): 48 dreams in English and German. A dream is
- * generic - it belongs to no character - and becomes a Smile project when it is taken. Amounts are minor units of the game money.
+ * The Dreamer Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): 48 dreams in English and German. A dream is
+ * generic - it belongs to no character - and becomes a Dream project when it is taken. Amounts are minor units of the game money.
  */
 import type { DreamCard } from './cashflow-game/dream-deck';
 import { withDreamDetails } from './cashflow-dream-details';

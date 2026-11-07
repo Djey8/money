@@ -19,7 +19,7 @@ function makeAuthDb(encryptionConfig) {
 }
 
 describe('backfillFundProjectIds', () => {
-  it('adds stable IDs to Smile projects, creates a backup, and remains idempotent', async () => {
+  it('adds stable IDs to Dream projects, creates a backup, and remains idempotent', async () => {
     const usersDb = makeUsersDb({
       _id: 'user_1',
       _rev: '1-test',

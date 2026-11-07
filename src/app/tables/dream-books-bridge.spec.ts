@@ -10,7 +10,7 @@ describe('dreamLifeToApp', () => {
     return p.snapshot();
   };
 
-  it('gives a new life its dream as a Smile project and its reserve as a Fire project, both empty', () => {
+  it('gives a new life its dream as a Dream project and its reserve as a Fire project, both empty', () => {
     const app = dreamLifeToApp(life(), 'en', NOW);
     expect(app.smile).toHaveLength(1);
     expect(app.smile[0].title).toBe('Mountain guide');

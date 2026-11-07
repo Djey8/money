@@ -8,7 +8,7 @@ import { applyDreamCommand, briefAll, createDreamTable, dreamCharacterIds } from
 import type { DreamTable } from './types';
 
 /**
- * The bot tournaments of the Dreamfund (todo/dreamfund-multiplayer.md, slice 9): tables of bots only, played headless and rated with the
+ * The bot tournaments of the Dreamer (todo/dreamfund-multiplayer.md, slice 9): tables of bots only, played headless and rated with the
  * same pairwise Elo as the board (`rateTable`, with the character's handicap). Every table seats a random mix of strategies at skill
  * levels on random characters; many tables later every bot has a rating per difficulty that says where it stands - the starting
  * rating of the board. Pure and seeded: the same seed gives the same tournament.

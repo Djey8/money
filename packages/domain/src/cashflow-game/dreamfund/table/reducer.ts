@@ -43,8 +43,8 @@ import {
 } from './types';
 
 /**
- * The pure rules of a Dreamfund table (todo/dreamfund-multiplayer.md, slice 2): `createDreamTable` and `applyDreamCommand`, the classic
- * table's flow for the Dreamfund game. A command either returns the new table and the events it made, or throws a
+ * The pure rules of a Dreamer table (todo/dreamfund-multiplayer.md, slice 2): `createDreamTable` and `applyDreamCommand`, the classic
+ * table's flow for the Dreamer game. A command either returns the new table and the events it made, or throws a
  * `TableCommandError` and changes nothing. A table is plain data: a player's life is stored as data (`DreamPlayerData`) and woken up
  * with the table's dice for the length of one command.
  */

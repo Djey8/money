@@ -159,7 +159,7 @@ curl -X PUT "http://localhost:3000/api/v1/mojo" \
   -d '{"targetMinor": 200000}'
 ```
 
-## List or create Smile projects
+## List or create Dream projects
 
 Requires a PAT with `smile:r` (list) or `smile:w` (create). Provide either `targetMinor` or a non-empty `buckets` array when creating.
 
@@ -173,7 +173,7 @@ curl -X POST "http://localhost:3000/api/v1/smile" \
   -d '{"title": "Summer Vacation", "buckets": [{"title": "Flights", "targetMinor": 150000}]}'
 ```
 
-## Get, update, or delete a single Smile project
+## Get, update, or delete a single Dream project
 
 Requires a PAT with `smile:r` (get) or `smile:w` (update/delete). `PATCH` is partial for scalar fields, but array fields (`buckets`/`links`/`actionItems`/`notes`) replace the whole array — see `docs/api/AGENTS.md` for the echo-back rules that preserve bucket/note identity across an update.
 
@@ -192,7 +192,7 @@ curl -X DELETE "http://localhost:3000/api/v1/smile/smile_<id>" \
 
 ## List or create Fire projects
 
-Requires a PAT with `fire:r` (list) or `fire:w` (create). Fire projects are shaped identically to Smile projects — see above for the create rules (either `targetMinor` or a non-empty `buckets` array).
+Requires a PAT with `fire:r` (list) or `fire:w` (create). Fire projects are shaped identically to Dream projects — see above for the create rules (either `targetMinor` or a non-empty `buckets` array).
 
 ```bash
 curl "http://localhost:3000/api/v1/fire" \

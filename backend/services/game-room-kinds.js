@@ -1,7 +1,7 @@
 'use strict';
 
 const domain = require('@money/domain');
-// the Dreamfund table is kept out of the domain package's barrel (the browser bundle does not carry the table's rules)
+// the Dreamer table is kept out of the domain package's barrel (the browser bundle does not carry the table's rules)
 require('./game-sets'); // registers the printed sets the dream table's rules look for
 const dreamTable = require('@money/domain/dist/cashflow-game/dreamfund/table/reducer');
 const dreamBots = require('@money/domain/dist/cashflow-game/dreamfund/table/bot');
@@ -12,10 +12,10 @@ const dreamLevels = require('@money/domain/dist/cashflow-game/dreamfund/table/bo
 const { DREAM_POLICIES } = require('@money/domain/dist/cashflow-game/dreamfund-sim/policies');
 
 /**
- * The kinds of table a room can hold (todo/dreamfund-multiplayer.md slice 5): the classic Cashflow table and the Dreamfund table.
+ * The kinds of table a room can hold (todo/dreamfund-multiplayer.md slice 5): the classic Cashflow table and the Dreamer table.
  * A room, its lobby, its clock, its event log, its live channel and its seats are the same for both; what differs is the rules - which
  * are the domain's, one set per kind. A table says which kind it is (`kind: 'dreamfund'`; a classic table has none), so rooms made
- * before the Dreamfund existed are classic without a change.
+ * before the Dreamer existed are classic without a change.
  */
 
 const classic = {

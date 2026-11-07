@@ -28,6 +28,7 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let AppComponent: any;
@@ -68,6 +69,7 @@ setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.Info
   selector: 'app-info-grow',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -377,8 +379,8 @@ export class InfoGrowComponent extends BaseInfoComponent {
   }
 
   /**
-   * Adds an amount to a Smile Project.
-   * @param index - The index of the Smile Project.
+   * Adds an amount to a Dream Project.
+   * @param index - The index of the Dream Project.
    */
   paybackProject(index: number) {
     // find liabilitie index

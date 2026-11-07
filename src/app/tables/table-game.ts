@@ -1,4 +1,4 @@
-/** The two games a table can be for: the classic Cashflow, or the Dreamfund (the app's own game). */
+/** The two games a table can be for: the classic Cashflow, or the Dreamer (the app's own game). */
 export type TableGame = 'classic' | 'dreamfund';
 
 const GAME_KEY = 'mm.tables.game';

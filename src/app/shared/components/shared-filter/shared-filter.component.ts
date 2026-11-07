@@ -5,6 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { IncomeFilter } from 'src/app/interfaces/income-filter';
 import { AppStateService } from '../../services/app-state.service';
 import { ChartFilterService } from '../../services/chart-filter.service';
+import { AccountLabelPipe } from '../../pipes/account-label.pipe';
 
 type Period = 'week' | 'month' | 'quarter' | 'year' | 'all' | 'custom';
 
@@ -18,7 +19,7 @@ function iso(date: Date): string {
 @Component({
   selector: 'app-shared-filter',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [AccountLabelPipe, CommonModule, FormsModule, TranslateModule],
   templateUrl: './shared-filter.component.html',
   styleUrls: ['../../styles/filter-styles.css'],
 })

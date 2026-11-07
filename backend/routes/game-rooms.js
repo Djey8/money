@@ -79,7 +79,7 @@ function stats() {
   }
   return statsService;
 }
-/** The Dreamfund leaderboard (services/game-dream-stats.js): a world of its own next to the classic one. */
+/** The Dreamer leaderboard (services/game-dream-stats.js): a world of its own next to the classic one. */
 let dreamStatsService = null;
 function dreamStats() {
   if (!dreamStatsService) {
@@ -240,7 +240,7 @@ router.get(
   '/bots',
   ...guard('r'),
   handle(async (req, res) => {
-    // the bots of a Dreamfund table are the twelve strategies of the simulation (docs/DREAMFUND_SIMULATION.md): `?kind=dreamfund`
+    // the bots of a Dreamer table are the twelve strategies of the simulation (docs/DREAMFUND_SIMULATION.md): `?kind=dreamfund`
     if (req.query.kind === 'dreamfund') {
       const skills = dreamfund.levels.map((l) => l.id);
       const idOf = (id, skill) => (skill === 'master' ? id : `${id}--${skill}`);
@@ -253,7 +253,7 @@ router.get(
             .flatMap((p) => skills.map((skill) => idOf(p.id, skill))),
         );
       } catch (error) {
-        logger.warn('Dreamfund bot ratings could not be read', { error: error.message });
+        logger.warn('Dreamer bot ratings could not be read', { error: error.message });
       }
       return res.json({
         items: dreamfund.policies.map((policy) => ({
@@ -417,7 +417,7 @@ router.get(
 );
 
 /**
- * `GET /game/rooms/{roomId}/review` - a short review of a running (or finished) Dreamfund table, for somebody who only watches it: where
+ * `GET /game/rooms/{roomId}/review` - a short review of a running (or finished) Dreamer table, for somebody who only watches it: where
  * every player stands on the goals, what they have and owe, how they compare with the simulation of their character and level, and
  * what to watch. A page, not the table: an agent asked "how are we doing?" reads this and not the books and the history. Anybody who may
  * look at the table may ask (a public table, or a seat at it); a classic table answers 400.
@@ -431,7 +431,7 @@ router.get(
 );
 
 /**
- * `GET /game/rooms/{roomId}/advice?strategy=` - advice for the reader's own seat at a Dreamfund table: the goals, the money, the moves a
+ * `GET /game/rooms/{roomId}/advice?strategy=` - advice for the reader's own seat at a Dreamer table: the goals, the money, the moves a
  * strategy would send now (each with a sentence), and what to keep in mind. A page, not the table.
  */
 router.get(
@@ -444,7 +444,7 @@ router.get(
 );
 
 /**
- * `POST /game/rooms/{roomId}/autoplay {strategy?, maxTurns?, maxMoves?, waitSeconds?}` - plays the reader's own seat at a Dreamfund
+ * `POST /game/rooms/{roomId}/autoplay {strategy?, maxTurns?, maxMoves?, waitSeconds?}` - plays the reader's own seat at a Dreamer
  * table for a while with a strategy of the simulation, move by move through the rules, and answers what was played and why it stopped.
  */
 router.post(
@@ -638,7 +638,7 @@ lobbyRoute('post', '/:roomId/start', () => ({ type: 'start' }));
 lobbyRoute('post', '/:roomId/bots', (body) => {
   if (typeof body.policyId !== 'string')
     return 'policyId must be the id of a bot (see GET /game/rooms/bots).';
-  // a seat of a Dreamfund table: one of its strategies (`GET /game/rooms/bots?kind=dreamfund`), sent as `dream:<id>` or plain
+  // a seat of a Dreamer table: one of its strategies (`GET /game/rooms/bots?kind=dreamfund`), sent as `dream:<id>` or plain
   const dreamId = body.policyId.replace(/^dream:/, '');
   const dreamParts = dreamfund.splitBotId(dreamId);
   if (body.policyId.startsWith('dream:') || (dreamParts && !splitBotId(body.policyId))) {

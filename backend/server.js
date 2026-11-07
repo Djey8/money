@@ -158,10 +158,10 @@ if (require.main === module) {
           });
         })
         .catch((err) => logger.logError(err, { context: 'game_stats_startup' }))
-        // The Dreamfund board of its own: its bots are known before they have played (idempotent).
+        // The Dreamer board of its own: its bots are known before they have played (idempotent).
         .then(async () => {
           const seeded = await require('./routes/game-rooms').dreamStats().seedBots();
-          logger.info('Dreamfund leaderboard ready', {
+          logger.info('Dreamer leaderboard ready', {
             botsMade: seeded.made,
             levelsMoved: seeded.moved,
           });

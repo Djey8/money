@@ -42,7 +42,7 @@ function tableWithHolding(): { table: DreamTable; seller: string; buyer: string;
 const holdingsOf = (t: DreamTable, id: string) =>
   (t.players.find((p) => p.id === id)!.life!.books.state.holdings ?? []).filter((h) => !h.ended);
 
-describe('trading an Opportunity card at a Dreamfund table', () => {
+describe('trading an Opportunity card at a Dreamer table', () => {
   it('moves the card and the money: the seller is paid, the buyer has the card, and everybody sees it', () => {
     const { table, seller, buyer } = tableWithHolding();
     const title = holdingsOf(table, seller)[0].title;

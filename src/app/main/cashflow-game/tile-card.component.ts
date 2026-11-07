@@ -89,11 +89,11 @@ interface OpportunityBandLike extends OpportunityRollLike {
 }
 
 /**
- * The body of a Dreamfund tile that has a stack of cards (JFK, 2026-10-26): Emergency, Life, Career, Dream. The flow is the same on all of
+ * The body of a Dreamer tile that has a stack of cards (JFK, 2026-10-26): Emergency, Life, Career, Dream. The flow is the same on all of
  * them. First the card is opened (the only choice where it cannot be refused; a dream can be declined). Under the free rules the
  * card is searched in a small grid with quick filters - or shuffled; under the others it is drawn at once. Then the card is read and
  * dealt with; a die is always seen rolling, then its result is told. What the card decides is kept in the game; money is settled with
- * the app's own components (the Fire and the Smile project), which the buttons open.
+ * the app's own components (the Fire and the Dream project), which the buttons open.
  */
 @Component({
   selector: 'app-tile-card',
@@ -2046,7 +2046,7 @@ export class TileCardComponent implements OnInit, OnDestroy {
   rolling = false;
   private timer: ReturnType<typeof setInterval> | undefined;
 
-  /** At a Dreamfund table the server draws the cards and settles the decisions: this screen only shows them and sends the answers. */
+  /** At a Dreamer table the server draws the cards and settles the decisions: this screen only shows them and sends the answers. */
   get dreamTable(): RemoteGame | null {
     const remote = RemoteGameHook.current;
     return remote?.dreamfund ? remote : null;

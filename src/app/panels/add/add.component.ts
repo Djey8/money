@@ -502,7 +502,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
    * typed Grow parser) and sent as the matching move; the server books it with the card's and the offer's numbers. Anything else
    * a plain transaction would do is not a move of the game and is refused.
    */
-  /** What the dialog funds at a Dreamfund table: the reserve (a Fire project), or a dream (a Smile project); null for anything else. */
+  /** What the dialog funds at a Dreamer table: the reserve (a Fire project), or a dream (a Dream project); null for anything else. */
   private dreamFunding(state: AppStateService): { decision: string; amountMinor: number } | null {
     const title = String(AddComponent.categoryTextField ?? '')
       .replace(/^@/, '')
@@ -540,7 +540,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
     const state = AppStateService.instance;
     const statements = parseGrowComment(comment);
     let outcome: { ok: boolean; message?: string } | null = null;
-    // a Dreamfund table: money put into the reserve or into a dream is the table's move (the table books it)
+    // a Dreamer table: money put into the reserve or into a dream is the table's move (the table books it)
     const funded = remote.dreamfund ? this.dreamFunding(state) : null;
     if (funded && remote.dreamMove) {
       outcome = await remote.dreamMove(funded);
@@ -1119,7 +1119,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
           this.addToMojo();
         }
 
-        // Handle Smile projects - can add from any account
+        // Handle Dream projects - can add from any account
         // Don't adjust amount if user has manual bucket allocations (let addToSmileProject handle capping)
         const hasManualBucketAllocation = AddComponent.commentTextField?.includes('#bucket:');
         if (!hasManualBucketAllocation) {
@@ -2434,7 +2434,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
         (project as any)._needsCommentUpdate = needsCommentUpdate;
         (project as any)._cappedAllocations = usedAllocations;
 
-        // Log smile project update from add transaction
+        // Log dream project update from add transaction
         this.frontendLogger.logActivity('update_smile_project_from_transaction', 'info', {
           projectType: 'smile',
           projectTitle: project.title,
@@ -2570,7 +2570,7 @@ export class AddComponent extends BaseAddComponent implements OnInit, AfterViewI
    * so we can properly access and modify it.
    */
   updateTransactionWithAllocationTags(transaction: Transaction, category: string) {
-    // Check if transaction is for a Smile project
+    // Check if transaction is for a Dream project
     for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
       if (category === '@' + AppStateService.instance.allSmileProjects[i].title) {
         const project = AppStateService.instance.allSmileProjects[i];

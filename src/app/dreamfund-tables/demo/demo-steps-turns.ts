@@ -11,7 +11,7 @@ const OPEN = '[data-demo="open-card"]';
 const ROLL = '.cf-solo-roll-row .btn--primary';
 const DONE = '[data-demo="solo-done"]';
 const MENU = '.desktop-nav-menu';
-const DREAMFUND_ITEM = '.menu-item@@~Dreamfund';
+const DREAMFUND_ITEM = '.menu-item@@~Dreamer';
 const PAY = '#infoTransaction-Container #addbtn';
 const GAME = 'game' as const;
 
@@ -37,7 +37,7 @@ const open = (
 ): DemoStep =>
   step({ id, screen: GAME, target: OPEN, next: 'event', done: seen, assist: `click:${OPEN}` });
 
-/** The way back to the game screen from any page: the Menu, then the Dreamfund entry. */
+/** The way back to the game screen from any page: the Menu, then the Dreamer entry. */
 const backToGame = (prefix: string, screens: DemoStep['screen']): DemoStep[] => [
   step({
     id: `${prefix}-menu`,
@@ -53,7 +53,7 @@ const backToGame = (prefix: string, screens: DemoStep['screen']): DemoStep[] => 
     target: DREAMFUND_ITEM,
     next: 'event',
     done: (c) => c.screen === GAME,
-    assist: 'click:.menu-item@@~Dreamfund',
+    assist: 'click:.menu-item@@~Dreamer',
   }),
 ];
 
@@ -233,7 +233,7 @@ export const TURN_STEPS: DemoStep[] = [
     done: (c) => !c.myTurn || c.turns >= 5,
     assist: `click:${ROLL}`,
   }),
-  // ── turn 5: a Dream and its Smile project and plan ──
+  // ── turn 5: a Dream and its Dream project and plan ──
   roll('t5-roll', 5),
   open('t5-open', (c) => c.dom('[data-card-id]') || c.turns >= 6),
   step({ id: 't5-dream', screen: GAME, target: '[data-card-id="D64"]' }),
@@ -248,10 +248,10 @@ export const TURN_STEPS: DemoStep[] = [
   step({
     id: 't5-smile',
     screen: GAME,
-    target: '.tc-btn--primary@@~Smile',
+    target: '.tc-btn--primary@@~Dream',
     next: 'event',
     done: (c) => c.screen === 'smile',
-    assist: 'click:.tc-btn--primary@@~Smile',
+    assist: 'click:.tc-btn--primary@@~Dream',
   }),
   step({ id: 's-overview', screen: 'smile' }),
   tab('s-plans', 'smile', 'Payment'),
@@ -345,7 +345,7 @@ export const TURN_STEPS: DemoStep[] = [
   step({
     id: 'menu-explain',
     screen: ['game', 'home', 'grow', 'fire', 'smile', 'subs', 'transactions', 'other'],
-    target: '.menu-item@@~Dreamfund',
+    target: '.menu-item@@~Dreamer',
     chapter: 'finish',
   }),
   step({
@@ -407,8 +407,8 @@ export const TURN_EN: Record<string, DemoText> = {
     text: 'The game screen is a window of its own. To go back to it from any page, open the **Menu**.',
   },
   'g-back': {
-    title: 'Dreamfund',
-    text: 'The entry **Dreamfund** brings you back to the game screen. Press it.',
+    title: 'Dreamer',
+    text: 'The entry **Dreamer** brings you back to the game screen. Press it.',
   },
   't1-done': { title: 'Done', text: 'Your turn is played - press **Done**. Coach plays next.' },
   't2-roll': {
@@ -446,10 +446,10 @@ export const TURN_EN: Record<string, DemoText> = {
   },
   'f-paid': {
     title: 'Paid',
-    text: 'The project is **completed**. Back to the game: open the **Menu** and press **Dreamfund**.',
+    text: 'The project is **completed**. Back to the game: open the **Menu** and press **Dreamer**.',
   },
   'f-menu': { title: 'Back to the game: the Menu', text: 'Open the **Menu**.' },
-  'f-back': { title: 'Dreamfund', text: 'Press **Dreamfund** to come back to the game screen.' },
+  'f-back': { title: 'Dreamer', text: 'Press **Dreamer** to come back to the game screen.' },
   't2-bank': {
     title: 'You owe the Bank',
     text: 'The loan costs **10% a month**: 100 DT less every Payday until you repay it. The Bank button shows it, and a **Repay** button.',
@@ -490,7 +490,7 @@ export const TURN_EN: Record<string, DemoText> = {
     text: 'A **subscription** is a payment that repeats: your salary, the rent, every bill - and the **payment plans** you set up. At every Payday each one is added as a **new transaction**. What is left of the month is your **cashflow**.',
   },
   't4-menu': { title: 'Back to the game: the Menu', text: 'Open the **Menu**.' },
-  't4-back': { title: 'Dreamfund', text: 'Press **Dreamfund**.' },
+  't4-back': { title: 'Dreamer', text: 'Press **Dreamer**.' },
   't4-repay': {
     title: 'Repay the Bank',
     text: 'You have money from the Payday. Press **Repay Outstanding** to pay the Bank back.',
@@ -511,12 +511,12 @@ export const TURN_EN: Record<string, DemoText> = {
   },
   't5-take': {
     title: 'Take the dream',
-    text: 'Take the small one, **Paraglide Over the Alps** (1,200 DT). If the other dream is shown, press **Choose again** first. It becomes a **Smile project**.',
+    text: 'Take the small one, **Paraglide Over the Alps** (1,200 DT). If the other dream is shown, press **Choose again** first. It becomes a **Dream project**.',
   },
-  't5-smile': { title: 'To the Smile project', text: 'Press **Open the Smile project**.' },
+  't5-smile': { title: 'To the Dream project', text: 'Press **Open the Dream project**.' },
   's-overview': {
     title: 'The dream as a project',
-    text: 'The real **Smile** panel: buckets, progress, tasks and notes - like the Fire project, for something you want.',
+    text: 'The real **Dream** panel: buckets, progress, tasks and notes - like the Fire project, for something you want.',
   },
   's-plans': {
     title: 'Payment plans',
@@ -535,7 +535,7 @@ export const TURN_EN: Record<string, DemoText> = {
     text: 'There it is: **50 a month into the dream**. At every Payday it is booked as a new transaction, and the dream fills up.',
   },
   's-menu': { title: 'Back to the game: the Menu', text: 'Open the **Menu**.' },
-  's-back': { title: 'Dreamfund', text: 'Press **Dreamfund**.' },
+  's-back': { title: 'Dreamer', text: 'Press **Dreamer**.' },
   't5-done': { title: 'Done', text: 'Press **Done** to end your turn.' },
   't6-roll': { title: 'A Life card', text: 'Roll: the next tile is ❤ **Life**.' },
   't6-open': { title: 'Life happens', text: 'Open the card.' },
@@ -577,7 +577,7 @@ export const TURN_EN: Record<string, DemoText> = {
   'menu-hub': { title: 'The Menu: your hub', text: 'One more place: the **Menu**. Open it.' },
   'menu-explain': {
     title: 'Everything is here',
-    text: 'The Menu is the **hub**: every page of the app - Transactions, the accounts, Subscriptions, Grow, the Income Statement, the Balance Sheet, Budget - and **Dreamfund** to jump back into the game. Use it to go from page to page. Close it with the x when you are done.',
+    text: 'The Menu is the **hub**: every page of the app - Transactions, the accounts, Subscriptions, Grow, the Income Statement, the Balance Sheet, Budget - and **Dreamer** to jump back into the game. Use it to go from page to page. Close it with the x when you are done.',
   },
   end: {
     title: 'That is the loop',
@@ -636,8 +636,8 @@ export const TURN_DE: Record<string, DemoText> = {
     text: 'Der Spielbildschirm ist ein eigenes Fenster. Zurück kommst du von jeder Seite über das **Menü**.',
   },
   'g-back': {
-    title: 'Dreamfund',
-    text: 'Der Eintrag **Dreamfund** bringt dich zurück ins Spiel. Drücke ihn.',
+    title: 'Dreamer',
+    text: 'Der Eintrag **Träumer** bringt dich zurück ins Spiel. Drücke ihn.',
   },
   't1-done': {
     title: 'Fertig',
@@ -678,10 +678,10 @@ export const TURN_DE: Record<string, DemoText> = {
   },
   'f-paid': {
     title: 'Bezahlt',
-    text: 'Das Projekt ist **abgeschlossen**. Zurück zum Spiel: öffne das **Menü** und drücke **Dreamfund**.',
+    text: 'Das Projekt ist **abgeschlossen**. Zurück zum Spiel: öffne das **Menü** und drücke **Träumer**.',
   },
   'f-menu': { title: 'Zurück zum Spiel: das Menü', text: 'Öffne das **Menü**.' },
-  'f-back': { title: 'Dreamfund', text: 'Drücke **Dreamfund**.' },
+  'f-back': { title: 'Träumer', text: 'Drücke **Träumer**.' },
   't2-bank': {
     title: 'Du schuldest der Bank',
     text: 'Der Kredit kostet **10 % im Monat**: 100 TT weniger bei jedem Zahltag. Die Bank-Schaltfläche zeigt ihn und eine **Zurückzahlen**-Schaltfläche.',
@@ -722,7 +722,7 @@ export const TURN_DE: Record<string, DemoText> = {
     text: 'Ein **Abo** ist eine Zahlung, die sich wiederholt: Gehalt, Miete, jede Rechnung - und die **Zahlungspläne**, die du anlegst. Bei jedem Zahltag wird jedes als **neue Transaktion** gebucht. Was vom Monat bleibt, ist dein **Cashflow**.',
   },
   't4-menu': { title: 'Zurück zum Spiel: das Menü', text: 'Öffne das **Menü**.' },
-  't4-back': { title: 'Dreamfund', text: 'Drücke **Dreamfund**.' },
+  't4-back': { title: 'Träumer', text: 'Drücke **Träumer**.' },
   't4-repay': {
     title: 'Die Bank zurückzahlen',
     text: 'Du hast Geld vom Zahltag. Drücke **Offenen Betrag zurückzahlen**.',
@@ -741,11 +741,11 @@ export const TURN_DE: Record<string, DemoText> = {
     title: 'Mit dem Gleitschirm über die Alpen',
     text: 'Lies den Traum: ein kleiner, 2 Punkte, vier **Eimer** zusammen 1.200 TT. Dann **Weiter**.',
   },
-  't5-take': { title: 'Nimm den Traum', text: 'Nimm ihn: er wird ein **Smile-Projekt**.' },
-  't5-smile': { title: 'Zum Smile-Projekt', text: 'Drücke **Smile-Projekt öffnen**.' },
+  't5-take': { title: 'Nimm den Traum', text: 'Nimm ihn: er wird ein **Traumprojekt**.' },
+  't5-smile': { title: 'Zum Traumprojekt', text: 'Drücke **Traumprojekt öffnen**.' },
   's-overview': {
     title: 'Der Traum als Projekt',
-    text: 'Das echte **Smile**-Fenster: Eimer, Fortschritt, Aufgaben, Notizen - wie das Fire-Projekt, für etwas, das du willst.',
+    text: 'Das echte **Traum**-Fenster: Eimer, Fortschritt, Aufgaben, Notizen - wie das Fire-Projekt, für etwas, das du willst.',
   },
   's-plans': {
     title: 'Zahlungspläne',
@@ -764,7 +764,7 @@ export const TURN_DE: Record<string, DemoText> = {
     text: 'Da ist er: **50 im Monat in den Traum**. Bei jedem Zahltag wird er als neue Transaktion gebucht, und der Traum füllt sich.',
   },
   's-menu': { title: 'Zurück zum Spiel: das Menü', text: 'Öffne das **Menü**.' },
-  's-back': { title: 'Dreamfund', text: 'Drücke **Dreamfund**.' },
+  's-back': { title: 'Träumer', text: 'Drücke **Träumer**.' },
   't5-done': { title: 'Fertig', text: 'Drücke **Fertig**.' },
   't6-roll': { title: 'Eine Lebenskarte', text: 'Würfle: das nächste Feld ist ❤ **Leben**.' },
   't6-open': { title: 'Das Leben passiert', text: 'Öffne die Karte.' },
@@ -809,7 +809,7 @@ export const TURN_DE: Record<string, DemoText> = {
   },
   'menu-explain': {
     title: 'Alles ist hier',
-    text: 'Das Menü ist der **Knotenpunkt**: jede Seite der App - Transaktionen, die Konten, Abos, Grow, Einkommen, Bilanz, Budget - und **Dreamfund**, um ins Spiel zurückzuspringen. Schließe es mit dem x.',
+    text: 'Das Menü ist der **Knotenpunkt**: jede Seite der App - Transaktionen, die Konten, Abos, Grow, Einkommen, Bilanz, Budget - und **Träumer**, um ins Spiel zurückzuspringen. Schließe es mit dem x.',
   },
   end: {
     title: 'Das ist die Schleife',

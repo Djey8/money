@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * Where the Dreamfund leaderboard lives (todo/dreamfund-multiplayer.md, slice 8): the same `gamestats` database as the classic board, under
+ * Where the Dreamer leaderboard lives (todo/dreamfund-multiplayer.md, slice 8): the same `gamestats` database as the classic board, under
  * prefixes of its own - nothing of the two worlds is shared, read or counted together. Game accounts only.
  *
- *  - `dprofile:<playerId>`  a player of the Dreamfund board, human or bot: the public `playerId` (never an account id), the display name,
+ *  - `dprofile:<playerId>`  a player of the Dreamer board, human or bot: the public `playerId` (never an account id), the display name,
  *                           and a rating with its counters for each difficulty (`ratings.easy|medium|hard`).
  *  - `dresult:<tableId>`    what one finished table came to - who played, how they placed, how the ratings moved. Written once (a second
  *                           write of the same table is refused: that is what makes recording idempotent).

@@ -300,7 +300,7 @@ describe('a whole seeded game of turns', () => {
   });
 });
 
-describe('the tiles of a Dreamfund map (JFK, 2026-10-25)', () => {
+describe('the tiles of a Dreamer map (JFK, 2026-10-25)', () => {
   const map = buildDreamfundBoard({ shape: 'ring', size: 'medium', seed: 3 });
   const dreamfundDeps = (rng: Rng): TurnDeps => ({ ...deps(rng), board: map.board });
   const firstOf = (kind: string) => map.board.findIndex((space) => space.kind === kind);
