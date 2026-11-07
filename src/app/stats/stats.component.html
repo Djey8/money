@@ -478,7 +478,7 @@
             [class.active]="isAccountSelected(account)"
             (click)="toggleAccountFilter(account)"
           >
-            {{ account }}
+            {{ account | accountLabel }}
           </button>
         </div>
       </div>
@@ -1009,7 +1009,7 @@
             [class.active]="isChartFilterAccountSelected(account)"
             (click)="toggleChartFilterAccount(account)"
           >
-            {{ account }}
+            {{ account | accountLabel }}
           </button>
         </div>
       </div>

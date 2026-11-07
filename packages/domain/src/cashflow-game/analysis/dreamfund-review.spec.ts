@@ -1,8 +1,14 @@
 import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
 import type { GameSnapshot } from '../history';
-import { describeDreamfundReview, reviewDreamfund } from './dreamfund-review';
+import {
+  benchmarkOf,
+  characterAndLevel,
+  DREAMFUND_BENCHMARK,
+  describeDreamfundReview,
+  reviewDreamfund,
+} from './dreamfund-review';
 
-/** A small Dreamfund game: a salary, a hustle bought in month 3, a Bank loan in month 5. */
+/** A small Dreamer game: a salary, a hustle bought in month 3, a Bank loan in month 5. */
 function position(
   round: number,
   extra: { hustle?: boolean; loan?: number; reserve?: number; debts?: boolean } = {},
@@ -85,7 +91,7 @@ function position(
   } as unknown as GameSnapshot;
 }
 
-describe('the Dreamfund review', () => {
+describe('the Dreamer review', () => {
   it('reads the story of a game: the milestones, what was bought, the loans, and what to do differently', () => {
     const stack = [
       { ...position(1, { debts: true }), step: { kind: 'start' as const, at: 't' } },
@@ -117,7 +123,26 @@ describe('the Dreamfund review', () => {
     expect(review.findings.some((f) => f.id === 'savings' && f.tone === 'tip')).toBe(true);
     expect(review.findings.some((f) => f.id === 'loans')).toBe(true);
     const text = describeDreamfundReview(review);
-    expect(text).toContain('Dreamfund game review');
+    expect(text).toContain('Dreamer game review');
     expect(text).toContain('Tutoring');
+  });
+});
+
+describe('the benchmark of a game', () => {
+  it('is the map cell of its character and difficulty, the Jonas numbers for an unknown one', () => {
+    expect(characterAndLevel('jan-oberarzt~hard')).toEqual({
+      character: 'jan-oberarzt',
+      level: 'hard',
+    });
+    expect(characterAndLevel('peter-busfahrer')).toEqual({
+      character: 'peter-busfahrer',
+      level: 'medium',
+    });
+    const peter = benchmarkOf('peter-busfahrer');
+    const jan = benchmarkOf('jan-oberarzt');
+    expect(peter.info?.winRate).toBeGreaterThan(jan.info!.winRate);
+    expect(peter.info?.strategies[0].winRate).toBe(peter.info?.winRate);
+    expect(benchmarkOf('nobody').info).toBeNull();
+    expect(benchmarkOf('nobody').bench).toEqual(DREAMFUND_BENCHMARK);
   });
 });

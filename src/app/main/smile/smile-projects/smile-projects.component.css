@@ -391,3 +391,14 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* what living a dream is worth: the dream points of a project */
+.points-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--color-warning, #d98e04);
+  color: var(--color-warning, #d98e04);
+}

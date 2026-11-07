@@ -1,4 +1,4 @@
-# Dreamfund simulation
+# Dreamer simulation
 
 420 games - {"games":60,"maxTurns":150,"rules":{}}
 

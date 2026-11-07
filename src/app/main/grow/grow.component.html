@@ -309,6 +309,14 @@
       >
     </div>
 
+    <!-- A Harvest card's offer to buy what you own: its price and how long it stays open -->
+    <div class="card-offer" *ngIf="sellOffer(project) as offer">
+      {{ 'Grow.sellOffer' | translate: { price: (offer.price | appNumber) } }}
+      <span *ngIf="offer.left !== null">
+        · {{ 'Grow.sellOfferLeft' | translate: { turns: offer.left } }}
+      </span>
+    </div>
+
     <!-- Card Footer: Quick Actions (income-growth only) -->
     <div class="card-footer" *ngIf="!project.type || project.type === 'income-growth'">
       <button

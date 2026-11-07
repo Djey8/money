@@ -14,13 +14,15 @@ import type { TableSessionService } from './table-session.service';
  * made - so the books the screen shows are the new ones - and hands back what happened.
  */
 export class TableGameDriver implements RemoteGame {
+  readonly dreamfund?: boolean;
+
   /**
    * `refusal` says why a move of play cannot be made now (looking at another player's books, not the player's turn, the turn held):
    * the words for the toast, or null when it can. It is asked before anything is sent, so a click on a stale button costs nothing.
    */
   constructor(
-    private readonly session: TableSessionService,
-    private readonly refusal: () => string | null = () => null,
+    protected readonly session: TableSessionService,
+    protected readonly refusal: () => string | null = () => null,
     private readonly historyLines: () => RemoteHistoryLine[] = () => [],
     private readonly words: () => { label: string; confirm: string; lobby: string } = () => ({
       label: 'Resign',
@@ -179,14 +181,17 @@ export class TableGameDriver implements RemoteGame {
     return this.move({ type: 'pay_liability', tag }, false);
   }
 
-  private async move(command: Record<string, unknown>, play = true): Promise<RemoteOutcome> {
+  protected async move(command: Record<string, unknown>, play = true): Promise<RemoteOutcome> {
     const refused = play ? this.refusal() : null;
     if (refused) return { ok: false, message: refused, events: [] };
     const done = await this.session.playForResult(command);
     if (!done) {
       return { ok: false, message: this.session.problem() ?? undefined, events: [] };
     }
-    await this.session.untilVersion(done.appliedVersion ?? done.version ?? 0);
+    const target = done.appliedVersion ?? done.version ?? 0;
+    await this.session.untilVersion(target);
+    // the stream did not bring it in time (a slow or a dropped line): the table is read again, so the screen never shows a stale card
+    if ((this.session.view()?.version ?? 0) < target) await this.session.resync();
     return {
       ok: true,
       events: (done.events ?? []).map((event) => ({

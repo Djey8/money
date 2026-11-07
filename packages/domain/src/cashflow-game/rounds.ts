@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { offerIsOpen } from './rules';
 import { applyInsuranceChanges } from './insurance';
 import { tickCareer } from './career';
 import { tickLife } from './life-books';
@@ -70,6 +71,10 @@ export interface RoundDeps {
   opportunityCards?: readonly OpportunityCard[];
   /** The level of the game: the markets drift by it. */
   difficulty?: Difficulty;
+  /** At a table the markets are everybody's: they drift once a table round, not at every player's Payday. */
+  sharedMarkets?: boolean;
+  /** The throw of the job search of this Payday, when the player's own die is used. */
+  jobRoll?: number;
 }
 
 /** One entry of the game's History: what kind of step it was and what it was about. */
@@ -193,8 +198,14 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
   const hadOffers = (next.marketOffers ?? []).length > 0;
   const growUpdates: BookGrowUpdate[] = [];
   if (hadOffers) {
-    next = { ...next, marketOffers: [] };
+    // a Harvest card's offer of the Dreamer game outlives the Payday for as many turns as the table allows; the others end here
+    const staying = (next.marketOffers ?? []).filter(
+      (offer) => offer.validRolls !== undefined && offerIsOpen(next, offer),
+    );
+    next = { ...next, marketOffers: staying };
+    const stayingTitles = new Set(staying.map((offer) => offer.title));
     for (const project of books.growNotes ?? []) {
+      if (stayingTitles.has(project.title)) continue;
       const kept = project.notes.filter((note) => !note.text.startsWith(MARKET_NOTE_MARK));
       if (kept.length !== project.notes.length)
         growUpdates.push({ title: project.title, notes: kept });
@@ -221,6 +232,7 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
           date: appendedTransactions[0]?.date ?? today,
           lang: deps.lang ?? 'en',
           rng: deps.rng,
+          jobRoll: deps.jobRoll,
         },
       )
     : null;
@@ -241,6 +253,7 @@ export function playPayday(books: RoundBooks, deps: RoundDeps): RoundEffects {
             lang: deps.lang ?? 'en',
             rng: deps.rng,
             difficulty: deps.difficulty,
+            drift: !deps.sharedMarkets,
           },
         )
       : null;

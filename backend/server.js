@@ -137,6 +137,10 @@ if (require.main === module) {
       // A failure here must not stop the server: the clocks arm again as soon as anyone touches a table.
       require('./routes/game-rooms')
         .startClocks()
+        .then((count) => {
+          require('./routes/game-rooms').startSweeper();
+          return count;
+        })
         .then((count) => logger.info('Table clocks armed', { tables: count }))
         .catch((err) => logger.logError(err, { context: 'game_room_clocks' }))
         // The leaderboard: a profile for every bot (idempotent) and the applications a crash left half done.
@@ -153,7 +157,16 @@ if (require.main === module) {
             repaired: repaired.repaired,
           });
         })
-        .catch((err) => logger.logError(err, { context: 'game_stats_startup' })),
+        .catch((err) => logger.logError(err, { context: 'game_stats_startup' }))
+        // The Dreamer board of its own: its bots are known before they have played (idempotent).
+        .then(async () => {
+          const seeded = await require('./routes/game-rooms').dreamStats().seedBots();
+          logger.info('Dreamer leaderboard ready', {
+            botsMade: seeded.made,
+            levelsMoved: seeded.moved,
+          });
+        })
+        .catch((err) => logger.logError(err, { context: 'game_dream_stats_startup' })),
     )
     .catch((err) => {
       logger.logError(err, { context: 'database_initialization' });

@@ -18,5 +18,12 @@ export function textOrFallback(text: GameText, key: string, fallback: string): s
   return translated === key ? fallback : translated;
 }
 
+/**
+ * A text function for a game that is kept on a server and shown in the language of each player (a table): a key comes back as itself,
+ * with its parameters written behind it (`key::{"cash":"100"}`), and the screen of the player translates it where it is shown.
+ */
+export const taggedText: GameText = (key, params) =>
+  params && Object.keys(params).length > 0 ? `${key}::${JSON.stringify(params)}` : key;
+
 /** A text function that never translates: every key comes back as itself. For tests and language-neutral callers. */
 export const identityText: GameText = (key) => key;

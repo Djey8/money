@@ -16,7 +16,7 @@ export type RatRaceSpaceKind =
   | 'charity'
   | 'downsized'
   | 'baby'
-  // the tiles of a Dreamfund map (dreamfund-board.ts)
+  // the tiles of a Dreamer map (dreamfund-board.ts)
   | 'dream'
   | 'emergency'
   | 'opportunity'
@@ -113,7 +113,7 @@ export function validateRatRaceBoard(board: RatRaceBoard): string[] {
     if (space.index !== index) problems.push(`Space ${index} has index ${space.index}.`);
   });
   const present = new Set(board.map((space) => space.kind));
-  // a Dreamfund map has its own tiles, the classic ring its own
+  // a Dreamer map has its own tiles, the classic ring its own
   const family = DREAMFUND_KINDS.some((kind) => kind !== 'payday' && present.has(kind))
     ? DREAMFUND_KINDS
     : CLASSIC_KINDS;

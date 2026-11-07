@@ -212,6 +212,14 @@ export class FireEmergenciesComponent {
     const totalTarget = IncomeStatementService.getTotalFireTarget(fire);
     const totalAmount = IncomeStatementService.getTotalFireAmount(fire);
     AddComponent.commentTextField = `${fire.title} ${totalTarget - totalAmount} `;
+    // in a game the amount that finishes the project is filled in; never the amount of the last payment
+    const remaining = Math.round((totalTarget - totalAmount) * 100) / 100;
+    AddComponent.amountTextField =
+      CashflowGameService.isCashflowGame() &&
+      !!AppStateService.instance.cashflowGame.professionId &&
+      remaining > 0
+        ? (remaining * -1).toString()
+        : '';
   }
 
   /**

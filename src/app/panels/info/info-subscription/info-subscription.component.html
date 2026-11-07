@@ -14,7 +14,7 @@
     <div id="info-box">
       <h4 class="infoLable">{{ classReference.title }}</h4>
       <h4 class="infoLable">{{ getFrequencyLabel(classReference.frequencyField) }}</h4>
-      <h4 class="infoLableB">{{ classReference.account }}</h4>
+      <h4 class="infoLableB">{{ classReference.account | accountLabel }}</h4>
       <img
         id="account-pic"
         alt="Account Pic"

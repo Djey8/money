@@ -3,28 +3,23 @@
 const crypto = require('crypto');
 const {
   applyCommand,
-  applyTimeout,
   botFallbackCommand,
-  createTable,
   nextBotCommand,
-  humansAreOut,
   canAnswerTrade,
   seededRng,
-  nextDeadline,
   rewindTable,
-  projectFor,
   systemClock,
-  tableLegalActions,
   TableCommandError,
 } = require('@money/domain');
 // the catalog of bots is data kept out of the domain package's barrel (the browser bundle must not carry it)
 const { botPolicy } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
-const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
+const { CASHFLOW_GAME_SETS } = require('./game-sets');
 const store = require('../repositories/game-room-store');
 const { RoomError } = require('./game-room-errors');
 const { createRoomQueue } = require('./room-queue');
 const { eventSeat, projectLog, publicEvent } = require('./game-room-stream');
 const { createGameText } = require('./game-text');
+const { kindOf, kindNamed } = require('./game-room-kinds');
 const { createCardTextSource } = require('./game-card-text');
 
 /**
@@ -55,6 +50,9 @@ const number = (name, fallback) => {
 };
 
 /** What one account and the server allow; environment overrides are read at call time so a test can lower them. */
+/** How long a finished guided demo game stays for its end screen before the server forgets it. */
+const DEMO_FORGET_MS = 15 * 60 * 1000;
+
 function limits() {
   return {
     maxHosted: number('GAME_ROOMS_MAX_HOSTED', 3),
@@ -64,6 +62,10 @@ function limits() {
     playingIdleMs: number('GAME_ROOMS_PLAYING_IDLE_MS', 7 * DAY_MS),
     // a finished table stays readable for the people who played it, and from the leaderboard, for three months
     retentionMs: number('GAME_ROOMS_RETENTION_MS', 90 * DAY_MS),
+    // the move-by-move history of a finished table (replay, rewind) goes after this; the table and its result stay
+    historyMs: number('GAME_ROOMS_HISTORY_MS', 30 * DAY_MS),
+    // how many tables one sweep touches: it is bounded work, never a burst
+    sweepBatch: number('GAME_ROOMS_SWEEP_BATCH', 25),
   };
 }
 
@@ -150,8 +152,8 @@ function roomView(doc, userId) {
     language: doc.language,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
-    table: projectFor(doc.table, userId),
-    legalActions: tableLegalActions(doc.table, userId),
+    table: kindOf(doc.table).project(doc.table, userId),
+    legalActions: kindOf(doc.table).legal(doc.table, userId),
   };
 }
 
@@ -165,6 +167,15 @@ function roomSummary(doc, userId) {
     visibility: doc.visibility,
     seatsTaken: doc.seatsTaken,
     maxSeats: doc.maxSeats,
+    kind: doc.table.kind === 'dreamfund' ? 'dreamfund' : 'classic',
+    ...(doc.table.kind === 'dreamfund'
+      ? {
+          difficulty: settings.difficulty,
+          shape: settings.shape,
+          size: settings.size,
+          mode: settings.mode,
+        }
+      : {}),
     gameSetId: settings.gameSetId,
     rulesBase: settings.rulesBase,
     ranked: settings.ranked,
@@ -193,6 +204,8 @@ function desiredMarkers(table) {
     }
     return wanted;
   }
+  // The guided demo game is nobody's history: once it is over no list shows it
+  if (table.settings && table.settings.demo) return wanted;
   // A table that is over keeps a marker for everyone who sat at it, flagged closed: the "recent tables" list reads them, the
   // limits do not count them, and they go with the room when it is deleted.
   for (const player of table.players) {
@@ -208,12 +221,12 @@ function createGameRoomService({
   log = () => {},
   hub = null,
   stats = null,
+  dreamStats = null,
   nicknameOf = async () => '',
   clocks = null,
   bots = null,
   filer = null,
 }) {
-  let lastSweep = -Infinity;
   /** Everything that changes a table waits in this line, in the order it arrived (services/room-queue.js). */
   const queue = createRoomQueue();
 
@@ -252,6 +265,10 @@ function createGameRoomService({
     const saved = await store.saveRoom(db, {
       ...doc,
       ...listingFields(table),
+      // a table that is over keeps its history for a while, then the sweep removes it (a saved game keeps it for good)
+      ...(['finished', 'abandoned'].includes(table.phase) && !doc.compactAfter && !doc.compacted
+        ? { compactAfter: new Date(nowMs() + limits().historyMs).toISOString() }
+        : {}),
       table,
       turnSeq,
       eventSeq: firstSeq - 1 + events.length,
@@ -264,10 +281,17 @@ function createGameRoomService({
         firstSeq,
         events.map((event) => ({ ...event, seat: eventSeat(previous, table, event) })),
       );
-      await store.syncMarkers(db, doc.roomId, desiredMarkers(table));
-      if (startsTurn && options.turnSeq === undefined) {
-        await store.putSnapshot(db, doc.roomId, turnSeq, table);
-      }
+      // the markers say who sits at the table: they only change when somebody sits down, leaves or the table ends - not with a move
+      const changedSeats =
+        !previous ||
+        JSON.stringify([...desiredMarkers(previous)]) !==
+          JSON.stringify([...desiredMarkers(table)]);
+      await Promise.all([
+        changedSeats ? store.syncMarkers(db, doc.roomId, desiredMarkers(table)) : null,
+        startsTurn && options.turnSeq === undefined
+          ? store.putSnapshot(db, doc.roomId, turnSeq, table)
+          : null,
+      ]);
     } catch (error) {
       // The table is saved - it is the truth; a missing event, marker or snapshot is repaired by the next change.
       log('game_room_side_write_failed', { roomId: doc.roomId, message: error.message });
@@ -280,14 +304,39 @@ function createGameRoomService({
       });
     }
     // a game that has just ended goes onto the leaderboard (never in the way of the game itself)
-    if (stats && table.phase === 'finished' && (!previous || previous.phase !== 'finished')) {
+    if (
+      stats &&
+      table.kind !== 'dreamfund' &&
+      table.phase === 'finished' &&
+      (!previous || previous.phase !== 'finished')
+    ) {
       stats
         .record(saved)
         .catch((error) =>
           log('game_stats_record_failed', { roomId: doc.roomId, message: error.message }),
         );
     }
-    if (clocks) clocks.arm(doc.roomId, nextDeadline(table));
+    // a Dreamer game that has just ended goes onto its own board (the guided demo game goes nowhere and is forgotten soon)
+    if (table.settings && table.settings.demo && ['finished', 'abandoned'].includes(table.phase)) {
+      const forget = setTimeout(() => {
+        store.deleteRoom(db, doc.roomId).catch(() => {});
+      }, DEMO_FORGET_MS);
+      if (forget && typeof forget.unref === 'function') forget.unref();
+    }
+    if (
+      dreamStats &&
+      !(table.settings && table.settings.demo) &&
+      table.kind === 'dreamfund' &&
+      table.phase === 'finished' &&
+      (!previous || previous.phase !== 'finished')
+    ) {
+      dreamStats
+        .record(saved)
+        .catch((error) =>
+          log('game_dream_stats_record_failed', { roomId: doc.roomId, message: error.message }),
+        );
+    }
+    if (clocks) clocks.arm(doc.roomId, kindOf(table).deadline(table));
     if (bots) bots.touch(doc.roomId, table);
     return saved;
   }
@@ -312,19 +361,30 @@ function createGameRoomService({
     return markers;
   }
 
-  async function maybeSweep() {
-    if (nowMs() - lastSweep < SWEEP_EVERY_MS) return;
-    lastSweep = nowMs();
-    try {
-      await sweep();
-    } catch (error) {
-      log('game_room_sweep_failed', { message: error.message });
-    }
+  /**
+   * The housekeeping runs on its own timer, never inside a request (JFK, 2026-11-04: no other table, list or sweep may slow down
+   * somebody who is playing): a bounded batch every few minutes, one at a time.
+   */
+  let sweeper = null;
+  let sweeping = false;
+  function startSweeper() {
+    if (sweeper) return;
+    sweeper = setInterval(async () => {
+      if (sweeping) return;
+      sweeping = true;
+      try {
+        await sweep();
+      } catch (error) {
+        log('game_room_sweep_failed', { message: error.message });
+      } finally {
+        sweeping = false;
+      }
+    }, SWEEP_EVERY_MS);
+    if (sweeper.unref) sweeper.unref();
   }
 
   /** A new table with `userId` as host. */
   async function createRoom(userId, input) {
-    await maybeSweep();
     if (!input || typeof input !== 'object') {
       throw new RoomError('validation_invalid', 400, 'A table needs a nickname and settings.');
     }
@@ -334,7 +394,8 @@ function createGameRoomService({
       throw new RoomError('room_limit', 429, 'The server has no room for another table right now.');
     }
     const roomId = crypto.randomUUID();
-    const { table, events } = createTable(
+    const kind = kindNamed(input.kind);
+    const { table, events } = kind.create(
       {
         id: roomId,
         hostId: userId,
@@ -344,7 +405,10 @@ function createGameRoomService({
         hostInitials: input.initials,
         // a table people create waits for everybody to say Continue after each turn, unless the host switched that off
         // the strict rules are the table's: nothing is added, changed or bought without a card (the solo game's strict mode)
-        settings: { turnGate: true, rulesBase: 'strict', ...input.settings },
+        settings:
+          kind.id === 'dreamfund'
+            ? { turnGate: true, ...input.settings }
+            : { turnGate: true, rulesBase: 'strict', ...input.settings },
         seed: crypto.randomInt(0, 2 ** 32),
       },
       contextFor(language),
@@ -372,6 +436,160 @@ function createGameRoomService({
     // A private table does not exist for anyone who is not at it - unless they came with its invite code.
     if (!member && doc.visibility === 'private' && !joining) throw notFound();
     return doc;
+  }
+
+  /**
+   * A short review of a Dreamer table for somebody who watches it (a person, or an agent asked "how are we doing?"): where every
+   * player stands on the goals, what they have and owe, the pace against the simulation and what to watch. Anybody who may look at the
+   * table may ask; nothing is saved. A classic table has no such review.
+   */
+  async function reviewRoom(userId, roomId) {
+    const doc = await loadFor(userId, roomId);
+    if (doc.table.kind !== 'dreamfund') {
+      throw new RoomError(
+        'review_not_available',
+        400,
+        'Only a Dreamer table can be reviewed this way.',
+      );
+    }
+    return { id: doc.roomId, version: doc.table.version, ...kindOf(doc.table).review(doc.table) };
+  }
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function dreamOnly(doc, what) {
+    if (doc.table.kind !== 'dreamfund') {
+      throw new RoomError('not_available', 400, `${what} is for Dreamer tables.`);
+    }
+  }
+
+  /**
+   * Advice for the reader's own seat at a Dreamer table (JFK, 2026-11-06): the goals, the money, what a strategy would do now with a
+   * sentence for each move, and what to keep in mind. Only somebody who sits at the table can ask; nothing is saved.
+   */
+  async function adviseRoom(userId, roomId, { policyId = 'expert' } = {}) {
+    const doc = await loadFor(userId, roomId);
+    dreamOnly(doc, 'Advice');
+    if (!doc.table.players.some((p) => p.id === userId)) {
+      throw new RoomError('not_seated', 403, 'You have no seat at this table.');
+    }
+    if (!kindOf(doc.table).knowsPolicy(policyId)) {
+      throw new RoomError('unknown_strategy', 400, `There is no strategy called ${policyId}.`);
+    }
+    return {
+      id: doc.roomId,
+      version: doc.table.version,
+      ...kindOf(doc.table).advise(doc.table, userId, policyId),
+    };
+  }
+
+  /**
+   * Plays the reader's own seat for a while with a strategy (JFK, 2026-11-06): the very moves a bot of that strategy would send, one
+   * after the other through the rules, until `maxTurns` of the reader's turns are played, `maxMoves` moves are sent, it is not their
+   * turn, the game is over, or no move is accepted. With `waitSeconds` it waits for the others to play and goes on when it is their
+   * turn again. Everything is a normal move: the table, the log and the other players see it as the reader's.
+   */
+  async function autoplayRoom(
+    userId,
+    roomId,
+    { policyId = 'expert', maxMoves = 25, maxTurns = 1, waitSeconds = 0 } = {},
+  ) {
+    let doc = await loadFor(userId, roomId);
+    dreamOnly(doc, 'Autoplay');
+    if (!doc.table.players.some((p) => p.id === userId)) {
+      throw new RoomError('not_seated', 403, 'You have no seat at this table.');
+    }
+    const kind = kindOf(doc.table);
+    if (!kind.knowsPolicy(policyId)) {
+      throw new RoomError('unknown_strategy', 400, `There is no strategy called ${policyId}.`);
+    }
+    const played = [];
+    let turns = 0;
+    let stopped = 'moves_limit';
+    const deadline = Date.now() + Math.min(Math.max(waitSeconds, 0), 25) * 1000;
+    for (let sent = 0; sent < maxMoves;) {
+      doc = await loadFor(userId, roomId);
+      if (doc.table.phase !== 'playing') {
+        stopped = 'game_over';
+        break;
+      }
+      const commands = kind.policyCommands(doc.table, userId, policyId);
+      if (commands.length === 0) {
+        if (turns > 0 && turns >= maxTurns) {
+          stopped = 'turns_limit';
+          break;
+        }
+        if (Date.now() < deadline) {
+          await sleep(500);
+          continue;
+        }
+        stopped = 'not_your_turn';
+        break;
+      }
+      // the strategy's step is a few moves in a row (the plans of a month, then settling it): all of them, as a bot plays it
+      let applied = false;
+      let waiting = false;
+      for (const command of commands) {
+        if (sent >= maxMoves) break;
+        try {
+          const done = await runCommand(userId, roomId, command, {
+            clientCommandId: crypto.randomUUID(),
+          });
+          played.push({
+            command,
+            events: done.events.map((event) => event.type),
+          });
+          applied = true;
+          sent += 1;
+          if (command.type === 'end_turn') turns += 1;
+        } catch (error) {
+          if (!(error instanceof TableCommandError)) throw error;
+          // the turn cannot end before somebody else has read a Harvest card: not a refusal, the others are to move
+          if (/^Waiting for/.test(error.message)) {
+            waiting = true;
+            break;
+          }
+          played.push({ command, refused: error.message });
+          break;
+        }
+      }
+      if (waiting && !applied) {
+        if (Date.now() < deadline) {
+          await sleep(500);
+          continue;
+        }
+        stopped = 'waiting_for_others';
+        break;
+      }
+      if (!applied) {
+        stopped = 'refused';
+        break;
+      }
+      if (turns >= maxTurns) {
+        // the turn is over; with a wait the next one is played when it comes
+        if (Date.now() >= deadline) {
+          stopped = 'turns_limit';
+          break;
+        }
+        const after = kind.policyCommands((await loadFor(userId, roomId)).table, userId, policyId);
+        if (after.length === 0) {
+          stopped = 'turns_limit';
+          break;
+        }
+      }
+    }
+    doc = await loadFor(userId, roomId);
+    return {
+      id: doc.roomId,
+      version: doc.table.version,
+      stopped,
+      turnsPlayed: turns,
+      movesPlayed: played.filter((entry) => !entry.refused).length,
+      played,
+      ...(doc.table.phase === 'playing'
+        ? { advice: kind.advise(doc.table, userId, policyId) }
+        : {}),
+    };
   }
 
   /** The table, as `userId` may see it (a stranger sees a public table as a spectator). */
@@ -465,7 +683,7 @@ function createGameRoomService({
             throw new TableCommandError('ILLEGAL_MOVE', 'There is no earlier turn to go back to.');
           }
         }
-        const result = applyCommand(doc.table, userId, next, ctx);
+        const result = kindOf(doc.table).apply(doc.table, userId, next, ctx);
         if (!result.events.some((event) => event.type === 'undo_approved')) return { result };
         // the table has voted to undo: go back to the start of the previous turn, in the same save
         const turnSeq = doc.turnSeq || 0;
@@ -510,10 +728,10 @@ function createGameRoomService({
       }
       let result;
       try {
-        result = applyTimeout(doc.table, contextFor(doc.language));
+        result = kindOf(doc.table).timeout(doc.table, contextFor(doc.language));
       } catch (error) {
         if (!(error instanceof TableCommandError)) throw error;
-        if (clocks) clocks.arm(roomId, nextDeadline(doc.table));
+        if (clocks) clocks.arm(roomId, kindOf(doc.table).deadline(doc.table));
         return { fired: false };
       }
       try {
@@ -534,6 +752,7 @@ function createGameRoomService({
    */
   /** The next move of the first bot that has one (the player on the move first), played through the rules; null when none has. */
   function botStep(table, ctx, now, roomId) {
+    if (table.kind === 'dreamfund') return kindOf(table).botStep(table, ctx);
     const order = [
       ...table.players.filter((p) => p.id === table.activePlayerId),
       ...table.players.filter((p) => p.id !== table.activePlayerId),
@@ -601,8 +820,20 @@ function createGameRoomService({
       if (!doc || doc.table.phase !== 'playing') return { moved: false };
       const table = doc.table;
       if (!table.players.some((p) => p.bot)) return { moved: false };
-      if (humansAreOut(table)) return runBotsFast(doc, roomId);
+      if (kindOf(table).humansOut(table)) return runBotsFast(doc, roomId);
       const ctx = contextFor(doc.language);
+      if (table.kind === 'dreamfund') {
+        // one step of the first bot that has one (a step may be several commands of one decision), saved like any other change
+        const stepped = kindOf(table).botStep(table, ctx);
+        if (!stepped || stepped.table.version === table.version) return { moved: false };
+        try {
+          await persist(doc, stepped.table, stepped.events, table);
+          return { moved: true };
+        } catch (error) {
+          if (!(error instanceof store.RoomConflictError)) throw error;
+          continue;
+        }
+      }
       // the player on the move first, then the others (selling off turn, answering a trade offer)
       const order = [
         ...table.players.filter((p) => p.id === table.activePlayerId),
@@ -660,7 +891,7 @@ function createGameRoomService({
     if (!clocks && !bots) return 0;
     const docs = await store.listPlayingRooms(db);
     for (const doc of docs) {
-      if (clocks) clocks.arm(doc.roomId, nextDeadline(doc.table));
+      if (clocks) clocks.arm(doc.roomId, kindOf(doc.table).deadline(doc.table));
       if (bots) bots.touch(doc.roomId, doc.table);
     }
     return docs.length;
@@ -668,7 +899,6 @@ function createGameRoomService({
 
   /** Takes a seat at a public table by id, or at any table by invite code. */
   async function joinRoom(userId, input) {
-    await maybeSweep();
     if (!input || typeof input !== 'object' || (!input.code && !input.roomId)) {
       throw new RoomError('validation_invalid', 400, 'Give the invite code or the table id.');
     }
@@ -701,11 +931,14 @@ function createGameRoomService({
     return joined.view;
   }
 
+  /** The leaderboard service of a table's game: each game has a board of its own. */
+  const boardOf = (table) => (table.kind === 'dreamfund' ? dreamStats : stats);
+
   /** Who sits at a table, for the lobby: the public profile of every seat (picture, rating, numbers) - for those who may see the table. */
   async function seatsOfRoom(userId, roomId) {
     const doc = await loadFor(userId, roomId);
-    if (!stats) return [];
-    return stats.seatsOf(doc.table);
+    const board = boardOf(doc.table);
+    return board ? board.seatsOf(doc.table) : [];
   }
 
   /** Whether both accounts sit at this table (a table-mate may see the other's picture, listed or not). */
@@ -718,14 +951,15 @@ function createGameRoomService({
 
   /** The lobby lists carry who sits at each table (a short preview: name, picture, rating), so a player sees who is there before joining. */
   async function withSeats(summaries, docs) {
-    if (!stats) return summaries;
+    if (!stats && !dreamStats) return summaries;
     const byId = new Map(docs.map((doc) => [doc.roomId, doc]));
     const out = [];
     for (const summary of summaries) {
       const doc = byId.get(summary.id);
       let seats = [];
       try {
-        seats = doc ? await stats.seatsOf(doc.table) : [];
+        const board = doc && boardOf(doc.table);
+        seats = board ? await board.seatsOf(doc.table) : [];
       } catch (error) {
         log('game_room_seats_failed', { roomId: summary.id, message: error.message });
       }
@@ -748,8 +982,10 @@ function createGameRoomService({
   }
 
   /** The public tables with a free seat, or the tables `userId` sits at. */
-  async function listRooms(userId, { scope = 'open', limit = 50 } = {}) {
-    await maybeSweep();
+  async function listRooms(userId, { scope = 'open', limit = 50, kind = 'classic' } = {}) {
+    // the two games are worlds of their own: a list shows one (the classic by default) or, asked for, both
+    const ofKind = (doc) =>
+      kind === 'all' || (doc.table.kind === 'dreamfund') === (kind === 'dreamfund');
     if (scope === 'mine' || scope === 'recent') {
       const wantClosed = scope === 'recent';
       const markers = (await store.seatMarkers(db, userId)).filter(
@@ -761,6 +997,7 @@ function createGameRoomService({
       );
       const picked = docs
         .filter((doc) => OPEN_PHASES.includes(doc.phase) !== wantClosed)
+        .filter(ofKind)
         .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
         .slice(0, limit);
       return withSeats(
@@ -768,9 +1005,9 @@ function createGameRoomService({
         picked,
       );
     }
-    const docs = (await store.listPublicRooms(db, 'lobby', limit)).filter(
-      (doc) => doc.seatsTaken < doc.maxSeats,
-    );
+    const docs = (await store.listPublicRooms(db, 'lobby', limit))
+      .filter((doc) => doc.seatsTaken < doc.maxSeats)
+      .filter(ofKind);
     return withSeats(
       docs.map((doc) => roomSummary(doc, userId)),
       docs,
@@ -840,7 +1077,17 @@ function createGameRoomService({
     for (let attempt = 0; attempt < MAX_COMMAND_ATTEMPTS; attempt += 1) {
       const doc = await loadFor(userId, roomId);
       const player = doc.table.players.find((p) => p.id === userId);
-      if (!player || !player.books) {
+      // a Dreamer seat keeps its life (the books, the reserve, the dreams): filed with what the solo game keeps in the app
+      const dream = doc.table.kind === 'dreamfund' && player && player.life;
+      const entities = dream
+        ? require('@money/domain/dist/cashflow-game/dreamfund/app-entities').dreamAppEntities(
+            player.life,
+            doc.language === 'de' ? 'de' : 'en',
+            nowIso(),
+          )
+        : null;
+      const books = entities ? entities.books : player && player.books;
+      if (!player || !books) {
         throw new RoomError(
           'room_forbidden',
           403,
@@ -869,7 +1116,7 @@ function createGameRoomService({
         if (error instanceof store.RoomConflictError) continue;
         throw error;
       }
-      const gameSet = player.books.gameSet;
+      const gameSet = books.gameSet;
       const profession = gameSet?.professions?.find((p) => p.id === player.professionId);
       const label = `${doc.table.settings.name} · ${profession ? profession.title : 'Cashflow'}`;
       let result;
@@ -878,7 +1125,7 @@ function createGameRoomService({
         const ranked = (doc.table.result?.ranking ?? []).find((entry) => entry.playerId === userId);
         result = await filer(
           userId,
-          player.books,
+          books,
           typeof name === 'string' && name.trim() ? name.trim() : label,
           {
             table: doc.table.settings.name,
@@ -887,6 +1134,9 @@ function createGameRoomService({
             rank: ranked ? ranked.rank : null,
             outcome: ranked ? ranked.outcome : undefined,
           },
+          entities
+            ? { mojo: entities.mojo, smile: entities.smile, fire: entities.fire }
+            : undefined,
         );
       } catch (error) {
         await release(roomId, userId);
@@ -1039,37 +1289,69 @@ function createGameRoomService({
   }
 
   /** Closes tables nobody has touched for too long and deletes old finished ones. Returns what it did. */
+  let retentionCursor = '';
+
   async function sweep() {
     const cap = limits();
     const now = nowMs();
-    const smallest = Math.min(cap.lobbyIdleMs, cap.playingIdleMs, cap.retentionMs);
-    const idle = await store.findIdleRooms(db, new Date(now - smallest).toISOString());
-    const done = { closed: 0, deleted: 0 };
-    for (const doc of idle) {
-      const age = now - Date.parse(doc.updatedAt);
-      if (OPEN_PHASES.includes(doc.phase)) {
-        const limit = doc.phase === 'playing' ? cap.playingIdleMs : cap.lobbyIdleMs;
-        if (age <= limit) continue;
-        const version = doc.table.version + 1;
-        const closed = { ...doc.table, version, phase: 'abandoned', activePlayerId: null };
-        try {
-          await persist(doc, closed, [
-            {
-              version,
-              at: nowIso(),
-              type: 'table_closed',
-              playerId: null,
-              data: { reason: 'idle' },
-            },
-          ]);
-          done.closed += 1;
-        } catch (error) {
-          if (!(error instanceof store.RoomConflictError)) throw error;
+    const done = { closed: 0, deleted: 0, compacted: 0 };
+    // open tables nobody touched for too long are closed: the few open tables are read as light entries, the big document only when due
+    const entries = await store.listOpenRoomEntries(db);
+    const due = entries
+      .filter(
+        (entry) =>
+          now - Date.parse(entry.updatedAt) >
+          (entry.phase === 'playing' ? cap.playingIdleMs : cap.lobbyIdleMs),
+      )
+      .slice(0, cap.sweepBatch);
+    for (const entry of due) {
+      const doc = await store.getRoom(db, entry.roomId);
+      if (!doc || !OPEN_PHASES.includes(doc.phase)) continue;
+      const version = doc.table.version + 1;
+      const closed = { ...doc.table, version, phase: 'abandoned', activePlayerId: null };
+      try {
+        await persist(doc, closed, [
+          { version, at: nowIso(), type: 'table_closed', playerId: null, data: { reason: 'idle' } },
+        ]);
+        done.closed += 1;
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
+      }
+    }
+    // tables that are long over (the oldest first) are deleted, unless somebody saved them
+    const old = await store.findIdleRooms(
+      db,
+      new Date(now - cap.retentionMs).toISOString(),
+      cap.sweepBatch,
+      retentionCursor,
+    );
+    // tables somebody saved stay where they are: the next sweep goes on after them, and starts again at the oldest when it is through
+    retentionCursor = old.length < cap.sweepBatch ? '' : old[old.length - 1].updatedAt;
+    for (const doc of old) {
+      if (OPEN_PHASES.includes(doc.phase) || isKept(doc)) continue;
+      if (clocks) clocks.disarm(doc.roomId);
+      await store.deleteRoom(db, doc.roomId);
+      done.deleted += 1;
+    }
+    // the history of tables that are long over goes, a few at a time (a saved game keeps its history for good)
+    for (const doc of await store.findCompactable(
+      db,
+      new Date(now).toISOString(),
+      cap.sweepBatch,
+    )) {
+      const { compactAfter: _due, ...rest } = doc;
+      void _due;
+      try {
+        if (!isKept(doc)) {
+          if (clocks) clocks.disarm(doc.roomId);
+          await store.compactRoom(db, doc.roomId);
+          await store.saveRoom(db, { ...rest, compacted: true });
+          done.compacted += 1;
+        } else {
+          await store.saveRoom(db, rest);
         }
-      } else if (age > cap.retentionMs && !isKept(doc)) {
-        if (clocks) clocks.disarm(doc.roomId);
-        await store.deleteRoom(db, doc.roomId);
-        done.deleted += 1;
+      } catch (error) {
+        if (!(error instanceof store.RoomConflictError)) throw error;
       }
     }
     return done;
@@ -1078,6 +1360,9 @@ function createGameRoomService({
   return {
     createRoom,
     getRoom,
+    reviewRoom,
+    adviseRoom,
+    autoplayRoom,
     seatsOfRoom,
     sitTogether,
     runCommand,
@@ -1094,6 +1379,7 @@ function createGameRoomService({
     listRooms,
     openStream,
     sweep,
+    startSweeper,
   };
 }
 

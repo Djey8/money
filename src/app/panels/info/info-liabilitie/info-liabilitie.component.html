@@ -25,7 +25,9 @@
       </h4>
     </div>
     <button id="editbtn" (click)="editLiabilitie()">{{ 'Info.edit' | translate }}</button>
-    <button id="editbtn" (click)="payback()">{{ 'InfoLiabilitie.payback' | translate }}</button>
+    <button id="editbtn" class="payback-btn" (click)="payback()">
+      {{ 'InfoLiabilitie.payback' | translate }}
+    </button>
   </div>
   <div *ngIf="isEdit">
     <form id="input-container">

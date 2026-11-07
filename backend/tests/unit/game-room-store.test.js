@@ -316,10 +316,10 @@ describe('the service over a fake database', () => {
     expect(await service.listRooms('u1', { scope: 'mine' })).toHaveLength(1);
 
     now += 2 * 24 * 60 * 60 * 1000;
-    expect(await service.sweep()).toEqual({ closed: 1, deleted: 0 });
+    expect(await service.sweep()).toEqual({ closed: 1, deleted: 0, compacted: 0 });
     expect(await service.listRooms('u2')).toEqual([]);
     now += 91 * 24 * 60 * 60 * 1000; // a finished table is kept for three months
-    expect(await service.sweep()).toEqual({ closed: 0, deleted: 1 });
+    expect(await service.sweep()).toEqual({ closed: 0, deleted: 1, compacted: 0 });
     await expect(service.getRoom('u1', view.id)).rejects.toMatchObject({ code: 'room_not_found' });
   });
 });

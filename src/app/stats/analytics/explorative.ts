@@ -2,6 +2,7 @@ import { StatsComponent } from '../stats.component';
 import * as d3 from 'd3';
 import { ChartFilterService } from '../../shared/services/chart-filter.service';
 import { AppStateService } from '../../shared/services/app-state.service';
+import { accountLabel } from '../../shared/account-label';
 
 export function createExplorativeAnalytics(container: any) {
   const contentDiv = container
@@ -749,7 +750,11 @@ export function createExplorativeAccountDetail(container: any, transactions: any
       .style('padding', '10px')
       .text(i + 1);
 
-    row.append('td').style('padding', '10px').style('font-weight', 'bold').text(d.category);
+    row
+      .append('td')
+      .style('padding', '10px')
+      .style('font-weight', 'bold')
+      .text(accountLabel(d.category));
 
     row
       .append('td')
@@ -1364,7 +1369,7 @@ export function createExplorativeTransactionTable(container: any) {
       .style('white-space', 'nowrap')
       .text(`${day}.${month}.${year}`);
 
-    row.append('td').style('padding', '10px').text(t.account);
+    row.append('td').style('padding', '10px').text(accountLabel(t.account));
 
     const categoryCell = row.append('td').style('padding', '10px');
 
@@ -1376,9 +1381,9 @@ export function createExplorativeTransactionTable(container: any) {
         .style('margin-right', '5px')
         .text('⚠️');
 
-      categoryCell.append('span').text(t.category);
+      categoryCell.append('span').text(accountLabel(t.category));
     } else {
-      categoryCell.text(t.category);
+      categoryCell.text(accountLabel(t.category));
     }
 
     row

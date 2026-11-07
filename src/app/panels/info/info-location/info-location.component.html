@@ -65,7 +65,7 @@
               class="clickable-row"
             >
               <td>{{ getTransactionId(tx) }}</td>
-              <td>{{ tx.account }}</td>
+              <td>{{ tx.account | accountLabel }}</td>
               <td class="{{ legAmount(tx) >= 0 ? 'amount-positive' : 'amount-negative' }}">
                 {{ legAmount(tx) | appNumber }} {{ currency }}
               </td>

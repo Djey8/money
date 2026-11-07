@@ -21,7 +21,7 @@ import {
  * (`docs/discovery/DOMAIN_MODEL.md` item 6), and `returnCorrectSmileAmount`
  * has a real bug: its `return result` sits inside the `for` loop but outside
  * the `if` that matches the category, so the cap only ever fires for
- * `allSmileProjects[0]` — every other Smile project's cap check never runs.
+ * `allSmileProjects[0]` — every other Dream project's cap check never runs.
  * `addToSmileProject` has a second bug: it appends the `#bucket:` comment tag
  * to `allTransactions[length - 1]` *before* the new transaction is
  * constructed, so the tag lands on the previous transaction, not the one
@@ -116,7 +116,7 @@ function hasRoom(bucket: FundBucket): boolean {
  * - with `#bucket:` tags (payment-plan subscriptions): the tagged buckets;
  * - untagged Smile (`@<project>`): all of the project's buckets;
  * - untagged Fire: `@<bucket>` → that bucket, `@<project>` → its first bucket.
- * The original only checked Mojo and whole Smile projects, so a funded Fire
+ * The original only checked Mojo and whole Dream projects, so a funded Fire
  * plan (or a plan whose own buckets were full while another had room) kept
  * generating transactions that were capped to €0.
  */

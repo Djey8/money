@@ -46,7 +46,7 @@ describe('the live history', () => {
     expect(history.schema).toBe(LIVE_HISTORY_SCHEMA);
     expect(history.updatedAt).toBe('2026-10-05T10:00:00.000Z');
     expect(history.gameId).toBe('game_1');
-    expect(history.undo.format).toBe(1);
+    expect(history.undo.format).toBe(2);
     expect(history.undo.snapshots).toHaveLength(2);
     expect(history.steps).toEqual([
       { number: 1, kind: 'start', detail: 'Janitor', at: 't1' },
@@ -78,7 +78,7 @@ describe('the live history', () => {
       {},
       { ...good, schema: undefined },
       { ...good, updatedAt: 5 },
-      { ...good, undo: { format: 2, snapshots: [] } },
+      { ...good, undo: { format: 3, snapshots: [] } },
       { ...good, undo: 'nope' },
     ]) {
       expect(readLiveHistory(bad)).toBeNull();

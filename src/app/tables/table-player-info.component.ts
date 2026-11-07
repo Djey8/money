@@ -15,6 +15,9 @@ import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { TablesApiService, type GamePlayer } from './tables-api.service';
 import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
+import { DreamApiService, type DreamPlayerDetail } from '../dreamfund-tables/dream-session.service';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
+import { factGroups, type FactGroup } from '../dreamfund-tables/dream-player-facts';
 
 /**
  * One player of the leaderboard, opened from its list: a panel like the app's own info panels - who they are, the rating, the
@@ -185,6 +188,29 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
         <p class="pi-axis-note">{{ t.axisNote }}</p>
       </section>
 
+      <!-- the fact table of a Dreamer player: what the games came to in Grow, Fire, Smile and the income -->
+      <section class="pi-facts" *ngIf="game === 'dreamfund' && loaded">
+        <h4>{{ d.profile.facts }}</h4>
+        <p class="pi-empty" *ngIf="!facts.length">{{ d.profile.noFacts }}</p>
+        <ng-container *ngIf="facts.length">
+          <p class="pi-axis-note">{{ d.profile.factsNote }}</p>
+          <div class="pi-fact-group" *ngFor="let group of facts" [attr.data-group]="group.id">
+            <h5>{{ group.title }}</h5>
+            <dl>
+              <div class="pi-fact-head" aria-hidden="true">
+                <span></span><span>{{ d.profile.total }}</span
+                ><span>{{ d.profile.perGame }}</span>
+              </div>
+              <div class="pi-fact" *ngFor="let row of group.rows">
+                <dt>{{ row.label }}</dt>
+                <dd>{{ row.total }}</dd>
+                <dd>{{ row.perGame }}</dd>
+              </div>
+            </dl>
+          </div>
+        </ng-container>
+      </section>
+
       <section class="pi-recent">
         <h4>{{ t.recent }}</h4>
         <p class="pi-empty" *ngIf="loaded && !detail?.recent?.length">{{ t.noGames }}</p>
@@ -256,6 +282,48 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
         gap: 16px;
       }
       /* the sections keep their own height (the panel scrolls, they are not squeezed to fit it) and may not push it wider */
+      .pi-fact-group h5 {
+        margin: 10px 0 4px;
+        font-size: 0.95rem;
+      }
+      .pi-fact-group[data-group='grow'] h5 {
+        color: #2e7d32;
+      }
+      .pi-fact-group[data-group='fire'] h5 {
+        color: #d84315;
+      }
+      .pi-fact-group[data-group='smile'] h5 {
+        color: #6a1b9a;
+      }
+      .pi-fact-group[data-group='income'] h5 {
+        color: #1565c0;
+      }
+      .pi-fact-group dl {
+        margin: 0;
+      }
+      .pi-fact,
+      .pi-fact-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 5.2rem 5.2rem;
+        gap: 8px;
+        padding: 3px 0;
+        border-bottom: 1px solid var(--color-border-light, #eee);
+      }
+      .pi-fact dt {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .pi-fact dd {
+        margin: 0;
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+      }
+      .pi-fact-head {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--color-text-secondary, #666);
+        text-align: end;
+      }
       .pi-panel > * {
         flex: none;
         min-width: 0;
@@ -518,9 +586,15 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
 })
 export class TablePlayerInfoComponent implements OnChanges {
   @Input({ required: true }) player!: GamePlayer;
+  /** The board the player is of: the classic Cashflow's, or the Dreamer's (more: how the rating moved, the fact table). */
+  @Input() game: 'classic' | 'dreamfund' = 'classic';
   @Output() closed = new EventEmitter<void>();
 
   t: LeaderboardTexts;
+  d: DreamTexts;
+  /** A Dreamer player: the fact table, and the rating after each of the last games. */
+  facts: FactGroup[] = [];
+  private history: DreamPlayerDetail['history'] = [];
   rtl: boolean;
   detail: GamePlayer | null = null;
   loaded = false;
@@ -533,9 +607,11 @@ export class TablePlayerInfoComponent implements OnChanges {
     private translate: TranslateService,
     private cdr: ChangeDetectorRef,
     private router: Router,
+    private dreamApi: DreamApiService,
   ) {
     const lang = this.translate.currentLang || this.translate.defaultLang || 'en';
     this.t = leaderboardTexts(lang);
+    this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
   }
 
@@ -550,6 +626,40 @@ export class TablePlayerInfoComponent implements OnChanges {
   ngOnChanges(): void {
     this.detail = null;
     this.loaded = false;
+    this.facts = [];
+    this.history = [];
+    if (this.game === 'dreamfund') {
+      this.dreamApi.player(this.player.dreamPlayerId ?? this.player.playerId).subscribe({
+        next: (full) => {
+          this.history = full.history;
+          this.facts = factGroups(full.facts, this.d.profile);
+          this.detail = {
+            ...this.player,
+            baseRating: full.rating.baseRating ?? this.player.baseRating,
+            recent: full.recent.map((game) => ({
+              tableId: game.tableId,
+              table: game.name,
+              endedAt: game.endedAt,
+              players: game.players ?? 0,
+              place: game.place ?? 0,
+              outcome: game.outcome ?? '',
+              ranked: game.counted,
+              ...(game.why ? { notRankedBecause: game.why } : {}),
+              ratingChange: game.ratingChange ?? 0,
+              ratingAfter: game.ratingAfter ?? 0,
+            })),
+          };
+          this.loaded = true;
+          this.cdr.markForCheck();
+          setTimeout(() => this.fitRecent());
+        },
+        error: () => {
+          this.loaded = true;
+          this.cdr.markForCheck();
+        },
+      });
+      return;
+    }
     this.api.player(this.player.playerId).subscribe({
       next: (full) => {
         this.detail = full;
@@ -607,7 +717,17 @@ export class TablePlayerInfoComponent implements OnChanges {
   }
 
   get chart(): Chart | null {
-    const games = [...(this.detail?.recent ?? [])].reverse();
+    // the Dreamer keeps the whole line (up to 120 games); the classic board's panel has the last games it listed
+    const dreamGames = this.history
+      .filter((point) => point.endedAt)
+      .map((point) => ({
+        table: point.difficulty ?? '',
+        endedAt: point.endedAt as string,
+        ratingAfter: point.rating,
+        ratingChange: point.delta ?? 0,
+      }));
+    const games =
+      this.game === 'dreamfund' ? dreamGames : [...(this.detail?.recent ?? [])].reverse();
     const baseValue = this.baseRating;
     if (games.length < (baseValue === null ? 2 : 1)) return null;
     // the line starts on the base the rating is counted from, then one point for every game

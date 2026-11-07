@@ -32,7 +32,7 @@ const log = (open: string[] = [], lived: string[] = []): DreamLog => ({
 
 describe('the Dream stack (temp_cards v0.2)', () => {
   it('has the 48 dreams and 8 moments in English and German, every price adding up', () => {
-    expect(DREAM_CARDS).toHaveLength(48);
+    expect(DREAM_CARDS).toHaveLength(96);
     expect(DREAM_MOMENTS).toHaveLength(8);
     for (const card of DREAM_CARDS) {
       expect(card.title.en && card.title.de && card.story.en && card.story.de).toBeTruthy();
@@ -133,6 +133,11 @@ describe('the Dream stack (temp_cards v0.2)', () => {
   it('at most as many dreams can be open as the setting allows', () => {
     expect(canTakeDream(log(['D01', 'D02']), DEFAULT_DREAM_SETTINGS)).toBe(true);
     expect(canTakeDream(log(['D01', 'D02', 'D04']), DEFAULT_DREAM_SETTINGS)).toBe(false);
+    const many = log(['D01', 'D02', 'D04', 'D05', 'D06', 'D07']);
+    expect(canTakeDream(many, { ...DEFAULT_DREAM_SETTINGS, maxOpenDreams: 6 })).toBe(false);
+    expect(canTakeDream(many, { ...DEFAULT_DREAM_SETTINGS, maxOpenDreams: 7 })).toBe(true);
+    // 0: no limit
+    expect(canTakeDream(many, { ...DEFAULT_DREAM_SETTINGS, maxOpenDreams: 0 })).toBe(true);
   });
 
   it('points: lived dreams, the set of the seven wonders, patience - and half for fully funded buckets of the rest', () => {

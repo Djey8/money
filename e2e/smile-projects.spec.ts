@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { freshUser } from './fixtures/test-data';
 import { registerAndRedirect, navigateTo } from './helpers/auth.helper';
 
-test.describe('Smile Projects', () => {
+test.describe('Dream Projects', () => {
   const user = freshUser();
 
   test.beforeAll(async ({ browser }) => {
@@ -20,19 +20,19 @@ test.describe('Smile Projects', () => {
     await page.waitForSelector('#heading', { timeout: 15_000 });
   });
 
-  test('should navigate to smile projects page', async ({ page }) => {
+  test('should navigate to dream projects page', async ({ page }) => {
     await navigateTo(page, 'smileprojects');
     await page.waitForTimeout(1000);
     await expect(page.locator('#heading').last()).toBeVisible();
   });
 
-  test('should open add smile project panel', async ({ page }) => {
+  test('should open add dream project panel', async ({ page }) => {
     await navigateTo(page, 'smileprojects');
     await page.locator('#addbtn').click();
     await expect(page.locator('#addSmile-Container')).toBeVisible({ timeout: 5_000 });
   });
 
-  test('should add a smile project with title and target', async ({ page }) => {
+  test('should add a dream project with title and target', async ({ page }) => {
     await navigateTo(page, 'smileprojects');
     await page.locator('#addbtn').click();
     await page.waitForSelector('#addSmile-Container', { state: 'visible' });
@@ -46,7 +46,7 @@ test.describe('Smile Projects', () => {
     await expect(page.locator('#addSmile-Container')).toBeHidden({ timeout: 10_000 });
   });
 
-  test('should display the smile project after adding', async ({ page }) => {
+  test('should display the dream project after adding', async ({ page }) => {
     // First add a project
     await navigateTo(page, 'smileprojects');
     const uniqueTitle = `SmileGoal${Date.now()}`;
@@ -67,7 +67,7 @@ test.describe('Smile Projects', () => {
     expect(bodyText).toContain(uniqueTitle);
   });
 
-  test('should show progress percentage for a smile project', async ({ page }) => {
+  test('should show progress percentage for a dream project', async ({ page }) => {
     // Add a project with known amounts
     await navigateTo(page, 'smileprojects');
     await page.locator('#addbtn').click();

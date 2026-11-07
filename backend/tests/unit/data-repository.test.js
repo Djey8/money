@@ -1081,7 +1081,7 @@ describe('importUserData', () => {
     });
   });
 
-  it('rejects a malformed Smile bucket target with a clean 400 instead of an unwrapped 500', async () => {
+  it('rejects a malformed Dream bucket target with a clean 400 instead of an unwrapped 500', async () => {
     // decryptMoney (smile-repository.js) has no Number.isFinite check of its
     // own — a malformed target silently becomes NaN and survives the first
     // validation pass untouched. It's only caught downstream, inside

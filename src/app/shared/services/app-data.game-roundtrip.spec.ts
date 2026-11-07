@@ -7,11 +7,11 @@ import { migrateFire } from '../fire-migration.utils';
 import { migrateSmile } from '../smile-migration.utils';
 
 /**
- * A Dreamfund game that is closed and opened again must be what it was (JFK, 2026-10-26: after a reload the life, the career, the
+ * A Dreamer game that is closed and opened again must be what it was (JFK, 2026-10-26: after a reload the life, the career, the
  * dreams and the reserve were gone). The state is written leaf by leaf - everything a string once encrypted - and read back by name:
  * a part the reader does not know is lost. Here a game is played, stored the way the database stores it, and read back.
  */
-describe('a Dreamfund game survives a reload', () => {
+describe('a Dreamer game survives a reload', () => {
   let service: CashflowGameService;
   const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
   const state = () => AppStateService.instance;

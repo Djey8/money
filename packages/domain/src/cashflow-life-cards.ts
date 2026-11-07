@@ -1,10 +1,11 @@
 /**
- * The Dreamfund Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): 27 cards, 36 with the copies, in English and
+ * The Dreamer Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): 27 cards, 36 with the copies, in English and
  * German. Amounts are minor units of the game money. Kept out of the domain package's main entry like the other printed content.
  */
 import type { LifeCard } from './cashflow-game/life-deck';
+import { LIFE_CARDS_MORE } from './cashflow-life-cards-more';
 
-export const LIFE_CARDS: LifeCard[] = [
+const BASE_LIFE_CARDS: LifeCard[] = [
   {
     id: 'L01',
     copies: 2,
@@ -241,7 +242,7 @@ export const LIFE_CARDS: LifeCard[] = [
   {
     id: 'L09',
     copies: 2,
-    type: 'choice',
+    type: 'fate',
     title: {
       en: 'A Cat Moves In',
       de: 'Eine Katze zieht ein',
@@ -262,7 +263,7 @@ export const LIFE_CARDS: LifeCard[] = [
     requires: {
       pet: 'none',
     },
-    accept: {
+    effects: {
       oneTimeMinor: -30000,
       monthlyMinor: 7000,
       setState: {
@@ -273,7 +274,7 @@ export const LIFE_CARDS: LifeCard[] = [
   {
     id: 'L10',
     copies: 1,
-    type: 'choice',
+    type: 'fate',
     title: {
       en: 'A Dog Moves In',
       de: 'Ein Hund zieht ein',
@@ -294,7 +295,7 @@ export const LIFE_CARDS: LifeCard[] = [
     requires: {
       pet: 'none',
     },
-    accept: {
+    effects: {
       oneTimeMinor: -45000,
       monthlyMinor: 12000,
       setState: {
@@ -548,9 +549,9 @@ export const LIFE_CARDS: LifeCard[] = [
         employment: 'unemployed',
       },
       jobSearch: {
-        rollFrom: 6,
-        maxPaydays: 6,
-        fallbackPercent: -15,
+        rollFrom: 5,
+        maxPaydays: 5,
+        fallbackPercent: -10,
       },
       group: 'employment',
     },
@@ -728,3 +729,6 @@ export const LIFE_CARDS: LifeCard[] = [
     },
   },
 ];
+
+/** The whole stack: the first cards of the design and the more that make it balanced (JFK, 2026-11-04). */
+export const LIFE_CARDS: LifeCard[] = [...BASE_LIFE_CARDS, ...LIFE_CARDS_MORE];

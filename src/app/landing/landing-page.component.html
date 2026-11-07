@@ -235,13 +235,13 @@
             (click)="toggleBucket('smile')"
             role="button"
             tabindex="0"
-            aria-label="Smile — click for details"
+            aria-label="Dream — click for details"
             (keydown.enter)="toggleBucket('smile')"
           >
             <div class="bucket-flip-inner">
               <div class="grid-item bucket-front">
                 <h3 class="grid-header">{{ 'Landing.buckets.smile' | translate }}</h3>
-                <img class="grid-pic" src="assets/icons/smile.jpg" alt="Smile bucket" />
+                <img class="grid-pic" src="assets/icons/smile.jpg" alt="Dream bucket" />
                 <div [class]="bucketValues.smile > 0 ? 'grid-value-positive' : 'grid-value-zero'">
                   {{ bucketValues.smile | number: '1.2-2' }} {{ currencySymbol }}
                 </div>
@@ -884,7 +884,7 @@
   </section>
 
   <!-- ============================================================
-  6. AI STRATEGY € Smile Projects & AI Assistant
+  6. AI STRATEGY € Dream Projects & AI Assistant
   ============================================================ -->
   <section class="ai-strategy" id="ai-strategy">
     <div class="container">
@@ -2581,7 +2581,7 @@ My current financial situation (anonymized):
 - Monthly expenses: ~XXXX €
 - Available savings rate: ~XXX €/month
 
-Please create a detailed Smile Project with:
+Please create a detailed Dream Project with:
 1. A clear project description
 2. Budget buckets (flights, hotels, activities, food)
 3. Realistic cost estimates for each bucket
@@ -2640,7 +2640,7 @@ Monthly averages by category provided. Identify spending trends, anomalies, and 
 
 Return as JSON matching the import schema.</pre>
               <pre class="ai-mock-prompt" *ngIf="selectedPromptType === 'smile-improve'">
-I have an existing Smile Project "Japan Holiday" that I'd like to improve.
+I have an existing Dream Project "Japan Holiday" that I'd like to improve.
 
 Current state (anonymized):
 - Phase: Saving, Progress: 65%

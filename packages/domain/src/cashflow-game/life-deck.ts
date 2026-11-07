@@ -2,7 +2,7 @@ import { pickOne, rollDie, systemRng, type Rng } from './rng';
 import type { EmergencyDeckState, EmergencyLang, Localized } from './emergency-deck';
 
 /**
- * The Dreamfund Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): what a life card is, who it can happen to, and
+ * The Dreamer Life stack (JFK, 2026-10-26, temp_cards/dreamfund-life-deck.md v0.3): what a life card is, who it can happen to, and
  * what it does to the books. A card never touches the account itself: resolving it gives an outcome (one payment, monthly lines, a new
  * life state, a reward, things that happen at later Paydays) which `applyLifeOutcome` turns into the game's effects.
  */
@@ -22,6 +22,8 @@ export interface LifeState {
   home: HomeKind;
   location: LocationKind;
   employment: EmploymentKind;
+  /** In training (a dual student): the study ends when the career reaches the stage that says so. Absent: not studying. */
+  education?: boolean;
 }
 
 export const INITIAL_LIFE_STATE: LifeState = {
@@ -37,6 +39,11 @@ export const INITIAL_LIFE_STATE: LifeState = {
 /** The life state a card may ask for: a value, or any of several. */
 export type LifeRequirement = {
   [K in keyof LifeState]?: LifeState[K] | LifeState[K][];
+} & {
+  /** At least this many children (`kids: 1` would ask for exactly one). */
+  kidsAtLeast?: number;
+  /** Any relationship but single. */
+  partner?: boolean;
 };
 
 /** What a card changes of the life state (`kidsDelta`: children added). */
@@ -57,6 +64,8 @@ export interface LifeEffect {
   monthlyMinor?: number;
   /** More income each month. */
   incomeMonthlyMinor?: number;
+  /** The income is the same for everybody (a child benefit): not scaled by the character's price level. */
+  unscaledIncome?: boolean;
   /** A change of the net income in percent of it (negative: a cut); children soften a cut. */
   incomePercentOfNet?: number;
   incomePercentWithKids?: number;
@@ -128,7 +137,12 @@ export interface LifeDraw {
 
 export function meetsRequirement(requires: LifeRequirement | undefined, life: LifeState): boolean {
   if (!requires) return true;
-  return (Object.keys(requires) as (keyof LifeState)[]).every((key) => {
+  if (requires.kidsAtLeast !== undefined && life.kids < requires.kidsAtLeast) return false;
+  if (requires.partner !== undefined && (life.relationship !== 'single') !== requires.partner) {
+    return false;
+  }
+  return (Object.keys(requires) as (keyof LifeState | 'kidsAtLeast' | 'partner')[]).every((key) => {
+    if (key === 'kidsAtLeast' || key === 'partner') return true;
     const wanted = requires[key];
     const has = life[key];
     return Array.isArray(wanted)
@@ -242,6 +256,37 @@ export interface LifeContext {
   rng?: Rng;
 }
 
+/**
+ * How much a character feels a life card (JFK, 2026-11-04): the amounts of a card are printed for the Dual Student; a character with a
+ * higher price level (a better job, a bigger life) feels them as much more in both directions - the windfall as well as the bill.
+ * Shares of the income and the child's cost already follow the character and are left alone.
+ */
+export function lifeScale(context: Pick<LifeContext, 'livingStandard'>): number {
+  return Math.min(4, Math.max(0.8, context.livingStandard || 1));
+}
+
+/** The effect as this character feels it (what a card shows before it is played, and what it does). */
+export function scaledEffect(
+  effect: LifeEffect,
+  context: Pick<LifeContext, 'livingStandard'>,
+): LifeEffect {
+  const scale = lifeScale(context);
+  if (scale === 1) return effect;
+  const by = (minor: number | undefined) =>
+    minor === undefined ? undefined : Math.round((minor * scale) / 100) * 100;
+  return {
+    ...effect,
+    ...(effect.oneTimeMinor !== undefined ? { oneTimeMinor: by(effect.oneTimeMinor) } : {}),
+    ...(effect.monthlyMinor !== undefined ? { monthlyMinor: by(effect.monthlyMinor) } : {}),
+    ...(effect.incomeMonthlyMinor !== undefined && !effect.unscaledIncome
+      ? { incomeMonthlyMinor: by(effect.incomeMonthlyMinor) }
+      : {}),
+    ...(effect.removeCostMinor !== undefined
+      ? { removeCostMinor: by(effect.removeCostMinor) }
+      : {}),
+  };
+}
+
 const bandOf = <T>(bands: DiceBand<T>[], roll: number): T | undefined =>
   bands.find((band) => roll >= band.from && roll <= band.to)?.value;
 
@@ -273,7 +318,7 @@ export function mergeChange(
 /** What one effect does to this player: the payment, the lines, the new life state. Dice are rolled here. */
 export function resolveLifeEffect(
   card: Pick<LifeCard, 'id' | 'title'>,
-  effect: LifeEffect | undefined,
+  rawEffect: LifeEffect | undefined,
   context: LifeContext,
   base?: LifeOutcome,
 ): LifeOutcome {
@@ -288,7 +333,8 @@ export function resolveLifeEffect(
     scheduled: [],
     rolls: [],
   };
-  if (!effect) return out;
+  if (!rawEffect) return out;
+  const effect = scaledEffect(rawEffect, context);
   const net = context.netMonthlyMinor;
   const withKids = context.life.kids > 0;
   const lineId = (suffix: string) => `${card.id}:${suffix}`;
@@ -451,6 +497,7 @@ export function resolveLifeCard(
     case 'lend': {
       const out = effectFor(card.lend);
       const lend = card.lend?.lendReturn;
+      const lent = lend ? Math.round((lend.amountMinor * lifeScale(context)) / 100) * 100 : 0;
       if (lend) {
         out.scheduled.push({
           paydaysLeft: 1,
@@ -460,7 +507,7 @@ export function resolveLifeCard(
             success: {
               cardId: card.id,
               title: card.title,
-              oneTimeMinor: lend.amountMinor,
+              oneTimeMinor: lent,
               lines: [],
               removeGroups: [],
               life: context.life,

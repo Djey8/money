@@ -64,6 +64,26 @@ export interface RemoteGate {
 }
 
 export interface RemoteGame {
+  /** A Dreamer table: the stack tiles (Emergency, Life, Career, Dream, Opportunity, Harvest) of the solo screen are played at it. */
+  dreamfund?: boolean;
+  /**
+   * A project of the app (a Smile or a Fire project) can be given a plan at this table - so much set aside at every Payday: what to
+   * say about it, the amount now, or null when the project has none. The other end words it; the project pages only show it.
+   */
+  projectPlan?(project: {
+    kind: 'smile' | 'fire';
+    title: string;
+  }): { label: string; button: string; perMinor: number } | null;
+  setProjectPlan?(
+    project: { kind: 'smile' | 'fire'; title: string },
+    perMinor: number,
+  ): Promise<RemoteOutcome>;
+  /** A Dreamer table: a decision of a stack tile, sent as the table's own command (answer a card, roll its die, pay). */
+  dreamMove?(decision: { decision: string } & Record<string, unknown>): Promise<RemoteOutcome>;
+  /** A Dreamer table that asks for dream points besides the life dream: the goal and what the player has. Null: none asked for. */
+  dreamPoints?(): { goal: number; points: number } | null;
+  /** A Dreamer table: the money of the table ('game' is Dream Taler, else a real currency's sign). */
+  currency?(): string;
   /** Another player's books are on screen: read only, nothing of the game can be done from here. */
   viewOnly(): boolean;
   /** Whose turn it is when it is not the player's own (a name and a colour), else null. */
@@ -128,6 +148,23 @@ export interface RemoteGame {
 /** The one game being played remotely, or null for a normal (solo) game. */
 export class RemoteGameHook {
   static current: RemoteGame | null = null;
+  /**
+   * The card of the tile the player stands on that has been opened (JFK, 2026-11-04): a Life, Fire or Harvest card cannot be left
+   * without opening it, so Done and End turn wait for this. The key is the turn and the tile (`openedKey`).
+   */
+  static readonly opened = signal('');
+  /** The key of the card at hand: the turn count and the tile, or '' when no tile card is open. */
+  static openedKey(
+    turn: { count: number; pending?: { kind: string; tile?: string } } | undefined,
+  ): string {
+    return turn?.pending?.kind === 'story' ? `${turn.count}:${turn.pending.tile ?? ''}` : '';
+  }
+  /**
+   * A debug game (JFK, 2026-11-03): whether the debug buttons are shown - on a card and on the screen - and how the debug panel is
+   * opened, on a pile (the button of a card) or on all of them.
+   */
+  static debug: { on(): boolean; open(start?: { tile?: string; pile?: string }): void } | null =
+    null;
   /** A component the game screen shows on top while a remote game is played: who is on the move, the others, the clock. */
   static layer: Type<unknown> | null = null;
   private static readonly hold = signal(false);

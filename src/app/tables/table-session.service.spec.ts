@@ -45,6 +45,17 @@ describe('mergeTableView', () => {
     expect((merged.players[1] as never as { books: unknown }).books).toEqual({ n: 'b2' });
     expect(merged.version).toBe(2);
   });
+
+  it('keeps the Dreamer life of a seat whose life an update does not send again', () => {
+    const before = view(1, [
+      { ...player(0, { n: 'a' }), dreamLife: { l: 1 } },
+      { ...player(1, { n: 'b' }), dreamLife: { l: 2 } },
+    ]) as never;
+    const merged = mergeTableView(before, view(2, [player(0), player(1)]) as never);
+    const seat0 = merged.players[0] as never as { books: unknown; dreamLife: unknown };
+    expect(seat0.books).toEqual({ n: 'a' });
+    expect(seat0.dreamLife).toEqual({ l: 1 });
+  });
 });
 
 describe('TableSessionService', () => {

@@ -183,7 +183,7 @@ describe('generateDueSubscriptionTransactions', () => {
     expect(result.transactions.map((t) => t.date)).toEqual(['2026-04-01']);
   });
 
-  it('skips generating a transaction once a matching Smile project is already fully funded', () => {
+  it('skips generating a transaction once a matching Dream project is already fully funded', () => {
     const smileState: FundState = {
       mojo: { amountMinor: 0, targetMinor: 100000 },
       smile: [
@@ -279,7 +279,7 @@ describe('generateDueSubscriptionTransactions', () => {
     expect(result.transactionsCreated).toBe(0);
   });
 
-  it('still generates a transaction for a Smile project that is under target', () => {
+  it('still generates a transaction for a Dream project that is under target', () => {
     const smileState: FundState = {
       mojo: { amountMinor: 0, targetMinor: 100000 },
       smile: [

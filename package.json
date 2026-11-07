@@ -43,7 +43,8 @@
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --bundles nsis",
     "desktop:build:mac": "tauri build --bundles dmg --target universal-apple-darwin",
-    "simulate:dreamfund": "npm run build:domain && node packages/domain/dist/cashflow-game/dreamfund-sim/cli.js"
+    "simulate:dreamfund": "npm run build:domain && node packages/domain/dist/cashflow-game/dreamfund-sim/cli.js",
+    "matrix:dreamfund": "npm run build:domain && node scripts/dreamfund-matrix.js"
   },
   "private": true,
   "dependencies": {

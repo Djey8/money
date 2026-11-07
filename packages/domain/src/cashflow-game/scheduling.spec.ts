@@ -154,7 +154,7 @@ describe('isGameTransaction / shiftedGameTransactionDates', () => {
   });
 });
 
-describe('the tag of a game (JFK, 2026-10-25: Dreamfund)', () => {
+describe('the tag of a game (JFK, 2026-10-25: Dreamer)', () => {
   it('is #dreamfund, and the #cashflow of games saved before the rename is still recognised', () => {
     expect(isGameTransaction({ comment: 'paid\n#dreamfund' })).toBe(true);
     expect(isGameTransaction({ comment: 'paid\n#cashflow' })).toBe(true);

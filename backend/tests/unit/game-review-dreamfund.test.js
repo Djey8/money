@@ -2,7 +2,7 @@
 
 const { reviewHistory } = require('../../services/game-review');
 
-/** A Dreamfund game (it has a life) is reviewed as a story, not by the classic rollouts. */
+/** A Dreamer game (it has a life) is reviewed as a story, not by the classic rollouts. */
 function snapshot(round, withHustle) {
   return {
     allTransactions: [
@@ -76,7 +76,7 @@ function snapshot(round, withHustle) {
   };
 }
 
-describe('reviewHistory for a Dreamfund game', () => {
+describe('reviewHistory for a Dreamer game', () => {
   it('returns the story of the game and a text, without a worker', async () => {
     const stack = [
       { ...snapshot(1, false), step: { kind: 'start', at: 't' } },
@@ -86,6 +86,6 @@ describe('reviewHistory for a Dreamfund game', () => {
     expect(result.reviewable).toBe(true);
     expect(result.kind).toBe('dreamfund');
     expect(result.review.purchases.map((p) => p.title)).toEqual(['Tutoring']);
-    expect(result.text).toContain('Dreamfund game review');
+    expect(result.text).toContain('Dreamer game review');
   });
 });

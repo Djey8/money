@@ -4,9 +4,9 @@ import type { Smile } from 'src/app/interfaces/smile';
 import type { Fire } from 'src/app/interfaces/fire';
 
 /**
- * The dream of a character as the app's own Smile project (JFK, 2026-10-25): the static content of the character - buckets with what
+ * The dream of a character as the app's own Dream project (JFK, 2026-10-25): the static content of the character - buckets with what
  * they cost and why, links, tasks, notes - turned into the entity the Smile page and its info panel already work with. Nothing
- * here is new to the app; it only fills a Smile project when a game starts (or shows it, before it does).
+ * here is new to the app; it only fills a Dream project when a game starts (or shows it, before it does).
  */
 export function dreamToSmile(project: CashflowDreamProject, nowIso: string): Smile {
   return {

@@ -465,7 +465,7 @@ export class AddSmileComponent extends BaseAddComponent {
   }
 
   /**
-   * Adds a smile project.
+   * Adds a dream project.
    */
   addSmileProject() {
     // First trim string
@@ -482,7 +482,7 @@ export class AddSmileComponent extends BaseAddComponent {
       this.showError('Target Amount is required (or add at least one Bucket)');
       return;
     } else if (this.invalidTitle(this.titleTextField)) {
-      this.showError('This smile project already exists.');
+      this.showError('This dream project already exists.');
       return;
     }
 
@@ -508,7 +508,7 @@ export class AddSmileComponent extends BaseAddComponent {
       finalBuckets = [...finalBuckets, ...this.buckets];
     }
 
-    // Create new Smile project - ALL amounts now in buckets
+    // Create new Dream project - ALL amounts now in buckets
     const newSmile: Smile = {
       title: this.titleTextField,
       sub: this.subTextField.trim(),
@@ -550,7 +550,7 @@ export class AddSmileComponent extends BaseAddComponent {
       },
       onSuccess: () => {
         AppStateService.instance.isSaving = false;
-        this.toastService.show('Smile project added', 'success');
+        this.toastService.show('Dream project added', 'success');
         gotoTop();
         this.router.navigate([`/smileprojects`]);
       },

@@ -144,7 +144,7 @@ export function pickCashflowProfession(
       gameSubscriptionTitles,
       ...(profession.profile
         ? {
-            life: INITIAL_LIFE_STATE,
+            life: { ...INITIAL_LIFE_STATE, ...profession.lifeStart },
             ...(profession.career ? { career: initialCareer(profession.career) } : {}),
             livingStandard: profession.priceFactor ?? 1,
             lineTitles: Object.fromEntries(

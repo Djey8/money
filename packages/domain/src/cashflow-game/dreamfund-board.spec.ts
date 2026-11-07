@@ -18,7 +18,7 @@ const setupOf = (
   difficulty?: BoardDifficulty,
 ): BoardSetup => ({ shape, size, seed, ...(difficulty ? { difficulty } : {}) });
 
-describe('the Dreamfund maps', () => {
+describe('the Dreamer maps', () => {
   it('every size and difficulty adds up to the tiles of the size', () => {
     for (const size of BOARD_SIZES) {
       for (const difficulty of ['easy', 'medium', 'hard'] as const) {

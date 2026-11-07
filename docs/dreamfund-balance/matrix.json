@@ -1,0 +1,8826 @@
+{
+ "generated": "2026-10-27",
+ "config": {
+  "games": 200,
+  "maxTurns": 150,
+  "shape": "ring",
+  "size": "medium",
+  "policies": [
+   "saver",
+   "etf",
+   "property",
+   "hustler",
+   "gambler",
+   "expert",
+   "dividend",
+   "sapling",
+   "tree",
+   "dreamer",
+   "steady",
+   "passive"
+  ],
+  "levels": [
+   "easy",
+   "medium",
+   "hard"
+  ]
+ },
+ "matrix": {
+  "dual-student-informatik": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.005,
+     "timeout": 0.99,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 105,
+      "median": 105,
+      "p75": 105
+     },
+     "reached": {
+      "reserve": 0.92,
+      "debts": 0.89,
+      "dream": 0.88,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 89,
+      "debts": 94,
+      "dream": 102,
+      "independent": 105
+     },
+     "peakPassiveMedianMinor": 95836,
+     "netWorthMedianMinor": 8710212
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.075,
+     "bankrupt": 0,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 111,
+      "median": 121,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.985,
+      "dream": 0.945,
+      "independent": 0.075
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 71,
+      "dream": 92,
+      "independent": 121
+     },
+     "peakPassiveMedianMinor": 140907,
+     "netWorthMedianMinor": 9117595
+    },
+    "property": {
+     "games": 200,
+     "win": 0.385,
+     "bankrupt": 0.005,
+     "timeout": 0.61,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 120,
+      "median": 131,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.99,
+      "dream": 0.97,
+      "independent": 0.395
+     },
+     "medianTurn": {
+      "reserve": 49,
+      "debts": 60,
+      "dream": 87,
+      "independent": 135
+     },
+     "peakPassiveMedianMinor": 190625,
+     "netWorthMedianMinor": 8757635
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.445,
+     "bankrupt": 0.005,
+     "timeout": 0.55,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 114,
+      "median": 125,
+      "p75": 139
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.99,
+      "dream": 0.98,
+      "independent": 0.45
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 63,
+      "dream": 89,
+      "independent": 125
+     },
+     "peakPassiveMedianMinor": 250400,
+     "netWorthMedianMinor": 7359124
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.92,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 32,
+      "debts": 44,
+      "dream": 92,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 17100,
+     "netWorthMedianMinor": 9556483
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.78,
+     "bankrupt": 0.005,
+     "timeout": 0.215,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 96,
+      "median": 113,
+      "p75": 130
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.99,
+      "independent": 0.78
+     },
+     "medianTurn": {
+      "reserve": 28,
+      "debts": 36,
+      "dream": 76,
+      "independent": 113
+     },
+     "peakPassiveMedianMinor": 269784,
+     "netWorthMedianMinor": 7409952
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.19,
+     "bankrupt": 0.005,
+     "timeout": 0.805,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 122,
+      "median": 136,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.95,
+      "independent": 0.19
+     },
+     "medianTurn": {
+      "reserve": 33,
+      "debts": 40,
+      "dream": 92,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 166687,
+     "netWorthMedianMinor": 9435908
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.8,
+     "bankrupt": 0.005,
+     "timeout": 0.195,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 92,
+      "median": 109,
+      "p75": 122
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.985,
+      "independent": 0.8
+     },
+     "medianTurn": {
+      "reserve": 28,
+      "debts": 36,
+      "dream": 76,
+      "independent": 107
+     },
+     "peakPassiveMedianMinor": 273400,
+     "netWorthMedianMinor": 6924202
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.075,
+     "bankrupt": 0.015,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 136,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.98,
+      "independent": 0.075
+     },
+     "medianTurn": {
+      "reserve": 28,
+      "debts": 35,
+      "dream": 85,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 82190,
+     "netWorthMedianMinor": 8245824
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.095,
+     "bankrupt": 0.005,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 118,
+      "median": 129,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.915,
+      "debts": 0.82,
+      "dream": 0.895,
+      "independent": 0.095
+     },
+     "medianTurn": {
+      "reserve": 86,
+      "debts": 103,
+      "dream": 95,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 141900,
+     "netWorthMedianMinor": 8766553
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.49,
+     "bankrupt": 0,
+     "timeout": 0.51,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 107,
+      "median": 122,
+      "p75": 135
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.97,
+      "independent": 0.49
+     },
+     "medianTurn": {
+      "reserve": 52,
+      "debts": 58,
+      "dream": 97,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 242722,
+     "netWorthMedianMinor": 9364552
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.005,
+     "timeout": 0.995,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.885,
+      "debts": 0.865,
+      "dream": 0.87,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 98,
+      "debts": 104,
+      "dream": 107,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13100,
+     "netWorthMedianMinor": 8100540
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.105,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 132,
+      "p75": 132
+     },
+     "reached": {
+      "reserve": 0.54,
+      "debts": 0.425,
+      "dream": 0.43,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 120,
+      "debts": 124,
+      "dream": 124,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 5400,
+     "netWorthMedianMinor": 4792159
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.06,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 137,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.855,
+      "debts": 0.68,
+      "dream": 0.575,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 81,
+      "debts": 115,
+      "dream": 124,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 49337,
+     "netWorthMedianMinor": 5200744
+    },
+    "property": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.06,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 131,
+      "median": 142,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.9,
+      "debts": 0.78,
+      "dream": 0.6,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 76,
+      "debts": 99,
+      "dream": 120,
+      "independent": 142
+     },
+     "peakPassiveMedianMinor": 4600,
+     "netWorthMedianMinor": 5424855
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.055,
+     "bankrupt": 0.055,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 138,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.905,
+      "debts": 0.755,
+      "dream": 0.635,
+      "independent": 0.055
+     },
+     "medianTurn": {
+      "reserve": 73,
+      "debts": 105,
+      "dream": 119,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 96600,
+     "netWorthMedianMinor": 5416861
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.945,
+      "debts": 0.875,
+      "dream": 0.495,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 79,
+      "dream": 123,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6600,
+     "netWorthMedianMinor": 5778366.5
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.255,
+     "bankrupt": 0.07,
+     "timeout": 0.675,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 119,
+      "median": 129,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.895,
+      "dream": 0.79,
+      "independent": 0.26
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 68,
+      "dream": 107,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 151094,
+     "netWorthMedianMinor": 6537967
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.07,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 135,
+      "median": 135,
+      "p75": 135
+     },
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.9,
+      "dream": 0.565,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 74,
+      "dream": 124,
+      "independent": 135
+     },
+     "peakPassiveMedianMinor": 38932,
+     "netWorthMedianMinor": 6202629
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.28,
+     "bankrupt": 0.07,
+     "timeout": 0.65,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 117,
+      "median": 128,
+      "p75": 139
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.92,
+      "dream": 0.81,
+      "independent": 0.28
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 65,
+      "dream": 106,
+      "independent": 127
+     },
+     "peakPassiveMedianMinor": 142500,
+     "netWorthMedianMinor": 5957517
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.94,
+      "dream": 0.64,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 68,
+      "dream": 119,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4600,
+     "netWorthMedianMinor": 4891654
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.09,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.545,
+      "debts": 0.31,
+      "dream": 0.45,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 117,
+      "debts": 129,
+      "dream": 124,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 5400,
+     "netWorthMedianMinor": 4586191
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.095,
+     "bankrupt": 0.05,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 120,
+      "median": 133,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.905,
+      "debts": 0.825,
+      "dream": 0.535,
+      "independent": 0.095
+     },
+     "medianTurn": {
+      "reserve": 79,
+      "debts": 89,
+      "dream": 124,
+      "independent": 133
+     },
+     "peakPassiveMedianMinor": 101252,
+     "netWorthMedianMinor": 6294126
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.105,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.39,
+      "debts": 0.275,
+      "dream": 0.31,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 126,
+      "debts": 127,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4600,
+     "netWorthMedianMinor": 4334841
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.75,
+      "debts": 0.685,
+      "dream": 0.675,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 108,
+      "debts": 114,
+      "dream": 118,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 30200,
+     "netWorthMedianMinor": 6475859
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.015,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 134,
+      "median": 137,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 0.945,
+      "debts": 0.835,
+      "dream": 0.785,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 74,
+      "debts": 96,
+      "dream": 112,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 87146,
+     "netWorthMedianMinor": 6854461
+    },
+    "property": {
+     "games": 200,
+     "win": 0.085,
+     "bankrupt": 0.03,
+     "timeout": 0.885,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 131,
+      "median": 136,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.9,
+      "dream": 0.82,
+      "independent": 0.085
+     },
+     "medianTurn": {
+      "reserve": 66,
+      "debts": 83,
+      "dream": 109,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 55500,
+     "netWorthMedianMinor": 7421085
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.19,
+     "bankrupt": 0.01,
+     "timeout": 0.8,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 122,
+      "median": 137,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.91,
+      "dream": 0.845,
+      "independent": 0.19
+     },
+     "medianTurn": {
+      "reserve": 63,
+      "debts": 85,
+      "dream": 108,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 135280,
+     "netWorthMedianMinor": 6642592
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.97,
+      "dream": 0.74,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 67,
+      "dream": 115,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7675,
+     "netWorthMedianMinor": 7798912
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.445,
+     "bankrupt": 0.005,
+     "timeout": 0.55,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 116,
+      "median": 131,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.99,
+      "dream": 0.935,
+      "independent": 0.45
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 54,
+      "dream": 96,
+      "independent": 131
+     },
+     "peakPassiveMedianMinor": 242653,
+     "netWorthMedianMinor": 8008958
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.07,
+     "bankrupt": 0.025,
+     "timeout": 0.905,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 137,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.975,
+      "dream": 0.78,
+      "independent": 0.07
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 59,
+      "dream": 112,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 62353,
+     "netWorthMedianMinor": 7747245
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.45,
+     "bankrupt": 0.005,
+     "timeout": 0.545,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 116,
+      "median": 127,
+      "p75": 139
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.985,
+      "dream": 0.945,
+      "independent": 0.455
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 53,
+      "dream": 95,
+      "independent": 127
+     },
+     "peakPassiveMedianMinor": 236535,
+     "netWorthMedianMinor": 7360150.5
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.025,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 129,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.87,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 53,
+      "dream": 105,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 5500,
+     "netWorthMedianMinor": 6162550
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.03,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 140,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.725,
+      "debts": 0.525,
+      "dream": 0.66,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 105,
+      "debts": 121,
+      "dream": 114,
+      "independent": 139
+     },
+     "peakPassiveMedianMinor": 13658,
+     "netWorthMedianMinor": 5835229
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.185,
+     "bankrupt": 0.005,
+     "timeout": 0.81,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 125,
+      "median": 137,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.945,
+      "dream": 0.805,
+      "independent": 0.185
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 79,
+      "dream": 117,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 138408,
+     "netWorthMedianMinor": 8236501
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.65,
+      "debts": 0.53,
+      "dream": 0.535,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 117,
+      "debts": 121,
+      "dream": 123,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4700,
+     "netWorthMedianMinor": 5920412
+    }
+   }
+  },
+  "tobias-designer": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.005,
+     "timeout": 0.99,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 149,
+      "median": 149,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.685,
+      "debts": 0.4,
+      "dream": 0.545,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 118,
+      "debts": 136,
+      "dream": 129,
+      "independent": 149
+     },
+     "peakPassiveMedianMinor": 14400,
+     "netWorthMedianMinor": 5997339
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.095,
+     "bankrupt": 0.02,
+     "timeout": 0.885,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 136,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.71,
+      "dream": 0.755,
+      "independent": 0.12
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 113,
+      "dream": 116,
+      "independent": 135
+     },
+     "peakPassiveMedianMinor": 135584,
+     "netWorthMedianMinor": 6942713
+    },
+    "property": {
+     "games": 200,
+     "win": 0.05,
+     "bankrupt": 0.04,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 129,
+      "median": 141,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.785,
+      "dream": 0.77,
+      "independent": 0.05
+     },
+     "medianTurn": {
+      "reserve": 41,
+      "debts": 111,
+      "dream": 122,
+      "independent": 141
+     },
+     "peakPassiveMedianMinor": 20800,
+     "netWorthMedianMinor": 7363639
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.42,
+     "bankrupt": 0.01,
+     "timeout": 0.57,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 102,
+      "median": 119,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.855,
+      "dream": 0.87,
+      "independent": 0.455
+     },
+     "medianTurn": {
+      "reserve": 39,
+      "debts": 99,
+      "dream": 109,
+      "independent": 110
+     },
+     "peakPassiveMedianMinor": 187700,
+     "netWorthMedianMinor": 6652365
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.78,
+      "dream": 0.535,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 26,
+      "debts": 89,
+      "dream": 126,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 24200,
+     "netWorthMedianMinor": 6723024.5
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.71,
+     "bankrupt": 0.01,
+     "timeout": 0.28,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 89,
+      "median": 105,
+      "p75": 123
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.945,
+      "dream": 0.965,
+      "independent": 0.755
+     },
+     "medianTurn": {
+      "reserve": 21,
+      "debts": 91,
+      "dream": 93,
+      "independent": 90
+     },
+     "peakPassiveMedianMinor": 207159,
+     "netWorthMedianMinor": 6532342
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.02,
+     "bankrupt": 0.04,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 125,
+      "median": 144,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.8,
+      "dream": 0.71,
+      "independent": 0.02
+     },
+     "medianTurn": {
+      "reserve": 27,
+      "debts": 89,
+      "dream": 127,
+      "independent": 144
+     },
+     "peakPassiveMedianMinor": 72260,
+     "netWorthMedianMinor": 7182325
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.72,
+     "bankrupt": 0.015,
+     "timeout": 0.265,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 88,
+      "median": 106,
+      "p75": 123
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.955,
+      "dream": 0.965,
+      "independent": 0.735
+     },
+     "medianTurn": {
+      "reserve": 21,
+      "debts": 77,
+      "dream": 91,
+      "independent": 92
+     },
+     "peakPassiveMedianMinor": 209082,
+     "netWorthMedianMinor": 6452202
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.05,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 144,
+      "median": 144,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.92,
+      "dream": 0.775,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 21,
+      "debts": 54,
+      "dream": 120,
+      "independent": 143
+     },
+     "peakPassiveMedianMinor": 20800,
+     "netWorthMedianMinor": 6120094
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.015,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 135,
+      "median": 144,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.74,
+      "debts": 0.24,
+      "dream": 0.505,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 96,
+      "debts": 134,
+      "dream": 125,
+      "independent": 141
+     },
+     "peakPassiveMedianMinor": 14200,
+     "netWorthMedianMinor": 5694764
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.5,
+     "bankrupt": 0.01,
+     "timeout": 0.49,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 105,
+      "median": 122,
+      "p75": 136
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.93,
+      "dream": 0.89,
+      "independent": 0.55
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 104,
+      "dream": 113,
+      "independent": 104
+     },
+     "peakPassiveMedianMinor": 196589,
+     "netWorthMedianMinor": 7663639
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.01,
+     "timeout": 0.99,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.575,
+      "debts": 0.285,
+      "dream": 0.38,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 122,
+      "debts": 134,
+      "dream": 130,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 12300,
+     "netWorthMedianMinor": 5924328
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.16,
+     "timeout": 0.84,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.07,
+      "debts": 0,
+      "dream": 0.015,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 136,
+      "debts": null,
+      "dream": 145,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6960,
+     "netWorthMedianMinor": 3103615
+    },
+    "etf": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.725,
+      "debts": 0.04,
+      "dream": 0.11,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 80,
+      "debts": 133,
+      "dream": 131,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 11440,
+     "netWorthMedianMinor": 3495668
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.83,
+      "debts": 0.025,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 74,
+      "debts": 129,
+      "dream": 143,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6960,
+     "netWorthMedianMinor": 3207226
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.075,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 119,
+      "median": 129,
+      "p75": 132
+     },
+     "reached": {
+      "reserve": 0.815,
+      "debts": 0.145,
+      "dream": 0.21,
+      "independent": 0.05
+     },
+     "medianTurn": {
+      "reserve": 71,
+      "debts": 132,
+      "dream": 135,
+      "independent": 116
+     },
+     "peakPassiveMedianMinor": 84576,
+     "netWorthMedianMinor": 3919110
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.085,
+     "timeout": 0.915,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.92,
+      "debts": 0.07,
+      "dream": 0.01,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 131,
+      "dream": 149,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 9690,
+     "netWorthMedianMinor": 2918351
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.065,
+     "bankrupt": 0.06,
+     "timeout": 0.875,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 135,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.255,
+      "dream": 0.46,
+      "independent": 0.14
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 128,
+      "dream": 126,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 147137,
+     "netWorthMedianMinor": 5633785
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.935,
+      "debts": 0.11,
+      "dream": 0.025,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 54,
+      "debts": 138,
+      "dream": 144,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 28415,
+     "netWorthMedianMinor": 3860656
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.085,
+     "bankrupt": 0.065,
+     "timeout": 0.85,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 118,
+      "median": 134,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.365,
+      "dream": 0.495,
+      "independent": 0.14
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 130,
+      "dream": 125,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 137440,
+     "netWorthMedianMinor": 5370249
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.945,
+      "debts": 0.08,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 127,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6960,
+     "netWorthMedianMinor": 3347971
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.13,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.11,
+      "debts": 0,
+      "dream": 0,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 116,
+      "debts": null,
+      "dream": null,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6960,
+     "netWorthMedianMinor": 2747868
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.025,
+     "bankrupt": 0.05,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 136,
+      "median": 140,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.835,
+      "debts": 0.105,
+      "dream": 0.165,
+      "independent": 0.1
+     },
+     "medianTurn": {
+      "reserve": 83,
+      "debts": 135,
+      "dream": 133,
+      "independent": 130
+     },
+     "peakPassiveMedianMinor": 123983,
+     "netWorthMedianMinor": 4694152
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.185,
+     "timeout": 0.815,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.03,
+      "debts": 0,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 145,
+      "debts": null,
+      "dream": 149,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6960,
+     "netWorthMedianMinor": 2702580
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.255,
+      "debts": 0.055,
+      "dream": 0.095,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 121,
+      "debts": 143,
+      "dream": 136,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7360,
+     "netWorthMedianMinor": 4360967
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.045,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 141,
+      "median": 141,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.89,
+      "debts": 0.245,
+      "dream": 0.37,
+      "independent": 0.02
+     },
+     "medianTurn": {
+      "reserve": 66,
+      "debts": 130,
+      "dream": 132,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 74560,
+     "netWorthMedianMinor": 5266959
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.93,
+      "debts": 0.305,
+      "dream": 0.27,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 58,
+      "debts": 134,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7360,
+     "netWorthMedianMinor": 4896816
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.09,
+     "bankrupt": 0.025,
+     "timeout": 0.885,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 124,
+      "median": 134,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.47,
+      "dream": 0.49,
+      "independent": 0.13
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 127,
+      "dream": 124,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 136720,
+     "netWorthMedianMinor": 5883348
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.315,
+      "dream": 0.095,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 42,
+      "debts": 121,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10720,
+     "netWorthMedianMinor": 4526515
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.26,
+     "bankrupt": 0.05,
+     "timeout": 0.69,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 123,
+      "median": 130,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.605,
+      "dream": 0.735,
+      "independent": 0.3
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 121,
+      "dream": 117,
+      "independent": 127
+     },
+     "peakPassiveMedianMinor": 163020,
+     "netWorthMedianMinor": 6724405
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.37,
+      "dream": 0.2,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 42,
+      "debts": 127,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 45516,
+     "netWorthMedianMinor": 5889339
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.235,
+     "bankrupt": 0.045,
+     "timeout": 0.72,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 111,
+      "median": 126,
+      "p75": 135
+     },
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.73,
+      "dream": 0.76,
+      "independent": 0.28
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 116,
+      "dream": 113,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 154780,
+     "netWorthMedianMinor": 6415081
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.505,
+      "dream": 0.28,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 98,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7360,
+     "netWorthMedianMinor": 5016502
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.39,
+      "debts": 0.025,
+      "dream": 0.085,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 111,
+      "debts": 145,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7360,
+     "netWorthMedianMinor": 4363583
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.12,
+     "bankrupt": 0.015,
+     "timeout": 0.865,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 137,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.935,
+      "debts": 0.39,
+      "dream": 0.445,
+      "independent": 0.135
+     },
+     "medianTurn": {
+      "reserve": 64,
+      "debts": 130,
+      "dream": 133,
+      "independent": 133
+     },
+     "peakPassiveMedianMinor": 143551,
+     "netWorthMedianMinor": 6521551
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.19,
+      "debts": 0.045,
+      "dream": 0.1,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 132,
+      "debts": 145,
+      "dream": 139,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7360,
+     "netWorthMedianMinor": 4224740
+    }
+   }
+  },
+  "sophie-lehrerin": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.8,
+      "debts": 0.51,
+      "dream": 0.695,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 97,
+      "debts": 122,
+      "dream": 119,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 54900,
+     "netWorthMedianMinor": 6370398
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.025,
+     "bankrupt": 0.035,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 137,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.765,
+      "dream": 0.86,
+      "independent": 0.025
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 104,
+      "dream": 105,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 145655,
+     "netWorthMedianMinor": 7282691
+    },
+    "property": {
+     "games": 200,
+     "win": 0.055,
+     "bankrupt": 0.055,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 123,
+      "median": 136,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.905,
+      "dream": 0.875,
+      "independent": 0.055
+     },
+     "medianTurn": {
+      "reserve": 38,
+      "debts": 91,
+      "dream": 107,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 22900,
+     "netWorthMedianMinor": 8373134
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.31,
+     "bankrupt": 0.01,
+     "timeout": 0.68,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 112,
+      "median": 129,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.93,
+      "dream": 0.945,
+      "independent": 0.31
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 92,
+      "dream": 97,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 250400,
+     "netWorthMedianMinor": 7368809
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.92,
+      "dream": 0.76,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 22,
+      "debts": 70,
+      "dream": 116,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 25900,
+     "netWorthMedianMinor": 7811842
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.66,
+     "bankrupt": 0.005,
+     "timeout": 0.335,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 102,
+      "median": 117,
+      "p75": 131
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.97,
+      "dream": 0.99,
+      "independent": 0.67
+     },
+     "medianTurn": {
+      "reserve": 17,
+      "debts": 71,
+      "dream": 82,
+      "independent": 116
+     },
+     "peakPassiveMedianMinor": 307930,
+     "netWorthMedianMinor": 8205945
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.055,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 122,
+      "median": 135,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.925,
+      "dream": 0.89,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 22,
+      "debts": 71,
+      "dream": 111,
+      "independent": 135
+     },
+     "peakPassiveMedianMinor": 94313,
+     "netWorthMedianMinor": 7567758
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.71,
+     "bankrupt": 0.005,
+     "timeout": 0.285,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 96,
+      "median": 117,
+      "p75": 132
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.985,
+      "dream": 0.99,
+      "independent": 0.715
+     },
+     "medianTurn": {
+      "reserve": 17,
+      "debts": 56,
+      "dream": 81,
+      "independent": 117
+     },
+     "peakPassiveMedianMinor": 308498,
+     "netWorthMedianMinor": 7762551.5
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.99,
+      "dream": 0.905,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 17,
+      "debts": 44,
+      "dream": 106,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 21100,
+     "netWorthMedianMinor": 6207533
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.035,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 139,
+      "median": 141,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.84,
+      "debts": 0.42,
+      "dream": 0.695,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 79,
+      "debts": 127,
+      "dream": 114,
+      "independent": 141
+     },
+     "peakPassiveMedianMinor": 52900,
+     "netWorthMedianMinor": 6175591
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.405,
+     "bankrupt": 0.005,
+     "timeout": 0.59,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 113,
+      "median": 129,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.95,
+      "dream": 0.92,
+      "independent": 0.41
+     },
+     "medianTurn": {
+      "reserve": 42,
+      "debts": 81,
+      "dream": 104,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 257760,
+     "netWorthMedianMinor": 8696038
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.01,
+     "timeout": 0.99,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.735,
+      "debts": 0.38,
+      "dream": 0.545,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 113,
+      "debts": 133,
+      "dream": 127,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13900,
+     "netWorthMedianMinor": 6310587
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.225,
+      "debts": 0.025,
+      "dream": 0.065,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 121,
+      "debts": 138,
+      "dream": 131,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6427,
+     "netWorthMedianMinor": 3863025
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.05,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.8,
+      "debts": 0.135,
+      "dream": 0.27,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 75,
+      "debts": 124,
+      "dream": 127,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 42550,
+     "netWorthMedianMinor": 4535378
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.86,
+      "debts": 0.175,
+      "dream": 0.24,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 133,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6427,
+     "netWorthMedianMinor": 4311975
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.04,
+     "bankrupt": 0.05,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 144,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.87,
+      "debts": 0.3,
+      "dream": 0.41,
+      "independent": 0.04
+     },
+     "medianTurn": {
+      "reserve": 66,
+      "debts": 126,
+      "dream": 126,
+      "independent": 143
+     },
+     "peakPassiveMedianMinor": 120550,
+     "netWorthMedianMinor": 5209040
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.935,
+      "debts": 0.18,
+      "dream": 0.055,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 132,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7750,
+     "netWorthMedianMinor": 4237325
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.075,
+     "bankrupt": 0.02,
+     "timeout": 0.905,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 136,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.97,
+      "debts": 0.52,
+      "dream": 0.7,
+      "independent": 0.075
+     },
+     "medianTurn": {
+      "reserve": 43,
+      "debts": 123,
+      "dream": 119,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 171970,
+     "netWorthMedianMinor": 6583626
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.13,
+      "dream": 0.155,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 52,
+      "debts": 134,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 32972,
+     "netWorthMedianMinor": 5114989
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.09,
+     "bankrupt": 0.055,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 122,
+      "median": 135,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.97,
+      "debts": 0.55,
+      "dream": 0.705,
+      "independent": 0.095
+     },
+     "medianTurn": {
+      "reserve": 43,
+      "debts": 116,
+      "dream": 119,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 146350,
+     "netWorthMedianMinor": 5912527
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.97,
+      "debts": 0.27,
+      "dream": 0.23,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 42,
+      "debts": 103,
+      "dream": 136,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4750,
+     "netWorthMedianMinor": 4419609
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.32,
+      "debts": 0.015,
+      "dream": 0.07,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 104,
+      "debts": 144,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6550,
+     "netWorthMedianMinor": 3789896
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.04,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 125,
+      "median": 139,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.865,
+      "debts": 0.285,
+      "dream": 0.345,
+      "independent": 0.045
+     },
+     "medianTurn": {
+      "reserve": 80,
+      "debts": 132,
+      "dream": 127,
+      "independent": 130
+     },
+     "peakPassiveMedianMinor": 145058,
+     "netWorthMedianMinor": 5654374
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.185,
+      "debts": 0.015,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 125,
+      "debts": 146,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4750,
+     "netWorthMedianMinor": 3666974
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.035,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 132,
+      "p75": 132
+     },
+     "reached": {
+      "reserve": 0.515,
+      "debts": 0.115,
+      "dream": 0.25,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 116,
+      "debts": 137,
+      "dream": 137,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 6950,
+     "netWorthMedianMinor": 4882426
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.03,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.37,
+      "dream": 0.51,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 61,
+      "debts": 128,
+      "dream": 121,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 74240,
+     "netWorthMedianMinor": 5752131
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.97,
+      "debts": 0.51,
+      "dream": 0.5,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 123,
+      "dream": 127,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6950,
+     "netWorthMedianMinor": 5844846
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.105,
+     "bankrupt": 0.04,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 118,
+      "median": 136,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.97,
+      "debts": 0.615,
+      "dream": 0.69,
+      "independent": 0.105
+     },
+     "medianTurn": {
+      "reserve": 53,
+      "debts": 116,
+      "dream": 115,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 146750,
+     "netWorthMedianMinor": 6390951
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.47,
+      "dream": 0.235,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 112,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 9876,
+     "netWorthMedianMinor": 5769844
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.27,
+     "bankrupt": 0.015,
+     "timeout": 0.715,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 125,
+      "median": 137,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.82,
+      "dream": 0.87,
+      "independent": 0.27
+     },
+     "medianTurn": {
+      "reserve": 31,
+      "debts": 111,
+      "dream": 106,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 214839,
+     "netWorthMedianMinor": 7777050
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.5,
+      "dream": 0.425,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 115,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 47843,
+     "netWorthMedianMinor": 6675661
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.27,
+     "bankrupt": 0.01,
+     "timeout": 0.72,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 123,
+      "median": 132,
+      "p75": 139
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.925,
+      "dream": 0.925,
+      "independent": 0.275
+     },
+     "medianTurn": {
+      "reserve": 31,
+      "debts": 95,
+      "dream": 102,
+      "independent": 130
+     },
+     "peakPassiveMedianMinor": 225575,
+     "netWorthMedianMinor": 7244857
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.68,
+      "dream": 0.505,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 31,
+      "debts": 87,
+      "dream": 128,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6950,
+     "netWorthMedianMinor": 5709892
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.61,
+      "debts": 0.065,
+      "dream": 0.265,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 106,
+      "debts": 131,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6950,
+     "netWorthMedianMinor": 4942836
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.075,
+     "bankrupt": 0.025,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 140,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.58,
+      "dream": 0.575,
+      "independent": 0.075
+     },
+     "medianTurn": {
+      "reserve": 63,
+      "debts": 118,
+      "dream": 125,
+      "independent": 140
+     },
+     "peakPassiveMedianMinor": 159925,
+     "netWorthMedianMinor": 7509635
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.42,
+      "debts": 0.075,
+      "dream": 0.145,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 121,
+      "debts": 143,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6950,
+     "netWorthMedianMinor": 4575021
+    }
+   }
+  },
+  "mehmet-elektroniker": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.025,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 106,
+      "median": 106,
+      "p75": 106
+     },
+     "reached": {
+      "reserve": 0.855,
+      "debts": 0.745,
+      "dream": 0.765,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 97,
+      "debts": 113,
+      "dream": 113,
+      "independent": 106
+     },
+     "peakPassiveMedianMinor": 63699,
+     "netWorthMedianMinor": 5550559
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.11,
+     "bankrupt": 0.015,
+     "timeout": 0.875,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 106,
+      "median": 127,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.905,
+      "dream": 0.895,
+      "independent": 0.115
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 90,
+      "dream": 104,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 112416,
+     "netWorthMedianMinor": 6195803
+    },
+    "property": {
+     "games": 200,
+     "win": 0.155,
+     "bankrupt": 0.03,
+     "timeout": 0.815,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 125,
+      "median": 134,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.965,
+      "dream": 0.94,
+      "independent": 0.155
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 73,
+      "dream": 100,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 75733,
+     "netWorthMedianMinor": 7150109
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.415,
+     "bankrupt": 0.005,
+     "timeout": 0.58,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 99,
+      "median": 118,
+      "p75": 134
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.94,
+      "dream": 0.925,
+      "independent": 0.415
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 75,
+      "dream": 94,
+      "independent": 117
+     },
+     "peakPassiveMedianMinor": 162000,
+     "netWorthMedianMinor": 5613891
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.04,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.98,
+      "dream": 0.86,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 21,
+      "debts": 46,
+      "dream": 111,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 19200,
+     "netWorthMedianMinor": 6617562
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.715,
+     "bankrupt": 0.015,
+     "timeout": 0.27,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 92,
+      "median": 111,
+      "p75": 126
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.99,
+      "dream": 0.98,
+      "independent": 0.715
+     },
+     "medianTurn": {
+      "reserve": 17,
+      "debts": 37,
+      "dream": 82,
+      "independent": 108
+     },
+     "peakPassiveMedianMinor": 208212,
+     "netWorthMedianMinor": 5904631
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.085,
+     "bankrupt": 0.025,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 131,
+      "median": 143,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.91,
+      "independent": 0.085
+     },
+     "medianTurn": {
+      "reserve": 21,
+      "debts": 39,
+      "dream": 107,
+      "independent": 143
+     },
+     "peakPassiveMedianMinor": 74143,
+     "netWorthMedianMinor": 6198274
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.72,
+     "bankrupt": 0.01,
+     "timeout": 0.27,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 88,
+      "median": 105,
+      "p75": 119
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.985,
+      "independent": 0.73
+     },
+     "medianTurn": {
+      "reserve": 17,
+      "debts": 33,
+      "dream": 78,
+      "independent": 104
+     },
+     "peakPassiveMedianMinor": 194500,
+     "netWorthMedianMinor": 5412423
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.02,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 124,
+      "median": 145,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.94,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 17,
+      "debts": 31,
+      "dream": 97,
+      "independent": 145
+     },
+     "peakPassiveMedianMinor": 15300,
+     "netWorthMedianMinor": 5027460
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.095,
+     "bankrupt": 0.01,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 130,
+      "median": 138,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.88,
+      "debts": 0.57,
+      "dream": 0.775,
+      "independent": 0.095
+     },
+     "medianTurn": {
+      "reserve": 89,
+      "debts": 118,
+      "dream": 109,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 55482,
+     "netWorthMedianMinor": 5251820
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.52,
+     "bankrupt": 0,
+     "timeout": 0.48,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 102,
+      "median": 120,
+      "p75": 134
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.935,
+      "independent": 0.525
+     },
+     "medianTurn": {
+      "reserve": 39,
+      "debts": 56,
+      "dream": 103,
+      "independent": 113
+     },
+     "peakPassiveMedianMinor": 179565,
+     "netWorthMedianMinor": 6469508
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.01,
+     "timeout": 0.99,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.82,
+      "debts": 0.61,
+      "dream": 0.72,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 110,
+      "debts": 122,
+      "dream": 123,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 12600,
+     "netWorthMedianMinor": 5316458
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.105,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.25,
+      "debts": 0.08,
+      "dream": 0.13,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 112,
+      "debts": 132,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 5810,
+     "netWorthMedianMinor": 3070796
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.06,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 136,
+      "p75": 136
+     },
+     "reached": {
+      "reserve": 0.815,
+      "debts": 0.295,
+      "dream": 0.31,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 78,
+      "debts": 125,
+      "dream": 129,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 33090,
+     "netWorthMedianMinor": 3581490
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.87,
+      "debts": 0.37,
+      "dream": 0.27,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 119,
+      "dream": 128,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 5810,
+     "netWorthMedianMinor": 3555950
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.075,
+     "bankrupt": 0.06,
+     "timeout": 0.865,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 113,
+      "median": 133,
+      "p75": 139
+     },
+     "reached": {
+      "reserve": 0.89,
+      "debts": 0.45,
+      "dream": 0.425,
+      "independent": 0.09
+     },
+     "medianTurn": {
+      "reserve": 67,
+      "debts": 113,
+      "dream": 123,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 86242,
+     "netWorthMedianMinor": 4062434
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.57,
+      "dream": 0.105,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 46,
+      "debts": 109,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6883,
+     "netWorthMedianMinor": 3372107
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.15,
+     "bankrupt": 0.045,
+     "timeout": 0.805,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 121,
+      "median": 136,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.725,
+      "dream": 0.73,
+      "independent": 0.17
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 97,
+      "dream": 119,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 133072,
+     "netWorthMedianMinor": 5226355
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.65,
+      "dream": 0.215,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 95,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 26191,
+     "netWorthMedianMinor": 4222283
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.16,
+     "bankrupt": 0.05,
+     "timeout": 0.79,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 119,
+      "median": 136,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.825,
+      "dream": 0.715,
+      "independent": 0.18
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 87,
+      "dream": 116,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 120210,
+     "netWorthMedianMinor": 4666585
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.82,
+      "dream": 0.29,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 78,
+      "dream": 130,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 5810,
+     "netWorthMedianMinor": 3722597.5
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.315,
+      "debts": 0.03,
+      "dream": 0.11,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 105,
+      "debts": 128,
+      "dream": 123,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 5810,
+     "netWorthMedianMinor": 3101601
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.07,
+     "bankrupt": 0.035,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 112,
+      "median": 136,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.9,
+      "debts": 0.6,
+      "dream": 0.365,
+      "independent": 0.08
+     },
+     "medianTurn": {
+      "reserve": 73,
+      "debts": 111,
+      "dream": 130,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 106247,
+     "netWorthMedianMinor": 4625702
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.085,
+     "timeout": 0.915,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.155,
+      "debts": 0.045,
+      "dream": 0.075,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 125,
+      "debts": 147,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 5810,
+     "netWorthMedianMinor": 2894866
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.01,
+     "timeout": 0.99,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.53,
+      "debts": 0.33,
+      "dream": 0.43,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 120,
+      "debts": 134,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6681,
+     "netWorthMedianMinor": 4218775
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.035,
+     "bankrupt": 0.015,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 136,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.615,
+      "dream": 0.61,
+      "independent": 0.04
+     },
+     "medianTurn": {
+      "reserve": 60,
+      "debts": 114,
+      "dream": 121,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 83027,
+     "netWorthMedianMinor": 5028057
+    },
+    "property": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.055,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 116,
+      "median": 132,
+      "p75": 133
+     },
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.72,
+      "dream": 0.61,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 105,
+      "dream": 125,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 6210,
+     "netWorthMedianMinor": 5102370
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.145,
+     "bankrupt": 0.02,
+     "timeout": 0.835,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 140,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.74,
+      "dream": 0.695,
+      "independent": 0.17
+     },
+     "medianTurn": {
+      "reserve": 52,
+      "debts": 106,
+      "dream": 117,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 114714,
+     "netWorthMedianMinor": 5086800
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.8,
+      "dream": 0.39,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 83,
+      "dream": 130,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8356,
+     "netWorthMedianMinor": 4965538.5
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.34,
+     "bankrupt": 0.015,
+     "timeout": 0.645,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 114,
+      "median": 126,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.93,
+      "dream": 0.915,
+      "independent": 0.35
+     },
+     "medianTurn": {
+      "reserve": 30,
+      "debts": 77,
+      "dream": 106,
+      "independent": 126
+     },
+     "peakPassiveMedianMinor": 168719,
+     "netWorthMedianMinor": 5927023
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.06,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 128,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.895,
+      "dream": 0.535,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 35,
+      "debts": 78,
+      "dream": 128,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 38303,
+     "netWorthMedianMinor": 5463670
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.335,
+     "bankrupt": 0.02,
+     "timeout": 0.645,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 116,
+      "median": 128,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.96,
+      "dream": 0.91,
+      "independent": 0.345
+     },
+     "medianTurn": {
+      "reserve": 30,
+      "debts": 63,
+      "dream": 103,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 172314,
+     "netWorthMedianMinor": 5404005
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.97,
+      "dream": 0.615,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 30,
+      "debts": 57,
+      "dream": 122,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6210,
+     "netWorthMedianMinor": 4455582
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.04,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 146,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.555,
+      "debts": 0.19,
+      "dream": 0.38,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 114,
+      "debts": 135,
+      "dream": 129,
+      "independent": 146
+     },
+     "peakPassiveMedianMinor": 7042,
+     "netWorthMedianMinor": 4016560
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.145,
+     "bankrupt": 0.005,
+     "timeout": 0.85,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 117,
+      "median": 128,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.97,
+      "debts": 0.87,
+      "dream": 0.675,
+      "independent": 0.155
+     },
+     "medianTurn": {
+      "reserve": 58,
+      "debts": 89,
+      "dream": 122,
+      "independent": 121
+     },
+     "peakPassiveMedianMinor": 119499,
+     "netWorthMedianMinor": 5931113
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.395,
+      "debts": 0.185,
+      "dream": 0.265,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 129,
+      "debts": 135,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4890,
+     "netWorthMedianMinor": 3900968
+    }
+   }
+  },
+  "katrin-marketing": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.895,
+      "debts": 0.745,
+      "dream": 0.715,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 93,
+      "debts": 124,
+      "dream": 126,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 82100,
+     "netWorthMedianMinor": 12127373
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.045,
+     "bankrupt": 0.015,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 138,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.95,
+      "dream": 0.855,
+      "independent": 0.045
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 89,
+      "dream": 116,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 230069,
+     "netWorthMedianMinor": 13786010
+    },
+    "property": {
+     "games": 200,
+     "win": 0.06,
+     "bankrupt": 0.05,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 134,
+      "median": 142,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.975,
+      "dream": 0.85,
+      "independent": 0.06
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 78,
+      "dream": 118,
+      "independent": 142
+     },
+     "peakPassiveMedianMinor": 34800,
+     "netWorthMedianMinor": 14632510
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.36,
+     "bankrupt": 0.02,
+     "timeout": 0.62,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 118,
+      "median": 131,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.98,
+      "dream": 0.935,
+      "independent": 0.365
+     },
+     "medianTurn": {
+      "reserve": 41,
+      "debts": 71,
+      "dream": 105,
+      "independent": 131
+     },
+     "peakPassiveMedianMinor": 431800,
+     "netWorthMedianMinor": 13728644
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.985,
+      "dream": 0.67,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 28,
+      "debts": 55,
+      "dream": 122,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 36100,
+     "netWorthMedianMinor": 14147442
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.645,
+     "bankrupt": 0.005,
+     "timeout": 0.35,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 112,
+      "median": 125,
+      "p75": 133
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.97,
+      "independent": 0.66
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 46,
+      "dream": 96,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 476173,
+     "netWorthMedianMinor": 14068957
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.05,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 138,
+      "median": 140,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.99,
+      "dream": 0.77,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 29,
+      "debts": 49,
+      "dream": 121,
+      "independent": 140
+     },
+     "peakPassiveMedianMinor": 153987,
+     "netWorthMedianMinor": 14028008
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.65,
+     "bankrupt": 0.01,
+     "timeout": 0.34,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 106,
+      "median": 124,
+      "p75": 134
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.96,
+      "independent": 0.655
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 43,
+      "dream": 93,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 475686,
+     "netWorthMedianMinor": 13660242
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.02,
+     "bankrupt": 0.075,
+     "timeout": 0.905,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 135,
+      "median": 138,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.83,
+      "independent": 0.02
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 41,
+      "dream": 113,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 34800,
+     "netWorthMedianMinor": 11843636
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.025,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 141,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.945,
+      "debts": 0.495,
+      "dream": 0.745,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 76,
+      "debts": 126,
+      "dream": 121,
+      "independent": 141
+     },
+     "peakPassiveMedianMinor": 78800,
+     "netWorthMedianMinor": 11992468
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.32,
+     "bankrupt": 0.02,
+     "timeout": 0.66,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 124,
+      "median": 133,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.99,
+      "dream": 0.88,
+      "independent": 0.325
+     },
+     "medianTurn": {
+      "reserve": 50,
+      "debts": 65,
+      "dream": 114,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 417182,
+     "netWorthMedianMinor": 15623901
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.755,
+      "debts": 0.545,
+      "dream": 0.545,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 112,
+      "debts": 125,
+      "dream": 127,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 19800,
+     "netWorthMedianMinor": 12219250
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.39,
+      "debts": 0.025,
+      "dream": 0.025,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 120,
+      "debts": 134,
+      "dream": 145,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13220,
+     "netWorthMedianMinor": 6635438
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.04,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.86,
+      "debts": 0.34,
+      "dream": 0.15,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 77,
+      "debts": 129,
+      "dream": 144,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 79463,
+     "netWorthMedianMinor": 7911775
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.895,
+      "debts": 0.425,
+      "dream": 0.07,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 73,
+      "debts": 116,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10580,
+     "netWorthMedianMinor": 6856067
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.06,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 117,
+      "median": 128,
+      "p75": 128
+     },
+     "reached": {
+      "reserve": 0.92,
+      "debts": 0.53,
+      "dream": 0.27,
+      "independent": 0.02
+     },
+     "medianTurn": {
+      "reserve": 71,
+      "debts": 114,
+      "dream": 134,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 206600,
+     "netWorthMedianMinor": 8958020
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.955,
+      "debts": 0.67,
+      "dream": 0.035,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 108,
+      "dream": 140,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 14980,
+     "netWorthMedianMinor": 6825124
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.07,
+     "bankrupt": 0.075,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 131,
+      "median": 141,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.74,
+      "dream": 0.445,
+      "independent": 0.08
+     },
+     "medianTurn": {
+      "reserve": 52,
+      "debts": 93,
+      "dream": 130,
+      "independent": 141
+     },
+     "peakPassiveMedianMinor": 239057,
+     "netWorthMedianMinor": 11048787
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.955,
+      "debts": 0.665,
+      "dream": 0.035,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 58,
+      "debts": 101,
+      "dream": 144,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 50284,
+     "netWorthMedianMinor": 7940957
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.1,
+     "bankrupt": 0.065,
+     "timeout": 0.835,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 141,
+      "median": 147,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.805,
+      "dream": 0.525,
+      "independent": 0.105
+     },
+     "medianTurn": {
+      "reserve": 52,
+      "debts": 85,
+      "dream": 127,
+      "independent": 146
+     },
+     "peakPassiveMedianMinor": 226268,
+     "netWorthMedianMinor": 10785002
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.825,
+      "dream": 0.09,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 53,
+      "debts": 84,
+      "dream": 143,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13220,
+     "netWorthMedianMinor": 7109723.5
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.57,
+      "debts": 0,
+      "dream": 0.04,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 108,
+      "debts": null,
+      "dream": 140,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13220,
+     "netWorthMedianMinor": 6575752
+    },
+    "steady": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.875,
+      "debts": 0.63,
+      "dream": 0.15,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 84,
+      "debts": 111,
+      "dream": 136,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 197789,
+     "netWorthMedianMinor": 9015484
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.24,
+      "debts": 0.03,
+      "dream": 0.025,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 122,
+      "debts": 142,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10580,
+     "netWorthMedianMinor": 6428032
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.62,
+      "debts": 0.245,
+      "dream": 0.245,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 112,
+      "debts": 131,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15373,
+     "netWorthMedianMinor": 9490259
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.025,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.71,
+      "dream": 0.495,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 66,
+      "debts": 115,
+      "dream": 133,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 176110,
+     "netWorthMedianMinor": 11332379
+    },
+    "property": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.055,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 147,
+      "median": 147,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.765,
+      "dream": 0.385,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 59,
+      "debts": 104,
+      "dream": 135,
+      "independent": 147
+     },
+     "peakPassiveMedianMinor": 13620,
+     "netWorthMedianMinor": 10146381
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.055,
+     "bankrupt": 0.04,
+     "timeout": 0.905,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 124,
+      "median": 138,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.805,
+      "dream": 0.62,
+      "independent": 0.055
+     },
+     "medianTurn": {
+      "reserve": 57,
+      "debts": 101,
+      "dream": 127,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 219320,
+     "netWorthMedianMinor": 11916280
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.91,
+      "dream": 0.205,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 45,
+      "debts": 86,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 16755,
+     "netWorthMedianMinor": 10003578
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.23,
+     "bankrupt": 0.015,
+     "timeout": 0.755,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 131,
+      "median": 142,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.945,
+      "dream": 0.82,
+      "independent": 0.235
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 73,
+      "dream": 120,
+      "independent": 142
+     },
+     "peakPassiveMedianMinor": 296106,
+     "netWorthMedianMinor": 13372087
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.93,
+      "dream": 0.28,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 82,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 81822,
+     "netWorthMedianMinor": 11418338
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.265,
+     "bankrupt": 0.03,
+     "timeout": 0.705,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 126,
+      "median": 136,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.965,
+      "dream": 0.81,
+      "independent": 0.27
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 67,
+      "dream": 118,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 335810,
+     "netWorthMedianMinor": 12547292
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.975,
+      "dream": 0.395,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 66,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13620,
+     "netWorthMedianMinor": 10219664
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.785,
+      "debts": 0.155,
+      "dream": 0.3,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 98,
+      "debts": 135,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15380,
+     "netWorthMedianMinor": 9495171
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.045,
+     "bankrupt": 0.025,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 131,
+      "median": 137,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.915,
+      "dream": 0.495,
+      "independent": 0.06
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 93,
+      "dream": 135,
+      "independent": 135
+     },
+     "peakPassiveMedianMinor": 237917,
+     "netWorthMedianMinor": 13169113
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.405,
+      "debts": 0.13,
+      "dream": 0.17,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 121,
+      "debts": 137,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13620,
+     "netWorthMedianMinor": 9088829
+    }
+   }
+  },
+  "lena-pflege": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.76,
+      "debts": 0.64,
+      "dream": 0.665,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 115,
+      "debts": 124,
+      "dream": 125,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 43032,
+     "netWorthMedianMinor": 5553948
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.08,
+     "bankrupt": 0.01,
+     "timeout": 0.91,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 137,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.835,
+      "dream": 0.8,
+      "independent": 0.085
+     },
+     "medianTurn": {
+      "reserve": 50,
+      "debts": 99,
+      "dream": 114,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 119300,
+     "netWorthMedianMinor": 6196322
+    },
+    "property": {
+     "games": 200,
+     "win": 0.07,
+     "bankrupt": 0.025,
+     "timeout": 0.905,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 123,
+      "median": 133,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.935,
+      "dream": 0.825,
+      "independent": 0.07
+     },
+     "medianTurn": {
+      "reserve": 45,
+      "debts": 80,
+      "dream": 111,
+      "independent": 133
+     },
+     "peakPassiveMedianMinor": 19000,
+     "netWorthMedianMinor": 7104415
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.355,
+     "bankrupt": 0.02,
+     "timeout": 0.625,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 112,
+      "median": 126,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.915,
+      "dream": 0.85,
+      "independent": 0.365
+     },
+     "medianTurn": {
+      "reserve": 41,
+      "debts": 82,
+      "dream": 101,
+      "independent": 125
+     },
+     "peakPassiveMedianMinor": 195000,
+     "netWorthMedianMinor": 6006560
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.97,
+      "dream": 0.68,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 29,
+      "debts": 54,
+      "dream": 118,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 21300,
+     "netWorthMedianMinor": 6303206
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.64,
+     "bankrupt": 0.005,
+     "timeout": 0.355,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 95,
+      "median": 108,
+      "p75": 126
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.99,
+      "independent": 0.65
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 42,
+      "dream": 89,
+      "independent": 106
+     },
+     "peakPassiveMedianMinor": 222620,
+     "netWorthMedianMinor": 6078731
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.04,
+     "bankrupt": 0.03,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 141,
+      "median": 147,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.98,
+      "dream": 0.835,
+      "independent": 0.04
+     },
+     "medianTurn": {
+      "reserve": 28,
+      "debts": 44,
+      "dream": 119,
+      "independent": 147
+     },
+     "peakPassiveMedianMinor": 71326,
+     "netWorthMedianMinor": 6399261
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.67,
+     "bankrupt": 0.015,
+     "timeout": 0.315,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 95,
+      "median": 110,
+      "p75": 127
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.985,
+      "independent": 0.685
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 37,
+      "dream": 88,
+      "independent": 107
+     },
+     "peakPassiveMedianMinor": 230000,
+     "netWorthMedianMinor": 5977509
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.035,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.88,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 36,
+      "dream": 109,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 17500,
+     "netWorthMedianMinor": 5338971.5
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.025,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 135,
+      "median": 140,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.79,
+      "debts": 0.48,
+      "dream": 0.66,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 101,
+      "debts": 134,
+      "dream": 122,
+      "independent": 140
+     },
+     "peakPassiveMedianMinor": 20375,
+     "netWorthMedianMinor": 5234429
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.46,
+     "bankrupt": 0.01,
+     "timeout": 0.53,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 108,
+      "median": 126,
+      "p75": 135
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.865,
+      "independent": 0.465
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 61,
+      "dream": 108,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 195319,
+     "netWorthMedianMinor": 6969569
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.58,
+      "debts": 0.435,
+      "dream": 0.46,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 119,
+      "debts": 129,
+      "dream": 129,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 12000,
+     "netWorthMedianMinor": 5385489
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.1,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.195,
+      "debts": 0.025,
+      "dream": 0.06,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 124,
+      "debts": 127,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7320,
+     "netWorthMedianMinor": 3197423
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.05,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.765,
+      "debts": 0.23,
+      "dream": 0.205,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 85,
+      "debts": 131,
+      "dream": 130,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 32880,
+     "netWorthMedianMinor": 3594550
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.84,
+      "debts": 0.245,
+      "dream": 0.135,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 80,
+      "debts": 112,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7320,
+     "netWorthMedianMinor": 3428021
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.04,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 119,
+      "median": 142,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.86,
+      "debts": 0.38,
+      "dream": 0.305,
+      "independent": 0.055
+     },
+     "medianTurn": {
+      "reserve": 73,
+      "debts": 124,
+      "dream": 127,
+      "independent": 133
+     },
+     "peakPassiveMedianMinor": 75768,
+     "netWorthMedianMinor": 3968791
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.5,
+      "dream": 0.05,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 57,
+      "debts": 106,
+      "dream": 130,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8244,
+     "netWorthMedianMinor": 3354372
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.105,
+     "bankrupt": 0.04,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 120,
+      "median": 127,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.715,
+      "dream": 0.57,
+      "independent": 0.135
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 107,
+      "dream": 124,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 131697,
+     "netWorthMedianMinor": 5337946
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.955,
+      "debts": 0.625,
+      "dream": 0.085,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 102,
+      "dream": 139,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 24914,
+     "netWorthMedianMinor": 3934901
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.1,
+     "bankrupt": 0.04,
+     "timeout": 0.86,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 138,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.81,
+      "dream": 0.585,
+      "independent": 0.115
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 90,
+      "dream": 123,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 119160,
+     "netWorthMedianMinor": 4953062
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.83,
+      "dream": 0.165,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 87,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7320,
+     "netWorthMedianMinor": 3566454
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.1,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.215,
+      "debts": 0.01,
+      "dream": 0.06,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 114,
+      "debts": 138,
+      "dream": 131,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7320,
+     "netWorthMedianMinor": 3008577
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.045,
+     "bankrupt": 0.035,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 129,
+      "median": 136,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.86,
+      "debts": 0.53,
+      "dream": 0.255,
+      "independent": 0.055
+     },
+     "medianTurn": {
+      "reserve": 85,
+      "debts": 111,
+      "dream": 132,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 101816,
+     "netWorthMedianMinor": 4474291
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.135,
+     "timeout": 0.865,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.11,
+      "debts": 0.015,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 132,
+      "debts": 139,
+      "dream": 146,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7320,
+     "netWorthMedianMinor": 2880474
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.03,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 128,
+      "p75": 128
+     },
+     "reached": {
+      "reserve": 0.415,
+      "debts": 0.18,
+      "dream": 0.27,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 126,
+      "debts": 140,
+      "dream": 139,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 7720,
+     "netWorthMedianMinor": 4120937
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.025,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 136,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.915,
+      "debts": 0.51,
+      "dream": 0.445,
+      "independent": 0.02
+     },
+     "medianTurn": {
+      "reserve": 68,
+      "debts": 121,
+      "dream": 129,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 42298,
+     "netWorthMedianMinor": 4924953
+    },
+    "property": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.06,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 136,
+      "median": 148,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.945,
+      "debts": 0.63,
+      "dream": 0.42,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 61,
+      "debts": 114,
+      "dream": 128,
+      "independent": 148
+     },
+     "peakPassiveMedianMinor": 7720,
+     "netWorthMedianMinor": 4816151
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.09,
+     "bankrupt": 0.05,
+     "timeout": 0.86,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 124,
+      "median": 130,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.945,
+      "debts": 0.67,
+      "dream": 0.565,
+      "independent": 0.11
+     },
+     "medianTurn": {
+      "reserve": 57,
+      "debts": 110,
+      "dream": 121,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 117160,
+     "netWorthMedianMinor": 5135411
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.835,
+      "dream": 0.235,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 42,
+      "debts": 93,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 9850,
+     "netWorthMedianMinor": 4681230
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.24,
+     "bankrupt": 0.02,
+     "timeout": 0.74,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 115,
+      "median": 129,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.925,
+      "dream": 0.84,
+      "independent": 0.255
+     },
+     "medianTurn": {
+      "reserve": 36,
+      "debts": 78,
+      "dream": 113,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 159714,
+     "netWorthMedianMinor": 5952756
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.865,
+      "dream": 0.385,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 84,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 36078,
+     "netWorthMedianMinor": 5495385
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.24,
+     "bankrupt": 0.025,
+     "timeout": 0.735,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 114,
+      "median": 128,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.96,
+      "dream": 0.88,
+      "independent": 0.26
+     },
+     "medianTurn": {
+      "reserve": 36,
+      "debts": 68,
+      "dream": 114,
+      "independent": 125
+     },
+     "peakPassiveMedianMinor": 152824,
+     "netWorthMedianMinor": 5700298
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.95,
+      "dream": 0.475,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 36,
+      "debts": 61,
+      "dream": 128,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7720,
+     "netWorthMedianMinor": 4787255.5
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.04,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.465,
+      "debts": 0.095,
+      "dream": 0.25,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 115,
+      "debts": 138,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 7720,
+     "netWorthMedianMinor": 4141612
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.12,
+     "bankrupt": 0.015,
+     "timeout": 0.865,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 121,
+      "median": 129,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.865,
+      "dream": 0.53,
+      "independent": 0.14
+     },
+     "medianTurn": {
+      "reserve": 68,
+      "debts": 96,
+      "dream": 130,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 127184,
+     "netWorthMedianMinor": 6092767
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.28,
+      "debts": 0.125,
+      "dream": 0.15,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 130,
+      "debts": 141,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6280,
+     "netWorthMedianMinor": 3875998
+    }
+   }
+  },
+  "frank-ingenieur": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.925,
+      "debts": 0.745,
+      "dream": 0.68,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 81,
+      "debts": 120,
+      "dream": 125,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 97600,
+     "netWorthMedianMinor": 13741239
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.045,
+     "bankrupt": 0.03,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 140,
+      "median": 145,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.95,
+      "dream": 0.84,
+      "independent": 0.05
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 89,
+      "dream": 115,
+      "independent": 145
+     },
+     "peakPassiveMedianMinor": 263486,
+     "netWorthMedianMinor": 15793360
+    },
+    "property": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.05,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 139,
+      "median": 145,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.975,
+      "dream": 0.79,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 40,
+      "debts": 77,
+      "dream": 119,
+      "independent": 143
+     },
+     "peakPassiveMedianMinor": 41100,
+     "netWorthMedianMinor": 16285414
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.36,
+     "bankrupt": 0.015,
+     "timeout": 0.625,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 115,
+      "median": 129,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.985,
+      "dream": 0.935,
+      "independent": 0.37
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 73,
+      "dream": 104,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 477600,
+     "netWorthMedianMinor": 15630950
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.645,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 24,
+      "debts": 57,
+      "dream": 126,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 40600,
+     "netWorthMedianMinor": 15751236
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.59,
+     "bankrupt": 0.005,
+     "timeout": 0.405,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 112,
+      "median": 123,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.995,
+      "independent": 0.62
+     },
+     "medianTurn": {
+      "reserve": 20,
+      "debts": 48,
+      "dream": 96,
+      "independent": 123
+     },
+     "peakPassiveMedianMinor": 548134,
+     "netWorthMedianMinor": 17045511
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.06,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 145,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.735,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 27,
+      "debts": 51,
+      "dream": 123,
+      "independent": 145
+     },
+     "peakPassiveMedianMinor": 158424,
+     "netWorthMedianMinor": 15722155
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.67,
+     "bankrupt": 0,
+     "timeout": 0.33,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 108,
+      "median": 122,
+      "p75": 133
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.98,
+      "independent": 0.685
+     },
+     "medianTurn": {
+      "reserve": 20,
+      "debts": 45,
+      "dream": 94,
+      "independent": 121
+     },
+     "peakPassiveMedianMinor": 556909,
+     "netWorthMedianMinor": 15640326
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 1,
+      "dream": 0.8,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 20,
+      "debts": 41,
+      "dream": 116,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 46600,
+     "netWorthMedianMinor": 13312219
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.04,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 138,
+      "median": 138,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.45,
+      "dream": 0.725,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 130,
+      "dream": 121,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 85083,
+     "netWorthMedianMinor": 13204461
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.34,
+     "bankrupt": 0.03,
+     "timeout": 0.63,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 119,
+      "median": 133,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.98,
+      "dream": 0.885,
+      "independent": 0.345
+     },
+     "medianTurn": {
+      "reserve": 48,
+      "debts": 67,
+      "dream": 113,
+      "independent": 133
+     },
+     "peakPassiveMedianMinor": 459144,
+     "netWorthMedianMinor": 17628564
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.78,
+      "debts": 0.53,
+      "dream": 0.515,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 105,
+      "debts": 127,
+      "dream": 130,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 26100,
+     "netWorthMedianMinor": 13628186
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.74,
+      "debts": 0.215,
+      "dream": 0.175,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 106,
+      "debts": 132,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15170,
+     "netWorthMedianMinor": 10727433
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.035,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.755,
+      "dream": 0.465,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 63,
+      "debts": 110,
+      "dream": 134,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 212469,
+     "netWorthMedianMinor": 13283164
+    },
+    "property": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.05,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 149,
+      "median": 149,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.775,
+      "dream": 0.3,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 57,
+      "debts": 109,
+      "dream": 135,
+      "independent": 149
+     },
+     "peakPassiveMedianMinor": 15170,
+     "netWorthMedianMinor": 11390342
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.095,
+     "bankrupt": 0.045,
+     "timeout": 0.86,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 120,
+      "median": 137,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.84,
+      "dream": 0.585,
+      "independent": 0.1
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 102,
+      "dream": 128,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 263570,
+     "netWorthMedianMinor": 13373848
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.915,
+      "dream": 0.11,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 42,
+      "debts": 86,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 17803,
+     "netWorthMedianMinor": 11112683
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.22,
+     "bankrupt": 0.03,
+     "timeout": 0.75,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 136,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.95,
+      "dream": 0.805,
+      "independent": 0.225
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 75,
+      "dream": 119,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 350497,
+     "netWorthMedianMinor": 15361109
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.935,
+      "dream": 0.185,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 45,
+      "debts": 84,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 89185,
+     "netWorthMedianMinor": 12976398
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.23,
+     "bankrupt": 0.03,
+     "timeout": 0.74,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 122,
+      "median": 133,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.97,
+      "dream": 0.82,
+      "independent": 0.235
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 69,
+      "dream": 117,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 415670,
+     "netWorthMedianMinor": 14801774
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.97,
+      "dream": 0.365,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 37,
+      "debts": 68,
+      "dream": 136,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15170,
+     "netWorthMedianMinor": 11714348
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.84,
+      "debts": 0.06,
+      "dream": 0.23,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 90,
+      "debts": 141,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 17330,
+     "netWorthMedianMinor": 10704439
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.065,
+     "bankrupt": 0.035,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 138,
+      "median": 142,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.92,
+      "dream": 0.465,
+      "independent": 0.065
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 97,
+      "dream": 136,
+      "independent": 142
+     },
+     "peakPassiveMedianMinor": 289959,
+     "netWorthMedianMinor": 14853601
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.015,
+     "timeout": 0.985,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.455,
+      "debts": 0.1,
+      "dream": 0.115,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 121,
+      "debts": 142,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15170,
+     "netWorthMedianMinor": 10602126
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.53,
+      "debts": 0.05,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 116,
+      "debts": 148,
+      "dream": 149,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 14670,
+     "netWorthMedianMinor": 7597885
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.045,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.88,
+      "debts": 0.44,
+      "dream": 0.19,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 73,
+      "debts": 120,
+      "dream": 140,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 143068,
+     "netWorthMedianMinor": 9235192
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.92,
+      "debts": 0.49,
+      "dream": 0.065,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 71,
+      "debts": 116,
+      "dream": 143,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 11430,
+     "netWorthMedianMinor": 8048120
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.02,
+     "bankrupt": 0.055,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 139,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.93,
+      "debts": 0.565,
+      "dream": 0.285,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 68,
+      "debts": 114,
+      "dream": 136,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 253350,
+     "netWorthMedianMinor": 10648518
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.71,
+      "dream": 0.02,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 108,
+      "dream": 139,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 16830,
+     "netWorthMedianMinor": 7998742.5
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.11,
+     "bankrupt": 0.06,
+     "timeout": 0.83,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 140,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.785,
+      "dream": 0.535,
+      "independent": 0.125
+     },
+     "medianTurn": {
+      "reserve": 49,
+      "debts": 95,
+      "dream": 127,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 303426,
+     "netWorthMedianMinor": 13579070
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.955,
+      "debts": 0.74,
+      "dream": 0.035,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 102,
+      "dream": 145,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 56952,
+     "netWorthMedianMinor": 9328716
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.09,
+     "bankrupt": 0.05,
+     "timeout": 0.86,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 139,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.96,
+      "debts": 0.825,
+      "dream": 0.57,
+      "independent": 0.105
+     },
+     "medianTurn": {
+      "reserve": 49,
+      "debts": 91,
+      "dream": 133,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 289638,
+     "netWorthMedianMinor": 12726565
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.82,
+      "dream": 0.085,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 49,
+      "debts": 86,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 14670,
+     "netWorthMedianMinor": 8177074
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.67,
+      "debts": 0.005,
+      "dream": 0.025,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 104,
+      "debts": 137,
+      "dream": 145,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 14670,
+     "netWorthMedianMinor": 7498490
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.035,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 149,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.88,
+      "debts": 0.63,
+      "dream": 0.16,
+      "independent": 0.025
+     },
+     "medianTurn": {
+      "reserve": 84,
+      "debts": 114,
+      "dream": 140,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 242696,
+     "netWorthMedianMinor": 10407648
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.245,
+      "debts": 0.015,
+      "dream": 0.01,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 120,
+      "debts": 147,
+      "dream": 149,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 11430,
+     "netWorthMedianMinor": 7141252
+    }
+   }
+  },
+  "jan-oberarzt": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.02,
+     "timeout": 0.98,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.685,
+      "debts": 0.235,
+      "dream": 0.125,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 119,
+      "debts": 129,
+      "dream": 145,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 36500,
+     "netWorthMedianMinor": 13974823
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.035,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 136,
+      "median": 136,
+      "p75": 136
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.61,
+      "dream": 0.28,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 80,
+      "debts": 119,
+      "dream": 139,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 176000,
+     "netWorthMedianMinor": 16213515
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.65,
+      "dream": 0.215,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 78,
+      "debts": 117,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 51500,
+     "netWorthMedianMinor": 14978500
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.11,
+     "bankrupt": 0.035,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 123,
+      "median": 136,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.935,
+      "debts": 0.72,
+      "dream": 0.445,
+      "independent": 0.145
+     },
+     "medianTurn": {
+      "reserve": 76,
+      "debts": 117,
+      "dream": 134,
+      "independent": 125
+     },
+     "peakPassiveMedianMinor": 391500,
+     "netWorthMedianMinor": 18317891
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.74,
+      "dream": 0.125,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 62,
+      "debts": 112,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 55500,
+     "netWorthMedianMinor": 15345309
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.3,
+     "bankrupt": 0.04,
+     "timeout": 0.66,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 121,
+      "median": 134,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.825,
+      "dream": 0.68,
+      "independent": 0.35
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 105,
+      "dream": 126,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 509052,
+     "netWorthMedianMinor": 20575467
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.745,
+      "dream": 0.185,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 68,
+      "debts": 109,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 142816,
+     "netWorthMedianMinor": 16304402
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.375,
+     "bankrupt": 0.04,
+     "timeout": 0.585,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 121,
+      "median": 133,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.975,
+      "debts": 0.83,
+      "dream": 0.695,
+      "independent": 0.44
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 97,
+      "dream": 126,
+      "independent": 123
+     },
+     "peakPassiveMedianMinor": 538400,
+     "netWorthMedianMinor": 20554148
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.845,
+      "dream": 0.335,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 57,
+      "debts": 97,
+      "dream": 139,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 61500,
+     "netWorthMedianMinor": 17681184
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.02,
+     "timeout": 0.98,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.795,
+      "debts": 0.01,
+      "dream": 0.09,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 109,
+      "debts": 148,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 32868,
+     "netWorthMedianMinor": 13192350
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.055,
+     "bankrupt": 0.02,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 136,
+      "median": 139,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.88,
+      "debts": 0.625,
+      "dream": 0.22,
+      "independent": 0.11
+     },
+     "medianTurn": {
+      "reserve": 96,
+      "debts": 121,
+      "dream": 142,
+      "independent": 139
+     },
+     "peakPassiveMedianMinor": 346584,
+     "netWorthMedianMinor": 17627732
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.365,
+      "debts": 0.095,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 133,
+      "debts": 146,
+      "dream": 147,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 31500,
+     "netWorthMedianMinor": 13535896
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.235,
+     "timeout": 0.765,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.14,
+      "debts": 0.01,
+      "dream": 0,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 128,
+      "debts": 138,
+      "dream": null,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15610,
+     "netWorthMedianMinor": 4116069
+    },
+    "etf": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.13,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.62,
+      "debts": 0.085,
+      "dream": 0.005,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 109,
+      "debts": 137,
+      "dream": 144,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 23410,
+     "netWorthMedianMinor": 4503008
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.13,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.65,
+      "debts": 0.105,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 107,
+      "debts": 136,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15610,
+     "netWorthMedianMinor": 4309760
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.14,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.645,
+      "debts": 0.1,
+      "dream": 0.025,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 104,
+      "debts": 132,
+      "dream": 135,
+      "independent": 137
+     },
+     "peakPassiveMedianMinor": 31210,
+     "netWorthMedianMinor": 4779024
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.145,
+     "timeout": 0.855,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.76,
+      "debts": 0.145,
+      "dream": 0,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 88,
+      "debts": 126,
+      "dream": null,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 20290,
+     "netWorthMedianMinor": 4568305
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.12,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 140,
+      "median": 149,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.79,
+      "debts": 0.21,
+      "dream": 0.07,
+      "independent": 0.035
+     },
+     "medianTurn": {
+      "reserve": 82,
+      "debts": 125,
+      "dream": 145,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 308214,
+     "netWorthMedianMinor": 8079254
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.13,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.725,
+      "debts": 0.17,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 93,
+      "debts": 128,
+      "dream": 146,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 31222,
+     "netWorthMedianMinor": 4670356
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.025,
+     "bankrupt": 0.125,
+     "timeout": 0.85,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 136,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.79,
+      "debts": 0.23,
+      "dream": 0.07,
+      "independent": 0.05
+     },
+     "medianTurn": {
+      "reserve": 82,
+      "debts": 132,
+      "dream": 139,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 300739,
+     "netWorthMedianMinor": 8360720
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.13,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.78,
+      "debts": 0.19,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 82,
+      "debts": 122,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15610,
+     "netWorthMedianMinor": 4584130
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.175,
+     "timeout": 0.825,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.205,
+      "debts": 0,
+      "dream": 0,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 122,
+      "debts": null,
+      "dream": null,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15610,
+     "netWorthMedianMinor": 3921411
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.125,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 147,
+      "median": 147,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 0.41,
+      "debts": 0.085,
+      "dream": 0.015,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 118,
+      "debts": 130,
+      "dream": 147,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 20290,
+     "netWorthMedianMinor": 4231410
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.325,
+     "timeout": 0.675,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.03,
+      "debts": 0.01,
+      "dream": 0,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 140,
+      "debts": 146,
+      "dream": null,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15610,
+     "netWorthMedianMinor": 3154275
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.105,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.395,
+      "debts": 0.055,
+      "dream": 0.01,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 131,
+      "debts": 137,
+      "dream": 150,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 20390,
+     "netWorthMedianMinor": 8026576
+    },
+    "etf": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.81,
+      "debts": 0.265,
+      "dream": 0.065,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 96,
+      "debts": 132,
+      "dream": 136,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 103460,
+     "netWorthMedianMinor": 9420762
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.84,
+      "debts": 0.315,
+      "dream": 0.05,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 95,
+      "debts": 129,
+      "dream": 142,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15710,
+     "netWorthMedianMinor": 8267535
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.06,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 121,
+      "median": 142,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.855,
+      "debts": 0.335,
+      "dream": 0.095,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 93,
+      "debts": 131,
+      "dream": 141,
+      "independent": 144
+     },
+     "peakPassiveMedianMinor": 234110,
+     "netWorthMedianMinor": 10325368
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.875,
+      "debts": 0.42,
+      "dream": 0.02,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 81,
+      "debts": 122,
+      "dream": 147,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 20390,
+     "netWorthMedianMinor": 8657218
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.075,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 120,
+      "median": 145,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.895,
+      "debts": 0.495,
+      "dream": 0.26,
+      "independent": 0.065
+     },
+     "medianTurn": {
+      "reserve": 74,
+      "debts": 119,
+      "dream": 141,
+      "independent": 130
+     },
+     "peakPassiveMedianMinor": 389468,
+     "netWorthMedianMinor": 14891071
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.875,
+      "debts": 0.41,
+      "dream": 0.02,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 84,
+      "debts": 121,
+      "dream": 143,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 54856,
+     "netWorthMedianMinor": 9623879
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.09,
+     "bankrupt": 0.1,
+     "timeout": 0.81,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 134,
+      "median": 142,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.895,
+      "debts": 0.505,
+      "dream": 0.285,
+      "independent": 0.125
+     },
+     "medianTurn": {
+      "reserve": 74,
+      "debts": 117,
+      "dream": 139,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 376070,
+     "netWorthMedianMinor": 14944302
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.905,
+      "debts": 0.44,
+      "dream": 0.05,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 75,
+      "debts": 119,
+      "dream": 139,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 20390,
+     "netWorthMedianMinor": 9014804
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.08,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.46,
+      "debts": 0,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 120,
+      "debts": null,
+      "dream": 144,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 20390,
+     "netWorthMedianMinor": 7607955
+    },
+    "steady": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.04,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.68,
+      "debts": 0.295,
+      "dream": 0.045,
+      "independent": 0.02
+     },
+     "medianTurn": {
+      "reserve": 115,
+      "debts": 131,
+      "dream": 144,
+      "independent": 144
+     },
+     "peakPassiveMedianMinor": 99213,
+     "netWorthMedianMinor": 9130304
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.14,
+     "timeout": 0.86,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.14,
+      "debts": 0.03,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 134,
+      "debts": 146,
+      "dream": 149,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 15710,
+     "netWorthMedianMinor": 7647668
+    }
+   }
+  },
+  "heike-werkstatt": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.02,
+     "timeout": 0.98,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.735,
+      "debts": 0.235,
+      "dream": 0.5,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 114,
+      "debts": 130,
+      "dream": 135,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 16100,
+     "netWorthMedianMinor": 7827835
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.035,
+     "bankrupt": 0.025,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 134,
+      "median": 137,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.585,
+      "dream": 0.735,
+      "independent": 0.065
+     },
+     "medianTurn": {
+      "reserve": 41,
+      "debts": 122,
+      "dream": 119,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 175497,
+     "netWorthMedianMinor": 9370869
+    },
+    "property": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.05,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 134,
+      "median": 134,
+      "p75": 134
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.665,
+      "dream": 0.675,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 36,
+      "debts": 124,
+      "dream": 123,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 24000,
+     "netWorthMedianMinor": 9009377
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.355,
+     "bankrupt": 0.015,
+     "timeout": 0.63,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 114,
+      "median": 132,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.785,
+      "dream": 0.85,
+      "independent": 0.4
+     },
+     "medianTurn": {
+      "reserve": 34,
+      "debts": 112,
+      "dream": 108,
+      "independent": 127
+     },
+     "peakPassiveMedianMinor": 249500,
+     "netWorthMedianMinor": 9127552
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.605,
+      "dream": 0.415,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 19,
+      "debts": 116,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 29400,
+     "netWorthMedianMinor": 8653290
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.605,
+     "bankrupt": 0.01,
+     "timeout": 0.385,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 109,
+      "median": 119,
+      "p75": 131
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.875,
+      "dream": 0.955,
+      "independent": 0.69
+     },
+     "medianTurn": {
+      "reserve": 15,
+      "debts": 106,
+      "dream": 92,
+      "independent": 109
+     },
+     "peakPassiveMedianMinor": 297670,
+     "netWorthMedianMinor": 9516506.5
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.05,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 114,
+      "median": 114,
+      "p75": 114
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.55,
+      "dream": 0.6,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 21,
+      "debts": 114,
+      "dream": 130,
+      "independent": 114
+     },
+     "peakPassiveMedianMinor": 86061,
+     "netWorthMedianMinor": 9335757
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.625,
+     "bankrupt": 0.01,
+     "timeout": 0.365,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 100,
+      "median": 121,
+      "p75": 134
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.92,
+      "dream": 0.985,
+      "independent": 0.69
+     },
+     "medianTurn": {
+      "reserve": 15,
+      "debts": 99,
+      "dream": 91,
+      "independent": 110
+     },
+     "peakPassiveMedianMinor": 304528,
+     "netWorthMedianMinor": 9500317
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.065,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.63,
+      "dream": 0.705,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 15,
+      "debts": 102,
+      "dream": 125,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 24000,
+     "netWorthMedianMinor": 8013010
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.03,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 143,
+      "median": 143,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.81,
+      "debts": 0.15,
+      "dream": 0.465,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 84,
+      "debts": 138,
+      "dream": 132,
+      "independent": 143
+     },
+     "peakPassiveMedianMinor": 16100,
+     "netWorthMedianMinor": 7519528
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.375,
+     "bankrupt": 0.015,
+     "timeout": 0.61,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 119,
+      "median": 127,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.71,
+      "dream": 0.87,
+      "independent": 0.43
+     },
+     "medianTurn": {
+      "reserve": 44,
+      "debts": 118,
+      "dream": 115,
+      "independent": 124
+     },
+     "peakPassiveMedianMinor": 261991,
+     "netWorthMedianMinor": 10541752
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.02,
+     "timeout": 0.98,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.555,
+      "debts": 0.18,
+      "dream": 0.34,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 122,
+      "debts": 136,
+      "dream": 132,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 14000,
+     "netWorthMedianMinor": 7718759
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.125,
+     "timeout": 0.875,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.09,
+      "debts": 0,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 122,
+      "debts": null,
+      "dream": 146,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8020,
+     "netWorthMedianMinor": 3185736
+    },
+    "etf": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.745,
+      "debts": 0.02,
+      "dream": 0.075,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 79,
+      "debts": 149,
+      "dream": 136,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 14131,
+     "netWorthMedianMinor": 3637325
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.82,
+      "debts": 0.01,
+      "dream": 0.02,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 72,
+      "debts": 150,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8020,
+     "netWorthMedianMinor": 3303448
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.015,
+     "bankrupt": 0.05,
+     "timeout": 0.935,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 125,
+      "median": 147,
+      "p75": 150
+     },
+     "reached": {
+      "reserve": 0.825,
+      "debts": 0.065,
+      "dream": 0.165,
+      "independent": 0.035
+     },
+     "medianTurn": {
+      "reserve": 69,
+      "debts": 136,
+      "dream": 131,
+      "independent": 89
+     },
+     "peakPassiveMedianMinor": 132040,
+     "netWorthMedianMinor": 4994070
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.89,
+      "debts": 0.05,
+      "dream": 0.015,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 52,
+      "debts": 136,
+      "dream": 149,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 11530,
+     "netWorthMedianMinor": 3130860
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.04,
+     "bankrupt": 0.07,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 138,
+      "median": 142,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.13,
+      "dream": 0.42,
+      "independent": 0.12
+     },
+     "medianTurn": {
+      "reserve": 46,
+      "debts": 141,
+      "dream": 132,
+      "independent": 126
+     },
+     "peakPassiveMedianMinor": 190905,
+     "netWorthMedianMinor": 7048939
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.085,
+     "timeout": 0.915,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.915,
+      "debts": 0.04,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 147,
+      "dream": 146,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 36375,
+     "netWorthMedianMinor": 4316870
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.03,
+     "bankrupt": 0.085,
+     "timeout": 0.885,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 117,
+      "median": 130,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.165,
+      "dream": 0.485,
+      "independent": 0.115
+     },
+     "medianTurn": {
+      "reserve": 46,
+      "debts": 138,
+      "dream": 132,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 177940,
+     "netWorthMedianMinor": 6940174
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.05,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.95,
+      "debts": 0.025,
+      "dream": 0.03,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 46,
+      "debts": 131,
+      "dream": 145,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8020,
+     "netWorthMedianMinor": 3568946
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.105,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.17,
+      "debts": 0,
+      "dream": 0,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 123,
+      "debts": null,
+      "dream": null,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8020,
+     "netWorthMedianMinor": 2827424
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.05,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 142,
+      "median": 142,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.825,
+      "debts": 0.025,
+      "dream": 0.08,
+      "independent": 0.05
+     },
+     "medianTurn": {
+      "reserve": 87,
+      "debts": 141,
+      "dream": 138,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 126600,
+     "netWorthMedianMinor": 4383547
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.135,
+     "timeout": 0.865,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.07,
+      "debts": 0,
+      "dream": 0.005,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 140,
+      "debts": null,
+      "dream": 147,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8020,
+     "netWorthMedianMinor": 2854922
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.325,
+      "debts": 0.03,
+      "dream": 0.1,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 121,
+      "debts": 148,
+      "dream": 141,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10580,
+     "netWorthMedianMinor": 5438707
+    },
+    "etf": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.915,
+      "debts": 0.125,
+      "dream": 0.31,
+      "independent": 0.015
+     },
+     "medianTurn": {
+      "reserve": 64,
+      "debts": 141,
+      "dream": 136,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 95311,
+     "netWorthMedianMinor": 6803829
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.155,
+      "dream": 0.185,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 58,
+      "debts": 131,
+      "dream": 139,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8420,
+     "netWorthMedianMinor": 5668977
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.07,
+     "bankrupt": 0.015,
+     "timeout": 0.915,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 135,
+      "median": 145,
+      "p75": 147
+     },
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.35,
+      "dream": 0.46,
+      "independent": 0.125
+     },
+     "medianTurn": {
+      "reserve": 56,
+      "debts": 130,
+      "dream": 124,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 174740,
+     "netWorthMedianMinor": 7478654
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.04,
+     "timeout": 0.96,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.185,
+      "dream": 0.05,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 39,
+      "debts": 134,
+      "dream": 143,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 13685,
+     "netWorthMedianMinor": 5505882
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.155,
+     "bankrupt": 0.03,
+     "timeout": 0.815,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 128,
+      "median": 135,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.445,
+      "dream": 0.77,
+      "independent": 0.23
+     },
+     "medianTurn": {
+      "reserve": 32,
+      "debts": 129,
+      "dream": 119,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 214555,
+     "netWorthMedianMinor": 9283549
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.205,
+      "dream": 0.115,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 41,
+      "debts": 129,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 51614,
+     "netWorthMedianMinor": 6825847
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.21,
+     "bankrupt": 0.02,
+     "timeout": 0.77,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 123,
+      "median": 134,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.5,
+      "dream": 0.755,
+      "independent": 0.25
+     },
+     "medianTurn": {
+      "reserve": 32,
+      "debts": 123,
+      "dream": 115,
+      "independent": 126
+     },
+     "peakPassiveMedianMinor": 192816,
+     "netWorthMedianMinor": 8344763
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.045,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.995,
+      "debts": 0.245,
+      "dream": 0.21,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 32,
+      "debts": 129,
+      "dream": 138,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8420,
+     "netWorthMedianMinor": 5967970
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.555,
+      "debts": 0.01,
+      "dream": 0.1,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 108,
+      "debts": 148,
+      "dream": 137,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10580,
+     "netWorthMedianMinor": 5243801
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.05,
+     "bankrupt": 0.005,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 141,
+      "median": 145,
+      "p75": 146
+     },
+     "reached": {
+      "reserve": 0.965,
+      "debts": 0.24,
+      "dream": 0.38,
+      "independent": 0.09
+     },
+     "medianTurn": {
+      "reserve": 70,
+      "debts": 134,
+      "dream": 137,
+      "independent": 141
+     },
+     "peakPassiveMedianMinor": 186258,
+     "netWorthMedianMinor": 8389881
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.055,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.245,
+      "debts": 0.015,
+      "dream": 0.085,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 131,
+      "debts": 143,
+      "dream": 140,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10580,
+     "netWorthMedianMinor": 5301072
+    }
+   }
+  },
+  "peter-busfahrer": {
+   "easy": {
+    "saver": {
+     "games": 200,
+     "win": 0.025,
+     "bankrupt": 0.01,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 127,
+      "median": 136,
+      "p75": 136
+     },
+     "reached": {
+      "reserve": 0.92,
+      "debts": 0.685,
+      "dream": 0.79,
+      "independent": 0.025
+     },
+     "medianTurn": {
+      "reserve": 65,
+      "debts": 113,
+      "dream": 102,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 76480,
+     "netWorthMedianMinor": 4513303
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.165,
+     "bankrupt": 0.005,
+     "timeout": 0.83,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 95,
+      "median": 115,
+      "p75": 136
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.88,
+      "dream": 0.945,
+      "independent": 0.175
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 84,
+      "dream": 85,
+      "independent": 113
+     },
+     "peakPassiveMedianMinor": 117470,
+     "netWorthMedianMinor": 5458974
+    },
+    "property": {
+     "games": 200,
+     "win": 0.16,
+     "bankrupt": 0.055,
+     "timeout": 0.785,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 126,
+      "median": 136,
+      "p75": 140
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.935,
+      "dream": 0.92,
+      "independent": 0.16
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 71,
+      "dream": 90,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 62425,
+     "netWorthMedianMinor": 6025249
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.615,
+     "bankrupt": 0.005,
+     "timeout": 0.38,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 82,
+      "median": 102,
+      "p75": 119
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.995,
+      "independent": 0.66
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 58,
+      "dream": 69,
+      "independent": 98
+     },
+     "peakPassiveMedianMinor": 153800,
+     "netWorthMedianMinor": 4820638
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.03,
+     "timeout": 0.97,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.95,
+      "dream": 0.85,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 38,
+      "dream": 106,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 17600,
+     "netWorthMedianMinor": 5592519
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.8,
+     "bankrupt": 0,
+     "timeout": 0.2,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 67,
+      "median": 92,
+      "p75": 120
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.99,
+      "independent": 0.82
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 50,
+      "dream": 63,
+      "independent": 81
+     },
+     "peakPassiveMedianMinor": 163407,
+     "netWorthMedianMinor": 4901527
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.065,
+     "bankrupt": 0.02,
+     "timeout": 0.915,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 133,
+      "median": 134,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.965,
+      "dream": 0.91,
+      "independent": 0.065
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 42,
+      "dream": 103,
+      "independent": 134
+     },
+     "peakPassiveMedianMinor": 61672,
+     "netWorthMedianMinor": 5176833
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.81,
+     "bankrupt": 0.015,
+     "timeout": 0.175,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 70,
+      "median": 92,
+      "p75": 110
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.985,
+      "dream": 0.985,
+      "independent": 0.835
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 37,
+      "dream": 62,
+      "independent": 86
+     },
+     "peakPassiveMedianMinor": 158900,
+     "netWorthMedianMinor": 4595108
+    },
+    "tree": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.045,
+     "timeout": 0.95,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 113,
+      "median": 113,
+      "p75": 113
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 0.925,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 1,
+      "debts": 16,
+      "dream": 89,
+      "independent": 113
+     },
+     "peakPassiveMedianMinor": 13300,
+     "netWorthMedianMinor": 4149514
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.12,
+     "bankrupt": 0.01,
+     "timeout": 0.87,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 115,
+      "median": 136,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.94,
+      "debts": 0.52,
+      "dream": 0.75,
+      "independent": 0.12
+     },
+     "medianTurn": {
+      "reserve": 29,
+      "debts": 116,
+      "dream": 99,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 46918,
+     "netWorthMedianMinor": 4302103
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.695,
+     "bankrupt": 0,
+     "timeout": 0.305,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 87,
+      "median": 106,
+      "p75": 123
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.995,
+      "dream": 1,
+      "independent": 0.72
+     },
+     "medianTurn": {
+      "reserve": 11,
+      "debts": 58,
+      "dream": 83,
+      "independent": 101
+     },
+     "peakPassiveMedianMinor": 158463,
+     "netWorthMedianMinor": 5655651
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.025,
+     "timeout": 0.975,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.8,
+      "debts": 0.545,
+      "dream": 0.695,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 92,
+      "debts": 122,
+      "dream": 114,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 10800,
+     "netWorthMedianMinor": 4380950
+    }
+   },
+   "hard": {
+    "saver": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.115,
+     "timeout": 0.885,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.265,
+      "debts": 0.025,
+      "dream": 0.08,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 97,
+      "debts": 134,
+      "dream": 130,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4105,
+     "netWorthMedianMinor": 2737688
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.075,
+     "timeout": 0.92,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 137,
+      "median": 137,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 0.855,
+      "debts": 0.22,
+      "dream": 0.325,
+      "independent": 0.03
+     },
+     "medianTurn": {
+      "reserve": 53,
+      "debts": 129,
+      "dream": 125,
+      "independent": 107
+     },
+     "peakPassiveMedianMinor": 28045,
+     "netWorthMedianMinor": 3305589
+    },
+    "property": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.085,
+     "timeout": 0.915,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.915,
+      "debts": 0.21,
+      "dream": 0.23,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 47,
+      "debts": 125,
+      "dream": 127,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4105,
+     "netWorthMedianMinor": 3068916
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.035,
+     "bankrupt": 0.04,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 100,
+      "median": 126,
+      "p75": 143
+     },
+     "reached": {
+      "reserve": 0.935,
+      "debts": 0.335,
+      "dream": 0.42,
+      "independent": 0.065
+     },
+     "medianTurn": {
+      "reserve": 43,
+      "debts": 127,
+      "dream": 121,
+      "independent": 106
+     },
+     "peakPassiveMedianMinor": 89320,
+     "netWorthMedianMinor": 3735421
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.1,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.955,
+      "debts": 0.25,
+      "dream": 0.05,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 25,
+      "debts": 103,
+      "dream": 133,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 6171,
+     "netWorthMedianMinor": 2657246
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.13,
+     "bankrupt": 0.025,
+     "timeout": 0.845,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 100,
+      "median": 132,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.56,
+      "dream": 0.815,
+      "independent": 0.16
+     },
+     "medianTurn": {
+      "reserve": 19,
+      "debts": 121,
+      "dream": 113,
+      "independent": 122
+     },
+     "peakPassiveMedianMinor": 116400,
+     "netWorthMedianMinor": 4766578
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.095,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 148,
+      "median": 148,
+      "p75": 148
+     },
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.305,
+      "dream": 0.135,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 27,
+      "debts": 107,
+      "dream": 132,
+      "independent": 148
+     },
+     "peakPassiveMedianMinor": 25724,
+     "netWorthMedianMinor": 3660168
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.18,
+     "bankrupt": 0.04,
+     "timeout": 0.78,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 103,
+      "median": 120,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.735,
+      "dream": 0.82,
+      "independent": 0.2
+     },
+     "medianTurn": {
+      "reserve": 19,
+      "debts": 108,
+      "dream": 111,
+      "independent": 117
+     },
+     "peakPassiveMedianMinor": 102316,
+     "netWorthMedianMinor": 4312475
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.07,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.99,
+      "debts": 0.435,
+      "dream": 0.195,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 19,
+      "debts": 74,
+      "dream": 131,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4105,
+     "netWorthMedianMinor": 3005608
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.11,
+     "timeout": 0.89,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.435,
+      "debts": 0.015,
+      "dream": 0.06,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 84,
+      "debts": 144,
+      "dream": 134,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4105,
+     "netWorthMedianMinor": 2657688
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.04,
+     "bankrupt": 0.015,
+     "timeout": 0.945,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 134,
+      "median": 140,
+      "p75": 145
+     },
+     "reached": {
+      "reserve": 0.925,
+      "debts": 0.335,
+      "dream": 0.46,
+      "independent": 0.06
+     },
+     "medianTurn": {
+      "reserve": 55,
+      "debts": 124,
+      "dream": 129,
+      "independent": 138
+     },
+     "peakPassiveMedianMinor": 97229,
+     "netWorthMedianMinor": 4343163
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.1,
+     "timeout": 0.9,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.19,
+      "debts": 0.01,
+      "dream": 0.045,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 117,
+      "debts": 145,
+      "dream": 143,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4105,
+     "netWorthMedianMinor": 2648409
+    }
+   },
+   "medium": {
+    "saver": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.04,
+     "timeout": 0.955,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 141,
+      "median": 141,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 0.515,
+      "debts": 0.17,
+      "dream": 0.3,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 103,
+      "debts": 131,
+      "dream": 124,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 5645,
+     "netWorthMedianMinor": 3495907
+    },
+    "etf": {
+     "games": 200,
+     "win": 0.05,
+     "bankrupt": 0.055,
+     "timeout": 0.895,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 132,
+      "median": 137,
+      "p75": 138
+     },
+     "reached": {
+      "reserve": 0.955,
+      "debts": 0.46,
+      "dream": 0.605,
+      "independent": 0.065
+     },
+     "medianTurn": {
+      "reserve": 30,
+      "debts": 119,
+      "dream": 114,
+      "independent": 132
+     },
+     "peakPassiveMedianMinor": 76540,
+     "netWorthMedianMinor": 4238249
+    },
+    "property": {
+     "games": 200,
+     "win": 0.01,
+     "bankrupt": 0.085,
+     "timeout": 0.905,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 126,
+      "median": 136,
+      "p75": 136
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.58,
+      "dream": 0.555,
+      "independent": 0.01
+     },
+     "medianTurn": {
+      "reserve": 26,
+      "debts": 120,
+      "dream": 122,
+      "independent": 136
+     },
+     "peakPassiveMedianMinor": 5645,
+     "netWorthMedianMinor": 4131575
+    },
+    "hustler": {
+     "games": 200,
+     "win": 0.195,
+     "bankrupt": 0.045,
+     "timeout": 0.76,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 112,
+      "median": 131,
+      "p75": 142
+     },
+     "reached": {
+      "reserve": 0.98,
+      "debts": 0.69,
+      "dream": 0.775,
+      "independent": 0.205
+     },
+     "medianTurn": {
+      "reserve": 23,
+      "debts": 104,
+      "dream": 105,
+      "independent": 129
+     },
+     "peakPassiveMedianMinor": 98270,
+     "netWorthMedianMinor": 4513501
+    },
+    "gambler": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.63,
+      "dream": 0.32,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 10,
+      "debts": 97,
+      "dream": 129,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 8257,
+     "netWorthMedianMinor": 4144621
+    },
+    "expert": {
+     "games": 200,
+     "win": 0.455,
+     "bankrupt": 0,
+     "timeout": 0.545,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 110,
+      "median": 128,
+      "p75": 141
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.86,
+      "dream": 0.975,
+      "independent": 0.465
+     },
+     "medianTurn": {
+      "reserve": 7,
+      "debts": 92,
+      "dream": 90,
+      "independent": 123
+     },
+     "peakPassiveMedianMinor": 147644,
+     "netWorthMedianMinor": 5420457
+    },
+    "dividend": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.06,
+     "timeout": 0.94,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.625,
+      "dream": 0.465,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 13,
+      "debts": 92,
+      "dream": 126,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 36809,
+     "netWorthMedianMinor": 4774395
+    },
+    "sapling": {
+     "games": 200,
+     "win": 0.475,
+     "bankrupt": 0.005,
+     "timeout": 0.52,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 106,
+      "median": 121,
+      "p75": 137
+     },
+     "reached": {
+      "reserve": 1,
+      "debts": 0.945,
+      "dream": 0.96,
+      "independent": 0.48
+     },
+     "medianTurn": {
+      "reserve": 7,
+      "debts": 76,
+      "dream": 90,
+      "independent": 120
+     },
+     "peakPassiveMedianMinor": 149809,
+     "netWorthMedianMinor": 4879162
+    },
+    "tree": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.075,
+     "timeout": 0.925,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 1,
+      "debts": 0.785,
+      "dream": 0.56,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 7,
+      "debts": 61,
+      "dream": 121,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4505,
+     "netWorthMedianMinor": 3943177
+    },
+    "dreamer": {
+     "games": 200,
+     "win": 0.005,
+     "bankrupt": 0.065,
+     "timeout": 0.93,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 149,
+      "median": 149,
+      "p75": 149
+     },
+     "reached": {
+      "reserve": 0.67,
+      "debts": 0.12,
+      "dream": 0.28,
+      "independent": 0.005
+     },
+     "medianTurn": {
+      "reserve": 79,
+      "debts": 132,
+      "dream": 126,
+      "independent": 149
+     },
+     "peakPassiveMedianMinor": 5645,
+     "netWorthMedianMinor": 3441584
+    },
+    "steady": {
+     "games": 200,
+     "win": 0.21,
+     "bankrupt": 0.015,
+     "timeout": 0.775,
+     "error": 0,
+     "turnsToWin": {
+      "p25": 121,
+      "median": 129,
+      "p75": 144
+     },
+     "reached": {
+      "reserve": 0.985,
+      "debts": 0.745,
+      "dream": 0.795,
+      "independent": 0.215
+     },
+     "medianTurn": {
+      "reserve": 36,
+      "debts": 110,
+      "dream": 114,
+      "independent": 128
+     },
+     "peakPassiveMedianMinor": 116539,
+     "netWorthMedianMinor": 5405397
+    },
+    "passive": {
+     "games": 200,
+     "win": 0,
+     "bankrupt": 0.035,
+     "timeout": 0.965,
+     "error": 0,
+     "turnsToWin": null,
+     "reached": {
+      "reserve": 0.41,
+      "debts": 0.125,
+      "dream": 0.2,
+      "independent": 0
+     },
+     "medianTurn": {
+      "reserve": 114,
+      "debts": 140,
+      "dream": 127,
+      "independent": null
+     },
+     "peakPassiveMedianMinor": 4505,
+     "netWorthMedianMinor": 3355965
+    }
+   }
+  }
+ }
+}

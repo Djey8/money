@@ -23,6 +23,7 @@ import {
   type BoardSetup,
   type DreamfundTile,
   computeCashflowProfessionMonthlyCashflowMinor,
+  professionIdAtDifficulty,
   fromMinorUnits,
   maxRepayableMinor,
   buyerCardTypes,
@@ -52,6 +53,8 @@ import {
   paymentDueComment,
   type PaymentDue,
   droppedPremiumTitles,
+  INSURANCE_CATALOG,
+  premiumMinor,
   classicRulesOfMode,
   isPresetMode,
   INITIAL_LIFE_STATE,
@@ -89,6 +92,8 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { type ProfessionSheetNumbers } from './profession-sheets.component';
 import { ActiveEffectsComponent } from './active-effects.component';
 import { CharacterSheetComponent } from './character-sheet.component';
+import { InsuranceDecisionComponent } from './insurance-decision.component';
+import { CardPreviewComponent } from './card-preview.component';
 import {
   DreamBoardComponent,
   TILE_COLORS,
@@ -100,6 +105,7 @@ import { BoardThumbComponent } from './board-thumb.component';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { RatRaceBoardComponent, SPACE_GLYPHS, type BoardToken } from './rat-race-board.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 // Deferred import to break the circular chain with AppComponent, same pattern as every other panel.
 let AppComponent: any;
@@ -166,6 +172,9 @@ const DICE_DECISION_REST_MS = 900;
   selector: 'app-cashflow-game',
   standalone: true,
   imports: [
+    AccountLabelPipe,
+    CardPreviewComponent,
+    InsuranceDecisionComponent,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -298,6 +307,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     RemoteGameHook.openCard = (cardId) => {
       CashflowGameComponent.open();
       this.showHistoryCard(cardId);
+      // opened from a popup or a message, not from the History: back leads to the dashboard
+      this.historyTileBack = 'main';
     };
     // Paying a dice card (gold coins) brings the player here, to the decision.
     this.cashflowGameService.decisionNeeded$?.subscribe(() => this.showOpenDecision());
@@ -423,10 +434,16 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.gameSets.find((set) => set.id === this.selectedGameSetId);
   }
 
+  /** The chosen character as played at the chosen difficulty: Easy and Hard have their own numbers (JFK, 2026-10-27). */
   get selectedProfession(): CashflowProfession | undefined {
-    return this.selectedGameSet?.professions.find(
-      (profession) => profession.id === this.selectedProfessionId,
+    const set = this.selectedGameSet;
+    if (!set || !this.selectedProfessionId) return undefined;
+    const id = professionIdAtDifficulty(
+      set,
+      this.selectedProfessionId,
+      set.edition === 'custom' ? this.customDraft.difficulty : undefined,
     );
+    return set.professions.find((profession) => profession.id === id);
   }
 
   /**
@@ -475,9 +492,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
    * the id of each one): the card as it was dealt, with none of its buttons.
    */
   showHistoryCard(cardId: string): void {
+    this.historyTileBack = 'history';
     const decks = this.currentGameSet?.decks;
     if (!decks) return;
-    // a card of the Dreamfund stacks is read as text: its title and its story
+    // a card of the Dreamer stacks is read as text: its title and its story
     const own = this.tileCardOfHistory(cardId);
     if (own) {
       this.historyTileCard = own;
@@ -497,8 +515,24 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
   }
 
+  /** Where the card that is read again leads back to: the History it came from, or the dashboard. */
+  historyTileBack: 'history' | 'main' = 'history';
+
   /** The Emergency, Life or Dream card of the History that is being read again. */
-  historyTileCard: { deck: string; title: string; story: string; facts: string[] } | null = null;
+  historyTileCard: {
+    id: string;
+    deck: string;
+    title: string;
+    story: string;
+    facts: string[];
+  } | null = null;
+
+  /** The name of a deck for the card that is read again (a deck without its own word is named as it is). */
+  private deckWord(deck: string): string {
+    const key = `CashflowGame.history.deck.${deck}`;
+    const text = this.translate.instant(key);
+    return text === key ? deck.charAt(0).toUpperCase() + deck.slice(1) : text;
+  }
 
   private tileCardOfHistory(cardId: string) {
     const decks = this.currentGameSet?.decks;
@@ -511,19 +545,25 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       type?: string;
       category?: string;
       totalMinor?: number;
+      costMinor?: number;
+      pile?: string;
       points?: number;
     }
     const lists: [string, Card[]][] = [
       ['emergency', (decks?.emergency ?? []) as never],
       ['life', (decks?.life ?? []) as never],
       ['dream', (decks?.dream ?? []) as never],
+      ['opportunity', (decks?.opportunity ?? []) as never],
+      ['harvest', (decks?.harvest ?? []) as never],
     ];
     for (const [deck, cards] of lists) {
       const card = cards.find((candidate) => candidate.id === cardId);
       if (!card) continue;
       // what the card is, in a few words, besides its story
       const facts = [
-        this.translate.instant(`CashflowGame.history.deck.${deck}`),
+        this.deckWord(deck),
+        card.pile ? this.translate.instant(`CashflowGame.opportunity.pile.${card.pile}`) : '',
+        card.costMinor ? `${this.cardAmount(card.costMinor)} ${this.appState.currency}` : '',
         card.tier
           ? this.translate.instant(
               `CashflowGame.${deck === 'dream' ? 'dream' : 'emergency'}.tier.${card.tier}`,
@@ -533,7 +573,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         card.totalMinor ? `${this.cardAmount(card.totalMinor)} ${this.appState.currency}` : '',
         card.points ? `${card.points} ${this.translate.instant('CashflowGame.dream.points')}` : '',
       ].filter(Boolean);
-      return { deck, title: card.title[lang], story: card.story[lang], facts };
+      return { id: card.id, deck, title: card.title[lang], story: card.story[lang], facts };
     }
     return null;
   }
@@ -886,6 +926,30 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     };
   }
 
+  /**
+   * A line of the budget in the language of the screen. The books carry the title the line was made with (German for the characters),
+   * and that title is also what its transactions are filed under, so it is only translated where it is shown (the lines of the game
+   * know their key).
+   */
+  private shownLineTitle(title: string): string {
+    const keys = this.appState.cashflowGame.lineTitles ?? {};
+    const key = Object.keys(keys).find((candidate) => keys[candidate] === title);
+    if (!key) return title;
+    const id = `CashflowGame.expenseLine.${key}`;
+    const text = this.translate.instant(id);
+    return text === id ? title : text;
+  }
+
+  /** A starting debt in the language of the screen, by the key the character's card gives it. */
+  private shownLiabilityTag(tag: string): string {
+    const kit = this.currentProfession?.starterKit.liabilities ?? [];
+    const key = kit.find((line) => line.tag === tag)?.key;
+    if (!key) return tag;
+    const id = `CashflowGame.liabilityTag.${key}`;
+    const text = this.translate.instant(id);
+    return text === id ? tag : text;
+  }
+
   private liveSheets(): ProfessionSheetNumbers {
     const passive = this.livePassiveIncome;
     return {
@@ -902,7 +966,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         ...this.liveOtherIncomeLines,
       ],
       revenueTotal: this.liveTotalIncome,
-      expenses: this.liveExpenseLines.map((line) => ({ name: line.title, amount: line.amount })),
+      expenses: this.liveExpenseLines.map((line) => ({
+        name: this.shownLineTitle(line.title),
+        amount: line.amount,
+      })),
       expensesTotal: -this.liveTotalExpenses,
       assets: [
         { name: this.translate.instant('CashflowGame.cashOnHand'), amount: this.cash },
@@ -910,7 +977,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       ],
       assetsTotal: this.liveTotalAssets,
       liabilities: this.liveLiabilities.map((liability, index) => ({
-        name: liability.tag,
+        name: this.shownLiabilityTag(liability.tag),
         amount: Number(liability.amount),
         index,
       })),
@@ -924,7 +991,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   private winSeenId: string | null = null;
 
-  /** Every goal of the character's list is met in a game with a list (a Dreamfund game). */
+  /** Every goal of the character's list is met in a game with a list (a Dreamer game). */
   get allGoalsDone(): boolean {
     if (!this.hasActiveGame || !this.cashflowGameService.customRules) return false;
     return this.memoized('goalsDone', `${this.appState.allSmileProjects.length}`, () => {
@@ -966,7 +1033,40 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   get winGoals(): { id: string; text: string }[] {
-    return this.profileOf(this.selectedProfession)?.goalItems ?? [];
+    return [...(this.profileOf(this.selectedProfession)?.goalItems ?? []), ...this.extraGoals];
+  }
+
+  /**
+   * The dream points a game asks for besides the life dream (JFK, 2026-11): a table's setting, or the solo game's own - the running
+   * game's, or the one being set up.
+   */
+  private get pointsAsked(): { goal: number; points: number } | null {
+    const remote = this.remote?.dreamPoints?.();
+    if (remote) return remote;
+    if (this.hasActiveGame) {
+      const goal = this.cashflowGameService.customRules?.dreamPointsGoal ?? 0;
+      return goal > 0 && this.appState.cashflowGame.life
+        ? { goal, points: this.dreamPoints.total }
+        : null;
+    }
+    return this.showBoardChoice && this.customDraft.dreamPointsGoal > 0
+      ? { goal: this.customDraft.dreamPointsGoal, points: 0 }
+      : null;
+  }
+
+  /** The dream points a game asks for, besides the life dream. */
+  get extraGoals(): { id: string; text: string }[] {
+    const asked = this.pointsAsked;
+    if (!asked) return [];
+    return [
+      {
+        id: 'dreamPoints',
+        text:
+          this.language.current === 'de'
+            ? `${asked.goal} Traumpunkte mit weiteren Träumen sammeln`
+            : `Collect ${asked.goal} dream points with other dreams`,
+      },
+    ];
   }
 
   get winStats(): { round: number; turns: number; passive: number; expenses: number } {
@@ -1005,13 +1105,23 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       reserve: this.reserveStatus?.ok ?? false,
       independence: this.escapedRatRace,
     };
+    const asked = this.pointsAsked;
+    if (asked) (value as Record<string, boolean>)['dreamPoints'] = asked.points >= asked.goal;
+    // the other debts of a character: a goal of its own each, met when that debt is repaid
+    const profession = this.selectedProfession;
+    for (const liability of profession?.starterKit.liabilities ?? []) {
+      if (!liability.key) continue;
+      (value as Record<string, boolean>)[`debt:${liability.key}`] = !open(
+        alias(liability.key, liability.tag),
+      );
+    }
     const key = JSON.stringify(value);
     if (this.goalChecksCache?.key !== key) this.goalChecksCache = { key, value };
     return this.goalChecksCache.value;
   }
 
   /**
-   * The dream of the character, as the app's own Smile project: before the game it is only looked at (every tab, nothing to change),
+   * The dream of the character, as the app's own Dream project: before the game it is only looked at (every tab, nothing to change),
    * in the running game it opens in the Smile page, where it is the real project that is funded.
    */
   /** The Smile info panel, drawn here while a dream is only looked at (before the game). */
@@ -1084,7 +1194,13 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   get boardSetup(): BoardSetup {
-    return { shape: this.boardShape, size: this.boardSize, seed: this.boardSeed };
+    return {
+      shape: this.boardShape,
+      size: this.boardSize,
+      seed: this.boardSeed,
+      // the life dream alone: no dream tiles on the map
+      ...(this.customDraft.dreamPointsGoal === 0 ? { dreams: false } : {}),
+    };
   }
 
   tileCount(size: BoardSize): number {
@@ -1104,7 +1220,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.boardSeed = Math.floor(Math.random() * 1_000_000_000);
   }
 
-  // ── the tiles of a Dreamfund map ──
+  // ── the tiles of a Dreamer map ──
 
   /** The tile the turn waits on, with the card drawn from its stack (a filler card for now). */
   get pendingStory(): { tile: DreamfundTile; cardId: string } | null {
@@ -1118,14 +1234,23 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The insurances of the running game, for the character view (rebuilt only when something changes, so the rows are not drawn again). */
   private insuranceCache: {
     key: string;
-    rows: { kind: string; premium: number; held: boolean; heldNext: boolean }[];
+    rows: { kind: string; premium: number; held: boolean; heldNext: boolean; fresh?: boolean }[];
   } | null = null;
-  get insuranceRows(): { kind: string; premium: number; held: boolean; heldNext: boolean }[] {
+  get insuranceRows(): {
+    kind: string;
+    premium: number;
+    held: boolean;
+    heldNext: boolean;
+    fresh?: boolean;
+  }[] {
+    // before the game starts the insurances are those chosen for the start (the whole catalogue is on offer)
+    if (!this.appState.cashflowGame.life && this.characterChosen) return this.setupInsuranceRows;
     const rows = this.cashflowGameService.insurances.map((offer) => ({
       kind: offer.kind,
       premium: this.cashflowGameService.insurancePremium(offer),
       held: offer.held,
       heldNext: offer.heldNext,
+      fresh: offer.fresh,
     }));
     const key = JSON.stringify(rows);
     if (this.insuranceCache?.key !== key) this.insuranceCache = { key, rows };
@@ -1133,6 +1258,10 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   toggleInsurance(change: { kind: string; on: boolean }): void {
+    if (!this.appState.cashflowGame.life && this.characterChosen) {
+      this.toggleSetupInsurance(change);
+      return;
+    }
     this.cashflowGameService.setInsurance(change.kind, change.on, {
       onSuccess: () => undefined,
       onError: (message) =>
@@ -1150,7 +1279,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   get lifeDeckReady(): boolean {
     return (
-      !this.remote &&
+      !this.classicRemote &&
       this.cashflowGameService.lifeCards.length > 0 &&
       !!this.appState.cashflowGame.life
     );
@@ -1158,12 +1287,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   get careerReady(): boolean {
     return (
-      !this.remote && !!this.cashflowGameService.careerTrack && !!this.appState.cashflowGame.career
+      !this.classicRemote &&
+      !!this.cashflowGameService.careerTrack &&
+      !!this.appState.cashflowGame.career
     );
   }
 
   get dreamDeckReady(): boolean {
-    return !this.remote && this.cashflowGameService.dreamCards.length > 0;
+    return !this.classicRemote && this.cashflowGameService.dreamCards.length > 0;
   }
 
   /** The tile under the token has a stack of cards that is opened in a view of its own (not the career ladder). */
@@ -1186,6 +1317,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     if (this.stackPlayed) return false;
     // an opportunity may always be passed: nobody has to take a card
     if (story.tile === 'opportunity') return true;
+    // at a table only dreams and Opportunities may be left: a Harvest, Life or Emergency card is dealt with
+    if (this.remote?.dreamfund)
+      return story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
     if (rules?.mode === 'free') return true;
     return !this.stackPlayed && story.tile === 'dream' && this.cashflowGameService.dreamMayDecline;
   }
@@ -1249,12 +1383,48 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     await this.openPlannedInGrow(title, card?.share ? 'share' : 'asset');
   }
 
+  /** A debug game (the host's): the symbol that loads another card of the pile of the tile. */
+  get debugOn(): boolean {
+    return !!this.remote?.dreamfund && RemoteGameHook.debug?.on() === true;
+  }
+
+  openDebug(tile: string): void {
+    const pile =
+      tile === 'opportunity' ? this.cashflowGameService.opportunityView?.pile : undefined;
+    RemoteGameHook.debug?.open({ tile, ...(pile ? { pile } : {}) });
+  }
+
   openStackTile(): void {
     this.dashboardView = 'tile';
+    RemoteGameHook.opened.set(RemoteGameHook.openedKey(this.appState.cashflowGame.turn));
+  }
+
+  /**
+   * At a table a Life, Fire or Harvest card cannot be left without opening it (JFK, 2026-11-04): Done waits until it was opened and
+   * dealt with. A dream and an Opportunity may be passed, and every other game is as it was.
+   */
+  get stackOpened(): boolean {
+    const story = this.stackTile;
+    if (!story || !this.remote?.dreamfund) return true;
+    if (story.tile === 'dream' || story.tile === 'opportunity') return true;
+    const key = RemoteGameHook.openedKey(this.appState.cashflowGame.turn);
+    return this.dashboardView === 'tile' || (!!key && RemoteGameHook.opened() === key);
   }
 
   /** The tile is left without a card (a dream refused, or a free game's choice). */
   passStackTile(): void {
+    // at a Dreamer table a dream or an Opportunity card that is still open is left with the table's own move first
+    const remote = this.remote;
+    const pending = this.appState.cashflowGame.turn?.pending;
+    const open =
+      (!!pending?.dream && !pending.dream.taken && !pending.dream.declined) ||
+      (!!pending?.opportunity && !pending.opportunity.taken && !pending.opportunity.passed);
+    if (remote?.dreamfund && remote.dreamMove && open) {
+      void remote.dreamMove({ decision: 'leave' }).then((outcome) => {
+        if (outcome.ok) this.finishSoloDecision('done');
+      });
+      return;
+    }
     if (this.stackTile?.tile === 'dream' && !this.appState.cashflowGame.turn?.pending?.dream) {
       this.cashflowGameService.declineDreams({
         onSuccess: () => undefined,
@@ -1307,10 +1477,16 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   /** The insurances of the character as chosen for the start: all of them, unless one was left out. */
   startInsurances: string[] | undefined = undefined;
 
-  get setupInsuranceRows(): { kind: string; premium: number; held: boolean; heldNext: boolean }[] {
+  get setupInsuranceRows(): {
+    kind: string;
+    premium: number;
+    held: boolean;
+    heldNext: boolean;
+    fresh?: boolean;
+  }[] {
     const profession = this.selectedProfession;
     if (!this.characterChosen || !profession) return [];
-    const rows = profession.expenses
+    const own = profession.expenses
       .filter((line) => line.insurance && line.amountMinor !== 0)
       .map((line) => {
         const held = !this.startInsurances || this.startInsurances.includes(line.insurance!);
@@ -1321,6 +1497,22 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
           heldNext: held,
         };
       });
+    // the others of the catalogue are on offer too, as at a table: not held unless the player hops in
+    const ownKinds = new Set<string>(own.map((row) => row.kind));
+    const offered = INSURANCE_CATALOG.filter(
+      (info) => info.baseMinor !== undefined && !ownKinds.has(info.kind),
+    ).map((info) => {
+      const held = !!this.startInsurances?.includes(info.kind);
+      return {
+        kind: info.kind,
+        premium: this.toDisplayAmount(
+          premiumMinor(info.baseMinor!, profession.priceFactor, profession.insuranceFactor),
+        ),
+        held,
+        heldNext: held,
+      };
+    });
+    const rows = [...own, ...offered];
     const key = JSON.stringify(rows);
     if (this.setupInsuranceCache?.key !== key) this.setupInsuranceCache = { key, rows };
     return this.setupInsuranceCache.rows;
@@ -1328,13 +1520,18 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   private setupInsuranceCache: {
     key: string;
-    rows: { kind: string; premium: number; held: boolean; heldNext: boolean }[];
+    rows: { kind: string; premium: number; held: boolean; heldNext: boolean; fresh?: boolean }[];
   } | null = null;
 
   /** Hop in or out of an insurance before the game starts: the premium and the cover follow from the first Payday. */
   toggleSetupInsurance(change: { kind: string; on: boolean }): void {
-    const all = this.setupInsuranceRows.map((row) => row.kind);
-    const held = new Set(this.startInsurances ?? all);
+    const rows = this.setupInsuranceRows;
+    const all = rows.map((row) => row.kind);
+    // when nothing was chosen yet the character's own insurances are held, the others of the catalogue are not
+    const ownKinds = (this.selectedProfession?.expenses ?? [])
+      .filter((line) => line.insurance && line.amountMinor !== 0)
+      .map((line) => line.insurance!);
+    const held = new Set(this.startInsurances ?? ownKinds);
     if (change.on) held.add(change.kind);
     else held.delete(change.kind);
     this.startInsurances = all.filter((kind) => held.has(kind));
@@ -1345,33 +1542,33 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   toggleTrait(key: string): void {
     this.openTrait = this.openTrait === key ? null : key;
-    if (key === 'insurance') this.goToInsurance();
   }
 
-  /** The insurance chip leads to where the insurances are hopped in and out: the profession panel, at its insurance section. */
-  private goToInsurance(): void {
-    const profession = this.currentProfession;
-    if (this.hasActiveGame && profession && !this.viewedProfession) {
-      this.openProfessionCard(profession);
-    }
-    // the panel is drawn by the next check
-    setTimeout(
-      () =>
-        document
-          .querySelector('.cs-group--insurance')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
-      80,
-    );
+  closeTrait(): void {
+    this.openTrait = null;
+  }
+
+  /** The insurances are decided in their own component (JFK, 2026-11-03): from the chip and from the button next to the chips. */
+  insuranceOpen = false;
+  get languageCode(): string {
+    return this.language.current;
+  }
+
+  openInsurances(): void {
+    // a game that began before an insurance joined the catalogue is given its offer now
+    this.cashflowGameService.ensureInsuranceOffers();
+    this.openTrait = null;
+    this.insuranceOpen = true;
   }
 
   private traitChipsCache: {
     key: string;
-    chips: { key: string; icon: string; text: string; detail?: string }[];
+    chips: { key: string; icon: string; text: string; detail?: string; raw?: string }[];
   } | null = null;
 
   /** The traits of the character as chips: what has happened to them, and their step on the career ladder. */
-  get traitChips(): { key: string; icon: string; text: string; detail?: string }[] {
-    const chips: { key: string; icon: string; text: string; detail?: string }[] = [
+  get traitChips(): { key: string; icon: string; text: string; detail?: string; raw?: string }[] {
+    const chips: { key: string; icon: string; text: string; detail?: string; raw?: string }[] = [
       ...this.lifeBadges,
     ];
     const career = this.careerBadge;
@@ -1389,6 +1586,21 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.traitChipsCache.chips;
   }
 
+  /** The insurances held, with what each costs a month, in one line. */
+  private insuranceSummary(): string {
+    const held = this.appState.cashflowGame.life
+      ? this.cashflowGameService.insurances.filter((offer) => offer.heldNext)
+      : [];
+    return held
+      .map((offer) => {
+        const premium = this.toDisplayAmount(
+          Math.round(this.cashflowGameService.insurancePremium(offer) * 100),
+        );
+        return `${this.translate.instant('CashflowGame.insurance.kind.' + offer.kind)} ${premium.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${this.appState.currency}`;
+      })
+      .join(' · ');
+  }
+
   /** The small card of the open trait: what it is, what it is now and what it does in the game. */
   get traitInfo(): {
     icon: string;
@@ -1396,6 +1608,8 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     value: string;
     text: string;
     extra?: string;
+    more?: string;
+    action?: 'insurance';
   } | null {
     const chip = this.traitChips.find((candidate) => candidate.key === this.openTrait);
     if (!chip) return null;
@@ -1416,11 +1630,18 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
         extra = `${this.translate.instant('CashflowGame.career.paydaysIn', { now: next.paydaysIn, min: next.minPaydays })} · ${this.translate.instant('CashflowGame.career.needs', { roll: next.rollFrom })}`;
       }
     }
+    // what this value in particular does (Single, Own flat, Employed...): the card tells it after the general words
+    const valueKey = chip.raw ? `CashflowGame.life.valueInfo.${chip.raw}` : '';
+    const more = valueKey ? t(valueKey) : '';
     return {
       icon: chip.icon,
       title: t(`CashflowGame.life.badge.${chip.key}`),
       value: chip.detail ?? chip.text,
       text: t(`CashflowGame.life.info.${chip.key}`),
+      ...(more && more !== valueKey ? { more } : {}),
+      ...(chip.key === 'insurance'
+        ? { extra: this.insuranceSummary(), action: 'insurance' as const }
+        : {}),
       ...(extra ? { extra } : {}),
     };
   }
@@ -1445,33 +1666,47 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   private get traitLife() {
     const life = this.appState.cashflowGame.life;
     if (life) return life;
-    return this.characterChosen && this.selectedProfession?.profile ? INITIAL_LIFE_STATE : null;
+    return this.characterChosen && this.selectedProfession?.profile
+      ? { ...INITIAL_LIFE_STATE, ...this.selectedProfession.lifeStart }
+      : null;
   }
 
   /** The insurances held: those of the running game, or those chosen for the start. */
   private get insurancesHeld(): number {
     if (this.appState.cashflowGame.life) {
-      return this.cashflowGameService.insurances.filter((offer) => offer.held).length;
+      return this.cashflowGameService.insurances.filter((offer) => offer.heldNext).length;
     }
     return this.setupInsuranceRows.filter((row) => row.held).length;
   }
 
-  get lifeBadges(): { icon: string; text: string; key: string }[] {
+  get lifeBadges(): { icon: string; text: string; key: string; raw?: string }[] {
     const life = this.traitLife;
     if (!life) return [];
     const v = (value: string) => this.translate.instant(`CashflowGame.life.value.${value}`);
-    const badges: { icon: string; text: string; key: string }[] = [
-      { key: 'relationship', icon: '❤️', text: v(life.relationship) },
-      { key: 'home', icon: '🏠', text: v(life.home) },
-      { key: 'location', icon: '📍', text: v(life.location) },
-      { key: 'employment', icon: '💼', text: v(life.employment) },
+    const badges: { icon: string; text: string; key: string; raw?: string }[] = [
+      { key: 'relationship', icon: '❤️', text: v(life.relationship), raw: life.relationship },
+      { key: 'home', icon: '🏠', text: v(life.home), raw: life.home },
+      { key: 'location', icon: '📍', text: v(life.location), raw: life.location },
+      { key: 'employment', icon: '💼', text: v(life.employment), raw: life.employment },
     ];
+    if (life.education)
+      badges.push({ key: 'education', icon: '📚', text: v('studying'), raw: 'studying' });
     if (life.kids > 0) badges.splice(1, 0, { key: 'kids', icon: '👶', text: `× ${life.kids}` });
     if (life.pet !== 'none')
-      badges.push({ key: 'pet', icon: life.pet === 'cat' ? '🐱' : '🐶', text: v(life.pet) });
-    if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('yes') });
+      badges.push({
+        key: 'pet',
+        icon: life.pet === 'cat' ? '🐱' : '🐶',
+        text: v(life.pet),
+        raw: life.pet,
+      });
+    if (life.car) badges.push({ key: 'car', icon: '🚗', text: v('car') });
     const held = this.insurancesHeld;
     if (held > 0) badges.push({ key: 'insurance', icon: '🛡️', text: `× ${held}` });
+    // a game that asks for dream points: how many of them the player has
+    const asked = this.pointsAsked;
+    if (asked) {
+      badges.push({ key: 'dreamPoints', icon: '🌟', text: `${asked.points} / ${asked.goal}` });
+    }
     return badges;
   }
 
@@ -1499,7 +1734,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     this.cashflowGameService.endLifeLine(id, this.tileCallbacks);
   }
 
-  /** The Smile project of a dream, open in the Smile page: fund it, plan its payments. */
+  /** The Dream project of a dream, open in the Smile page: fund it, plan its payments. */
   async openDreamProject(projectTitle: string): Promise<void> {
     const { InfoSmileComponent } =
       await import('src/app/panels/info/info-smile/info-smile.component');
@@ -1552,7 +1787,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   /** The game has an Emergency stack (the custom edition): its tile draws a card instead of showing the filler. */
   get emergencyDeckReady(): boolean {
-    return !this.remote && this.cashflowGameService.emergencyCards.length > 0;
+    return !this.classicRemote && this.cashflowGameService.emergencyCards.length > 0;
   }
 
   get emergency() {
@@ -1725,28 +1960,37 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     cashflow: number;
     cashflowText: string;
   }[] {
-    const custom =
-      this.selectedGameSet?.edition === 'custom' || this.selectedGameSetId === 'custom-jfk';
+    // the test characters of the table bots' champion book (custom-jfk) are not offered any more (JFK, 2026-10-27): only the edition's own
+    const custom = this.selectedGameSet?.edition === 'custom';
     const sets = custom
-      ? this.gameSets.filter((set) => set.edition === 'custom' || set.id === 'custom-jfk')
+      ? this.gameSets.filter((set) => set.edition === 'custom')
       : this.gameSets.filter((set) => set.id === this.selectedGameSetId);
     return sets
       .flatMap((set) =>
-        set.professions.map((profession) => {
-          const story = this.profileOf(profession);
-          const cashflow = this.toDisplayAmount(
-            computeCashflowProfessionMonthlyCashflowMinor(profession),
-          );
-          const cashflowText = `${cashflow.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
-          return {
-            setId: set.id,
-            profession,
-            name: story?.name ?? this.professionTitle(profession),
-            tagline: story?.tagline ?? '',
-            cashflow,
-            cashflowText,
-          };
-        }),
+        set.professions
+          .filter((profession) => !profession.variantOf)
+          .map((profession) => {
+            const story = this.profileOf(profession);
+            // what is left of a month at the chosen difficulty
+            const played =
+              set.professions.find(
+                (candidate) =>
+                  candidate.id ===
+                  professionIdAtDifficulty(set, profession.id, this.customDraft.difficulty),
+              ) ?? profession;
+            const cashflow = this.toDisplayAmount(
+              computeCashflowProfessionMonthlyCashflowMinor(played),
+            );
+            const cashflowText = `${cashflow.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${this.appState.currency}`;
+            return {
+              setId: set.id,
+              profession,
+              name: story?.name ?? this.professionTitle(profession),
+              tagline: story?.tagline ?? '',
+              cashflow,
+              cashflowText,
+            };
+          }),
       )
       .sort((a, b) => a.cashflow - b.cashflow);
   }
@@ -1824,7 +2068,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
 
   startGame(): void {
     if (!this.selectedGameSetId || !this.selectedProfessionId) return;
-    // the account's Smile projects must have been read before the dream is added to them (saving earlier would replace them)
+    // the account's Dream projects must have been read before the dream is added to them (saving earlier would replace them)
     if (!this.appState.tier2Loaded) {
       this.isBusy = true;
       void this.appData.loadTier2().finally(() => {
@@ -1848,7 +2092,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     }
     this.cashflowGameService.pickProfession(
       this.selectedGameSetId,
-      this.selectedProfessionId,
+      this.selectedProfession?.id ?? this.selectedProfessionId,
       {
         onSuccess: () => {
           this.isBusy = false;
@@ -1898,7 +2142,14 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   customDraft: CustomRules = { ...CUSTOM_RULE_PRESETS.free };
 
   chooseCustomMode(mode: CustomMode): void {
-    this.customDraft = { ...CUSTOM_RULE_PRESETS[mode] };
+    this.customDraft = { ...CUSTOM_RULE_PRESETS[mode], difficulty: this.customDraft.difficulty };
+  }
+
+  /** Easy, Normal and Hard (JFK, 2026-10-27): the character's numbers and the cards change with it. */
+  readonly difficultyLevels = ['easy', 'medium', 'hard'] as const;
+
+  setDifficulty(level: 'easy' | 'medium' | 'hard'): void {
+    this.customDraft = { ...this.customDraft, difficulty: level };
   }
 
   get customIsPreset(): boolean {
@@ -1927,11 +2178,23 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     },
     {
       key: 'dreamOffers',
-      options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
+      // 0: one or two by chance, as at a table
+      options: [0, 1, 2, 3].map((n) => ({
+        value: n,
+        label: n === 0 ? 'CashflowGame.custom.dreamOffersChance' : String(n),
+      })),
+    },
+    {
+      // 0: the life dream alone, no dream tiles
+      key: 'dreamPointsGoal',
+      options: [0, 5, 8, 10, 15, 20, 30].map((n) => ({
+        value: n,
+        label: n === 0 ? 'CashflowGame.custom.dreamPointsAlone' : String(n),
+      })),
     },
     {
       key: 'maxOpenDreams',
-      options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+      options: [0, 1, 2, 3, 4, 5].map((n) => ({ value: n, label: n === 0 ? '∞' : String(n) })),
     },
     { key: 'dreamMayDecline', options: this.yesNo() },
     { key: 'lifeMayDecline', options: this.yesNo() },
@@ -1954,10 +2217,35 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
       key: 'opportunityValidTurns',
       options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })),
     },
+    {
+      // the tax on the profit of a sale: none, or a rate (the default is the German flat tax with the solidarity surcharge)
+      key: 'capitalGainsTaxPercent',
+      options: [0, 15, 20, 26.375, 30].map((n) => ({
+        value: n,
+        label: n === 0 ? 'CashflowGame.custom.taxNone' : `${n} %`,
+      })),
+    },
+    {
+      key: 'sellValidTurns',
+      options: [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) })),
+    },
     { key: 'savingsCardCopies', options: [1, 2, 3].map((n) => ({ value: n, label: String(n) })) },
     {
       key: 'bankInterestPercent',
       options: [5, 8, 10, 12, 15].map((n) => ({ value: n, label: `${n} %` })),
+    },
+    {
+      // the steps the Bank loan moves in: the character's own, any amount, or 50 to 1000 units (as at a table)
+      key: 'bankLoanStepMinor',
+      options: [0, 1, 5000, 10000, 20000, 50000, 100000].map((minor) => ({
+        value: minor,
+        label:
+          minor === 0
+            ? 'CashflowGame.custom.bankStepOwn'
+            : minor === 1
+              ? 'CashflowGame.custom.bankStepFree'
+              : String(minor / 100),
+      })),
     },
   ];
 
@@ -2045,7 +2333,7 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
     return this.cashflowGameService.board;
   }
 
-  /** Where the tiles of a Dreamfund map stand; null on the classic ring. */
+  /** Where the tiles of a Dreamer map stand; null on the classic ring. */
   get boardMap() {
     return this.cashflowGameService.boardMap;
   }
@@ -2223,6 +2511,11 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   /** The game being played somewhere else (a shared table), or null for a normal solo game: its moves are sent, not worked out here. */
+  /** A classic table is being played (not the solo game, not a Dreamer table): the stack tiles are not part of it. */
+  get classicRemote(): boolean {
+    return !!this.remote && !this.remote.dreamfund;
+  }
+
   get remote(): RemoteGame | null {
     return RemoteGameHook.current;
   }
@@ -2801,7 +3094,9 @@ export class CashflowGameComponent implements OnDestroy, AfterViewChecked {
   }
 
   private currencyFor(lang: string, custom: boolean): string | null {
-    if (this.currencyChoice !== 'game') return this.currencyChoice;
+    // at a table the money is the table's own setting, not the player's choice for a solo game
+    const choice = this.remote?.currency?.() ?? this.currencyChoice;
+    if (choice !== 'game') return choice;
     return custom ? (lang === 'de' ? 'TT' : 'DT') : null;
   }
 

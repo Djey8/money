@@ -37,6 +37,7 @@ import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { SettingsComponent } from '../settings/settings.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 /**
  * Represents the InfoComponent class.
@@ -57,6 +58,7 @@ setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.A
   selector: 'app-info',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -617,7 +619,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
           AppStateService.instance.liabilities.push(newLiability);
         }
 
-        // Update Smile Project
+        // Update Dream Project
         if (this.selectedOption === 'Smile') {
           for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
             if (
@@ -768,7 +770,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
               }
             }
 
-            // Update Smile Project
+            // Update Dream Project
             if (this.selectedOption === 'Smile') {
               for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
                 if (
@@ -843,7 +845,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
         this.addToMojo();
       }
 
-      // Handle Smile projects - can add from any account (except when category is @Mojo to avoid double-processing)
+      // Handle Dream projects - can add from any account (except when category is @Mojo to avoid double-processing)
       if (this.categoryTextField != '@Mojo') {
         this.addToSmileProject(this.categoryTextField);
       }
@@ -1464,7 +1466,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
           AppStateService.instance.liabilities.push(newLiability);
         }
 
-        // Update Smile projects - can remove from any account based on category
+        // Update Dream projects - can remove from any account based on category
         for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
           if (
             AppStateService.instance.allTransactions[InfoComponent.index].category ===
@@ -1484,7 +1486,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
               });
             }
 
-            // Log smile project removal from delete transaction
+            // Log dream project removal from delete transaction
             this.frontendLogger.logActivity('update_smile_project_from_transaction', 'info', {
               projectType: 'smile',
               projectTitle: project.title,
@@ -1727,12 +1729,12 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
   /**
    * Updates bucket allocation tags in transaction comment when amount changes.
    * Handles both single bucket tags and distributed bucket tags.
-   * Supports both Smile projects and Fire emergencies.
+   * Supports both Dream projects and Fire emergencies.
    */
   updateBucketAllocationTags(transaction: any) {
     if (!transaction.comment) return;
 
-    // Try Smile projects first
+    // Try Dream projects first
     for (let i = 0; i < AppStateService.instance.allSmileProjects.length; i++) {
       if (transaction.category === '@' + AppStateService.instance.allSmileProjects[i].title) {
         const project = AppStateService.instance.allSmileProjects[i];
@@ -2073,7 +2075,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
           });
         }
 
-        // Log smile project removal from delete transaction
+        // Log dream project removal from delete transaction
         this.frontendLogger.logActivity('update_smile_project_from_transaction', 'info', {
           projectType: 'smile',
           projectTitle: project.title,
@@ -2456,7 +2458,7 @@ export class InfoComponent extends BaseInfoComponent implements OnInit {
           }
         }
 
-        // Log smile project update from update transaction
+        // Log dream project update from update transaction
         this.frontendLogger.logActivity('update_smile_project_from_transaction', 'info', {
           projectType: 'smile',
           projectTitle: project.title,

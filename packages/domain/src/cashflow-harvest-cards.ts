@@ -1,7 +1,7 @@
 import type { HarvestCard } from './cashflow-game/harvest-deck';
 
 /**
- * The Harvest stack of the Dreamfund game (JFK, 2026-10-26), generated from temp_cards/dreamfund-harvest-deck.md v0.2: 87 cards, the
+ * The Harvest stack of the Dreamer game (JFK, 2026-10-26), generated from temp_cards/dreamfund-harvest-deck.md v0.2: 87 cards, the
  * market. Copies are those of a Medium game. The cards that say what happens to a holder in words are written down as data here.
  */
 export const HARVEST_CARDS: HarvestCard[] = [
@@ -499,7 +499,7 @@ export const HARVEST_CARDS: HarvestCard[] = [
   {
     id: 'H12',
     group: 'market',
-    copies: 3,
+    copies: 1,
     title: {
       en: 'Quiet Market',
       de: 'Ruhiger Markt',

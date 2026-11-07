@@ -1,5 +1,5 @@
 import { drawRandomCard } from './cards';
-import { pickOne, rollDie, seededRng, systemRng } from './rng';
+import { loggedRng, pickOne, rollDie, seededRng, systemRng } from './rng';
 
 describe('the game’s source of chance', () => {
   it('a seed always gives the same sequence, and different seeds differ', () => {
@@ -52,5 +52,20 @@ describe('the game’s source of chance', () => {
     expect([...play(1)].sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
     expect(drawRandomCard(deck, [], () => 0).card.id).toBe('a');
     expect(drawRandomCard(deck, ['a'], () => 0).card.id).toBe('b');
+  });
+});
+
+describe('loggedRng', () => {
+  it('notes every die rolled through it, and nothing else', () => {
+    const log: number[] = [];
+    const rng = loggedRng(() => 0.5, log);
+    expect(rollDie(rng)).toBe(4);
+    expect(rng()).toBe(0.5);
+    expect(rollDie(rng)).toBe(4);
+    expect(log).toEqual([4, 4]);
+  });
+
+  it('leaves a plain rng alone', () => {
+    expect(rollDie(() => 0)).toBe(1);
   });
 });

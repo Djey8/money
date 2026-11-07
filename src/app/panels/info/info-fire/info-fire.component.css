@@ -1869,3 +1869,21 @@
 #infoTransaction-Container.preview .phase-advance {
   display: none !important;
 }
+
+/* the phase stepper: back, any phase, forward */
+.phase-stepper {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.phase-select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.4));
+  background: var(--color-surface, transparent);
+  color: inherit;
+  font: inherit;
+}

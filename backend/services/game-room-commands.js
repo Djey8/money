@@ -20,6 +20,238 @@ const wholeAbove0 = (value, name) =>
 const wholeSeat = (value, name) =>
   Number.isSafeInteger(value) && value >= 0 ? null : `${name} must be a seat number from 0.`;
 
+const PILES = ['seed', 'sapling', 'tree'];
+const text = (value, name) =>
+  typeof value === 'string' && value.length > 0 && value.length <= 200
+    ? null
+    : `${name} must be a non-empty string.`;
+const amount = (value, name) =>
+  Number.isSafeInteger(value) && value > 0 ? null : `${name} must be a whole number above zero.`;
+const none = { fields: [], check: () => null };
+
+/**
+ * The moves of the Dreamer game (todo/dreamfund-multiplayer.md): the table's own - a life's decisions, its money, a Harvest card's
+ * options, a standing sale. (`roll`, the trade commands and the clock's commands are shared with the classic game above.)
+ */
+const DREAMFUND_COMMANDS = {
+  pay_emergency: {
+    fields: ['pay', 'choiceId'],
+    check: (c) =>
+      !['now', 'later', 3, 6, 12].includes(c.pay)
+        ? "pay must be 'now', 'later' or a plan of 3, 6 or 12 Paydays."
+        : c.choiceId === undefined || typeof c.choiceId === 'string'
+          ? null
+          : 'choiceId must be a string.',
+    build: (c) => ({
+      type: 'pay_emergency',
+      pay: c.pay,
+      ...(c.choiceId !== undefined ? { choiceId: c.choiceId } : {}),
+    }),
+  },
+  emergency_choose: {
+    fields: ['choiceId'],
+    check: (c) => text(c.choiceId, 'choiceId'),
+    build: (c) => ({ type: 'emergency_choose', choiceId: c.choiceId }),
+  },
+  emergency_roll: {
+    fields: ['key'],
+    check: (c) => text(c.key, 'key'),
+    build: (c) => ({ type: 'emergency_roll', key: c.key }),
+  },
+  emergency_reroll: { ...none, build: () => ({ type: 'emergency_reroll' }) },
+  answer_life: {
+    fields: ['decision', 'option'],
+    check: (c) =>
+      ['accept', 'decline', 'roll', 'pass', 'give', 'lend', 'option'].includes(c.decision)
+        ? c.decision === 'option'
+          ? text(c.option, 'option')
+          : null
+        : 'decision must be accept, decline, roll, pass, give, lend or option.',
+    build: (c) => ({
+      type: 'answer_life',
+      decision: c.decision === 'option' ? { option: c.option } : c.decision,
+    }),
+  },
+  choose_career_branch: {
+    fields: ['index'],
+    check: (c) => (Number.isInteger(c.index) && c.index >= 0 ? null : 'index must be 0 or more.'),
+    build: (c) => ({ type: 'choose_career_branch', index: c.index }),
+  },
+  take_dream: {
+    fields: ['cardId'],
+    check: (c) => text(c.cardId, 'cardId'),
+    build: (c) => ({ type: 'take_dream', cardId: c.cardId }),
+  },
+  choose_pile: {
+    fields: ['pile'],
+    check: (c) => (PILES.includes(c.pile) ? null : `pile must be one of ${PILES.join(', ')}.`),
+    build: (c) => ({ type: 'choose_pile', pile: c.pile }),
+  },
+  plan_opportunity: {
+    fields: ['cardId', 'swapOut'],
+    check: (c) =>
+      text(c.cardId, 'cardId') || (c.swapOut === undefined ? null : text(c.swapOut, 'swapOut')),
+    build: (c) => ({
+      type: 'plan_opportunity',
+      cardId: c.cardId,
+      ...(c.swapOut ? { swapOut: c.swapOut } : {}),
+    }),
+  },
+  buy_planned: {
+    fields: ['title', 'units', 'steps'],
+    check: (c) =>
+      text(c.title, 'title') ||
+      (c.units === undefined || (Number.isSafeInteger(c.units) && c.units > 0)
+        ? null
+        : 'units must be a positive whole number.') ||
+      (c.steps === undefined || (Number.isSafeInteger(c.steps) && c.steps > 0)
+        ? null
+        : 'steps must be a positive whole number.'),
+    build: (c) => ({
+      type: 'buy_planned',
+      title: c.title,
+      ...(c.units !== undefined ? { units: c.units } : {}),
+      ...(c.steps !== undefined ? { steps: c.steps } : {}),
+    }),
+  },
+  take_opportunity: {
+    fields: ['cardId', 'units', 'steps', 'swapOut'],
+    check: (c) =>
+      text(c.cardId, 'cardId') ||
+      (c.units === undefined ? null : amount(c.units, 'units')) ||
+      (c.steps === undefined ? null : amount(c.steps, 'steps')) ||
+      (c.swapOut === undefined ? null : text(c.swapOut, 'swapOut')),
+    build: (c) => ({
+      type: 'take_opportunity',
+      cardId: c.cardId,
+      choice: {
+        ...(c.units !== undefined ? { units: c.units } : {}),
+        ...(c.steps !== undefined ? { steps: c.steps } : {}),
+        ...(c.swapOut !== undefined ? { swapOut: c.swapOut } : {}),
+      },
+    }),
+  },
+  skip: { ...none, build: () => ({ type: 'skip' }) },
+  debug_load: {
+    fields: ['tile', 'cardId'],
+    check: (c) => text(c.tile, 'tile') || text(c.cardId, 'cardId'),
+    build: (c) => ({ type: 'debug_load', tile: c.tile, cardId: c.cardId }),
+  },
+  debug_payday: { ...none, build: () => ({ type: 'debug_payday' }) },
+  debug_career: {
+    fields: ['stage'],
+    check: (c) => text(c.stage, 'stage'),
+    build: (c) => ({ type: 'debug_career', stage: c.stage }),
+  },
+  throw_job_search: { ...none, build: () => ({ type: 'throw_job_search' }) },
+  roll_opportunity: { ...none, build: () => ({ type: 'roll_opportunity' }) },
+  roll_career: { ...none, build: () => ({ type: 'roll_career' }) },
+  confirm_briefing: { ...none, build: () => ({ type: 'confirm_briefing' }) },
+  end_turn: { ...none, build: () => ({ type: 'end_turn' }) },
+  settle_payday: { ...none, build: () => ({ type: 'settle_payday' }) },
+  fund_reserve: {
+    fields: ['amountMinor'],
+    check: (c) => amount(c.amountMinor, 'amountMinor'),
+    build: (c) => ({ type: 'fund_reserve', amountMinor: c.amountMinor }),
+  },
+  fund_dream: {
+    fields: ['amountMinor', 'id'],
+    check: (c) =>
+      amount(c.amountMinor, 'amountMinor') || (c.id === undefined ? null : text(c.id, 'id')),
+    build: (c) => ({
+      type: 'fund_dream',
+      amountMinor: c.amountMinor,
+      ...(c.id !== undefined ? { id: c.id } : {}),
+    }),
+  },
+  fund_emergency: {
+    fields: ['id', 'amountMinor'],
+    check: (c) => text(c.id, 'id') || amount(c.amountMinor, 'amountMinor'),
+    build: (c) => ({ type: 'fund_emergency', id: c.id, amountMinor: c.amountMinor }),
+  },
+  repay_debt: {
+    fields: ['tag'],
+    check: (c) => text(c.tag, 'tag'),
+    build: (c) => ({ type: 'repay_debt', tag: c.tag }),
+  },
+  repay_bank_loan: {
+    fields: ['amountMinor'],
+    check: (c) => amount(c.amountMinor, 'amountMinor'),
+    build: (c) => ({ type: 'repay_bank_loan', amountMinor: c.amountMinor }),
+  },
+  edit_transaction: {
+    fields: ['index', 'patch'],
+    check: (c) => {
+      if (!Number.isSafeInteger(c.index) || c.index < 0)
+        return 'index must be a booking number from 0.';
+      if (!isObject(c.patch)) return 'patch must be an object.';
+      const keys = Object.keys(c.patch);
+      if (keys.length === 0) return 'patch needs a category, an account or a time.';
+      const bad = keys.filter((key) => !['category', 'account', 'time'].includes(key));
+      if (bad.length > 0) {
+        return `${bad.join(', ')} belong to the game and cannot be changed: only category, account and time can.`;
+      }
+      return keys.every((key) => typeof c.patch[key] === 'string')
+        ? null
+        : 'patch values must be strings.';
+    },
+    build: (c) => ({ type: 'edit_transaction', index: c.index, patch: c.patch }),
+  },
+  edit_subscription: {
+    fields: ['title', 'account'],
+    check: (c) => text(c.title, 'title') || text(c.account, 'account'),
+    build: (c) => ({ type: 'edit_subscription', title: c.title, account: c.account }),
+  },
+  set_phase: {
+    fields: ['kind', 'id', 'phase'],
+    check: (c) =>
+      !['grow', 'smile', 'fire'].includes(c.kind)
+        ? 'kind must be grow, smile or fire.'
+        : text(c.id, 'id') || text(c.phase, 'phase'),
+    build: (c) => ({ type: 'set_phase', kind: c.kind, id: c.id, phase: c.phase }),
+  },
+  set_insurance: {
+    fields: ['kind', 'on'],
+    check: (c) =>
+      text(c.kind, 'kind') || (typeof c.on === 'boolean' ? null : 'on must be true or false.'),
+    build: (c) => ({ type: 'set_insurance', kind: c.kind, on: c.on }),
+  },
+  set_plan: {
+    fields: ['kind', 'id', 'perMinor'],
+    check: (c) =>
+      !['mojo', 'life', 'smile', 'emergency'].includes(c.kind)
+        ? 'kind must be mojo, life, smile or emergency.'
+        : text(c.id, 'id') ||
+          (Number.isSafeInteger(c.perMinor) && c.perMinor >= 0
+            ? null
+            : 'perMinor must be a whole number, 0 to stop the plan.'),
+    build: (c) => ({ type: 'set_plan', kind: c.kind, id: c.id, perMinor: c.perMinor }),
+  },
+  sell_holding: {
+    fields: ['holding'],
+    check: (c) => text(c.holding, 'holding'),
+    build: (c) => ({ type: 'sell_holding', holding: c.holding }),
+  },
+  harvest_continue: { ...none, build: () => ({ type: 'harvest_continue' }) },
+  harvest_sell: {
+    fields: ['holding'],
+    check: (c) => text(c.holding, 'holding'),
+    build: (c) => ({ type: 'harvest_sell', holding: c.holding }),
+  },
+  harvest_accept: {
+    fields: ['holding'],
+    check: (c) => text(c.holding, 'holding'),
+    build: (c) => ({ type: 'harvest_accept', holding: c.holding }),
+  },
+  harvest_ladder: {
+    fields: ['holding', 'action'],
+    check: (c) =>
+      text(c.holding, 'holding') ||
+      (['ride', 'cash', 'skip'].includes(c.action) ? null : 'action must be ride, cash or skip.'),
+    build: (c) => ({ type: 'harvest_ladder', holding: c.holding, action: c.action }),
+  },
+};
+
 /** Each command: its allowed fields, a check of them, and how it becomes a domain command given the table. */
 const COMMANDS = {
   roll: {
@@ -120,13 +352,17 @@ const COMMANDS = {
     build: (c) => ({ type: 'sell_position', input: { ...c.input } }),
   },
   offer_trade: {
-    fields: ['priceMinor', 'toSeat'],
+    fields: ['priceMinor', 'toSeat', 'holding'],
     check: (c) =>
       wholeAbove0(c.priceMinor, 'priceMinor') ||
+      (c.holding === undefined || (typeof c.holding === 'string' && c.holding)
+        ? null
+        : 'holding must be the title of the holding offered.') ||
       (c.toSeat === undefined ? null : wholeSeat(c.toSeat, 'toSeat')),
     build: (c, table) => ({
       type: 'offer_trade',
       priceMinor: c.priceMinor,
+      ...(c.holding !== undefined ? { holding: c.holding } : {}),
       ...(c.toSeat !== undefined ? { to: seatId(table, c.toSeat) } : {}),
     }),
   },
@@ -145,6 +381,7 @@ const COMMANDS = {
       ...(c.fromSeat !== undefined ? { from: seatId(table, c.fromSeat) } : {}),
     }),
   },
+  ...DREAMFUND_COMMANDS,
   pause: { fields: [], check: () => null, build: () => ({ type: 'pause' }) },
   resume: { fields: [], check: () => null, build: () => ({ type: 'resume' }) },
   back: { fields: [], check: () => null, build: () => ({ type: 'back' }) },

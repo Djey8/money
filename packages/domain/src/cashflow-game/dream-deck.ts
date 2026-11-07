@@ -3,9 +3,9 @@ import type { EmergencyDeckState, Localized } from './emergency-deck';
 import type { LifeState } from './life-deck';
 
 /**
- * The Dreamfund Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): what a dream is, how the Dream tile offers
+ * The Dreamer Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): what a dream is, how the Dream tile offers
  * them, what living one is worth in points, and what the eight dream moments do. A dream is generic - it belongs to no character -
- * and becomes a Smile project when it is taken; it is never financed with debt.
+ * and becomes a Dream project when it is taken; it is never financed with debt.
  */
 
 export type DreamTier = 'little' | 'big' | 'grand' | 'life' | 'legendary';
@@ -24,8 +24,19 @@ export interface DreamCard {
   giving?: boolean;
   title: Localized;
   story: Localized;
-  buckets: { id: string; title: Localized; amountMinor: number }[];
+  /** What the dream is and what it takes, in a few sentences: the project's description (the story when absent). */
+  description?: Localized;
+  buckets: {
+    id: string;
+    title: Localized;
+    amountMinor: number;
+    /** What the bucket is, what is realistic, where to look. */
+    notes?: Localized;
+    links?: { label: Localized; url: string }[];
+  }[];
   stat?: Localized;
+  /** More notes of the project besides `stat`: two at most, three in all. */
+  notes?: Localized[];
   actions: { text: Localized; priority: 'low' | 'medium' | 'high' }[];
   links: { label: Localized; url: string }[];
   /** What the dream costs every month once it is lived (a motorbike, a campervan, a farm). */
@@ -60,7 +71,7 @@ export const DEFAULT_DREAM_SETTINGS: DreamSettings = {
   lifeCanDecline: true,
 };
 
-/** A dream the character has taken: the Smile project it became, and since when. */
+/** A dream the character has taken: the Dream project it became, and since when. */
 export interface OpenDream {
   cardId: string;
   projectTitle: string;
@@ -173,7 +184,12 @@ export function drawDreamLanding(
       deck: { seen: [...seen, first.moment.id], gone: deck.gone },
     };
   }
-  const wanted = context.forceOffers ?? context.settings.offersPerLanding;
+  // an offer of 0 is one or two dreams, by chance
+  const wanted =
+    context.forceOffers ??
+    (context.settings.offersPerLanding === 0
+      ? 1 + Math.floor(rng() * 2)
+      : context.settings.offersPerLanding);
   const offers: DreamCard[] = [];
   const left = eligibleCards();
   if (first && 'card' in first) {
@@ -197,7 +213,7 @@ export function drawDreamLanding(
 
 /** The offers are to be kept as they are: whether another dream can be taken now (the open dreams are fewer than the limit). */
 export function canTakeDream(log: DreamLog, settings: DreamSettings): boolean {
-  return log.open.length < settings.maxOpenDreams;
+  return settings.maxOpenDreams <= 0 || log.open.length < settings.maxOpenDreams;
 }
 
 // ── the moments ──
@@ -215,8 +231,8 @@ export const DREAM_MOMENTS: DreamMoment[] = [
     id: 'M02',
     title: { en: 'Gift From Family', de: 'Geschenk der Familie' },
     story: {
-      en: 'A gift: 300 go straight into a bucket of one of your dreams. Without an open dream they go to your Smile account.',
-      de: 'Ein Geschenk: 300 gehen direkt in einen Topf eines deiner Träume. Ohne offenen Traum landen sie auf deinem Smile-Konto.',
+      en: 'A gift: 300 go straight into a bucket of one of your dreams. Without an open dream they go to your Dream account.',
+      de: 'Ein Geschenk: 300 gehen direkt in einen Topf eines deiner Träume. Ohne offenen Traum landen sie auf deinem Traumkonto.',
     },
   },
   {

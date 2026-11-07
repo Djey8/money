@@ -1,4 +1,8 @@
 import { of, Subject } from 'rxjs';
+import { exampleCards } from './dreamfund-examples';
+import { InfoFireComponent } from '../../panels/info/info-fire/info-fire.component';
+import { InfoSmileComponent } from '../../panels/info/info-smile/info-smile.component';
+import { InfoGrowComponent } from '../../panels/info/info-grow/info-grow.component';
 import { DreamfundDocsComponent } from './dreamfund-docs.component';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
@@ -51,12 +55,12 @@ describe('DreamfundDocsComponent', () => {
   });
 
   it('loads the manual of the language and lists its sections in the order of the page', async () => {
-    const { component, http } = makeComponent('de');
+    const { component, http } = makeComponent('en');
     component.ngOnInit();
     await flush();
-    expect(http.get).toHaveBeenCalledWith('assets/i18n/dreamfund-manual/de.json');
-    expect(component.sections.length).toBeGreaterThan(8);
-    expect(component.navOf(component.sections[0])).toBe('Überblick');
+    expect(http.get).toHaveBeenCalledWith('assets/i18n/dreamfund-manual/en.json');
+    expect(component.sections.length).toBeGreaterThan(20);
+    expect(component.navOf(component.sections[0])).toBe('Welcome');
     expect(component.section?.blocks.length).toBeGreaterThan(0);
     expect(component.usingFallback).toBe(false);
     component.ngOnDestroy();
@@ -84,5 +88,60 @@ describe('DreamfundDocsComponent', () => {
       ' ',
       'c',
     ]);
+  });
+
+  it('writes the guide as the classic manual does: steps, cards, callouts and a glossary', () => {
+    const english = manual('en');
+    const kinds = new Set<string>();
+    for (const id of english.order) {
+      for (const block of english.sections[id].blocks) kinds.add(block.type);
+    }
+    for (const kind of [
+      'p',
+      'h3',
+      'list',
+      'callout',
+      'steps',
+      'cards',
+      'table',
+      'glossary',
+      'cardfaces',
+      'examples',
+      'ladder',
+    ]) {
+      expect(kinds.has(kind)).toBe(true);
+    }
+    expect(kinds.has('import')).toBe(false);
+  });
+
+  it('shows six real example projects (two each of Grow, Fire and Smile) and the first four stages of Jonas', () => {
+    const english = manual('en');
+    const blocks = english.order.flatMap((id: string) => english.sections[id].blocks);
+    const kinds = blocks
+      .filter((block: { type: string }) => block.type === 'examples')
+      .map((block: { kind: string }) => block.kind);
+    expect(kinds.sort()).toEqual(['fire', 'grow', 'smile']);
+    for (const kind of ['fire', 'smile', 'grow'] as const) {
+      expect(exampleCards(kind).length).toBe(2);
+    }
+    const ladder = blocks.find((block: { type: string }) => block.type === 'ladder');
+    expect(ladder.stages.map((stage: { title: string }) => stage.title)).toEqual([
+      'Dual Student',
+      'Junior Data Analyst',
+      'Data Engineer',
+      'Senior Data Engineer',
+    ]);
+  });
+
+  it('opens the real info panels on the examples, read only', () => {
+    const { component } = makeComponent('en');
+    component.openExample('fire', 0);
+    expect(InfoFireComponent.preview).toBe(true);
+    expect(InfoFireComponent.title).toBe('A Chronic Illness: Part Time Only');
+    component.openExample('smile', 1);
+    expect(InfoSmileComponent.preview).toBe(true);
+    component.openExample('grow', 1);
+    expect(InfoGrowComponent.preview).toBe(true);
+    expect(InfoGrowComponent.title).toBe('World ETF Savings Plan');
   });
 });

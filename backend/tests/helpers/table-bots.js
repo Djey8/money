@@ -325,7 +325,15 @@ async function playTable(
     );
     const actor = candidates.find((bot) => bot.isMyTurn()) || candidates[0];
     if (!actor) {
-      if (Date.now() - idleSince > maxIdleMs) throw new Error('nobody could move for too long');
+      if (Date.now() - idleSince > maxIdleMs) {
+        const seen = bots
+          .map(
+            (bot) =>
+              `${bot.name}: turn=${bot.isMyTurn()} legal=[${bot.legalActions.map((a) => a.action).join(',')}]`,
+          )
+          .join('; ');
+        throw new Error(`nobody could move for too long (${seen})`);
+      }
       await sleep(10);
       continue;
     }

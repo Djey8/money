@@ -1,0 +1,191 @@
+import type { GameBooks } from '@money/domain';
+import { cardText } from './dream-texts';
+import type {
+  DreamHarvestOpen,
+  DreamPending,
+  DreamPendingInfo,
+  DreamResolvedView,
+} from './dream-session.service';
+
+/**
+ * What a Dreamer table wants from a player next, in the shape the solo screen keeps it (todo/dreamfund-tables-solo-ui.md, R4): the
+ * card drawn for the tile the token stands on is written into the turn's pending decision, so the solo views (the Emergency card, the
+ * Life card, the dreams offered, the Opportunity cards) show it exactly as they do in a solo game - the server drew it, the screen
+ * only reads it. Only the player's own decision is known in full; a pending decision of somebody else has just its kind.
+ *
+ * The table's own additions ride in the same entries under `dream...` names the solo game never reads: the plans an emergency may be
+ * paid over (the server worked them out), whether it must be paid at once, and what the card came to once it was dealt with.
+ */
+export interface DreamPendingExtras {
+  info?: DreamPendingInfo | null;
+  resolved?: DreamResolvedView | null;
+  /** The Harvest card the table drew, with what the player may still do about it. */
+  harvest?: DreamHarvestOpen | null;
+  /** The language of the screen: the title of the Fire project an emergency became. */
+  lang?: string;
+}
+
+export function withDreamPending(
+  books: GameBooks,
+  pending: DreamPending | { kind: string } | null | undefined,
+  extras: DreamPendingExtras = {},
+): GameBooks {
+  const turn = books.state.turn;
+  const open = turn?.pending;
+  if (!turn || !open || open.kind !== 'story') return books;
+  let next = open;
+  const card = pending as
+    | (DreamPending & {
+        cardId?: string;
+        offers?: string[];
+        pile?: string;
+        options?: string[];
+        roll?: number;
+        planned?: { cardId: string; title: string };
+        rolling?: { cardId: string };
+      })
+    | null
+    | undefined;
+  switch (card?.kind) {
+    case 'emergency':
+      if (card.cardId) {
+        next = {
+          ...open,
+          emergency: {
+            cardId: card.cardId,
+            skipped: [],
+            ...(card.choiceId ? { choiceId: card.choiceId } : {}),
+            ...(card.rolls ? { rolls: card.rolls } : {}),
+            ...(card.rerolled ? { rerolled: true } : {}),
+            dreamPlans: extras.info?.emergency?.plans ?? [],
+            dreamMustPayNow: extras.info?.emergency?.mustPayNow ?? false,
+            dreamPayMinor: extras.info?.emergency?.payMinor ?? null,
+          } as never,
+        };
+      }
+      break;
+    case 'life':
+      if (card.cardId) next = { ...open, life: { cardId: card.cardId, skipped: [] } };
+      break;
+    case 'dream':
+      next = { ...open, dream: { offers: card.offers ?? [] } };
+      break;
+    case 'career_branch':
+      next = {
+        ...open,
+        career: {
+          result: { kind: 'branch', options: card.options ?? [], roll: card.roll ?? 0 },
+        } as never,
+      };
+      break;
+    case 'opportunity':
+      next = {
+        ...open,
+        opportunity: {
+          pile: card.pile,
+          offers: card.offers ?? [],
+          told: [],
+          // an investment planned in Grow: its project waits to be bought from there
+          ...(card.planned
+            ? { taken: card.planned.cardId, planned: true, projectTitle: card.planned.title }
+            : {}),
+          // a card with a die: the player throws it before anything is paid
+          ...(card.rolling
+            ? { taken: card.rolling.cardId, rollFor: { cardId: card.rolling.cardId } }
+            : {}),
+        },
+      };
+      break;
+    default:
+      break;
+  }
+  // the Harvest tile: the card the table drew for everybody, and what is still open to sell
+  const harvest = extras.harvest;
+  if (open.tile === 'harvest' && harvest?.cardId) {
+    next = {
+      ...open,
+      harvest: {
+        cardId: harvest.cardId,
+        told: harvest.told ?? [],
+        window: harvest.window ?? [],
+        sales: harvest.sales.map((sale) => ({
+          holding: sale.holding,
+          label: sale.holding,
+          grossMinor: sale.grossMinor,
+          costsMinor: sale.costsMinor,
+          owedMinor: sale.owedMinor,
+          netMinor: sale.grossMinor - sale.costsMinor - sale.owedMinor,
+        })),
+        ladders: harvest.ladders as never,
+      },
+    };
+  }
+  // a card that was dealt with this turn stays on the screen with what came of it, until the next roll
+  const done = extras.resolved as (DreamResolvedView & Record<string, unknown>) | null | undefined;
+  if (!card && done?.kind === 'emergency' && typeof done['cardId'] === 'string') {
+    next = {
+      ...open,
+      emergency: {
+        cardId: done['cardId'],
+        skipped: [],
+        ...(done['choiceId'] ? { choiceId: done['choiceId'] as string } : {}),
+        ...(done['rolls'] ? { rolls: done['rolls'] as Record<string, number> } : {}),
+        // taken as a Fire project: the card says so and opens it; paid or planned: what it came to
+        ...(done['how'] === 'later'
+          ? { projectTitle: cardText('emergency', done['cardId'], extras.lang ?? 'en').title }
+          : { dreamPaid: { payMinor: done['payMinor'], how: done['how'] } }),
+      } as never,
+    };
+  } else if (!card && done?.kind === 'career') {
+    next = {
+      ...open,
+      career: {
+        result: done['result'] as never,
+        done: true,
+        ...(done['reached'] ? { reached: done['reached'] as string } : {}),
+      },
+    };
+  } else if (!card && done?.kind === 'opportunity') {
+    next = {
+      ...open,
+      opportunity: {
+        pile: done['pile'] as string | undefined,
+        offers: (done['offers'] as string[] | undefined) ?? [],
+        told: (done['told'] as string[] | undefined) ?? [],
+        ...(done['taken'] ? { taken: done['taken'] as string, dreamTaken: true } : {}),
+        ...(done['project'] ? { projectTitle: done['project'] as string } : {}),
+        ...(done['passed'] ? { passed: true } : {}),
+      } as never,
+    };
+  } else if (!card && done?.kind === 'dream') {
+    next = {
+      ...open,
+      dream: {
+        offers: (done['offers'] as string[] | undefined) ?? [],
+        ...(done['moment'] ? { moment: done['moment'] as string } : {}),
+        ...(done['declined'] ? { declined: true } : {}),
+        // the Dream project of the dream taken is named by the bridge, in the language of the screen
+        ...(done['taken'] ? { dreamTakenCardId: done['taken'] } : {}),
+      } as never,
+    };
+  } else if (!card && done?.kind === 'life' && typeof done['cardId'] === 'string') {
+    next = {
+      ...open,
+      life: {
+        cardId: done['cardId'],
+        skipped: [],
+        decision: done['decision'] as string,
+        outcome: done['outcome'] as never,
+      },
+    };
+  }
+  // a card that was dealt with: only Done is left on its tile
+  if (!card && done && next !== open) next = { ...next, played: true };
+  // the dice that were thrown for the card (of the open one, or of the one just dealt with)
+  const thrown =
+    (card as { dice?: number[] } | null | undefined)?.dice ??
+    (done as { dice?: number[] } | null | undefined)?.dice;
+  if (thrown?.length && next !== open) next = { ...next, dice: thrown };
+  if (next === open) return books;
+  return { ...books, state: { ...books.state, turn: { ...turn, pending: next } } };
+}

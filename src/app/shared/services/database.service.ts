@@ -64,6 +64,20 @@ export class DatabaseService {
     return DatabaseService.readOnly && !DatabaseService.ACCOUNT_OWN.has(tag);
   }
 
+  /**
+   * Told what a page tried to write while `readOnly` is on (a game table): the table works out which of it may be kept (a booking's
+   * category, the account of a payment, the phase of a project) and which belongs to the game and is put back.
+   */
+  static onBlockedWrite: ((tag: string, data: unknown) => void) | null = null;
+
+  private static refused(tag: string, data: unknown): void {
+    try {
+      DatabaseService.onBlockedWrite?.(tag, data);
+    } catch {
+      // what a table does with an edit never stops the page that made it
+    }
+  }
+
   /** Self-hosted writes run one at a time — see `queueSelfhostedWrite`. */
   private selfhostedWriteQueue: Promise<unknown> = Promise.resolve();
 
@@ -88,7 +102,10 @@ export class DatabaseService {
    * The auth database email (backend) remains unencrypted for login matching.
    */
   writeObject(tag: string, element: any): Observable<any> {
-    if (DatabaseService.blocked(tag)) return of({ success: true, skipped: true, readOnly: true });
+    if (DatabaseService.blocked(tag)) {
+      DatabaseService.refused(tag, element);
+      return of({ success: true, skipped: true, readOnly: true });
+    }
     this.ensureStableIds(tag, element);
     const dataToWrite = this.encryptForStorage(tag, element);
 
@@ -164,7 +181,10 @@ export class DatabaseService {
    * @returns {Observable<any>} Observable that completes when write succeeds or errors on failure.
    */
   writeObjectIfDirty(tag: string, element: any): Observable<any> {
-    if (DatabaseService.blocked(tag)) return of({ success: true, skipped: true, readOnly: true });
+    if (DatabaseService.blocked(tag)) {
+      DatabaseService.refused(tag, element);
+      return of({ success: true, skipped: true, readOnly: true });
+    }
     if (this.mode === 'firebase') {
       // Firebase mode: write immediately (no optimization needed)
       return this.writeObject(tag, element);
@@ -194,6 +214,9 @@ export class DatabaseService {
    */
   batchWrite(writes: { tag: string; data: any }[], forceWrite = false): Observable<any> {
     if (DatabaseService.readOnly) {
+      for (const write of writes) {
+        if (DatabaseService.blocked(write.tag)) DatabaseService.refused(write.tag, write.data);
+      }
       writes = writes.filter((write) => !DatabaseService.blocked(write.tag));
       if (writes.length === 0) return of({ success: true, skipped: true, readOnly: true });
     }
@@ -361,6 +384,15 @@ export class DatabaseService {
    * own IV, carries its own salt, and decrypts on its own.
    */
   private readonly encryptedRowCache = new WeakMap<object, { signature: string; row: any }>();
+  /**
+   * The leaves of the last encrypted form of each transaction, by its id: a Payday of a game moves the date of every transaction, and
+   * of each row only that one field changed - the other six keep their ciphertext (JFK, 2026-10-27: a Payday of a long Dreamer game
+   * re-encrypted 12,000 values). The same field of the same row keeps its ciphertext, which it already had on the server.
+   */
+  private readonly encryptedLeaves = new Map<
+    string,
+    { config: string; leaves: Record<string, { plain: string; cipher: string }> }
+  >();
 
   private encryptTransactionRows(rows: any[]): any[] {
     // epoch changes with the key/session, the flag with the on/off toggle,
@@ -376,7 +408,24 @@ export class DatabaseService {
       const hit = this.encryptedRowCache.get(item);
       if (hit && hit.signature === signature) return hit.row;
       const row = this.convertForStorage(JSON.parse(JSON.stringify(item)));
-      this.encryptObjectValues(row);
+      const id = typeof item.id === 'string' ? item.id : undefined;
+      const before = id ? this.encryptedLeaves.get(id) : undefined;
+      const known = before?.config === config ? before.leaves : {};
+      const leaves: Record<string, { plain: string; cipher: string }> = {};
+      for (const key of Object.keys(row)) {
+        const value = row[key];
+        if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') {
+          const plain = value.toString();
+          const old = known[key];
+          const cipher =
+            old && old.plain === plain ? old.cipher : this.cryptic.encrypt(plain, 'database');
+          leaves[key] = { plain, cipher };
+          row[key] = cipher;
+        } else if (typeof value === 'object' && value !== null) {
+          this.encryptObjectValues(value);
+        }
+      }
+      if (id) this.encryptedLeaves.set(id, { config, leaves });
       this.encryptedRowCache.set(item, { signature, row });
       return row;
     });

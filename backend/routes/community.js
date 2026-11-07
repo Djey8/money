@@ -91,19 +91,24 @@ router.get('/threads', async (req, res) => {
     const limit = clampPageSize(req.query.limit);
     const skip = parseInt(req.query.skip, 10) || 0;
 
+    // the newest activity first, from the index of the threads by their last activity: only the page asked for is read
     const result = await communityDb.find({
-      selector: { type: 'thread' },
-      limit: 200, // fetch a bounded working set, then sort+page in memory
+      selector: { type: 'thread', lastActivityAt: { $gt: null } },
+      sort: [{ type: 'desc' }, { lastActivityAt: 'desc' }],
+      skip,
+      limit,
     });
-
-    const sorted = result.docs.sort((a, b) =>
-      (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''),
-    );
-    const page = sorted.slice(skip, skip + limit);
+    const page = result.docs;
+    // how many threads there are: the index answers it without reading a thread
+    const all = await communityDb.find({
+      selector: { type: 'thread', lastActivityAt: { $gt: null } },
+      fields: ['_id'],
+      limit: 100000,
+    });
 
     res.json({
       threads: page.map(toPublicThread),
-      total: sorted.length,
+      total: all.docs.length,
     });
   } catch (error) {
     logger.logError(error, { context: 'community_list_threads' });
@@ -189,11 +194,12 @@ router.get('/threads/:id', async (req, res) => {
     }
 
     const result = await communityDb.find({
-      selector: { type: 'post', threadId },
+      selector: { type: 'post', threadId, createdAt: { $gt: null } },
+      sort: [{ type: 'asc' }, { threadId: 'asc' }, { createdAt: 'asc' }],
       limit: MAX_PAGE_SIZE * 10,
     });
 
-    const posts = result.docs.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    const posts = result.docs;
 
     res.json({
       thread: toPublicThread(threadDoc),
@@ -522,7 +528,8 @@ router.delete('/posts/:id', authenticateToken, async (req, res) => {
     }
 
     const threadResult = await communityDb.find({
-      selector: { type: 'post', threadId: postDoc.threadId },
+      selector: { type: 'post', threadId: postDoc.threadId, createdAt: { $gt: null } },
+      sort: [{ type: 'asc' }, { threadId: 'asc' }, { createdAt: 'asc' }],
       limit: MAX_PAGE_SIZE * 10,
     });
     const isOpeningPost =
@@ -589,7 +596,8 @@ router.delete('/threads/:id', authenticateToken, async (req, res) => {
     }
 
     const postsResult = await communityDb.find({
-      selector: { type: 'post', threadId },
+      selector: { type: 'post', threadId, createdAt: { $gt: null } },
+      sort: [{ type: 'asc' }, { threadId: 'asc' }, { createdAt: 'asc' }],
       limit: MAX_PAGE_SIZE * 10,
     });
 

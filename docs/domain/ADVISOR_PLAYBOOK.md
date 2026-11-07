@@ -28,7 +28,7 @@ The system, summarised from the book, and how the app implements it:
 | Split income automatically; buckets with one job each                                                              | The accounts and the `allocation` setting (default 60/10/10/20)                                                     |
 | **Daily Expenses** ~60% (bills, food, rent)                                                                        | `Daily`                                                                                                             |
 | **Splurge** ~10%, guilt-free                                                                                       | `Splurge`                                                                                                           |
-| **Smile** ~10% for the goals that make you smile                                                                   | `Smile` + Smile projects                                                                                            |
+| **Smile** ~10% for the goals that make you smile                                                                   | `Smile` + Dream projects                                                                                            |
 | **Fire Extinguisher** ~20%: first put out debt fires, later split into Smile/savings                               | `Fire` + Fire projects. **Here Fire funds known emergencies (car, health) — debts are liabilities (balance sheet)** |
 | **Mojo**: a separate reserve, start small, build to ~3 months of expenses                                          | `Mojo` + `fire_coverage`                                                                                            |
 | **Domino your debts**: minimums on all, extra on the smallest until it falls, then roll that payment into the next | Liabilities in `manage_balance_sheet`; payback via Grow `payback` or transactions                                   |
@@ -116,7 +116,7 @@ figure only if the user sees a different number in the app.
 - **Splurge not guilt-free**: Splurge spending well above its share, or Daily spending leaking into it.
 - **Forgotten subscriptions**: small recurring costs nobody mentions; long-running `@` categories with no budget.
 - **`@others` too big** in the budget: spending with no category. Suggest categories.
-- **Goals without a plan**: Smile projects without an active payment plan or target date; plans whose instalment
+- **Goals without a plan**: Dream projects without an active payment plan or target date; plans whose instalment
   is too high for the Smile share.
 - **Paid but not settled**: a goal's bill was paid (the phase is `ready`/`completed`, or the user mentions it) but
   its buckets aren't settled, so the money is still counted as saved.

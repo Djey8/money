@@ -31,7 +31,7 @@ export interface ValidationResult {
 }
 
 /**
- * Service for calculating and managing payment plans for Smile Projects and Fire Emergencies
+ * Service for calculating and managing payment plans for Dream Projects and Fire Emergencies
  */
 @Injectable({
   providedIn: 'root',

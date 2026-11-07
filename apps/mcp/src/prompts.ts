@@ -60,7 +60,36 @@ export const TEACH_PROMPT: PromptDefinition = {
   ],
 };
 
-export const PROMPTS: PromptDefinition[] = [TEACH_PROMPT];
+export const DREAMFUND_PROMPT: PromptDefinition = {
+  name: 'dreamfund_coach',
+  title: 'Coach me in my Dreamer game',
+  description:
+    'Look at my Dreamer table (or my solo game), tell me where I stand, and help: watch it, guide me move by move, or play my ' +
+    'seat for a while with the best strategy. Afterwards I can keep asking.',
+  arguments: [
+    {
+      name: 'job',
+      description:
+        '"watch" (how are we doing?), "guide" (tell me what to do and why - the default), "play" (play my turns for me) - or your ' +
+        'own wish in words ("get me to the dream first", "play safe", "explain the cards I was offered").',
+      required: false,
+    },
+    {
+      name: 'table',
+      description:
+        'The table to look at (its name or id). Left out: the table I sit at (if there are several, ask me which).',
+      required: false,
+    },
+    {
+      name: 'turns',
+      description:
+        'With "play": how many of my turns to play before you stop and tell me (default 3).',
+      required: false,
+    },
+  ],
+};
+
+export const PROMPTS: PromptDefinition[] = [TEACH_PROMPT, DREAMFUND_PROMPT];
 
 const LANGUAGES: { code: string; name: string; aliases: string[] }[] = [
   {
@@ -213,10 +242,54 @@ export function buildTeachPrompt(args: Record<string, string | undefined> = {}):
   };
 }
 
+/** The prompt of the Dreamer coach for the arguments a person gave (all optional). */
+export function buildDreamfundPrompt(args: Record<string, string | undefined> = {}): PromptResult {
+  const wish = (args['job'] ?? '').trim().toLowerCase();
+  const job = /^watch|^review|^how are we|^beobacht/.test(wish)
+    ? 'watch'
+    : /^play|^spiel|^autoplay/.test(wish)
+      ? 'play'
+      : wish === '' || /^guide|^coach|^help/.test(wish)
+        ? 'guide'
+        : 'custom';
+  const table = (args['table'] ?? '').trim();
+  const turns = Math.min(Math.max(Number.parseInt(args['turns'] ?? '', 10) || 3, 1), 10);
+  const jobText = {
+    watch:
+      'Watch: tell me in a few lines where everybody stands (get_cashflow_game table_review), who is ahead and why, and the one or two things I should do next. Do not read the whole table or the log.',
+    guide:
+      'Guide: read get_cashflow_game table_advice for my seat, tell me where I stand on the four goals (reserve, debts, dream, independence) and the dream points, what the table waits for, the move the strategy would make and why, and what to keep in mind. Explain any card I am offered in plain words (get_cashflow_game dream_cards). I decide - do not play unless I tell you to.',
+    play: `Play: I want you to play my seat. Read the advice first, tell me the strategy you will use (expert unless I said otherwise), then play with play_cashflow_game table_autoplay for ${turns} of my turns, and tell me what was played - the cards taken, the sales, the plans - and why. Stop and ask when something is not a clear case (a big sale, a dream, a loan).`,
+    custom: `Do what I asked: "${args['job'] ?? ''}". Use table_advice to know where I stand and dream_cards for the cards; play only if I asked you to (table_autoplay for a strategy, table_move for a move you choose).`,
+  }[job];
+  const text = [
+    'Help me with my Dreamer game. Start at once: do not repeat these instructions, do not announce a plan.',
+    '',
+    `- **Which game**: ${
+      table
+        ? `the table "${table}"`
+        : 'the table I sit at: get_cashflow_game tables with scope mine, kind dreamfund (if there is more than one running, ask me which). My solo game is read with get_cashflow_game game and review; its moves cannot be sent through the API.'
+    }`,
+    `- **What I want**: ${jobText}`,
+    '',
+    'Before you advise, read these with the explain_concept tool:',
+    '1. `dreamfund_strategy` - how the game is won, what to take, what to leave, when to sell.',
+    '2. `dreamfund_table_guide` - the tools, the moves and how to use them.',
+    '3. Only when you need them: `dreamfund_game_en` (the whole game), `dreamfund_map` (how hard each character is).',
+    '',
+    'Always keep my goals in mind: the reserve, the debts, the dream, the passive income against the cost of living, and the dream points the table asks for. Say what you see in plain words and in my language, short; end with at most three things I could ask next.',
+  ].join('\n');
+  return {
+    description: `Dreamer coach - ${job === 'custom' ? 'my wish' : job}.`,
+    messages: [{ role: 'user', content: { type: 'text', text } }],
+  };
+}
+
 export function getPrompt(
   name: string,
   args: Record<string, string | undefined> | undefined,
 ): PromptResult {
+  if (name === DREAMFUND_PROMPT.name) return buildDreamfundPrompt(args);
   if (name === TEACH_PROMPT.name) return buildTeachPrompt(args);
   throw new Error(`Unknown prompt: ${name}`);
 }

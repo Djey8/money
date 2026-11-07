@@ -4,7 +4,7 @@ import { CashflowGameService } from './cashflow-game.service';
 import { IncomeStatementService } from './income-statement.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
 
-/** The Life, Career and Dream tiles of a Dreamfund game, played through the service (JFK, 2026-10-26). */
+/** The Life, Career and Dream tiles of a Dreamer game, played through the service (JFK, 2026-10-26). */
 describe('CashflowGameService: life, career and dreams', () => {
   let service: CashflowGameService;
   const ok = () => ({ onSuccess: jest.fn(), onError: jest.fn() });
@@ -50,12 +50,18 @@ describe('CashflowGameService: life, career and dreams', () => {
 
   it('a character of the custom edition starts with a life, a career and no dreams', () => {
     const game = state().cashflowGame;
-    expect(game.life).toMatchObject({ relationship: 'single', kids: 0, car: false });
+    expect(game.life).toMatchObject({
+      relationship: 'single',
+      kids: 0,
+      car: false,
+      home: 'shared_flat',
+      education: true,
+    });
     expect(game.career).toMatchObject({ stage: 'C1' });
     expect(game.dreams).toEqual({ open: [], lived: [], bonusPoints: 0 });
     expect(game.lineTitles?.['incomeTax']).toBeTruthy();
-    expect(service.lifeCards).toHaveLength(27);
-    expect(service.dreamCards).toHaveLength(48);
+    expect(service.lifeCards.length).toBeGreaterThanOrEqual(70);
+    expect(service.dreamCards).toHaveLength(96);
   });
 
   it('a Life card is drawn, decided, and its lines become subscriptions of the game', () => {
@@ -401,7 +407,7 @@ describe('CashflowGameService: life, career and dreams', () => {
     expect(service.careerStatus!.stageNumber).toBe(2);
   });
 
-  it('a Dream landing offers dreams; taking one makes a Smile project with its buckets and the dream is open', () => {
+  it('a Dream landing offers dreams; taking one makes a Dream project with its buckets and the dream is open', () => {
     landOn('dream');
     service.drawDream(ok(), { cardId: 'D16' });
     expect(service.dreamView!.offers.map((o) => o.id)).toEqual(['D16']);

@@ -1,7 +1,8 @@
 import { pickOne, type Rng, systemRng } from './rng';
+import { meetsRequirement, type LifeRequirement, type LifeState } from './life-deck';
 
 /**
- * The Dreamfund Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): what a card is, how one is drawn,
+ * The Dreamer Emergency stack (JFK, 2026-10-25, temp_cards/dreamfund-emergency-deck.md v0.2): what a card is, how one is drawn,
  * what it costs a player who is insured or not, and what a payment plan costs on top. Pure rules: the cards themselves live in the
  * game set (`decks.emergency`), the app turns a paid card into a Fire project.
  */
@@ -14,7 +15,22 @@ export type EmergencyCardType = 'fixed' | 'dice' | 'choice' | 'multi';
 /** `pay_now`: fines and fees that cannot be spread; `plan_ok`: pay now or on a plan. */
 export type EmergencyPayment = 'pay_now' | 'plan_ok';
 export type InsuranceKind =
-  'liability' | 'liability_keyloss' | 'household' | 'household_bike' | 'car_partial' | 'car_full';
+  | 'liability'
+  | 'liability_keyloss'
+  | 'household'
+  | 'household_bike'
+  | 'car_partial'
+  | 'car_full'
+  | 'disability'
+  | 'legal'
+  | 'accident'
+  | 'life_risk'
+  | 'dental'
+  | 'travel'
+  | 'pet_liability'
+  | 'pet_health'
+  | 'phone'
+  | 'debt';
 
 /** One roll band of a die: 1-3, 4-5, 6. */
 export interface EmergencyDiceBand {
@@ -23,10 +39,19 @@ export interface EmergencyDiceBand {
   amountMinor: number;
 }
 
+/** A link of a card, a bucket or a choice. */
+export interface EmergencyLink {
+  label: Localized;
+  url: string;
+}
+
 export interface EmergencyBucket {
   id: string;
   title: Localized;
   amountMinor: number;
+  /** What the bucket is and what is realistic (JFK, 2026-11: as the buckets of a dream). */
+  notes?: Localized;
+  links?: EmergencyLink[];
   /** The bucket falls due this many months after the card (its target date). */
   dueInMonths?: number;
   /** The amount is rolled instead (a vet's treatment). */
@@ -45,6 +70,8 @@ export interface EmergencyChoice {
   id: string;
   label: Localized;
   amountMinor: number;
+  notes?: Localized;
+  links?: EmergencyLink[];
   /** The price when the character has this trait (a complete bonus booklet makes the dentist cheaper). */
   traitAmount?: { trait: string; amountMinor: number };
   afterEffect?: EmergencyAfterEffect;
@@ -62,6 +89,8 @@ export interface EmergencyCard {
   payment: EmergencyPayment;
   /** The card only applies to a player who owns this: otherwise it is shuffled back. */
   requires?: 'car' | 'pet';
+  /** The card only applies to a life like this (children, a partner, a flat to pay for, a study): otherwise it is shuffled back, as for a car. */
+  needs?: LifeRequirement;
   /** The insurance that limits the cost to the deductible. */
   insurance?: InsuranceKind;
   /** The amounts are fixed by law or fees (an ID card, a fine): they do not grow with the character's price level. */
@@ -72,8 +101,16 @@ export interface EmergencyCard {
   estimate?: boolean;
   title: Localized;
   story: Localized;
+  /** What happened and what to consider, in a few sentences: the description of the Fire project (the story when absent). */
+  description?: Localized;
   stat?: Localized;
   insuranceNote?: Localized;
+  /** More notes of the project: a tip against a known trap, or a fun fact (the last one is shown). */
+  notes?: Localized[];
+  /** What an insured player pays of this card at most; absent: the profession's deductible (500 for the Dual Student). Scales with the price level. */
+  deductibleMinor?: number;
+  /** A cost that comes on top for a player who is NOT insured against it (a lawsuit, a replacement): it makes going without more dangerous. */
+  uninsuredExtra?: { label: Localized; amountMinor: number; notes?: Localized };
   /** The card's cost is rolled: one die, the band it falls in sets the amount of the card's single bucket. */
   dice?: EmergencyDiceBand[];
   /** Costs more under a condition: another emergency is still open, or the player has a side gig. */
@@ -110,6 +147,8 @@ export function bandAmount(bands: EmergencyDiceBand[], roll: number): number {
 export function isInsuredAgainst(card: EmergencyCard, insurances: readonly string[]): boolean {
   if (!card.insurance) return false;
   if (insurances.includes(card.insurance)) return true;
+  // the full cover pays what the partial cover pays
+  if (card.insurance === 'car_partial' && insurances.includes('car_full')) return true;
   return card.insurance === 'liability_keyloss' && insurances.includes('liability');
 }
 
@@ -139,6 +178,8 @@ export interface ResolvedBucket {
   title: Localized;
   amountMinor: number;
   dueInMonths: number;
+  notes?: Localized;
+  links?: EmergencyLink[];
 }
 
 export interface EmergencyQuote {
@@ -156,6 +197,8 @@ export interface EmergencyQuote {
   payMinor: number;
   /** An insurance of the player's covers this card. */
   insured: boolean;
+  /** The most an insured player pays of this card (the deductible), at this player's price level. */
+  capMinor: number;
   /** What the insurance pays. */
   savedMinor: number;
   afterEffect?: EmergencyAfterEffect;
@@ -202,7 +245,16 @@ export function quoteEmergency(
         choice.traitAmount && context.traits.includes(choice.traitAmount.trait)
           ? choice.traitAmount.amountMinor
           : choice.amountMinor;
-      buckets = [{ id: 'choice', title: choice.label, amountMinor: amount, dueInMonths: 0 }];
+      buckets = [
+        {
+          id: 'choice',
+          title: choice.label,
+          amountMinor: amount,
+          dueInMonths: 0,
+          ...(choice.notes ? { notes: choice.notes } : {}),
+          ...(choice.links ? { links: choice.links } : {}),
+        },
+      ];
       afterEffect = choice.afterEffect ?? afterEffect;
       sideEffect = choice.sideEffect;
     }
@@ -226,6 +278,8 @@ export function quoteEmergency(
           title: bucket.title,
           amountMinor: amount,
           dueInMonths: bucket.dueInMonths ?? 0,
+          ...(bucket.notes ? { notes: bucket.notes } : {}),
+          ...(bucket.links ? { links: bucket.links } : {}),
         });
       }
     }
@@ -241,6 +295,20 @@ export function quoteEmergency(
         ? { ...bucket, amountMinor: bucket.amountMinor + card.modifier!.addMinor }
         : bucket,
     );
+  }
+  const insured = isInsuredAgainst(card, context.insurances);
+  // without the insurance the card is worse: a cost on top (a lawsuit, a replacement)
+  if (card.uninsuredExtra && card.insurance && !insured && buckets.length > 0) {
+    buckets = [
+      ...buckets,
+      {
+        id: 'uninsured',
+        title: card.uninsuredExtra.label,
+        amountMinor: card.uninsuredExtra.amountMinor,
+        dueInMonths: 0,
+        ...(card.uninsuredExtra.notes ? { notes: card.uninsuredExtra.notes } : {}),
+      },
+    ];
   }
   if (selection.rerolled && card.reroll) {
     buckets = [
@@ -263,10 +331,13 @@ export function quoteEmergency(
     }));
   }
   const fullMinor = buckets.reduce((sum, bucket) => sum + bucket.amountMinor, 0);
-  const insured = isInsuredAgainst(card, context.insurances);
+  const priceLevel = context.priceFactor ?? 1;
+  // the card's own deductible (a share of a dental bill) or the profession's cap
   const cap =
-    context.deductibleCapMinor ??
-    Math.round((INSURANCE_DEDUCTIBLE_CAP_MINOR * (context.priceFactor ?? 1)) / 100) * 100;
+    card.deductibleMinor !== undefined
+      ? Math.round((card.deductibleMinor * priceLevel) / 100) * 100
+      : (context.deductibleCapMinor ??
+        Math.round((INSURANCE_DEDUCTIBLE_CAP_MINOR * priceLevel) / 100) * 100);
   let payMinor = fullMinor;
   if (insured && fullMinor > cap && needsRolls.length === 0 && !needsChoice) {
     let extra = 0;
@@ -291,6 +362,7 @@ export function quoteEmergency(
     fullMinor,
     payMinor: ready ? payMinor : fullMinor,
     insured,
+    capMinor: cap,
     savedMinor: ready ? Math.max(0, fullMinor - payMinor) : 0,
     ...(afterEffect ? { afterEffect } : {}),
     ...(sideEffect ? { sideEffect } : {}),
@@ -353,6 +425,7 @@ export function drawEmergencyCard(
   deck: EmergencyDeckState,
   possessions: readonly string[],
   rng: Rng = systemRng,
+  life?: LifeState,
 ): EmergencyDraw {
   const skipped: string[] = [];
   let seen = deck.seen;
@@ -363,7 +436,9 @@ export function drawEmergencyCard(
     seen = [];
     pile = open();
   }
-  const fits = (card: EmergencyCard) => !card.requires || possessions.includes(card.requires);
+  const fits = (card: EmergencyCard) =>
+    (!card.requires || possessions.includes(card.requires)) &&
+    (!card.needs || !life || meetsRequirement(card.needs, life));
   // a card that does not apply is lucky: told, put back, and the next one is drawn
   const rest = [...pile];
   let card: EmergencyCard | undefined;

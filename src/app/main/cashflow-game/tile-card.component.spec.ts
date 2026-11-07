@@ -53,6 +53,8 @@ describe('TileCardComponent', () => {
       decideLife: jest.fn(),
       takeDream: jest.fn(),
       rollCareerTile: jest.fn(),
+      forgetDice: jest.fn(),
+      noteDice: jest.fn(() => []),
     };
     await TestBed.configureTestingModule({
       imports: [TileCardComponent, TranslateModule.forRoot()],
@@ -189,6 +191,9 @@ describe('TileCardComponent', () => {
       expect(element.querySelector('.tc-die--tumbling')).toBeNull();
       expect(element.querySelectorAll('.tc-die')).toHaveLength(1);
       expect(element.querySelector('.tc-result')!.textContent).toContain('promoted');
+      // the die that was rolled stays on the card, small, with what it rolled
+      expect(element.querySelectorAll('.tc-rolled app-die')).toHaveLength(1);
+      expect(element.querySelector('.tc-rolled-text')!.textContent).toContain('5');
     }
   });
 

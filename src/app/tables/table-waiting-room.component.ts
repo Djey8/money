@@ -11,6 +11,7 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { map } from 'rxjs';
 import type { PlayerView, TableView } from '@money/domain';
 import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
 import { TableSessionService } from './table-session.service';
@@ -22,6 +23,7 @@ import {
   type TableSeat,
 } from './tables-api.service';
 import { AddTableComponent } from './add-table.component';
+import { CharacterPreviewComponent } from './character-preview.component';
 import { SeatAvatarComponent } from './seat-avatar.component';
 import { seatToPlayer } from './seat-stats';
 import { TablePlayerInfoComponent } from './table-player-info.component';
@@ -29,6 +31,18 @@ import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
 import { tablesTexts, type TablesTexts } from './tables.texts';
 import { addTableTexts, type AddTableTexts } from './add-table.texts';
 import { hallTexts, type HallTexts } from './hall.texts';
+import { DreamApiService } from '../dreamfund-tables/dream-session.service';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
+
+/** What the waiting room needs of a table's session: the classic table's and the Dreamer table's have the same lobby calls. */
+export interface WaitingSession {
+  busy(): boolean;
+  problem(): string | null;
+  lobby(
+    path: 'leave' | 'ready' | 'kick' | 'settings' | 'start' | 'profession' | 'bots',
+    body?: Record<string, unknown>,
+  ): Promise<boolean>;
+}
 
 const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
 
@@ -40,13 +54,19 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
 @Component({
   selector: 'app-table-waiting-room',
   standalone: true,
-  imports: [CommonModule, AddTableComponent, SeatAvatarComponent, TablePlayerInfoComponent],
+  imports: [
+    CommonModule,
+    AddTableComponent,
+    SeatAvatarComponent,
+    TablePlayerInfoComponent,
+    CharacterPreviewComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
     <div class="wr" [attr.dir]="rtl ? 'rtl' : 'ltr'">
       <!-- what this table is -->
-      <section class="wr-group">
+      <section class="wr-group" data-demo="wr-settings">
         <header class="wr-group-head">
           <h3>{{ h.settingsTitle }}</h3>
           <button
@@ -66,6 +86,12 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             table.settings.visibility === 'public' ? a.public : '🔒 ' + a.private
           }}</span>
           <span class="wr-chip">{{ table.settings.maxSeats }} {{ h.seatsChip }}</span>
+          <span class="wr-chip" *ngIf="dream">{{ d[dreamSettings().difficulty] }}</span>
+          <span class="wr-chip" *ngIf="dream">{{ pointsChip() }}</span>
+          <span class="wr-chip" *ngIf="dream"
+            >{{ dreamSettings().shape }} · {{ dreamSettings().size }} ·
+            {{ dreamSettings().mode }}</span
+          >
           <span class="wr-chip">{{ professionLabel() }}</span>
           <span class="wr-chip">{{ endLabel() }}</span>
           <span class="wr-chip">{{ clockLabel() }}</span>
@@ -86,7 +112,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
       </section>
 
       <!-- who sits here -->
-      <section class="wr-group">
+      <section class="wr-group" data-demo="wr-players">
         <header class="wr-group-head">
           <h3>{{ h.playersTitle }} ({{ table.players.length }}/{{ table.settings.maxSeats }})</h3>
           <button
@@ -157,6 +183,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
                 *ngIf="first && isHost && table.phase === 'lobby'"
                 type="button"
                 class="tx-btn tx-btn--small"
+                data-demo="wr-add-bot"
                 (click)="openBots()"
               >
                 🤖 {{ h.addSeatBot }}
@@ -173,6 +200,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             *ngIf="isHost"
             class="tx-btn tx-btn--primary"
             type="button"
+            data-demo="wr-start"
             [disabled]="session.busy() || !canStart"
             (click)="session.lobby('start')"
           >
@@ -189,41 +217,13 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
           {{ h.waitingFor }}
         </p>
       </section>
-
-      <!-- the profession pick -->
-      <section class="wr-group" *ngIf="table.phase === 'picking' && me">
-        <header class="wr-group-head">
-          <h3>{{ t.pickProfession }}</h3>
-        </header>
-        <div class="wr-professions">
-          <button
-            *ngFor="let profession of professions()"
-            class="tx-btn"
-            type="button"
-            [class.tx-btn--primary]="me.pick === profession.id"
-            [disabled]="session.busy()"
-            (click)="session.lobby('profession', { professionId: profession.id })"
-          >
-            {{ profession.title }}
-          </button>
-          <button
-            class="tx-btn"
-            type="button"
-            [class.tx-btn--primary]="me.pick === 'random'"
-            [disabled]="session.busy()"
-            (click)="session.lobby('profession', { professionId: 'random' })"
-          >
-            🎲 {{ t.random }}
-          </button>
-        </div>
-        <p class="wr-hint">{{ t.waitingPicks }}</p>
-      </section>
     </div>
 
     <!-- the host changes the settings with the panel that opens a table -->
     <app-add-table
       *ngIf="editing"
       [existing]="table.settings"
+      [game]="game"
       [problem]="session.problem()"
       (saved)="saveSettings($event)"
       (closed)="editing = false"
@@ -232,6 +232,7 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
     <!-- the bots the host can seat -->
     <div
       class="wr-modal"
+      data-demo="wr-bots"
       *ngIf="botsOpen"
       role="dialog"
       aria-modal="true"
@@ -271,17 +272,19 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             *ngFor="let bot of sortedBots()"
             class="wr-bot"
             [class.wr-bot--seated]="botSeated(bot)"
+            [attr.data-demo]="bot.demo ? 'bot-coach' : null"
           >
             <app-seat-avatar [bot]="true" [size]="44"></app-seat-avatar>
             <div class="wr-bot-text">
               <strong>{{ bot.name }}</strong>
-              <small
+              <small *ngIf="bot.demo">{{ h.botCoach }}</small>
+              <small *ngIf="!bot.demo"
                 >{{ difficultyText(bot)
                 }}<ng-container *ngIf="bot.ratings?.[botLevel] as rating">
-                  · {{ rating }}</ng-container
+                  {{ dream ? '' : '· ' }}{{ rating }}</ng-container
                 ></small
               >
-              <small class="wr-bot-desc">{{ bot.description }}</small>
+              <small class="wr-bot-desc" *ngIf="bot.description">{{ bot.description }}</small>
             </div>
             <div class="wr-bot-actions">
               <button
@@ -307,6 +310,14 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
             </div>
           </li>
         </ul>
+        <button
+          type="button"
+          class="tx-btn tx-btn--primary wr-done"
+          data-demo="wr-bots-done"
+          (click)="botsOpen = false"
+        >
+          {{ h.botDone }}
+        </button>
       </div>
     </div>
 
@@ -526,6 +537,15 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
         line-height: 1;
         cursor: pointer;
       }
+      .wr-looking {
+        outline: 2px solid var(--color-primary, #2a7de1);
+      }
+      .wr-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
       .wr-actions,
       .wr-professions {
         display: flex;
@@ -534,6 +554,10 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
         margin-top: 12px;
       }
       /* the bot picker */
+      .wr-done {
+        width: 100%;
+        margin-top: 12px;
+      }
       .wr-modal {
         position: fixed;
         inset: 0;
@@ -613,8 +637,8 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
       }
       .wr-bot {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 4px 12px;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 4px 10px;
         align-items: center;
         padding: 10px;
         border: 1px solid var(--color-border, #d9dde3);
@@ -637,10 +661,16 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
         line-height: 1.25;
       }
       .wr-bot-actions {
-        grid-column: 1 / -1;
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
+        gap: 6px;
+      }
+      .wr-bot-actions .tx-btn {
+        padding: 4px 10px;
+        white-space: nowrap;
+      }
+      .wr-bot-desc {
+        grid-column: 2 / -1;
       }
       @media (max-width: 480px) {
         .wr-seats {
@@ -655,10 +685,17 @@ const BOT_LEVELS: BotLevel[] = ['master', 'strong', 'casual', 'beginner'];
   ],
 })
 export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
-  readonly session = inject(TableSessionService);
+  private readonly classicSession = inject(TableSessionService, { optional: true });
+  private readonly dreamApi = inject(DreamApiService);
   private readonly api = inject(TablesApiService);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  /** The session of the table: the classic room provides its own; a Dreamer room passes its session in. */
+  @Input() sessionOverride: WaitingSession | null = null;
+  /** The game of the table: the same waiting room serves both. */
+  @Input() game: 'classic' | 'dreamfund' = 'classic';
+  /** The characters to pick from at a Dreamer table (the classic table's come from its game set). */
+  @Input() characters: { id: string; title: string }[] = [];
   @Input({ required: true }) table!: TableView;
   @Input({ required: true }) roomId!: string;
   @Input() inviteCode: string | null = null;
@@ -667,6 +704,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   @Input() presentSeats: number[] = [];
   @Output() leaveRequested = new EventEmitter<void>();
 
+  d: DreamTexts = dreamTexts('en');
   t: TableRoomTexts = tableRoomTexts('en');
   tt: TablesTexts = tablesTexts('en');
   a: AddTableTexts = addTableTexts('en');
@@ -681,6 +719,8 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   showRules = false;
   copied = false;
   botsOpen = false;
+  /** The character being read before it is taken. */
+  previewId: string | null = null;
   botLevel: BotLevel = 'master';
   botCatalog: BotInfo[] = [];
   private seatKey = '';
@@ -690,6 +730,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['lang']) {
       this.t = tableRoomTexts(this.lang);
+      this.d = dreamTexts(this.lang);
       this.tt = tablesTexts(this.lang);
       this.a = addTableTexts(this.lang);
       this.h = hallTexts(this.lang);
@@ -725,6 +766,35 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     });
   }
 
+  get session(): WaitingSession {
+    return (this.sessionOverride ?? this.classicSession) as WaitingSession;
+  }
+
+  get dream(): boolean {
+    return this.game === 'dreamfund';
+  }
+
+  /** What the table plays for: the life dream alone, or the dream points as well. */
+  pointsChip(): string {
+    const points = (this.table.settings as unknown as { dreamPoints?: number }).dreamPoints ?? 0;
+    return points > 0 ? `🌟 ${points} ${this.d.dreamPointsUnit}` : `🌟 ${this.d.dreamPointsAlone}`;
+  }
+
+  /** The Dreamer's own settings of the table (a Dreamer room passes its view in the shape of the classic one). */
+  dreamSettings(): {
+    difficulty: 'easy' | 'medium' | 'hard';
+    shape: string;
+    size: string;
+    mode: string;
+  } {
+    return this.table.settings as unknown as {
+      difficulty: 'easy' | 'medium' | 'hard';
+      shape: string;
+      size: string;
+      mode: string;
+    };
+  }
+
   get me(): PlayerView | null {
     return this.table.youSeat !== null ? (this.table.players[this.table.youSeat] ?? null) : null;
   }
@@ -738,6 +808,7 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   }
 
   professions(): { id: string; title: string }[] {
+    if (this.dream) return this.characters;
     const set = CASHFLOW_GAME_SETS.find((s) => s.id === this.table.settings.gameSetId);
     return (set?.professions ?? []).map((p) => ({ id: p.id, title: p.title }));
   }
@@ -756,7 +827,9 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   endLabel(): string {
     const s = this.table.settings;
     if (s.endCondition === 'round-limit') return `${this.a.endRounds}: ${s.roundLimit ?? ''}`;
-    return s.endCondition === 'first-escape' ? this.a.endFirst : this.a.endAll;
+    return s.endCondition === 'first-escape' || (s.endCondition as string) === 'first-win'
+      ? this.a.endFirst
+      : this.a.endAll;
   }
 
   clockLabel(): string {
@@ -780,6 +853,14 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     const flag = (on: boolean) => (on ? yes : no);
     const pace =
       s.pace === 'fast' ? this.a.paceFast : s.pace === 'slow' ? this.a.paceSlow : this.a.paceNormal;
+    if (this.dream) {
+      return [
+        { title: this.a.pace, value: pace },
+        { title: this.a.turnGate, value: flag(s.turnGate) },
+        { title: this.a.spectators, value: flag(s.spectators) },
+        { title: this.a.showProgress, value: flag(s.showProgress) },
+      ];
+    }
     return [
       { title: this.a.pace, value: pace },
       { title: this.a.turnGate, value: flag(s.turnGate) },
@@ -827,7 +908,8 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
         isHost: player.seat === t.hostSeat,
         online: this.presentSeats.length === 0 || this.presentSeats.includes(player.seat),
         picture: seat ? this.api.pictureUrl(seat, this.roomId) : null,
-        stats: seat ? seatToPlayer(seat) : null,
+        // the stats panel is the classic board's: a Dreamer table shows the picture and the rating only
+        stats: seat && !this.dream ? seatToPlayer(seat) : null,
         done,
         stateText:
           t.phase === 'picking'
@@ -850,6 +932,11 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
 
   levelText(level: BotLevel | undefined): string {
     return level ? this.skillText(level) : this.t.botTag;
+  }
+
+  /** The character that was read is taken. */
+  takePreview(): void {
+    if (this.previewId) void this.session.lobby('profession', { professionId: this.previewId });
   }
 
   toggleReady(): void {
@@ -877,7 +964,21 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     this.botsOpen = true;
     if (this.botsRequested) return;
     this.botsRequested = true;
-    this.api.bots().subscribe({
+    const catalog = this.dream
+      ? this.dreamApi.bots().pipe(
+          map((r) => ({
+            items: r.items.map((bot): BotInfo => ({
+              id: bot.id,
+              name: bot.name,
+              difficulty: 'champion',
+              description: bot.description ?? '',
+              ...(bot.demo ? { demo: true } : {}),
+              ...(bot.ratings ? { ratings: bot.ratings } : {}),
+            })),
+          })),
+        )
+      : this.api.bots();
+    catalog.subscribe({
       next: (r) => {
         this.botCatalog = r.items;
         this.cdr.markForCheck();
@@ -897,12 +998,15 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
     const level = this.botLevel;
     return [...this.botCatalog].sort(
       (a, b) =>
-        (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) || a.name.localeCompare(b.name),
+        Number(!!a.demo) - Number(!!b.demo) ||
+        (b.ratings?.[level] ?? -1) - (a.ratings?.[level] ?? -1) ||
+        a.name.localeCompare(b.name),
     );
   }
 
   /** The chosen strategy at the chosen level already sits at the table (it sits once: the leaderboard knows it as one player). */
   botSeated(bot: BotInfo): boolean {
+    if (bot.demo) return this.table.players.some((player) => player.bot?.policyId === 'coach');
     const id = this.botLevel === 'master' ? bot.id : `${bot.id}--${this.botLevel}`;
     return this.table.players.some((player) => player.bot?.policyId === id);
   }
@@ -934,10 +1038,26 @@ export class TableWaitingRoomComponent implements OnChanges, OnDestroy {
   }
 
   addBot(bot: BotInfo): void {
-    void this.session.lobby('bots', { policyId: bot.id, level: this.botLevel });
+    // Coach has one level of its own and makes the table the guided demo
+    if (bot.demo) {
+      // the table is the demo now: the bot panel closes by itself, the coach goes on at the table
+      void this.session.lobby('bots', { policyId: 'dream:coach' }).then((ok) => {
+        if (ok) {
+          this.botsOpen = false;
+          this.cdr.markForCheck();
+        }
+      });
+      return;
+    }
+    // a Dreamer bot is a strategy of the simulation, told apart from the classic ones by its prefix
+    void this.session.lobby('bots', {
+      policyId: this.dream ? `dream:${bot.id}` : bot.id,
+      level: this.botLevel,
+    });
   }
 
   difficultyText(bot: BotInfo): string {
+    if (this.dream) return '';
     switch (bot.difficulty) {
       case 'easy':
         return this.t.levelEasy;

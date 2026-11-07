@@ -21,7 +21,7 @@ import { pickOne, rollDie, systemRng, type Rng } from './rng';
 import type { CashflowGameState } from './types';
 
 /**
- * The market of the Dreamfund game (JFK, 2026-10-26): what the Harvest cards do to the indices, to what the player owns, and what they
+ * The market of the Dreamer game (JFK, 2026-10-26): what the Harvest cards do to the indices, to what the player owns, and what they
  * offer - a window to sell, a buyer, a hype to ride. Every market starts at an index of 1.00; the value of a share is its card price
  * times the index of its market. Pure rules like all the others: books and a die in, `GameEffects` out.
  */
@@ -78,7 +78,9 @@ export function unitPriceNow(
 ): number {
   if (!card.share) return 0;
   const base = card.share.unitPriceMinor / (holding.splitFactor ?? 1);
-  return Math.round(base * indexOf(state, holding.marketTag ?? card.market?.tag));
+  return Math.round(
+    base * indexOf(state, holding.marketTag ?? card.market?.tag) * (holding.priceFactor ?? 1),
+  );
 }
 
 /** What a holding is worth in cash now, before what is owed on it. */
@@ -89,12 +91,16 @@ export function valueOf(
 ): number {
   if (card.share) return unitPriceNow(card, holding, state) * (holding.units ?? 0);
   if (card.property) {
-    return Math.round(card.property.priceMinor * indexOf(state, 'PROPERTY'));
+    return Math.round(
+      card.property.priceMinor * indexOf(state, 'PROPERTY') * (holding.priceFactor ?? 1),
+    );
   }
   if (holding.assetBaseMinor !== undefined) {
-    return Math.round(holding.assetBaseMinor * indexOf(state, holding.marketTag));
+    return Math.round(
+      holding.assetBaseMinor * indexOf(state, holding.marketTag) * (holding.priceFactor ?? 1),
+    );
   }
-  return holding.paidMinor ?? 0;
+  return Math.round((holding.paidMinor ?? 0) * (holding.priceFactor ?? 1));
 }
 
 /** The groups a holding is spoken of by on the Harvest cards (a business, a side hustle, a saving, a property). */
@@ -234,6 +240,24 @@ export interface HarvestContext {
   date: string;
   rng?: Rng;
   difficulty?: Difficulty;
+  /** How many of the player's own turns a sell offer stays open (the `sellValidTurns` setting); the offers of the card end with the turn when left out. */
+  validRolls?: number;
+  /** The tax on the profit of a sale, in percent (the `capitalGainsTaxPercent` setting); none when left out. */
+  taxPercent?: number;
+}
+
+/**
+ * The tax on a sale (JFK, 2026-11-06): the profit - what the sale brings after its costs and what is owed on it, less what was paid
+ * for the part that is sold - times the rate. A sale at a loss pays nothing, and neither does a scam or a saving.
+ */
+export function taxOnSale(
+  proceedsMinor: number,
+  basisMinor: number,
+  taxPercent: number | undefined,
+): number {
+  if (!taxPercent || taxPercent <= 0) return 0;
+  const profit = proceedsMinor - basisMinor;
+  return profit > 0 ? Math.round((profit * taxPercent) / 100) : 0;
 }
 
 export interface HarvestResult {
@@ -305,7 +329,12 @@ export function playHarvestCard(
   };
   const setLines = () => {
     for (const holding of live()) {
-      if (!holding.subscription || holding.ponziLeft !== undefined) continue;
+      if (
+        !holding.subscription ||
+        holding.ponziLeft !== undefined ||
+        holding.contributionLeft !== undefined
+      )
+        continue;
       const monthly = monthlyOf(holding);
       if (monthly !== holding.lineMinor) {
         effects.subscriptionUpserts.push({
@@ -371,6 +400,14 @@ export function playHarvestCard(
       case 'sellWindow':
         pending.window = op.markets;
         break;
+      case 'holdingValue': {
+        for (const holding of live()) {
+          const held = cardOf(holding);
+          if (!held || !op.targets.some((target) => matchesTarget(held, holding, target))) continue;
+          holding.priceFactor = round4((holding.priceFactor ?? 1) * op.factor);
+        }
+        break;
+      }
       case 'buyer': {
         pending.sales.push(...buyerSales(op.buyer, live(), cardOf, state, rng, lang));
         break;
@@ -644,7 +681,7 @@ export function playHarvestCard(
       ),
     );
   }
-  for (const entry of windowSaleList(state, context.cards, pending.window, lang)) {
+  for (const entry of windowSaleList({ ...state, holdings }, context.cards, pending.window, lang)) {
     note(
       entry.holding,
       text(
@@ -667,13 +704,14 @@ export function playHarvestCard(
   pending.affected = [...new Set([...(pending.affected ?? []), ...noted])];
   // what the card offers is also what Grow's Sell works with: a buyer's price for a property, a price for every share in a window
   const offers = [
-    ...windowSaleList(state, context.cards, pending.window, lang).map((entry) => ({
+    ...windowSaleList({ ...state, holdings }, context.cards, pending.window, lang).map((entry) => ({
       title: entry.holding,
       salePriceMinor: entry.unitMinor * (entry.isShare ? entry.units : 1),
       cardId: card.id,
       label: card.title[lang],
       ...(entry.isShare ? { pricePerShareMinor: entry.unitMinor } : {}),
       offeredAtRoll: state.turn?.count ?? 0,
+      ...(context.validRolls ? { validRolls: context.validRolls } : {}),
     })),
     ...pending.sales.map((sale) => ({
       title: sale.holding,
@@ -684,6 +722,7 @@ export function playHarvestCard(
         ? { pricePerShareMinor: Math.round(sale.grossMinor / sale.units) }
         : {}),
       offeredAtRoll: state.turn?.count ?? 0,
+      ...(context.validRolls ? { validRolls: context.validRolls } : {}),
     })),
   ];
   const offered = new Set(offers.map((offer) => offer.title));
@@ -722,9 +761,16 @@ function buyerSales(
     let label = held.title[lang];
     if (buyer.basis === 'fixed') {
       gross = buyer.fixedMinor ?? 0;
+    } else if (buyer.basis === 'paid') {
+      // a claim bought for a share of what was paid (the last exit from a scam, a loan portfolio on a secondary market)
+      const roll = buyer.bands ? pickBand(buyer.bands, rng) : (buyer.factor ?? 1);
+      gross = Math.round((holding.paidMinor ?? 0) * roll);
+      label = `${held.title[lang]} (×${round4(roll)})`;
     } else if (buyer.basis === 'index') {
       if (!held.share) continue;
-      gross = Math.round(valueOf(held, holding, state) * (buyer.factor ?? 1));
+      const roll = buyer.bands ? pickBand(buyer.bands, rng) : (buyer.factor ?? 1);
+      gross = Math.round(valueOf(held, holding, state) * roll);
+      if (buyer.bands) label = `${held.title[lang]} (×${round4(roll)})`;
     } else if (buyer.basis === 'asset') {
       if (held.share || held.property) continue;
       const roll = pickBand(
@@ -743,10 +789,23 @@ function buyerSales(
       owed = held.property.mortgageMinor;
       label = `${held.title[lang]} (×${round4(roll)})`;
     } else if (buyer.basis === 'business') {
-      if (soldBusiness || (!held.sideHustle && !held.loan)) continue;
+      // any business, hustle or loan that pays every month (not a share, a property or a thing priced by a market of its own)
+      if (
+        soldBusiness ||
+        held.share ||
+        held.property ||
+        holding.marketTag !== undefined ||
+        (!held.sideHustle && !held.loan && monthlyOf(holding) <= 0)
+      )
+        continue;
       soldBusiness = true;
       const roll = buyer.bands ? pickBand(buyer.bands, rng) : 1;
-      gross = Math.round((buyer.monthsOfCashflow ?? 24) * monthlyOf(holding) * roll);
+      const byCashflow = (buyer.monthsOfCashflow ?? 24) * monthlyOf(holding);
+      gross = Math.round(
+        (buyer.paidShare
+          ? Math.max(byCashflow, (holding.paidMinor ?? 0) * buyer.paidShare)
+          : byCashflow) * roll,
+      );
       owed = held.loan?.loanMinor ?? 0;
       label = `${held.title[lang]} (×${round4(roll)})`;
     }
@@ -1056,6 +1115,15 @@ export function standingSale(
   holding: OpportunityHolding,
   state: Pick<CashflowGameState, 'markets'>,
 ): StandingSale | null {
+  if (card.unsellable) return null;
+  // a plan paid into can be stopped: what went in comes back, less a fee (the bonus is for those who stay)
+  if (holding.contributionLeft !== undefined) {
+    return {
+      grossMinor: Math.round((holding.contributedMinor ?? 0) * 0.9),
+      owedMinor: 0,
+      discountPercent: 10,
+    };
+  }
   if (holding.monthlySavingsMinor || card.savings || card.trap || holding.ponziLeft !== undefined)
     return null;
   if (card.share) {
@@ -1180,7 +1248,38 @@ export function sellHolding(
       ],
     });
   }
-  const net = sale.grossMinor - sale.costsMinor - sale.owedMinor;
+  const proceeds = sale.grossMinor - sale.costsMinor - sale.owedMinor;
+  // what was paid for the part that is sold: all of it, or its share of the units
+  const soldShare =
+    partial && holding.units && sale.units !== undefined
+      ? sale.units / (holding.units + sale.units)
+      : 1;
+  const tax = card?.trap
+    ? 0
+    : taxOnSale(proceeds, Math.round((holding.paidMinor ?? 0) * soldShare), context.taxPercent);
+  if (tax > 0) {
+    if (holding.paidMinor !== undefined && partial) {
+      holding.paidMinor = Math.round(holding.paidMinor * (1 - soldShare));
+    }
+    effects.growUpdates.push({
+      title: holdingTitle,
+      notes: [
+        ...(effects.growUpdates.find((entry) => entry.title === holdingTitle)?.notes ??
+          books.growProjects.find((project) => project.title === holdingTitle)?.notes ??
+          []),
+        {
+          text:
+            lang === 'de'
+              ? `Steuer auf den Gewinn (${context.taxPercent} %): ${round2(tax / 100).toLocaleString('de-DE')}.`
+              : `Tax on the profit (${context.taxPercent}%): ${round2(tax / 100).toLocaleString('en')}.`,
+          createdAt: at,
+        },
+      ],
+    });
+  } else if (partial && holding.paidMinor !== undefined) {
+    holding.paidMinor = Math.round(holding.paidMinor * (1 - soldShare));
+  }
+  const net = proceeds - tax;
   if (net >= 0) {
     effects.appendedTransactions.push({
       account: 'Fire',
@@ -1245,10 +1344,13 @@ export function ladderPayout(offer: HarvestLadderOffer): number {
 export function tickMarkets(
   state: CashflowGameState,
   difficulty: Difficulty = 'medium',
+  drift = true,
 ): CashflowGameState {
   const markets = { ...initialMarkets(), ...(state.markets ?? {}) };
-  for (const tag of Object.keys(MARKET_DRIFT_PERCENT)) {
-    markets[tag] = round4(markets[tag] * (1 + MARKET_DRIFT_PERCENT[tag][difficulty] / 100));
+  if (drift) {
+    for (const tag of Object.keys(MARKET_DRIFT_PERCENT)) {
+      markets[tag] = round4(markets[tag] * (1 + MARKET_DRIFT_PERCENT[tag][difficulty] / 100));
+    }
   }
   for (const [tag, factor] of Object.entries(state.nextPaydayIndex ?? {})) {
     if (markets[tag] !== undefined) markets[tag] = round4(markets[tag] * factor);
@@ -1272,9 +1374,16 @@ export function tickWorld(
     growProjects: readonly { title: string; notes: { text: string; createdAt: string }[] }[];
   },
   cards: readonly OpportunityCard[],
-  options: { date: string; lang: EmergencyLang; rng?: Rng; difficulty?: Difficulty },
+  options: {
+    date: string;
+    lang: EmergencyLang;
+    rng?: Rng;
+    difficulty?: Difficulty;
+    /** False at a table: the markets are the table's and drift there. */
+    drift?: boolean;
+  },
 ): { effects: GameEffects; news: string[] } {
-  const drifted = tickMarkets(books.state, options.difficulty);
+  const drifted = tickMarkets(books.state, options.difficulty, options.drift ?? true);
   const tick = tickOpportunities({ ...books, state: drifted }, cards, options);
   const effects = tick?.effects ?? emptyEffects(drifted, null);
   let state = effects.state;
@@ -1308,3 +1417,18 @@ export function tickWorld(
 }
 
 export type { HarvestLadder };
+
+/** The table's markets after some rounds: the drift of a Payday, spread over the 2.5 rounds a player takes to reach one (JFK, 2026-10-27). */
+export function driftMarkets(
+  markets: Record<string, number>,
+  difficulty: Difficulty = 'medium',
+  rounds = 1,
+): Record<string, number> {
+  const next = { ...initialMarkets(), ...markets };
+  for (const tag of Object.keys(MARKET_DRIFT_PERCENT)) {
+    next[tag] = round4(
+      next[tag] * Math.pow(1 + MARKET_DRIFT_PERCENT[tag][difficulty] / 100, rounds / 2.5),
+    );
+  }
+  return next;
+}

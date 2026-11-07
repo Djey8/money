@@ -6,6 +6,7 @@ Personal finance app built on the Barefoot Investor method (Daily/Splurge/Smile/
 
 - Firebase edition ships **zero** Pro code — not disabled, absent from the built artifact. Never add a Pro feature (API client code, token UI, agent endpoints) without gating it through the build-time mechanism in `docs/adr/0004-edition-separation-mechanism.md` (conditional route array on `environment.edition`, never a runtime `*ngIf`).
 - The two editions do not sync. Firebase↔self-hosted data movement is a manual one-time JSON export/import a user triggers themselves (`docs/SELFHOSTED.md`). Don't assume shared state between them.
+- The game's printed content (cards, characters, texts: about a megabyte) is a lazy chunk, loaded when a game account signs in or opens the manual - never import `@money/domain/dist/cashflow-content` (or the card files) statically from the app or from a domain module that the barrel exports. The app reads `CASHFLOW_GAME_SETS` from `src/app/shared/cashflow-content.ts` (filled in place by `ensureCashflowContent()`; specs get it preloaded in `setup-jest.ts`); domain code finds the sets with `defaultTableGameSets()`, which the caller registers (the app after loading, `backend/services/game-sets.js`, the lab scripts).
 - Mode/edition branching for already-shared features stays as today's pattern: `if (environment.mode === 'firebase') ... else ...` inside services (`auth.service.ts`, `database.service.ts`, `cryptic.service.ts`).
 
 ## Repo map

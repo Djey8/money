@@ -1,5 +1,19 @@
 import { signal } from '@angular/core';
-import { CLASSIC_RAT_RACE_BOARD, moveToken, type TableView } from '@money/domain';
+import {
+  buildDreamfundBoard,
+  CLASSIC_RAT_RACE_BOARD,
+  moveToken,
+  type BoardSetup,
+  type GameBooks,
+  type RatRaceBoard,
+  type TableView,
+} from '@money/domain';
+import { cardFacts, findDreamCard } from '../dreamfund-tables/dream-card-facts';
+import {
+  dreamEventCard,
+  dreamEventDetail,
+  dreamEventTitle,
+} from '../dreamfund-tables/dream-event-texts';
 import type { TableEventLine } from './table-session.service';
 import { tableLayerTexts, type TableLayerTexts } from './table-layer.texts';
 
@@ -61,7 +75,29 @@ const TOLD = new Set([
   'trade_made',
   'player_escaped',
   'player_bankrupt',
+  // the Dreamer's own
+  'emergency',
+  'life',
+  'career',
+  'dream',
+  'opportunity',
+  'opportunity_taken',
+  'harvest',
+  'holding_sold',
+  'goal_reached',
+  'player_won',
 ]);
+
+/** The map a table is played on: the classic ring, or the Dreamer's own (its setup is in every seat's books). */
+function boardOf(view: TableView): RatRaceBoard {
+  if ((view as { kind?: string }).kind !== 'dreamfund') return CLASSIC_RAT_RACE_BOARD;
+  for (const player of view.players) {
+    const setup = (player.books as unknown as GameBooks | null)?.state.boardSetup as
+      BoardSetup | undefined;
+    if (setup) return buildDreamfundBoard(setup).board as unknown as RatRaceBoard;
+  }
+  return CLASSIC_RAT_RACE_BOARD;
+}
 
 /**
  * Tells the other players' moves round by round (JFK, 2026-10-17): their dice tumble, their token walks space by space, the card
@@ -249,7 +285,7 @@ export class TablePresenter {
         await this.pause(450 * this.beat);
         // the token walks to where the roll took it
         if (total > 0) {
-          for (const space of moveToken(CLASSIC_RAT_RACE_BOARD, from, total).entered) {
+          for (const space of moveToken(boardOf(view), from, total).entered) {
             this.tokenAt.update((at) => ({ ...at, [seat]: space.index }));
             await this.pause(260 * this.beat);
           }
@@ -374,6 +410,39 @@ export class TablePresenter {
         this.stage.set(this.base(line, view, t.stBankrupt));
         await this.pause(2000 * this.beat);
         return;
+      default: {
+        // the Dreamer's own events: a headline, and the card or the amount when there is one
+        const headline = dreamEventTitle(line.type, this.lang(), line.data);
+        if (!headline) return;
+        const detail = dreamEventDetail(line.type, line.data, this.lang());
+        // a card of a Dreamer pile: shown by its name, and it can be opened to be read in full
+        const cardId = dreamEventCard(line.type, line.data);
+        // the card as a small version of itself: its pile, the numbers that matter and the first sentence of its story
+        const found = cardId ? findDreamCard(cardId) : null;
+        const facts = found ? cardFacts(found.pile, found.card, this.lang()) : null;
+        const german = this.lang() === 'de';
+        this.stage.set({
+          ...this.base(line, view, headline),
+          ...(cardId && found && facts
+            ? {
+                card: {
+                  id: cardId,
+                  title: found.card.title[german ? 'de' : 'en'],
+                  deck: facts.deck,
+                  tone: 'deal' as const,
+                  lines: facts.lines,
+                  text: firstSentence(facts.text),
+                },
+              }
+            : cardId && detail
+              ? { card: { id: cardId, title: detail, deck: '', tone: 'deal' as const, lines: [] } }
+              : detail
+                ? { patch: { text: detail, tone: 'neutral' as const } }
+                : {}),
+        });
+        await this.pause((line.type === 'player_won' ? 2000 : cardId ? 2600 : 1500) * this.beat);
+        return;
+      }
     }
   }
 
@@ -413,4 +482,11 @@ export class TablePresenter {
       text: card.printed?.description ? String(card.printed.description) : undefined,
     };
   }
+}
+
+/** The first sentence of a text (at most about a line): the popup tells, the card opened from it reads. */
+function firstSentence(text: string): string {
+  const end = text.search(/[.!?](\s|$)/);
+  const sentence = end > 0 ? text.slice(0, end + 1) : text;
+  return sentence.length > 140 ? `${sentence.slice(0, 137)}…` : sentence;
 }

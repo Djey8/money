@@ -968,11 +968,11 @@ body.table-mode
     app-info-liabilitie,
     app-info-interests,
     app-info-properties,
-    app-info-mojo,
-    app-info-smile,
-    app-info-fire
+    app-info-mojo
   )
-  :is(#editbtn, #addbtn, #deletebtn),
+  :is(#editbtn:not(.payback-btn), #addbtn, #deletebtn),
+/* a Smile or Fire project: money is added to it (the table books the move), only edit and delete are not offered */
+body.table-mode :is(app-info-smile, app-info-fire) :is(#editbtn:not(.payback-btn), #deletebtn),
 body.table-mode app-info-grow #deletebtn,
 body.table-mode
   :is(
@@ -989,6 +989,11 @@ body.table-mode
   )
   .add-circle-btn,
 body.table-mode :is(.bottom-nav-add, .desktop-nav-add) {
+  display: none !important;
+}
+
+/* A game played with others: more of a holding is only bought through the game (the card planned in Grow), never from the balance sheet. */
+body.table-mode :is(app-info-asset, app-info-share, app-info-investment) #buyButton {
   display: none !important;
 }
 

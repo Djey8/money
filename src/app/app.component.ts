@@ -57,6 +57,7 @@ import { CashflowGameComponent as CashflowGameComp } from './main/cashflow-game/
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
+import { DemoGuideHook } from './shared/demo-guide-hook';
 import { OnboardingComponent } from './shared/components/onboarding/onboarding.component';
 import { TourOverlayComponent } from './shared/components/tour-overlay/tour-overlay.component';
 import { PullToRefreshComponent } from './shared/components/pull-to-refresh/pull-to-refresh.component';
@@ -202,6 +203,7 @@ export class AppComponent {
   showPages = true;
 
   static instance: AppComponent;
+  readonly demoGuide = DemoGuideHook;
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
   public classReference = AppComponent;
@@ -366,45 +368,55 @@ export class AppComponent {
           }
         }
         // Tier 1: Load critical data, block UI until ready
-        AppDataService.instance.loadTier1().then(() => {
-          if (AppDataService.instance.decryptionFailed) {
-            this.toastService.show(
-              'Login failed: wrong encryption settings. Please check your encryption key.',
-              'error',
-            );
-            this.logOut();
-            return;
-          }
-          AppStateService.instance.isLoading = false;
-          this.profilePicture.reload();
-          this.resumeTable();
-          // Recalculate home amounts now that data is loaded
-          if (HomeComponent) HomeComponent.getAmounts();
-          if (!CashflowGameService.isCashflowGame()) {
-            // Auto-generate subscription transactions on load
-            this.autoGenerateSubscriptionTransactions();
-          } else {
-            // A cashflow account's game state was only ever loaded on-demand, when the game
-            // panel itself was opened — so a page that needs to know "is a game running"
-            // (Settings' reset button) couldn't rely on it before that (JFK, 2026-09-29: "the
-            // component does not know we started a game"). Load it as part of normal bootstrap
-            // instead, same as tier 1, since for this account type it effectively is tier 1.
+        // a game account's content is a chunk of its own: it is there before the books are read (JFK, 2026-11)
+        this.cashflowGameService
+          .ensureContent()
+          .then(() => AppDataService.instance.loadTier1())
+          .then(() => {
+            if (AppDataService.instance.decryptionFailed) {
+              this.toastService.show(
+                'Login failed: wrong encryption settings. Please check your encryption key.',
+                'error',
+              );
+              this.logOut();
+              return;
+            }
+            AppStateService.instance.isLoading = false;
+            this.profilePicture.reload();
+            this.resumeTable();
+            // Recalculate home amounts now that data is loaded
+            if (HomeComponent) HomeComponent.getAmounts();
+            if (!CashflowGameService.isCashflowGame()) {
+              // Auto-generate subscription transactions on load
+              this.autoGenerateSubscriptionTransactions();
+            } else {
+              // A cashflow account's game state was only ever loaded on-demand, when the game
+              // panel itself was opened — so a page that needs to know "is a game running"
+              // (Settings' reset button) couldn't rely on it before that (JFK, 2026-09-29: "the
+              // component does not know we started a game"). Load it as part of normal bootstrap
+              // instead, same as tier 1, since for this account type it effectively is tier 1.
+              AppDataService.instance
+                .loadCashflowGameData()
+                .then(() => this.cashflowGameService.endSoloGameIfOver())
+                .then(() => this.cashflowGameService.ensureInsuranceOffers())
+                .then(() => this.cashflowHistorySync.loadAndAdopt())
+                .catch((err) => console.error('Cashflow game data load error:', err));
+            }
+            // Auto-start interactive tour for new users
+            if (window.localStorage.getItem('onboarding_pending') === 'true') {
+              window.localStorage.removeItem('onboarding_pending');
+              // a new game account on the self-hosted edition chooses: the normal tour or the guided Dreamer demo
+              if (this.appMode === 'selfhosted' && CashflowGameService.isCashflowGame()) {
+                void this.router.navigate(['/welcome']);
+              } else {
+                setTimeout(() => this.tourService.startTour(), 600);
+              }
+            }
+            // Tier 2: Load deferred data in background (non-blocking)
             AppDataService.instance
-              .loadCashflowGameData()
-              .then(() => this.cashflowGameService.endSoloGameIfOver())
-              .then(() => this.cashflowHistorySync.loadAndAdopt())
-              .catch((err) => console.error('Cashflow game data load error:', err));
-          }
-          // Auto-start interactive tour for new users
-          if (window.localStorage.getItem('onboarding_pending') === 'true') {
-            window.localStorage.removeItem('onboarding_pending');
-            setTimeout(() => this.tourService.startTour(), 600);
-          }
-          // Tier 2: Load deferred data in background (non-blocking)
-          AppDataService.instance
-            .loadTier2()
-            .catch((err) => console.error('Tier 2 load error:', err));
-        });
+              .loadTier2()
+              .catch((err) => console.error('Tier 2 load error:', err));
+          });
       } else {
         AppStateService.instance.isLoading = false;
         // Session expired or not authenticated — clean up encrypted data and redirect

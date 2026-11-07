@@ -4,11 +4,14 @@ import {
   Injector,
   OnDestroy,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import type { GameBooks } from '@money/domain';
 import { formatClock, clockReading } from './table-clock';
 import { standings } from './table-statements';
@@ -18,6 +21,25 @@ import { TableStageComponent } from './table-stage.component';
 import { TradeOfferComponent } from './trade-offer.component';
 import { RemoteGameHook } from '../shared/services/remote-game';
 import { TablesApiService } from './tables-api.service';
+import { TableBriefingComponent, type BriefingInsurance } from './table-briefing.component';
+import {
+  computeCashflowProfessionMonthlyCashflowMinor,
+  insuranceOffers,
+  professionIdAtDifficulty,
+} from '@money/domain';
+import { AppStateService } from '../shared/services/app-state.service';
+import {
+  characters as dreamCharacters,
+  dreamMoney,
+  dreamTexts,
+} from '../dreamfund-tables/dream-texts';
+import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
+import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
+import { extrasOf, moneyOf, pendingOf } from '../dreamfund-tables/dream-table-view';
+import { DebugPanelComponent } from './debug-panel.component';
+import { registerDemoGuide } from '../dreamfund-tables/demo/demo-guide.register';
+import { DreamDemoService } from '../dreamfund-tables/demo/demo-guide.service';
+import type { DreamTableView } from '../dreamfund-tables/dream-session.service';
 
 /**
  * The online layer on top of the solo game's own screen (todo/cashflow-multiplayer-solo-ui.md R2): whose turn it is and how much
@@ -28,11 +50,47 @@ import { TablesApiService } from './tables-api.service';
 @Component({
   selector: 'app-table-layer',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableStageComponent, TradeOfferComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableStageComponent,
+    TradeOfferComponent,
+    TableBriefingComponent,
+    DebugPanelComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tables.css',
   template: `
     <section class="tl-layer" *ngIf="view() as table" [attr.dir]="rtl ? 'rtl' : 'ltr'">
+      <!-- a Dreamer game before the first roll: who you are, and the insurances -->
+      <button
+        type="button"
+        class="btn btn--primary tl-brief-back"
+        *ngIf="briefing() && briefingPeek()"
+        (click)="briefingPeek.set(false)"
+      >
+        {{ d.briefingTitle }} ›
+      </button>
+      <app-table-briefing
+        *ngIf="briefing() as b"
+        [hidden]="briefingPeek()"
+        [professionId]="b.professionId"
+        [difficulty]="b.difficulty"
+        [lang]="lang"
+        [insurances]="b.insurances"
+        [currency]="currency"
+        [pointsGoal]="b.pointsGoal"
+        [confirmed]="b.confirmed"
+        [canChange]="b.canChange"
+        [characters]="b.characters"
+        [busy]="busy()"
+        [waitingFor]="b.waitingFor"
+        (insuranceChange)="move({ type: 'set_insurance', kind: $event.kind, on: $event.on })"
+        (dreamOpen)="openProject('dream')"
+        (reserveOpen)="openProject('reserve')"
+        (confirm)="move({ type: 'confirm_briefing' })"
+        (pickCharacter)="pickCharacter($event)"
+      ></app-table-briefing>
       <div class="tl-status" [class.tl-status--mine]="isMyTurn()">
         <strong class="tl-turn">{{ turnText() }}</strong>
         <span class="tl-meta">{{ t.round }} {{ table.tableRound }}</span>
@@ -43,6 +101,49 @@ import { TablesApiService } from './tables-api.service';
           [attr.aria-label]="t.time"
           >⏱ {{ clock }}</span
         >
+      </div>
+
+      <!-- a debug game: any card of any pile is loaded as if it had just been dealt, a Payday and a career step are mocked -->
+      <app-debug-panel
+        *ngIf="debugStart() as start"
+        [start]="start"
+        [lang]="lang"
+        [busy]="busy()"
+        [professionId]="debugProfession()"
+        (cardLoad)="debugLoad($event)"
+        (payday)="debugRun({ type: 'debug_payday' })"
+        (career)="debugRun({ type: 'debug_career', stage: $event })"
+        (dismiss)="debugStart.set(null)"
+      ></app-debug-panel>
+
+      <!-- a Harvest card of this turn affects the player: they are told, and say Continue when they have dealt with it -->
+      <div class="tl-job" *ngIf="harvestNotice() as note" role="alert">
+        <strong>🌾 {{ note.title }}</strong>
+        <p>{{ d.harvestAffected }}</p>
+        <button
+          type="button"
+          class="tx-btn tx-btn--primary"
+          [disabled]="busy()"
+          (click)="move({ type: 'harvest_continue' })"
+        >
+          {{ t.continueLabel }}
+        </button>
+      </div>
+
+      <!-- the job search of the Payday: the chances, then the player's own throw -->
+      <div class="tl-job" *ngIf="jobSearch() as job" role="status">
+        <strong>🎲 {{ d.jobTitle }}: {{ job.title }}</strong>
+        <p>{{ job.chances }}</p>
+        <button
+          type="button"
+          class="tx-btn tx-btn--primary"
+          *ngIf="!job.thrown"
+          [disabled]="busy()"
+          (click)="move({ type: 'throw_job_search' })"
+        >
+          {{ d.jobThrow }}
+        </button>
+        <p class="tl-job-result" *ngIf="job.thrown">🎲 {{ job.roll }} - {{ job.outcome }}</p>
       </div>
 
       <div class="tl-away" *ngIf="iAmAway()" role="status">
@@ -62,26 +163,23 @@ import { TablesApiService } from './tables-api.service';
           {{ t.resumeButton }}
         </button>
       </p>
+      <!-- a buyer's offer open for the player: only a small note and a quick way to the Grow project, where it is sold -->
       <div
         class="tl-offers"
         *ngIf="offers().length"
         role="region"
         [attr.aria-label]="t.offersTitle"
       >
-        <strong>{{ t.offersTitle }}</strong>
-        <div class="tl-row" *ngFor="let offer of offers()">
-          <span
-            >{{ offer.title }} · {{ offer.label }} · {{ offer.price }}
-            <small class="tl-left">({{ offerLeft(offer.left) }})</small></span
-          >
-          <button
-            type="button"
-            class="tx-btn tx-btn--primary tx-btn--small"
-            (click)="sell(offer.title)"
-          >
-            {{ t.sell }}
-          </button>
-        </div>
+        <button
+          type="button"
+          class="tl-offer"
+          *ngFor="let offer of offers()"
+          [title]="t.offersTitle"
+          (click)="openOfferProject(offer.title)"
+        >
+          {{ offer.title }} · {{ offer.price }}
+          <small class="tl-left">({{ offerLeft(offer.left) }})</small> ↗
+        </button>
       </div>
 
       <!-- a card on offer: every player who may answer reads it as a card, and the seller sees the offers that came in -->
@@ -268,7 +366,8 @@ import { TablesApiService } from './tables-api.service';
         gap: 6px;
         overflow-x: auto;
         overscroll-behavior-x: contain;
-        padding-bottom: 6px;
+        /* room for the frame, the glow and the outline of a player: the scrolling row would cut them off */
+        padding: 6px 6px 10px;
         scrollbar-width: thin;
       }
       /* a player: the colour on the left, the name above, who they are and how close to escaping below */
@@ -410,6 +509,19 @@ import { TablesApiService } from './tables-api.service';
         border-radius: 8px;
         background: var(--color-surface-alt, #f4f6f8);
       }
+      .tl-offer {
+        align-self: flex-start;
+        padding: 2px 6px;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: 0.82rem;
+        text-align: start;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
       .tl-row {
         display: flex;
         flex-wrap: wrap;
@@ -539,6 +651,18 @@ export class TableLayerComponent implements OnDestroy {
   private readonly injector = inject(Injector);
 
   readonly view = this.mode.view;
+  /** The guided demo game: the coach follows the person into the game screen. */
+  readonly demoGuide = inject(DreamDemoService);
+  private readonly adoptDemo = effect(() => {
+    const table = this.view();
+    if ((table?.settings as unknown as { demo?: string } | undefined)?.demo === 'basics') {
+      untracked(() => {
+        this.demoGuide.adopt(table!.id);
+        registerDemoGuide(this.demoGuide);
+      });
+    }
+  });
+
   /** A move of mine is on its way to the server. */
   readonly busy = computed(() => this.mode.session()?.busy() ?? false);
   readonly presenter = this.mode.presenter;
@@ -575,6 +699,187 @@ export class TableLayerComponent implements OnDestroy {
     if (row.outcome === 'left') return `${t.placeLeft} - ${t.placeOut}: #${row.rank}`;
     return `${t.placeNow}: #${row.rank}`;
   }
+
+  /** The moves the table lists for the player now. */
+  readonly allowedActions = computed(
+    () =>
+      this.session()
+        ?.legalActions()
+        .map((entry) => entry.action as string) ?? [],
+  );
+
+  /** At a Dreamer table before the first roll: the player's own character to read, and the insurances to choose. */
+  readonly briefing = computed(() => {
+    const view = this.view() as unknown as {
+      kind?: string;
+      dreamBriefing?: boolean;
+      youSeat: number | null;
+      settings: { difficulty?: 'easy' | 'medium' | 'hard'; professions?: string };
+      players: {
+        name: string;
+        bot?: unknown;
+        professionId: string | null;
+        dreamBriefed?: boolean;
+        dreamLife?: {
+          books: { state: never; subscriptions: { title: string; amountMinor: number }[] };
+        };
+      }[];
+    } | null;
+    if (!view || view.kind !== 'dreamfund' || !view.dreamBriefing || view.youSeat === null) {
+      return null;
+    }
+    const me = view.players[view.youSeat];
+    if (!me?.professionId || !me.dreamLife) return null;
+    const { state, subscriptions } = me.dreamLife.books;
+    const insurances: BriefingInsurance[] = insuranceOffers(state).map((offer) => ({
+      kind: offer.kind,
+      held: offer.held,
+      heldNext: offer.heldNext,
+      fresh: offer.fresh,
+      premium:
+        Math.abs(subscriptions.find((sub) => sub.title === offer.premiumTitle)?.amountMinor ?? 0) /
+        100,
+    }));
+    return {
+      professionId: me.professionId,
+      difficulty: view.settings.difficulty,
+      pointsGoal: (view.settings as { dreamPoints?: number }).dreamPoints ?? 0,
+      insurances,
+      confirmed: me.dreamBriefed === true,
+      canChange: view.settings.professions !== 'random',
+      // at a table of unique characters one that another player holds cannot be taken
+      characters: this.characterList(view.settings.difficulty).map((entry) => ({
+        ...entry,
+        held:
+          view.settings.professions === 'unique' &&
+          view.players.some(
+            (player, seat) => seat !== view.youSeat && player.professionId === entry.id,
+          ),
+      })),
+      waitingFor: view.players
+        .filter((player, seat) => seat !== view.youSeat && !player.dreamBriefed)
+        .map((player) => player.name),
+    };
+  });
+
+  get d() {
+    return dreamTexts(this.lang);
+  }
+
+  /** The characters with what is left of a month at the level of the table, the lowest first (as in the game on its own). */
+  private characterList(
+    difficulty: 'easy' | 'medium' | 'hard' | undefined,
+  ): { id: string; name: string; tagline: string; cashflowText: string; cashflow: number }[] {
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    return dreamCharacters(this.lang)
+      .map((entry) => {
+        const played = set?.professions.find(
+          (candidate) =>
+            candidate.id === professionIdAtDifficulty(set, entry.id, difficulty ?? 'medium'),
+        );
+        const cashflow = played ? computeCashflowProfessionMonthlyCashflowMinor(played) : 0;
+        return { ...entry, cashflow, cashflowText: dreamMoney(cashflow, this.lang) };
+      })
+      .sort((a, b) => a.cashflow - b.cashflow);
+  }
+
+  /** Another character while reading the one dealt: the table deals a new life of it. */
+  pickCharacter(professionId: string): void {
+    void this.mode.session()?.lobby('profession', { professionId });
+  }
+
+  get currency(): string {
+    return AppStateService.instance.currency ?? '€';
+  }
+
+  /** A Harvest card of this turn affects me and I have not said Continue: its title. */
+  readonly harvestNotice = computed(() => {
+    const view = this.view();
+    if (!view || view.youSeat === null || !this.mode.harvestWaitsFor(view.youSeat)) return null;
+    const open = extrasOf(view, view.youSeat).harvest as { cardId?: string } | null | undefined;
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    const card = (
+      set?.decks.harvest as { id: string; title: Record<string, string> }[] | undefined
+    )?.find((entry) => entry.id === open?.cardId);
+    const lang = this.lang.slice(0, 2) === 'de' ? 'de' : 'en';
+    return { title: card?.title?.[lang] ?? card?.title?.['en'] ?? open?.cardId ?? '' };
+  });
+
+  /** The debug panel: where it is open (a pile, or all of them), or null. */
+  readonly debugStart = this.mode.debugPanel;
+
+  /** The character of the host: the career ladder the panel lists is theirs. */
+  readonly debugProfession = computed(() => {
+    const view = this.view();
+    return view && view.youSeat !== null
+      ? (view.players[view.youSeat]?.professionId ?? null)
+      : null;
+  });
+
+  /** A card of a pile is loaded as if it had just been dealt. */
+  async debugLoad(card: { tile: string; cardId: string }): Promise<void> {
+    await this.debugRun({ type: 'debug_load', tile: card.tile, cardId: card.cardId });
+  }
+
+  /** A debug move; the panel closes when it was made (a refusal is told by the table's own message). */
+  async debugRun(command: Record<string, unknown>): Promise<void> {
+    await this.move(command as never);
+    // the card that was loaded is a fresh one: it has to be opened again
+    RemoteGameHook.opened.set('');
+    this.debugStart.set(null);
+  }
+
+  /** The briefing steps aside while one of the character's projects is looked at on its own page. */
+  readonly briefingPeek = signal(false);
+
+  /** The dream or the reserve of the character, opened as the project it is (the game has begun in the background). */
+  async openProject(which: 'dream' | 'reserve'): Promise<void> {
+    const professionId = this.briefing()?.professionId;
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    const profession = set?.professions.find((candidate) => candidate.id === professionId);
+    const game = CashflowGameComponent.instance;
+    if (!profession || !game) return;
+    this.briefingPeek.set(true);
+    if (which === 'dream') await game.openDream(profession);
+    else await game.openReserve(profession);
+  }
+
+  /** The job search of the Payday that has passed (the player's own): the chances, and what the die said once it is thrown. */
+  readonly jobSearch = computed(() => {
+    const view = this.view() as unknown as {
+      kind?: string;
+      youSeat: number | null;
+      players: {
+        dreamJobSearch?: {
+          title: Record<string, string>;
+          rollFrom: number;
+          paydaysLeft: number;
+          thrown: boolean;
+          roll: number | null;
+          result: 'found' | 'missed' | 'fallback' | null;
+        } | null;
+      }[];
+    } | null;
+    if (!view || view.kind !== 'dreamfund' || view.youSeat === null) return null;
+    const job = view.players[view.youSeat]?.dreamJobSearch;
+    if (!job) return null;
+    const t = dreamTexts(this.lang);
+    const l = this.lang === 'de' ? 'de' : 'en';
+    return {
+      title: job.title[l] ?? job.title['en'] ?? '',
+      chances: t.jobChances
+        .replace('{from}', String(job.rollFrom))
+        .replace('{left}', String(job.paydaysLeft)),
+      thrown: job.thrown,
+      roll: job.roll,
+      outcome:
+        job.result === 'found'
+          ? t.jobFound
+          : job.result === 'fallback'
+            ? t.jobFallback
+            : t.jobMissed,
+    };
+  });
 
   readonly rows = computed(() => {
     const table = this.view();
@@ -640,6 +945,16 @@ export class TableLayerComponent implements OnDestroy {
 
   readonly holdText = computed(() => {
     const table = this.view();
+    // a Harvest card of this turn: the others wait until everybody it affects has said Continue
+    const harvestSeats = this.mode.harvestWaiting();
+    if (
+      table &&
+      harvestSeats.length > 0 &&
+      !(table.youSeat !== null && harvestSeats.includes(table.youSeat))
+    ) {
+      const names = harvestSeats.map((seat) => table.players[seat]?.name ?? '').join(', ');
+      return this.t.waitingFor.replace('{names}', names);
+    }
     if (!table || table.holdSeats.length === 0) return '';
     const mine = table.youSeat !== null && table.holdSeats.includes(table.youSeat);
     // a seller is told what they can do; the one who only ends their turn needs no text, the button says it
@@ -750,8 +1065,13 @@ export class TableLayerComponent implements OnDestroy {
     return left <= 1 ? this.t.offerLeftOne : this.t.offerLeft.replace('{n}', String(left));
   }
 
-  async sell(title: string): Promise<void> {
-    await this.mode.session()?.play({ type: 'sell_position', input: { title } });
+  /** The Grow project of an offer opens, where it is sold with Grow's own tools. */
+  async openOfferProject(title: string): Promise<void> {
+    const { InfoGrowComponent } = await import('src/app/panels/info/info-grow/info-grow.component');
+    await this.injector.get(Router).navigate(['/grow']);
+    const projects = AppStateService.instance.allGrowProjects;
+    const index = projects.findIndex((project) => project.title === title);
+    if (index >= 0) InfoGrowComponent.setInfoGrowComponent(index, projects[index]);
   }
 
   async move(command: Record<string, unknown>): Promise<void> {

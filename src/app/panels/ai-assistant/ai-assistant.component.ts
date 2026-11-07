@@ -267,7 +267,7 @@ export class AiAssistantComponent implements DoCheck {
           smileOpts.smileNumberOfSuggestions = this.customNumberOfSuggestions;
         }
         this.generatedPrompt = this.promptService.generateSmileCreatePrompt({
-          goal: smileOpts.smileGoal || 'My Smile Project Goal',
+          goal: smileOpts.smileGoal || 'My Dream Project Goal',
           urgency: smileOpts.smileUrgency,
           researchDepth: smileOpts.smileResearchDepth,
           informationFocus: smileOpts.smileInformationFocus,
@@ -280,7 +280,7 @@ export class AiAssistantComponent implements DoCheck {
       }
       case 'smile-improve': {
         if (opts.selectedSmileProjects.length === 0) {
-          this.generatedPrompt = 'Please select at least one Smile project to improve.';
+          this.generatedPrompt = 'Please select at least one Dream project to improve.';
           this.currentStep = 'prompt';
           return;
         }
@@ -843,7 +843,7 @@ export class AiAssistantComponent implements DoCheck {
         this.importError = `${errors.length} item(s) skipped due to errors. ${validated.length} ready to import.`;
       }
     } catch (e: any) {
-      this.importError = `Failed to parse Smile projects: ${e.message}`;
+      this.importError = `Failed to parse Dream projects: ${e.message}`;
     }
   }
 
@@ -1093,7 +1093,7 @@ export class AiAssistantComponent implements DoCheck {
       return;
     }
 
-    // Handle Smile projects
+    // Handle Dream projects
     if (this.importType === 'smile-project') {
       this.importSmileProjects();
       return;
@@ -1175,7 +1175,7 @@ export class AiAssistantComponent implements DoCheck {
     }
 
     if (imported === 0) {
-      this.importError = `All ${skipped} Smile project(s) already exist (duplicate titles).`;
+      this.importError = `All ${skipped} Dream project(s) already exist (duplicate titles).`;
       return;
     }
 
@@ -1189,8 +1189,8 @@ export class AiAssistantComponent implements DoCheck {
         this.importSuccess = true;
         const msg =
           skipped > 0
-            ? `${imported} Smile project(s) imported, ${skipped} skipped (duplicates).`
-            : `${imported} Smile project(s) imported successfully.`;
+            ? `${imported} Dream project(s) imported, ${skipped} skipped (duplicates).`
+            : `${imported} Dream project(s) imported successfully.`;
         this.toast.show(msg, 'success');
       },
       onError: (error: any) => {
@@ -1458,7 +1458,7 @@ export class AiAssistantComponent implements DoCheck {
         this.importError = `${errors.length} item(s) skipped. ${validated.length} ready to import.`;
       }
     } catch (e: any) {
-      this.importError = `Failed to parse Smile updates: ${e.message}`;
+      this.importError = `Failed to parse Dream updates: ${e.message}`;
     }
   }
 

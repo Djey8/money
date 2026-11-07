@@ -104,6 +104,8 @@ import {
   lifeContext,
   monthlyExpensesMinor,
   livedPoints,
+  dreamProjectParts,
+  emergencyProjectParts,
   netMonthlyMinor,
   resolveLifeCard,
   rollCareer,
@@ -123,7 +125,9 @@ import {
   emptyEmergencyDeck,
   insuranceOffers,
   planQuote,
-  queueInsuranceChange,
+  chooseInsurance,
+  INSURANCE_CATALOG,
+  premiumMinor,
   quoteEmergency,
   type EmergencyCard,
   type EmergencyContext,
@@ -206,6 +210,7 @@ import {
   UNDO_STACK_LIMIT,
   systemClock,
   systemRng,
+  loggedRng,
   endIfOver,
   playCharityPaying,
   playDownsizedPaying,
@@ -238,6 +243,7 @@ import {
   type DealDeps,
   type DealInput,
   type Clock,
+  gameSetFor,
   type GameBooks,
   type GameEffects,
   type GameStep,
@@ -249,7 +255,12 @@ import {
   type RoundDeps,
   type SavedGameSummary,
 } from '@money/domain';
-import { CASHFLOW_GAME_SETS, loadCardTextDe } from '../cashflow-content';
+import {
+  CASHFLOW_CONTENT_AVAILABLE,
+  CASHFLOW_GAME_SETS,
+  ensureCashflowContent,
+  loadCardTextDe,
+} from '../cashflow-content';
 import { syncPaymentPlans } from '../payment-plan-sync';
 import { AppStateService } from './app-state.service';
 import { CashflowCardText } from './cashflow-card-text.service';
@@ -499,6 +510,11 @@ function deepClone<T>(value: T): T {
  * not a clear browser cache"). A page reload/dev-server restart reads it straight back; clearing
  * the browser's site data removes it same as everything else — no extra code needed for that part.
  */
+/** The kinds of insurance that have a premium of their own (the catalogue). */
+const CATALOG_KINDS = new Set(
+  INSURANCE_CATALOG.filter((info) => info.baseMinor !== undefined).map((info) => info.kind),
+);
+
 const UNDO_STACK_STORAGE_KEY = 'cashflowUndoStack';
 
 /** The most characters the browser's copy of the undo history may take (localStorage holds about 5 million in all). */
@@ -520,8 +536,27 @@ export class CashflowGameService {
   /** "Now" for everything the game dates and stamps. A property (not a constructor argument) so a test can pin it. */
   clock: Clock = systemClock;
 
+  /** The faces rolled since the last `noteDice()`: what the card in front of the player shows small, for as long as it is open. */
+  private readonly diceLog: number[] = [];
+
   /** Where chance comes from (the dice, the card draws, a shuffled profession). A property so a test - or the solo engine - can pin it. */
-  rng: Rng = systemRng;
+  rng: Rng = loggedRng(systemRng, this.diceLog);
+
+  /** Forgets the faces of earlier rolls: called before a throw the player sees, so only its own dice are noted. */
+  forgetDice(): void {
+    this.diceLog.length = 0;
+  }
+
+  /** Keeps the dice rolled since in the pending decision, so the card shows them again whenever the player comes back to it. */
+  noteDice(): number[] {
+    const rolled = this.diceLog.splice(0);
+    if (rolled.length === 0) return rolled;
+    this.updatePending((pending) => ({
+      ...pending,
+      dice: [...(pending.dice ?? []), ...rolled].slice(-12),
+    }));
+    return rolled;
+  }
 
   /**
    * Not synced to the DB — see `UNDO_STACK_STORAGE_KEY`'s own comment. Starts from whatever's in
@@ -605,6 +640,16 @@ export class CashflowGameService {
     return message === null ? null : CashflowGameService.ruleText(message);
   }
 
+  /** The account is a game account of a build that carries the game: its content has to be loaded (it may not be yet). */
+  static wantsContent(): boolean {
+    return CASHFLOW_CONTENT_AVAILABLE && Boolean(ProfileComponent.mail?.includes('cashflow'));
+  }
+
+  /** Resolves when the game content is there; at once for an account that is not a game account. */
+  ensureContent(): Promise<void> {
+    return CashflowGameService.wantsContent() ? ensureCashflowContent() : Promise.resolve();
+  }
+
   static isCashflowGame(): boolean {
     // The Firebase builds carry no game content (cashflow-content.firebase.ts): no sets, no game.
     return (
@@ -650,8 +695,15 @@ export class CashflowGameService {
         money: (amountMinor) => this.amountText(fromMinorUnits(amountMinor)),
       },
       this.undoStackAt ?? this.clock.nowIso(),
+      this.encodeCache,
     );
   }
+
+  /** What was worked out of the history's steps: a chain that grows by one step is encoded by working out one step (JFK, 2026-10-27). */
+  private readonly encodeCache = new WeakMap<
+    object,
+    { newer: object | undefined; encoded: never }
+  >();
 
   /**
    * Takes over the account's history when it is newer than the browser's (another device played, or the Pro API did).
@@ -713,12 +765,18 @@ export class CashflowGameService {
     try {
       // The browser's copy is a convenience with a budget of its own (the books must always fit beside it): when a very long
       // game outgrows it, the oldest steps stay out of it - the account and saved games keep the whole chain.
-      let kept = this.undoStack;
-      let json = JSON.stringify(encodeUndoChain(kept));
-      while (json.length > LOCAL_UNDO_BUDGET && kept.length > 1) {
-        kept = kept.slice(Math.ceil(kept.length / 4));
-        json = JSON.stringify(encodeUndoChain(kept));
+      // every step is encoded and written once; the oldest are left out until the rest fits (dropping the oldest changes nothing in the
+      // others: each step is stored relative to the newer one)
+      const parts = encodeUndoChain(this.undoStack, this.encodeCache as never).snapshots.map(
+        (snapshot) => JSON.stringify(snapshot),
+      );
+      let start = 0;
+      let size = parts.reduce((sum, part) => sum + part.length + 1, 0);
+      while (size > LOCAL_UNDO_BUDGET && start < parts.length - 1) {
+        size -= parts[start].length + 1;
+        start += 1;
       }
+      const json = `{"format":2,"snapshots":[${parts.slice(start).join(',')}]}`;
       localStorage.setItem(UNDO_STACK_STORAGE_KEY, json);
       if (this.undoStackAt) localStorage.setItem(UNDO_STACK_AT_KEY, this.undoStackAt);
     } catch {
@@ -861,6 +919,8 @@ export class CashflowGameService {
   private applySnapshot(snapshot: CashflowGameSnapshot): void {
     const state = AppStateService.instance;
     const planBefore = state.cashflowGame.budgetPlan ?? [];
+    // the steps of a chain read from a save share their items: what goes back into the game is its own copy
+    snapshot = JSON.parse(JSON.stringify(snapshot)) as CashflowGameSnapshot;
     state.allTransactions = snapshot.allTransactions;
     state.allSubscriptions = snapshot.allSubscriptions;
     state.allGrowProjects = snapshot.allGrowProjects;
@@ -1020,7 +1080,7 @@ export class CashflowGameService {
   }
 
   /**
-   * A note in a project of the game - a Grow, Fire or Smile project, found by its title - with what happened and the numbers of it
+   * A note in a project of the game - a Grow, Fire or Dream project, found by its title - with what happened and the numbers of it
    * (JFK, 2026-10-26: "when something happens or was diced or decided I want to have a note in that project").
    */
   private noteProject(title: string, en: string, de: string): void {
@@ -1229,7 +1289,7 @@ export class CashflowGameService {
       }),
     );
 
-    // the character's dream is a Smile project from the first day (JFK, 2026-10-25), in the language of the game
+    // the character's dream is a Dream project from the first day (JFK, 2026-10-25), in the language of the game
     const story = result.profession.profile?.texts;
     const dream = (story?.[this.translate.currentLang] ?? story?.['en'])?.dream.project;
     if (dream) {
@@ -1291,14 +1351,19 @@ export class CashflowGameService {
             insurance: {
               ...insurance,
               premiums: translatedPremiums,
+              // the ones the player chose: of the character's own and of the catalogue
               active: startInsurances
-                ? insurance.active.filter((kind) => startInsurances.includes(kind))
+                ? startInsurances.filter(
+                    (kind) => kind in translatedPremiums || CATALOG_KINDS.has(kind),
+                  )
                 : insurance.active,
             },
           }
         : {}),
       budgetPlan: [],
     };
+    // every insurance of the catalogue is on offer, as at a table; the ones chosen for the start are held
+    this.applyInsuranceOffers(startInsurances);
     // a new game starts without the plan of the last one
     if (state.tier2Loaded) {
       state.allBudgets = applyPlanChange(
@@ -1314,6 +1379,79 @@ export class CashflowGameService {
       includeSubscriptions: true,
       includeBalanceSheet: true,
     });
+  }
+
+  /**
+   * Every insurance of the catalogue is on offer in a game of the custom edition (JFK, 2026-11), as at a table: a premium line for each,
+   * not held until the player hops in. Done again it changes nothing. `startActive` is what the player chose for the start (when the
+   * character has no insurance lines of its own the game has no insurance state yet). Returns whether a line was added.
+   */
+  private applyInsuranceOffers(startActive?: string[]): boolean {
+    const state = AppStateService.instance;
+    const game = state.cashflowGame;
+    const profession = this.currentProfession();
+    if (!game.life || !profession) return false;
+    const known = game.insurance?.premiums ?? {};
+    const missing = INSURANCE_CATALOG.filter(
+      (info) => info.baseMinor !== undefined && !(info.kind in known),
+    );
+    if (missing.length === 0) return false;
+    const premiums = { ...known };
+    const lineTitles = { ...(game.lineTitles ?? {}) };
+    const titles = [...game.gameSubscriptionTitles];
+    const usedDays = this.currentMonthGameSubscriptionDays();
+    this.ensureGameLocation();
+    for (const info of missing) {
+      const title = this.translateOrFallback(
+        `CashflowGame.expenseLine.${info.lineKey}`,
+        info.lineTitle,
+      );
+      premiums[info.kind] = title;
+      lineTitles[info.lineKey] = title;
+      if (!titles.includes(title)) titles.push(title);
+      const premium = premiumMinor(
+        info.baseMinor!,
+        profession.priceFactor,
+        profession.insuranceFactor,
+      );
+      state.allSubscriptions = [
+        ...state.allSubscriptions.filter((sub) => sub.title !== title),
+        {
+          title,
+          account: 'Fire',
+          amount: -fromMinorUnits(premium),
+          startDate: this.nextSmartSubscriptionDate(usedDays),
+          endDate: '',
+          category: `@${title}`,
+          comment: '#dreamfund',
+          frequency: 'monthly',
+          locationId: GAME_BANK_LOCATION_ID,
+        },
+      ];
+    }
+    state.cashflowGame = {
+      ...game,
+      gameSubscriptionTitles: titles,
+      lineTitles,
+      insurance: {
+        active: game.insurance?.active ?? startActive ?? [],
+        premiums,
+        pending: game.insurance?.pending ?? [],
+        ...(game.insurance?.fresh ? { fresh: game.insurance.fresh } : {}),
+      },
+    };
+    return true;
+  }
+
+  /** A game that began before an insurance was in the catalogue is given its offer too (the lines are saved with the game). */
+  ensureInsuranceOffers(): void {
+    if (!this.applyInsuranceOffers()) return;
+    this.persistAll(
+      'cashflow_insurance_offers',
+      {},
+      { onSuccess: () => undefined, onError: () => undefined },
+      { quiet: true, includeSubscriptions: true },
+    );
   }
 
   /** Resolves a translation key against the currently-selected language, falling back to `fallback` (game-sets.ts's own string) if no such key exists yet — the same behavior ngx-translate's own missing-key handler already gives every other key in the app. */
@@ -1850,7 +1988,14 @@ export class CashflowGameService {
     ).length;
   }
 
-  private get emergencyContext(): EmergencyContext {
+  /** What things cost this character, and the level of the game: the factor the amounts of an Emergency card are worked out with. */
+  get emergencyPriceFactor(): number {
+    return (
+      (this.currentProfession()?.priceFactor ?? 1) * this.levelSettings.emergencyCostMultiplier
+    );
+  }
+
+  get emergencyContext(): EmergencyContext {
     const game = AppStateService.instance.cashflowGame;
     return {
       insurances: activeInsurances(game),
@@ -1921,7 +2066,7 @@ export class CashflowGameService {
           skipped: [] as string[],
           deck: { ...deck, seen: [...deck.seen.filter((id) => id !== named.id), named.id] },
         }
-      : drawEmergencyCard(cards, deck, game.possessions ?? [], this.rng);
+      : drawEmergencyCard(cards, deck, game.possessions ?? [], this.rng, game.life);
     this.recordTileCard('emergency', draw.card);
     state.cashflowGame = {
       ...game,
@@ -2004,8 +2149,17 @@ export class CashflowGameService {
 
   /** Hop in or hop out of an insurance: it takes effect with the next Payday. */
   setInsurance(kind: string, on: boolean, callbacks: CashflowGameCallbacks): void {
+    const remote = RemoteGameHook.current;
+    if (remote?.dreamfund && remote.dreamMove) {
+      // a table keeps the insurances on its server: the answer comes back with the table's next update
+      void remote.dreamMove({ decision: 'setInsurance', kind, on }).then((outcome) => {
+        if (outcome.ok) callbacks.onSuccess();
+        else callbacks.onError(outcome.message ?? 'The insurance could not be changed.');
+      });
+      return;
+    }
     const state = AppStateService.instance;
-    const next = queueInsuranceChange(state.cashflowGame, kind, on);
+    const next = chooseInsurance(state.cashflowGame, kind, on, false);
     if (next === state.cashflowGame) {
       callbacks.onSuccess();
       return;
@@ -2047,16 +2201,7 @@ export class CashflowGameService {
     const gameDate = game.virtualDate ?? this.clock.todayIso();
     const title = `${card.title[lang]} · M${String(game.round).padStart(2, '0')}`;
 
-    const buckets = quote.buckets.map((bucket) => ({
-      id: `${title}-${bucket.id}`,
-      title: bucket.title[lang],
-      target: fromMinorUnits(bucket.amountMinor),
-      amount: 0,
-      notes: '',
-      ...(bucket.dueInMonths > 0
-        ? { targetDate: addMonthsToIsoDate(gameDate, bucket.dueInMonths) }
-        : {}),
-    }));
+    // the project of the card: description, bucket notes and links, actions and notes - as the project of a dream
     const insuranceNote = quote.insured
       ? this.translate.instant('CashflowGame.emergency.insuredNote', {
           saved: fromMinorUnits(quote.savedMinor),
@@ -2065,24 +2210,27 @@ export class CashflowGameService {
       : card.insurance
         ? this.translate.instant('CashflowGame.emergency.uninsuredNote')
         : '';
-    const notes = [
-      ...(card.stat ? [card.stat[lang]] : []),
-      ...(card.insuranceNote ? [card.insuranceNote[lang]] : []),
-      ...(insuranceNote ? [insuranceNote] : []),
-      ...(card.refund ? [card.refund.note[lang]] : []),
-    ].map((text) => ({ text, createdAt: now }));
+    const parts = emergencyProjectParts(card, lang, quote, insuranceNote);
+    const buckets = parts.buckets.map((bucket) => ({
+      id: `${title}-${bucket.id}`,
+      title: bucket.title,
+      target: fromMinorUnits(bucket.amountMinor),
+      amount: 0,
+      notes: bucket.notes,
+      ...(bucket.links.length > 0 ? { links: bucket.links } : {}),
+      ...(bucket.dueInMonths > 0
+        ? { targetDate: addMonthsToIsoDate(gameDate, bucket.dueInMonths) }
+        : {}),
+    }));
+    const notes = parts.notes.map((text) => ({ text, createdAt: now }));
     const project: Fire = {
       title,
       sub: `${this.translate.instant(`CashflowGame.emergency.tier.${card.tier}`)} · ${card.category}`,
       phase: 'saving',
-      description: card.story[lang],
+      description: parts.description,
       buckets,
-      links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
-      actionItems: card.actions.map((action) => ({
-        text: action.text[lang],
-        done: false,
-        priority: action.priority,
-      })),
+      links: parts.links,
+      actionItems: parts.actionItems.map((action) => ({ ...action, done: false })),
       notes,
       emergencyCardId: card.id,
       ...(card.payment === 'pay_now' ? { emergencyPayNow: true } : {}),
@@ -2217,7 +2365,12 @@ export class CashflowGameService {
   /** The rules of this Custom JFK game (null in a classic game): what the player may decide and what the cards decide. */
   get customRules(): CustomRules | null {
     const game = AppStateService.instance.cashflowGame;
-    return game.life || game.customRules ? normalizeCustomRules(game.customRules) : null;
+    if (!game.life && !game.customRules) return null;
+    // a game saved before the dream points goal existed has none: it is not given one on the way
+    return normalizeCustomRules({
+      ...(game.customRules ?? {}),
+      dreamPointsGoal: game.customRules?.dreamPointsGoal ?? 0,
+    });
   }
 
   /** Whether the game lets the player decline what life offers (a game setting). */
@@ -2565,6 +2718,8 @@ export class CashflowGameService {
       date: this.gameDay,
       rng: this.rng,
       difficulty: this.customRules?.difficulty,
+      validRolls: this.customRules?.sellValidTurns,
+      taxPercent: this.customRules?.capitalGainsTaxPercent,
     };
   }
 
@@ -2972,8 +3127,9 @@ export class CashflowGameService {
     );
   }
 
+  /** A classic table is played: the stack tiles of the Dreamer are part of a solo game and of a Dreamer table, not of this. */
   private remote_(): boolean {
-    return !!RemoteGameHook.current;
+    return !!RemoteGameHook.current && !RemoteGameHook.current.dreamfund;
   }
 
   /** What a card asks of the player: their life, the stage of their career, what they owe, what they already own. */
@@ -3376,7 +3532,7 @@ export class CashflowGameService {
     return AppStateService.instance.cashflowGame.dreamSettings ?? DEFAULT_DREAM_SETTINGS;
   }
 
-  /** The Smile projects of the dreams the character has taken, with the card each came from. */
+  /** The Dream projects of the dreams the character has taken, with the card each came from. */
   get openDreams() {
     const state = AppStateService.instance;
     return this.dreamLog.open
@@ -3490,7 +3646,7 @@ export class CashflowGameService {
     this.persistAll('cashflow_dream_draw', { offers, moment }, callbacks, { quiet: true });
   }
 
-  /** A dream is taken: it becomes a Smile project (buckets, links, tasks, notes), to be funded there. */
+  /** A dream is taken: it becomes a Dream project (buckets, links, tasks, notes), to be funded there. */
   takeDream(cardId: string, callbacks: CashflowGameCallbacks): void {
     const state = AppStateService.instance;
     const game = state.cashflowGame;
@@ -3516,27 +3672,26 @@ export class CashflowGameService {
       deck: 'dream',
     });
     const now = new Date().toISOString();
+    const parts = dreamProjectParts(card, lang);
     const project: Smile = {
       title: card.title[lang],
+      points: livedPoints(card),
       sub: `${this.translate.instant(`CashflowGame.dream.tier.${card.tier}`)} · ${this.translate.instant(`CashflowGame.dream.category.${card.category}`)} · ${livedPoints(card)} ${this.translate.instant('CashflowGame.dream.points')}`,
       dreamCardId: card.id,
       phase: 'planning',
-      description: card.story[lang],
-      buckets: card.buckets.map((bucket) => ({
+      description: parts.description,
+      buckets: parts.buckets.map((bucket) => ({
         id: `${card.title[lang]}-${bucket.id}`,
-        title: bucket.title[lang],
+        title: bucket.title,
         target: fromMinorUnits(bucket.amountMinor),
         amount: 0,
-        notes: '',
+        notes: bucket.notes,
+        links: bucket.links,
       })),
-      links: card.links.map((link) => ({ label: link.label[lang], url: link.url })),
-      actionItems: card.actions.map((action) => ({
-        text: action.text[lang],
-        done: false,
-        priority: action.priority,
-      })),
+      links: parts.links,
+      actionItems: parts.actionItems,
       notes: [
-        ...(card.stat ? [{ text: card.stat[lang], createdAt: now }] : []),
+        ...parts.notes.map((text) => ({ text, createdAt: now })),
         ...(card.monthlyAfterMinor
           ? [
               {
@@ -3714,7 +3869,7 @@ export class CashflowGameService {
         addGift(300);
         applied = project
           ? say(`300 went into ${project.title}.`, `300 gingen in ${project.title}.`)
-          : say('300 went to your Smile account.', '300 gingen auf dein Smile-Konto.');
+          : say('300 went to your Dream account.', '300 gingen auf dein Traumkonto.');
         break;
       case 'M06': {
         const net = fromMinorUnits(
@@ -3734,8 +3889,8 @@ export class CashflowGameService {
               `${money(amount)} gingen in ${project.title}.`,
             )
           : say(
-              `${money(amount)} went to your Smile account.`,
-              `${money(amount)} gingen auf dein Smile-Konto.`,
+              `${money(amount)} went to your Dream account.`,
+              `${money(amount)} gingen auf dein Traumkonto.`,
             );
         break;
       }
@@ -3885,13 +4040,13 @@ export class CashflowGameService {
 
   // ── Solo mode: the token walks the rat-race ring (todo/cashflow-game-pro.md, Phase C) ──────────────
 
-  /** The track the token walks: the map of a Dreamfund game (shape, size, seed), or the classic ring. */
+  /** The track the token walks: the map of a Dreamer game (shape, size, seed), or the classic ring. */
   get board(): RatRaceBoard {
     const setup = AppStateService.instance.cashflowGame.boardSetup;
     return setup ? buildDreamfundBoard(setup).board : CLASSIC_RAT_RACE_BOARD;
   }
 
-  /** Where the tiles of a Dreamfund map stand, for the picture; null on the classic ring. */
+  /** Where the tiles of a Dreamer map stand, for the picture; null on the classic ring. */
   get boardMap(): DreamfundBoard | null {
     const setup = AppStateService.instance.cashflowGame.boardSetup;
     return setup ? buildDreamfundBoard(setup) : null;
@@ -5558,17 +5713,32 @@ export class CashflowGameService {
 
   private currentGameSet(): CashflowGameSet | undefined {
     const { gameSetId } = AppStateService.instance.cashflowGame;
-    const set = gameSetId
+    const base = gameSetId
       ? this.gameSets.find((candidate) => candidate.id === gameSetId)
       : undefined;
+    // the cards are as big as the character's price level makes them (a surgeon plays the same cards, scaled up)
+    const { professionId } = AppStateService.instance.cashflowGame;
+    const profession = base?.professions.find((candidate) => candidate.id === professionId);
+    const set = base
+      ? gameSetFor(base, profession?.priceFactor, { round: profession?.roundNumbers })
+      : undefined;
     const custom = set ? this.customRules : null;
-    if (!set || !custom || set.loanRule.monthlyInterestPercent === custom.bankInterestPercent) {
+    if (!set || !custom) return set;
+    // the Bank loan of a custom game costs and steps as its settings say (a step of 0 is the character's own)
+    const step = custom.bankLoanStepMinor || set.loanRule.incrementMinor;
+    if (
+      set.loanRule.monthlyInterestPercent === custom.bankInterestPercent &&
+      step === set.loanRule.incrementMinor
+    ) {
       return set;
     }
-    // the Bank loan of a custom game costs what its setting says
     return {
       ...set,
-      loanRule: { ...set.loanRule, monthlyInterestPercent: custom.bankInterestPercent },
+      loanRule: {
+        ...set.loanRule,
+        monthlyInterestPercent: custom.bankInterestPercent,
+        incrementMinor: step,
+      },
     };
   }
 

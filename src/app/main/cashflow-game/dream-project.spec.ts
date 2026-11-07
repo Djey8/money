@@ -4,7 +4,7 @@ import { dreamToSmile } from './dream-project';
 describe('dreamToSmile', () => {
   const student = CASHFLOW_GAME_SETS.find((set) => set.id === 'jfk-stories')!.professions[0];
 
-  it('turns the static dream into the Smile project of the app: buckets at 0, with their notes, links, tasks and notes', () => {
+  it('turns the static dream into the Dream project of the app: buckets at 0, with their notes, links, tasks and notes', () => {
     const project = dreamToSmile(
       student.profile!.texts['en'].dream.project!,
       '2026-10-25T10:00:00.000Z',

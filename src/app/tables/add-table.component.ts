@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import type { TableView } from '@money/domain';
 import { TablesApiService, type CreateTableInput } from './tables-api.service';
 import { ProfileComponent } from '../panels/profile/profile.component';
@@ -17,6 +17,8 @@ import { tablesTexts, type TablesTexts } from './tables.texts';
 import { addTableTexts, type AddTableTexts } from './add-table.texts';
 import { hallTexts, type HallTexts } from './hall.texts';
 import { WheelPickerComponent } from './wheel-picker.component';
+import { BoardThumbComponent } from '../main/cashflow-game/board-thumb.component';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 import {
   APP_LANGUAGES,
   GAME_LANGUAGES,
@@ -39,7 +41,7 @@ function accountName(): string {
 @Component({
   selector: 'app-add-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, WheelPickerComponent],
+  imports: [CommonModule, FormsModule, TranslateModule, WheelPickerComponent, BoardThumbComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css'],
   template: `
@@ -62,7 +64,33 @@ function accountName(): string {
           <!-- the table -->
           <section class="at-group">
             <h3>{{ a.groupTable }}</h3>
-            <div class="at-row">
+            <div class="at-row at-row--stack" *ngIf="!existing">
+              <div class="at-label">
+                <strong>{{ d.gameChoice }}</strong>
+                <small>{{ dream ? d.gameDreamHint : d.gameClassicHint }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="d.gameChoice">
+                <button
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="!dream"
+                  [attr.aria-checked]="!dream"
+                  (click)="game = 'classic'"
+                >
+                  {{ d.gameClassic }}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="dream"
+                  [attr.aria-checked]="dream"
+                  (click)="game = 'dreamfund'"
+                >
+                  {{ d.gameDream }}
+                </button>
+              </div>
+            </div>
+            <div class="at-row" data-demo="at-name">
               <div class="at-label">
                 <strong>{{ a.name }}</strong>
                 <small>{{ a.nameHint }}</small>
@@ -104,6 +132,24 @@ function accountName(): string {
                   (click)="chooseLanguage(lang.code)"
                 >
                   <img [src]="lang.flag" [alt]="lang.name" width="32" />
+                </button>
+              </div>
+            </div>
+            <div class="at-row at-row--stack" *ngIf="dream">
+              <div class="at-label">
+                <strong>{{ a.currency }}</strong>
+                <small>{{ a.currencyHint }}</small>
+              </div>
+              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.currency">
+                <button
+                  *ngFor="let option of currencyOptions()"
+                  type="button"
+                  role="radio"
+                  [class.at-seg--on]="form.currency === option.id"
+                  [attr.aria-checked]="form.currency === option.id"
+                  (click)="form.currency = option.id"
+                >
+                  {{ option.label }}
                 </button>
               </div>
             </div>
@@ -160,7 +206,7 @@ function accountName(): string {
           <!-- the game -->
           <section class="at-group">
             <h3>{{ a.groupGame }}</h3>
-            <div class="at-row">
+            <div class="at-row" data-demo="at-ranked">
               <div class="at-label">
                 <strong>{{ a.ranked }}</strong>
                 <small>{{ a.rankedHint }}</small>
@@ -175,6 +221,123 @@ function accountName(): string {
                 <span class="at-switch-track"></span>
               </label>
             </div>
+            <ng-container *ngIf="dream">
+              <!-- what the game is played for: the life dream alone, or the dream points as well -->
+              <div class="at-row">
+                <div class="at-label">
+                  <strong>{{ d.dreamPointsTitle }}</strong>
+                  <small>{{ form.pointsOn ? d.dreamPointsHint : d.dreamPointsOffHint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    name="pointsOn"
+                    [(ngModel)]="form.pointsOn"
+                    [attr.aria-label]="d.dreamPointsTitle"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
+              </div>
+              <div class="at-row at-row--stack" *ngIf="form.pointsOn">
+                <div class="at-label">
+                  <strong>{{ d.dreamPointsGoal }}</strong>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.dreamPointsGoal">
+                  <button
+                    *ngFor="let points of pointGoals"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.points === points"
+                    [attr.aria-checked]="form.points === points"
+                    (click)="form.points = points"
+                  >
+                    {{ points }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack" data-demo="at-difficulty">
+                <div class="at-label">
+                  <strong>{{ d.difficulty }}</strong>
+                  <small>{{ difficultyHint() }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.difficulty">
+                  <button
+                    *ngFor="let level of levels"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.difficulty === level"
+                    [attr.aria-checked]="form.difficulty === level"
+                    (click)="form.difficulty = level"
+                  >
+                    {{ d[level] }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.map }}</strong>
+                </div>
+                <div class="at-maps">
+                  <button
+                    *ngFor="let shape of shapes"
+                    type="button"
+                    class="at-map"
+                    [class.at-map--on]="form.shape === shape"
+                    (click)="form.shape = shape"
+                  >
+                    <app-board-thumb
+                      [shape]="shape"
+                      [size]="form.size"
+                      [seed]="form.layoutSeed"
+                      [dreams]="form.pointsOn"
+                    ></app-board-thumb>
+                    <span>{{ 'CashflowGame.board.shape.' + shape | translate }}</span>
+                  </button>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.map">
+                  <button
+                    *ngFor="let size of sizes"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.size === size"
+                    [attr.aria-checked]="form.size === size"
+                    (click)="form.size = size"
+                  >
+                    {{ 'CashflowGame.board.size.' + size | translate }}
+                  </button>
+                </div>
+                <button type="button" class="at-another" (click)="anotherLayout()">
+                  ↻ {{ 'CashflowGame.board.another' | translate }}
+                </button>
+              </div>
+              <!-- a ranked game is always played under the strict rules; the choice is for a game with friends -->
+              <div class="at-row at-row--stack" *ngIf="!form.ranked">
+                <div class="at-label">
+                  <strong>{{ d.mode }}</strong>
+                  <small>{{ d.modeFriendsHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.mode">
+                  <button
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.mode === 'guided'"
+                    [attr.aria-checked]="form.mode === 'guided'"
+                    (click)="form.mode = 'guided'"
+                  >
+                    {{ d.guided }}
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.mode === 'strict'"
+                    [attr.aria-checked]="form.mode === 'strict'"
+                    (click)="form.mode = 'strict'"
+                  >
+                    {{ d.strict }}
+                  </button>
+                </div>
+              </div>
+            </ng-container>
             <div class="at-row at-row--stack">
               <div class="at-label">
                 <strong>{{ a.endCondition }}</strong>
@@ -227,77 +390,6 @@ function accountName(): string {
             </div>
           </section>
 
-          <!-- time -->
-          <section class="at-group">
-            <h3>{{ a.groupTime }}</h3>
-            <div class="at-row at-row--stack">
-              <div class="at-label">
-                <strong>{{ a.clock }}</strong>
-                <small>{{ clockHint() }}</small>
-              </div>
-              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.clock">
-                <button
-                  *ngFor="let option of clockOptions(); trackBy: trackValue"
-                  type="button"
-                  role="radio"
-                  [class.at-seg--on]="form.clock === option.value"
-                  [attr.aria-checked]="form.clock === option.value"
-                  (click)="form.clock = option.value"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
-            </div>
-            <div class="at-row" *ngIf="form.clock === 'per-move'">
-              <div class="at-label">
-                <strong>{{ a.seconds }}</strong>
-              </div>
-              <app-wheel-picker
-                [options]="moveSecondOptions"
-                [(value)]="form.seconds"
-                [min]="10"
-                [max]="3600"
-                [unit]="a.unitSeconds"
-                [label]="a.seconds"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-            <div class="at-row" *ngIf="form.clock === 'bank'">
-              <div class="at-label">
-                <strong>{{ a.seconds }}</strong>
-              </div>
-              <app-wheel-picker
-                [options]="bankSecondOptions"
-                [(value)]="form.bankSeconds"
-                [min]="60"
-                [max]="14400"
-                [unit]="a.unitSeconds"
-                [label]="a.seconds"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-            <div class="at-row at-row--stack">
-              <div class="at-label">
-                <strong>{{ a.pace }}</strong>
-                <small>{{ a.paceHint }}</small>
-              </div>
-              <div class="at-seg" role="radiogroup" [attr.aria-label]="a.pace">
-                <button
-                  *ngFor="let option of paceOptions(); trackBy: trackValue"
-                  type="button"
-                  role="radio"
-                  [class.at-seg--on]="form.pace === option.value"
-                  [attr.aria-checked]="form.pace === option.value"
-                  (click)="form.pace = option.value"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
-            </div>
-          </section>
-
           <!-- the rules of play: only on demand, so the panel stays short -->
           <button
             type="button"
@@ -308,57 +400,264 @@ function accountName(): string {
             <span>{{ showAdvanced ? '▾' : '▸' }} {{ a.advanced }}</span>
             <small>{{ a.advancedHint }}</small>
           </button>
-          <section class="at-group" *ngIf="showAdvanced">
-            <h3>{{ a.groupRules }}</h3>
-            <div class="at-row" *ngFor="let rule of switches(); trackBy: trackRule">
-              <div class="at-label">
-                <strong>{{ rule.title }}</strong>
-                <small>{{ rule.hint }}</small>
+          <ng-container *ngIf="showAdvanced">
+            <!-- time -->
+            <section class="at-group">
+              <h3>{{ a.groupTime }}</h3>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ a.clock }}</strong>
+                  <small>{{ clockHint() }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="a.clock">
+                  <button
+                    *ngFor="let option of clockOptions(); trackBy: trackValue"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.clock === option.value"
+                    [attr.aria-checked]="form.clock === option.value"
+                    (click)="form.clock = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
               </div>
-              <label class="at-switch">
-                <input
-                  type="checkbox"
-                  [name]="rule.key"
-                  [checked]="rule.on"
-                  (change)="toggle(rule.key)"
-                  [attr.aria-label]="rule.title"
-                />
-                <span class="at-switch-track"></span>
-              </label>
-            </div>
-            <div class="at-row" *ngIf="form.ranked">
-              <div class="at-label">
-                <strong>{{ a.leaveFree }}</strong>
-                <small>{{ a.leaveFreeHint }}</small>
+              <div class="at-row" *ngIf="form.clock === 'per-move'">
+                <div class="at-label">
+                  <strong>{{ a.seconds }}</strong>
+                </div>
+                <app-wheel-picker
+                  [options]="moveSecondOptions"
+                  [(value)]="form.seconds"
+                  [min]="10"
+                  [max]="3600"
+                  [unit]="a.unitSeconds"
+                  [label]="a.seconds"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
               </div>
-              <app-wheel-picker
-                [options]="leaveOptions"
-                [(value)]="form.leaveFreeRounds"
-                [min]="0"
-                [max]="3"
-                [label]="a.leaveFree"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-            <div class="at-row">
-              <div class="at-label">
-                <strong>{{ a.offerRolls }}</strong>
-                <small>{{ a.offerRollsHint }}</small>
+              <div class="at-row" *ngIf="form.clock === 'bank'">
+                <div class="at-label">
+                  <strong>{{ a.seconds }}</strong>
+                </div>
+                <app-wheel-picker
+                  [options]="bankSecondOptions"
+                  [(value)]="form.bankSeconds"
+                  [min]="60"
+                  [max]="14400"
+                  [unit]="a.unitSeconds"
+                  [label]="a.seconds"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
               </div>
-              <app-wheel-picker
-                [options]="offerOptions"
-                [(value)]="form.offerRolls"
-                [min]="1"
-                [max]="12"
-                [label]="a.offerRolls"
-                [otherLabel]="a.otherNumber"
-                [ownLabel]="a.ownNumber"
-              ></app-wheel-picker>
-            </div>
-          </section>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ a.pace }}</strong>
+                  <small>{{ a.paceHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="a.pace">
+                  <button
+                    *ngFor="let option of paceOptions(); trackBy: trackValue"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.pace === option.value"
+                    [attr.aria-checked]="form.pace === option.value"
+                    (click)="form.pace = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+              </div>
+            </section>
 
-          <button class="tx-btn tx-btn--primary at-open" type="submit" [disabled]="busy">
+            <section class="at-group" *ngIf="dream && form.pointsOn">
+              <h3>{{ d.groupDreams }}</h3>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.dreamOffersTitle }}</strong>
+                  <small>{{ d.dreamOffersHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.dreamOffersTitle">
+                  <button
+                    *ngFor="let offers of dreamOfferChoices"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.dreamOffers === offers"
+                    [attr.aria-checked]="form.dreamOffers === offers"
+                    (click)="form.dreamOffers = offers"
+                  >
+                    {{ offers === 0 ? d.dreamOffersChance : offers }}
+                  </button>
+                </div>
+              </div>
+              <div class="at-row at-row--stack">
+                <div class="at-label">
+                  <strong>{{ d.maxOpenTitle }}</strong>
+                  <small>{{ d.maxOpenHint }}</small>
+                </div>
+                <div class="at-seg" role="radiogroup" [attr.aria-label]="d.maxOpenTitle">
+                  <button
+                    *ngFor="let open of maxOpenChoices"
+                    type="button"
+                    role="radio"
+                    [class.at-seg--on]="form.maxOpen === open"
+                    [attr.aria-checked]="form.maxOpen === open"
+                    (click)="form.maxOpen = open"
+                  >
+                    {{ open === 0 ? d.maxOpenNoLimit : open }}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="at-group">
+              <h3>{{ a.groupRules }}</h3>
+              <ng-container *ngIf="dream">
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
+                    <strong>{{ d.taxTitle }}</strong>
+                    <small>{{ d.taxHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.taxTitle">
+                    <button
+                      *ngFor="let rate of taxChoices"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.tax === rate"
+                      [attr.aria-checked]="form.tax === rate"
+                      (click)="form.tax = rate"
+                    >
+                      {{ rate === 0 ? d.taxNone : rate + ' %' }}
+                    </button>
+                  </div>
+                </div>
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
+                    <strong>{{ d.sellValidTitle }}</strong>
+                    <small>{{ d.sellValidHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.sellValidTitle">
+                    <button
+                      *ngFor="let turns of sellValidChoices"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.sellValid === turns"
+                      [attr.aria-checked]="form.sellValid === turns"
+                      (click)="form.sellValid = turns"
+                    >
+                      {{ turns }}
+                    </button>
+                  </div>
+                </div>
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
+                    <strong>{{ d.bankStep }}</strong>
+                    <small>{{ d.bankStepHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankStep">
+                    <button
+                      *ngFor="let step of bankSteps"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.bankStep === step"
+                      [attr.aria-checked]="form.bankStep === step"
+                      (click)="form.bankStep = step"
+                    >
+                      {{ bankStepLabel(step) }}
+                    </button>
+                  </div>
+                </div>
+                <div class="at-row at-row--stack">
+                  <div class="at-label">
+                    <strong>{{ d.bankInterest }}</strong>
+                    <small>{{ d.bankInterestHint }}</small>
+                  </div>
+                  <div class="at-seg" role="radiogroup" [attr.aria-label]="d.bankInterest">
+                    <button
+                      *ngFor="let percent of bankInterests"
+                      type="button"
+                      role="radio"
+                      [class.at-seg--on]="form.bankInterest === percent"
+                      [attr.aria-checked]="form.bankInterest === percent"
+                      (click)="form.bankInterest = percent"
+                    >
+                      {{ percent }} %
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+              <div class="at-row" *ngFor="let rule of switches(); trackBy: trackRule">
+                <div class="at-label">
+                  <strong>{{ rule.title }}</strong>
+                  <small>{{ rule.hint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    [name]="rule.key"
+                    [checked]="rule.on"
+                    (change)="toggle(rule.key)"
+                    [attr.aria-label]="rule.title"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
+              </div>
+              <div class="at-row" *ngIf="form.ranked && !dream">
+                <div class="at-label">
+                  <strong>{{ a.leaveFree }}</strong>
+                  <small>{{ a.leaveFreeHint }}</small>
+                </div>
+                <app-wheel-picker
+                  [options]="leaveOptions"
+                  [(value)]="form.leaveFreeRounds"
+                  [min]="0"
+                  [max]="3"
+                  [label]="a.leaveFree"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
+              </div>
+              <div class="at-row" *ngIf="!dream">
+                <div class="at-label">
+                  <strong>{{ a.offerRolls }}</strong>
+                  <small>{{ a.offerRollsHint }}</small>
+                </div>
+                <app-wheel-picker
+                  [options]="offerOptions"
+                  [(value)]="form.offerRolls"
+                  [min]="1"
+                  [max]="12"
+                  [label]="a.offerRolls"
+                  [otherLabel]="a.otherNumber"
+                  [ownLabel]="a.ownNumber"
+                ></app-wheel-picker>
+              </div>
+              <div class="at-row" *ngIf="dream">
+                <div class="at-label">
+                  <strong>{{ d.debugGame }}</strong>
+                  <small>{{ d.debugGameHint }}</small>
+                </div>
+                <label class="at-switch">
+                  <input
+                    type="checkbox"
+                    name="debug"
+                    [(ngModel)]="form.debug"
+                    [attr.aria-label]="d.debugGame"
+                  />
+                  <span class="at-switch-track"></span>
+                </label>
+              </div>
+            </section>
+          </ng-container>
+
+          <button
+            class="tx-btn tx-btn--primary at-open"
+            type="submit"
+            data-demo="at-open"
+            [disabled]="busy"
+          >
             {{ existing ? h.settingsSave : a.open }}
           </button>
         </form>
@@ -413,6 +712,42 @@ function accountName(): string {
         margin: 0 0 8px;
         font-size: 0.85rem;
         opacity: 0.75;
+      }
+      /* the maps, as in the solo setup: a grid of small boards, the chosen one framed */
+      /* one row of maps: more maps are scrolled to, never a second row (JFK, 2026-11-04) */
+      .at-maps {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .at-map {
+        flex: 0 0 5.6rem;
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 8px 6px;
+        border: 2px solid var(--color-border, #d9dde3);
+        border-radius: var(--radius-md, 10px);
+        background: var(--color-surface, #fff);
+        color: inherit;
+        font: inherit;
+        font-size: 0.82rem;
+        cursor: pointer;
+      }
+      .at-map app-board-thumb {
+        width: 100%;
+        max-width: 5.5rem;
+      }
+      .at-map--on {
+        border-color: var(--color-primary, #2a7de1);
+        font-weight: 700;
       }
       .at-form {
         display: flex;
@@ -486,6 +821,16 @@ function accountName(): string {
         width: 5rem;
         text-transform: uppercase;
         text-align: center;
+      }
+      .at-another {
+        align-self: flex-start;
+        padding: 6px 12px;
+        border: 1px solid var(--color-border, #ccc);
+        border-radius: 10px;
+        background: var(--color-surface, #fff);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
       }
       .at-seg {
         display: flex;
@@ -615,6 +960,24 @@ export class AddTableComponent implements OnInit {
   /** Why the table refused the changed settings (shown in the panel, which stays open). */
   @Input() problem: string | null = null;
 
+  /** The game the table is for: the classic Cashflow, or the Dreamer of this app (the same panel, a few settings more). */
+  @Input() game: 'classic' | 'dreamfund' = 'classic';
+  /** The guided demo game is being set up: the table starts unranked (the demo is never ranked) and the coach of the demo points at the settings. */
+  @Input() demo = false;
+  readonly levels = ['easy', 'medium', 'hard'] as const;
+  readonly shapes = ['ring', 'infinity', 'yinyang', 'rectangle', 'square', 'mountain'] as const;
+  readonly sizes = ['small', 'medium', 'large'] as const;
+  d: DreamTexts = dreamTexts('en');
+  get dream(): boolean {
+    return this.game === 'dreamfund';
+  }
+  difficultyHint(): string {
+    return this.d[`${this.form.difficulty}Hint` as 'easyHint'];
+  }
+  sizeText(size: string): string {
+    return size === 'small' ? this.d.small : size === 'large' ? this.d.large : this.d.mediumSize;
+  }
+
   t: TablesTexts = tablesTexts('en');
   a: AddTableTexts = addTableTexts('en');
   h: HallTexts = hallTexts('en');
@@ -653,8 +1016,28 @@ export class AddTableComponent implements OnInit {
     showProgress: true,
     ranked: true,
     language: 'en',
+    // 'game' is Dream Taler (Traumtaler in German); else the sign of a real currency
+    currency: 'game',
+    // the layout of the tiles: the host sees the maps dealt from it and can deal again
+    layoutSeed: Math.floor(Math.random() * 1_000_000_000),
     offerRolls: 3,
-    pace: 'normal' as 'fast' | 'normal' | 'slow',
+    pace: 'fast' as 'fast' | 'normal' | 'slow',
+    difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+    shape: 'ring' as 'ring' | 'infinity' | 'yinyang' | 'rectangle' | 'square' | 'mountain',
+    size: 'medium' as 'small' | 'medium' | 'large',
+    mode: 'guided' as 'guided' | 'strict',
+    bankStep: 100000,
+    bankInterest: 10,
+    // what the game is played for: 10 dream points besides the life dream (off: the life dream alone, no Smile tiles)
+    pointsOn: true,
+    points: 10,
+    dreamOffers: 0,
+    maxOpen: 3,
+    // how many of a player's own turns a sell offer of a Harvest card stays open
+    sellValid: 2,
+    // the tax on the profit of a sale, in percent (0 = none)
+    tax: 26.375,
+    debug: false,
   };
 
   constructor(
@@ -663,6 +1046,36 @@ export class AddTableComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private languageService: LanguageService,
   ) {}
+
+  /** The steps the Bank loan moves in, in minor units: any amount (1), 50, 100, 200, 500, 1000. */
+  readonly bankSteps = [1, 5000, 10000, 20000, 50000, 100000];
+  readonly bankInterests = [5, 8, 10, 12, 15];
+  readonly realCurrencies = ['€', '$', '£', '¥', 'CHF'];
+
+  /** The money to choose: the game's own (DT, TT in German) and the real signs, as in a solo game. */
+  /** The same shape and size with the tiles dealt out again. */
+  anotherLayout(): void {
+    this.form.layoutSeed = Math.floor(Math.random() * 1_000_000_000);
+  }
+
+  currencyOptions(): { id: string; label: string }[] {
+    return [
+      { id: 'game', label: this.form.language === 'de' ? 'TT' : 'DT' },
+      ...this.realCurrencies.map((sign) => ({ id: sign, label: sign })),
+    ];
+  }
+  readonly pointGoals = [5, 8, 10, 15, 20, 30];
+  readonly sellValidChoices = [1, 2, 3, 4, 5];
+  readonly taxChoices = [0, 15, 20, 26.375, 30];
+  /** How many dreams a landing on a Smile tile offers: 0 is one or two, by chance. */
+  readonly dreamOfferChoices = [0, 1, 2];
+  /** How many dreams a player can have open at once: 0 is no limit. */
+  readonly maxOpenChoices = [0, 1, 2, 3, 4, 5, 6, 8, 10];
+
+  bankStepLabel(step: number): string {
+    if (step === 1) return this.d.bankStepFree;
+    return String(step / 100);
+  }
 
   get defaultLetters(): string {
     return defaultInitials(this.nickname);
@@ -673,8 +1086,10 @@ export class AddTableComponent implements OnInit {
     this.t = tablesTexts(lang);
     this.a = addTableTexts(lang);
     this.h = hallTexts(lang);
+    this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
     if (this.existing) this.fillFrom(this.existing);
+    if (this.demo) this.form.ranked = false;
     const own = lang.slice(0, 2) === 'zh' ? 'cn' : lang.slice(0, 2);
     // only the languages the game is offered in; anything else starts as English
     this.form.language = GAME_LANGUAGES.some((game) => game.code === own) ? own : 'en';
@@ -749,10 +1164,10 @@ export class AddTableComponent implements OnInit {
     ];
   }
 
-  /** The on/off rules, each with what it does in one line. */
+  /** The on/off rules, each with what it does in one line (a Dreamer table has no undo vote or off-turn repaying yet). */
   switches() {
     const f = this.form;
-    return [
+    const all = [
       {
         key: 'turnGate' as const,
         on: f.turnGate,
@@ -784,6 +1199,13 @@ export class AddTableComponent implements OnInit {
         hint: this.a.repayOffTurnHint,
       },
     ];
+    // a Dreamer table has no turn gate: everybody is only asked to continue by a card that is time-sensitive (a Harvest card)
+    return this.dream
+      ? all.filter(
+          (rule) =>
+            rule.key !== 'allowUndo' && rule.key !== 'repayOffTurn' && rule.key !== 'turnGate',
+        )
+      : all;
   }
   toggle(key: 'turnGate' | 'spectators' | 'showProgress' | 'allowUndo' | 'repayOffTurn'): void {
     this.form[key] = !this.form[key];
@@ -795,6 +1217,7 @@ export class AddTableComponent implements OnInit {
     void this.languageService.use(code as AppLanguage['code']).then(() => {
       this.t = tablesTexts(code);
       this.a = addTableTexts(code);
+      this.d = dreamTexts(code);
       this.suggestion = this.a.suggestions[this.suggestionIndex % this.a.suggestions.length];
       this.rtl = code === 'ar';
       this.cdr.markForCheck();
@@ -810,6 +1233,38 @@ export class AddTableComponent implements OnInit {
         : f.clock === 'bank'
           ? { mode: 'bank', bankSeconds: f.bankSeconds, incrementSeconds: 0 }
           : { mode: 'none' };
+    if (this.dream) {
+      return {
+        name: (f.name.trim() || this.suggestion).slice(0, 40),
+        visibility: f.visibility,
+        maxSeats: f.maxSeats,
+        professions: f.professions,
+        clock,
+        endCondition: f.endCondition === 'first-escape' ? 'first-win' : f.endCondition,
+        ...(f.endCondition === 'round-limit' ? { roundLimit: f.roundLimit } : {}),
+        spectators: f.spectators,
+        turnGate: false,
+        pace: f.pace,
+        showProgress: f.showProgress,
+        ranked: f.debug ? false : f.ranked,
+        ...(f.debug ? { debug: true } : {}),
+        difficulty: f.difficulty,
+        shape: f.shape,
+        size: f.size,
+        mode: f.ranked ? 'strict' : f.mode,
+        dreamPoints: f.pointsOn ? f.points : 0,
+        currency: f.currency,
+        layoutSeed: f.layoutSeed,
+        customRules: {
+          bankLoanStepMinor: f.bankStep,
+          bankInterestPercent: f.bankInterest,
+          dreamOffers: f.dreamOffers,
+          maxOpenDreams: f.maxOpen,
+          sellValidTurns: f.sellValid,
+          capitalGainsTaxPercent: f.tax,
+        },
+      };
+    }
     return {
       name: (f.name.trim() || this.suggestion).slice(0, 40),
       visibility: f.visibility,
@@ -837,7 +1292,8 @@ export class AddTableComponent implements OnInit {
     f.maxSeats = current.maxSeats;
     f.visibility = current.visibility;
     f.professions = current.professions;
-    f.endCondition = current.endCondition;
+    f.endCondition =
+      (current.endCondition as string) === 'first-win' ? 'first-escape' : current.endCondition;
     if (current.roundLimit) f.roundLimit = current.roundLimit;
     f.spectators = current.spectators;
     f.allowUndo = current.allowRewind;
@@ -847,6 +1303,43 @@ export class AddTableComponent implements OnInit {
     f.showProgress = current.showProgress;
     f.ranked = current.ranked;
     f.pace = current.pace;
+    const dreamSettings = current as unknown as Partial<typeof this.form>;
+    if (dreamSettings.difficulty) f.difficulty = dreamSettings.difficulty;
+    if (dreamSettings.shape) f.shape = dreamSettings.shape;
+    if (dreamSettings.size) f.size = dreamSettings.size;
+    if (dreamSettings.mode) f.mode = dreamSettings.mode;
+    const savedCurrency = (current as unknown as { currency?: string }).currency;
+    if (savedCurrency) f.currency = savedCurrency;
+    const savedLayout = (current as unknown as { layoutSeed?: number }).layoutSeed;
+    if (savedLayout) f.layoutSeed = savedLayout;
+    const points = (current as unknown as { dreamPoints?: number }).dreamPoints;
+    if (points !== undefined) {
+      f.pointsOn = points > 0;
+      if (points > 0) f.points = points;
+    }
+    const rules = (
+      current as unknown as {
+        customRules?: { bankLoanStepMinor?: number; bankInterestPercent?: number };
+      }
+    ).customRules;
+    f.debug = (current as unknown as { debug?: boolean }).debug === true;
+    if (rules?.bankLoanStepMinor) f.bankStep = rules.bankLoanStepMinor;
+    if ((rules as { dreamOffers?: number } | undefined)?.dreamOffers !== undefined) {
+      f.dreamOffers = (rules as { dreamOffers: number }).dreamOffers;
+    }
+    if (
+      (rules as { capitalGainsTaxPercent?: number } | undefined)?.capitalGainsTaxPercent !==
+      undefined
+    ) {
+      f.tax = (rules as { capitalGainsTaxPercent: number }).capitalGainsTaxPercent;
+    }
+    if ((rules as { sellValidTurns?: number } | undefined)?.sellValidTurns !== undefined) {
+      f.sellValid = (rules as { sellValidTurns: number }).sellValidTurns;
+    }
+    if ((rules as { maxOpenDreams?: number } | undefined)?.maxOpenDreams !== undefined) {
+      f.maxOpen = (rules as { maxOpenDreams: number }).maxOpenDreams;
+    }
+    if (rules?.bankInterestPercent !== undefined) f.bankInterest = rules.bankInterestPercent;
     f.offerRolls = current.rules.sellOfferRolls;
     if (current.clock.mode === 'per-move') {
       f.clock = 'per-move';
@@ -864,6 +1357,7 @@ export class AddTableComponent implements OnInit {
     }
     const letters = saveInitials(this.initials);
     const input: CreateTableInput = {
+      ...(this.dream ? { kind: 'dreamfund' as const } : {}),
       nickname: this.nickname.trim(),
       ...(letters ? { initials: letters } : {}),
       language: this.form.language,

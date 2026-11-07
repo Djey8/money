@@ -34,7 +34,7 @@
     "colCategory": "Category",
     "colAverage": "Average",
     "colMost": "Most expensive",
-    "noteDoodads": "{count} Doodad cards in all, and the average card costs {average}. Smile / Splurge is the account the app suggests for the payment.",
+    "noteDoodads": "{count} Doodad cards in all, and the average card costs {average}. Dream / Splurge is the account the app suggests for the payment.",
     "colPile": "Pile",
     "pileSmall": "Small Deal",
     "pileBig": "Big Deal",
@@ -770,7 +770,7 @@
         },
         {
           "type": "p",
-          "text": "The big, dreamy purchases (a boat, a kitchen, a first car for a child) are suggested on your **Smile** account; the small things on **Splurge**. Neither takes money from your **Fire** or **Daily** accounts. Every card has a category such as Leisure, Home or Events, so your statements show where a game’s worth of Doodads went."
+          "text": "The big, dreamy purchases (a boat, a kitchen, a first car for a child) are suggested on your **Dream** account; the small things on **Splurge**. Neither takes money from your **Fire** or **Daily** accounts. Every card has a category such as Leisure, Home or Events, so your statements show where a game’s worth of Doodads went."
         },
         {
           "type": "data",
@@ -969,7 +969,7 @@
           "rows": [
             [
               "Cash",
-              "The sum of your Daily, Splurge, Smile and Fire accounts. Income is split between them by the percentages of your account."
+              "The sum of your Daily, Splurge, Dream and Fire accounts. Income is split between them by the percentages of your account."
             ],
             [
               "Salary, expenses, passive income",
@@ -990,15 +990,15 @@
             ],
             [
               "Your game over time",
-              "**Stats**: charts of each account, with markers for Grow trades, Smile and Fire payments, the bank loan and Doodads."
+              "**Stats**: charts of each account, with markers for Grow trades, Dream and Fire payments, the bank loan and Doodads."
             ]
           ]
         },
         {
           "type": "callout",
           "kind": "note",
-          "title": "Fire and Smile in the game",
-          "text": "Purchases, loans and repair bills run through **Fire**. Dreamy Doodads run through **Smile**, small ones through **Splurge**. That is only the suggestion of the app - you can always book a payment from another account in the Add dialog."
+          "title": "Fire and Dream in the game",
+          "text": "Purchases, loans and repair bills run through **Fire**. Dreamy Doodads run through **Dream**, small ones through **Splurge**. That is only the suggestion of the app - you can always book a payment from another account in the Add dialog."
         },
         {
           "type": "callout",
@@ -1599,8 +1599,8 @@
               "text": "Money from the bank in steps of 1.000 at 10% of the loan per month."
             },
             {
-              "term": "Fire / Smile / Splurge / Daily",
-              "text": "The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Smile, small ones through Splurge."
+              "term": "Fire / Dream / Splurge / Daily",
+              "text": "The four spending accounts of Money App. In the game, purchases go through Fire, dreamy Doodads through Dream, small ones through Splurge."
             }
           ]
         }

@@ -28,6 +28,7 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
+import { AccountLabelPipe } from '../../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let AppComponent: any;
@@ -68,6 +69,7 @@ setTimeout(() => import('../info.component').then((m) => (InfoComponent = m.Info
   selector: 'app-info-grow',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -126,7 +128,22 @@ export class InfoGrowComponent extends BaseInfoComponent {
   // Current detail tab
   static activeTab: 'overview' | 'actions' | 'notes' | 'financials' = 'overview';
 
+  /** The project is only looked at (an example in the manual): it is not in the account, and nothing can be changed or saved. */
+  static preview = false;
+  private static previewProject: Grow | null = null;
+
+  /** Shows a project that is not in the account, read only, above whatever is open. */
+  static openPreview(project: Grow, zIndex: number) {
+    InfoGrowComponent.setInfoGrowComponent(-1, project);
+    InfoGrowComponent.preview = true;
+    InfoGrowComponent.previewProject = project;
+    InfoGrowComponent.zIndex = zIndex;
+    InfoGrowComponent.isInfo = true;
+  }
+
   static setInfoGrowComponent(id: number, project: Grow) {
+    InfoGrowComponent.preview = false;
+    InfoGrowComponent.previewProject = null;
     InfoGrowComponent.index = id;
     InfoGrowComponent.title = project.title;
     InfoGrowComponent.sub = project.sub;
@@ -238,7 +255,15 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
   /** The project open in this panel. */
   private get openProject(): Grow | undefined {
+    if (InfoGrowComponent.preview) return InfoGrowComponent.previewProject ?? undefined;
     return AppStateService.instance.allGrowProjects[InfoGrowComponent.index];
+  }
+
+  /** In a game the phases follow the game flow: nobody moves a project on by hand. */
+  get inGame(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() && !!AppStateService.instance.cashflowGame.professionId
+    );
   }
 
   /** Buy / Sell are offered for shares, properties and assets - the same projects the Grow grid offers them for. */
@@ -348,12 +373,14 @@ export class InfoGrowComponent extends BaseInfoComponent {
 
   override closeWindow() {
     this.classReference.isInfo = false;
+    InfoGrowComponent.preview = false;
+    InfoGrowComponent.previewProject = null;
     InfoGrowComponent.isEdit = false;
   }
 
   /**
-   * Adds an amount to a Smile Project.
-   * @param index - The index of the Smile Project.
+   * Adds an amount to a Dream Project.
+   * @param index - The index of the Dream Project.
    */
   paybackProject(index: number) {
     // find liabilitie index
@@ -797,6 +824,13 @@ export class InfoGrowComponent extends BaseInfoComponent {
     this.editingLinkIndex = -1;
     this.editingLinkLabel = '';
     this.editingLinkUrl = '';
+  }
+
+  phaseOptions: GrowPhase[] = ['idea', 'research', 'plan', 'execute', 'monitor', 'completed'];
+
+  getPreviousPhase(): GrowPhase {
+    const idx = this.phaseOptions.indexOf(this.classReference.phase);
+    return this.phaseOptions[Math.max(idx - 1, 0)];
   }
 
   getNextPhase(): GrowPhase {

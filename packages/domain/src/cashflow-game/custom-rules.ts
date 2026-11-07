@@ -29,6 +29,8 @@ export interface CustomRules {
   /** How many dreams a Dream tile offers (1 to 3), and how many can be open at once. */
   dreamOffers: number;
   maxOpenDreams: number;
+  /** The dream points to collect besides the life dream (JFK, 2026-11): 0 is the life dream alone, with no dream tiles on the map. */
+  dreamPointsGoal: number;
   /** The dreams offered may all be refused. */
   dreamMayDecline: boolean;
   /** A Life card that offers a choice may be declined. */
@@ -44,10 +46,26 @@ export interface CustomRules {
   savingsCardCopies: number;
   /** How many turns a planned Opportunity card can still be bought: 1 = only in the turn the card is in hand (JFK, 2026-10-26). */
   opportunityValidTurns: number;
+  /**
+   * How many of the player's own turns a sell offer of a Harvest card stays open (JFK, 2026-11-05): 1 = only in the turn the card is
+   * played, 2 = this one and the next, and so on. After that the deal is off - life goes on.
+   */
+  sellValidTurns: number;
+  /**
+   * The tax on the profit of a sale, in percent of the profit (JFK, 2026-11-06; 0 = none). The default is the German flat tax on capital
+   * gains with the solidarity surcharge, 26.375 %. A sale at a loss pays nothing; the profit is what the sale brings after the costs and
+   * what is owed on it, less what was paid for it.
+   */
+  capitalGainsTaxPercent: number;
   /** The level of the game: the defaults of the decks and the odds. Only Medium is offered until the simulation has set the others. */
   difficulty: Difficulty;
   /** What the Bank loan costs each month, in percent of what is borrowed (JFK, 2026-10-26: 10 %, a setting). */
   bankInterestPercent: number;
+  /**
+   * The steps the Bank loan moves in, in minor units (JFK, 2026-11-03): 0 is the character's own step (it grows with the price level), 1 is
+   * any amount at all, else 50, 100, 200, 500 or 1000 units.
+   */
+  bankLoanStepMinor: number;
 }
 
 export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
@@ -56,16 +74,20 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     cardChoice: 'free',
     dreamOffers: 2,
     maxOpenDreams: 3,
+    dreamPointsGoal: 10,
     dreamMayDecline: true,
     lifeMayDecline: true,
     careerMustRoll: false,
     emergencySettle: 'never',
     ownProjects: true,
     bankInterestPercent: 10,
+    bankLoanStepMinor: 0,
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
     opportunityValidTurns: 1,
+    sellValidTurns: 2,
+    capitalGainsTaxPercent: 26.375,
     difficulty: 'medium',
   },
   guided: {
@@ -73,16 +95,20 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     cardChoice: 'random',
     dreamOffers: 2,
     maxOpenDreams: 3,
+    dreamPointsGoal: 10,
     dreamMayDecline: true,
     lifeMayDecline: true,
     careerMustRoll: true,
     emergencySettle: 'payNow',
     ownProjects: true,
     bankInterestPercent: 10,
+    bankLoanStepMinor: 0,
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
     opportunityValidTurns: 1,
+    sellValidTurns: 2,
+    capitalGainsTaxPercent: 26.375,
     difficulty: 'medium',
   },
   strict: {
@@ -90,6 +116,7 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     cardChoice: 'random',
     dreamOffers: 2,
     maxOpenDreams: 3,
+    dreamPointsGoal: 10,
     // the dreams of the cards are for the points of a ranked game: they may be refused or given up; the life dream is the aim
     dreamMayDecline: true,
     lifeMayDecline: false,
@@ -97,10 +124,13 @@ export const CUSTOM_RULE_PRESETS: Record<CustomMode, CustomRules> = {
     emergencySettle: 'all',
     ownProjects: false,
     bankInterestPercent: 10,
+    bankLoanStepMinor: 0,
     opportunityOffers: 2,
     maxSideHustles: 3,
     savingsCardCopies: 2,
     opportunityValidTurns: 1,
+    sellValidTurns: 2,
+    capitalGainsTaxPercent: 26.375,
     difficulty: 'medium',
   },
 };
@@ -116,8 +146,11 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
     mode: base.mode,
     cardChoice:
       raw?.cardChoice === 'free' || raw?.cardChoice === 'random' ? raw.cardChoice : base.cardChoice,
-    dreamOffers: clamp(raw?.dreamOffers, 1, 3, base.dreamOffers),
-    maxOpenDreams: clamp(raw?.maxOpenDreams, 1, 5, base.maxOpenDreams),
+    // 0: one or two dreams at each landing, by chance
+    dreamOffers: clamp(raw?.dreamOffers, 0, 3, base.dreamOffers),
+    // 0: no limit, a player may have as many dreams open as they like
+    maxOpenDreams: clamp(raw?.maxOpenDreams, 0, 20, base.maxOpenDreams),
+    dreamPointsGoal: clamp(raw?.dreamPointsGoal, 0, 60, base.dreamPointsGoal),
     dreamMayDecline:
       typeof raw?.dreamMayDecline === 'boolean' ? raw.dreamMayDecline : base.dreamMayDecline,
     lifeMayDecline:
@@ -132,10 +165,18 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
         : base.emergencySettle,
     ownProjects: typeof raw?.ownProjects === 'boolean' ? raw.ownProjects : base.ownProjects,
     bankInterestPercent: clamp(raw?.bankInterestPercent, 1, 30, base.bankInterestPercent),
+    bankLoanStepMinor: clamp(raw?.bankLoanStepMinor, 0, 10000000, base.bankLoanStepMinor),
     opportunityOffers: clamp(raw?.opportunityOffers, 1, 3, base.opportunityOffers),
     maxSideHustles: clamp(raw?.maxSideHustles, 1, 5, base.maxSideHustles),
     savingsCardCopies: clamp(raw?.savingsCardCopies, 1, 3, base.savingsCardCopies),
     opportunityValidTurns: clamp(raw?.opportunityValidTurns, 1, 3, base.opportunityValidTurns),
+    sellValidTurns: clamp(raw?.sellValidTurns, 1, 5, base.sellValidTurns),
+    capitalGainsTaxPercent: (() => {
+      const value = Number(raw?.capitalGainsTaxPercent);
+      return Number.isFinite(value)
+        ? Math.min(50, Math.max(0, Math.round(value * 1000) / 1000))
+        : base.capitalGainsTaxPercent;
+    })(),
     difficulty:
       raw?.difficulty === 'easy' || raw?.difficulty === 'medium' || raw?.difficulty === 'hard'
         ? raw.difficulty
@@ -146,7 +187,10 @@ export function normalizeCustomRules(raw: Partial<CustomRules> | undefined | nul
 /** Whether the settings are exactly those of their mode (a changed setting makes it a custom mix). */
 export function isPresetMode(rules: CustomRules): boolean {
   const preset = CUSTOM_RULE_PRESETS[rules.mode];
-  return (Object.keys(preset) as (keyof CustomRules)[]).every((key) => preset[key] === rules[key]);
+  // the difficulty is a choice of its own (JFK, 2026-10-27), not a change of the mode's rules
+  return (Object.keys(preset) as (keyof CustomRules)[])
+    .filter((key) => key !== 'difficulty')
+    .every((key) => preset[key] === rules[key]);
 }
 
 /** The classic rules the engine enforces for a mode: strict is the classic strict, and so on. */

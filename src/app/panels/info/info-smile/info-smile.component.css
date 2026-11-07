@@ -1826,3 +1826,39 @@
 #infoTransaction-Container.preview .phase-advance {
   display: none !important;
 }
+
+/* what living a dream is worth: the dream points of a project */
+.points-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--color-warning, #d98e04);
+  color: var(--color-warning, #d98e04);
+}
+
+.points-badge--corner {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+}
+
+/* the phase stepper: back, any phase, forward */
+.phase-stepper {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.phase-select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.4));
+  background: var(--color-surface, transparent);
+  color: inherit;
+  font: inherit;
+}

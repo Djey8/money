@@ -2200,11 +2200,11 @@ Each item represents a distinct spending pattern with deep behavioral insights a
   }
 
   // ========================================
-  // PHASE 3: Smile Project AI Generator
+  // PHASE 3: Dream Project AI Generator
   // ========================================
 
   /**
-   * Generates a prompt for creating a new Smile project from a dream/goal
+   * Generates a prompt for creating a new Dream project from a dream/goal
    */
   generateSmileCreatePrompt(config: {
     goal: string;
@@ -2219,8 +2219,8 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     const anon = config.anonymized;
     const lang = this.getCurrentLanguage();
 
-    let prompt = `# CREATE NEW SMILE PROJECT\n\n`;
-    prompt += `I want to create a detailed Smile Project plan for: **${config.goal}**\n\n`;
+    let prompt = `# CREATE NEW dream PROJECT\n\n`;
+    prompt += `I want to create a detailed Dream Project plan for: **${config.goal}**\n\n`;
 
     prompt += `## YOUR TASK\n`;
     prompt += `1. Research this goal thoroughly (depth: ${config.researchDepth})\n`;
@@ -2456,13 +2456,13 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     const smileAllocation = this.state.smile; // percentage
     const smileMonthlyBudget = (monthlyIncome * smileAllocation) / 100;
 
-    // Get Smile account balance
+    // Get Dream account balance
     const smileAccountBalance = this.state.getAmount('Smile', smileAllocation / 100);
 
     // Calculate last month's contribution (simplified)
     const lastMonthContribution = smileMonthlyBudget; // Approximation
 
-    // Existing Smile projects
+    // Existing Dream projects
     const existingProjects = this.state.allSmileProjects || [];
     const totalSmileTarget = existingProjects.reduce((sum, p) => {
       const bucketTotal = (p.buckets || []).reduce((s, b) => s + (b.target || 0), 0);
@@ -2480,14 +2480,14 @@ Each item represents a distinct spending pattern with deep behavioral insights a
 - Smile allocation: ${smileAllocation}% (~${this.toRange(smileMonthlyBudget)}/mo)
 - Current Smile savings: ${this.toRange(smileAccountBalance)}
 - Last month contribution: ${this.toRange(lastMonthContribution)}
-- Existing Smile projects: ${existingProjects.length} totaling ${this.toRange(totalSmileTarget)} (${this.toRange(totalSmileSaved)} saved)
+- Existing Dream projects: ${existingProjects.length} totaling ${this.toRange(totalSmileTarget)} (${this.toRange(totalSmileSaved)} saved)
 - Net worth range: ${this.toRange(netWorth)}`;
     } else {
       return `- Monthly income: ${this.currency}${monthlyIncome.toFixed(0)}
 - Smile allocation: ${smileAllocation}% (${this.currency}${smileMonthlyBudget.toFixed(0)}/mo)
 - Current Smile savings: ${this.currency}${smileAccountBalance.toFixed(2)}
 - Last month contribution: ${this.currency}${lastMonthContribution.toFixed(0)}
-- Existing Smile projects: ${existingProjects.length} totaling ${this.currency}${totalSmileTarget.toFixed(0)} (${this.currency}${totalSmileSaved.toFixed(0)} saved)
+- Existing Dream projects: ${existingProjects.length} totaling ${this.currency}${totalSmileTarget.toFixed(0)} (${this.currency}${totalSmileSaved.toFixed(0)} saved)
 - Net worth: ${this.currency}${netWorth.toFixed(0)}`;
     }
   }
@@ -2843,7 +2843,7 @@ Each item represents a distinct spending pattern with deep behavioral insights a
   }
 
   /**
-   * Generates a prompt for improving existing Smile projects
+   * Generates a prompt for improving existing Dream projects
    */
   generateSmileImprovePrompt(
     existingProjects: any[],
@@ -2860,8 +2860,8 @@ Each item represents a distinct spending pattern with deep behavioral insights a
     const lang = this.getCurrentLanguage();
     const multi = existingProjects.length > 1;
 
-    let prompt = `# UPDATE EXISTING SMILE PROJECT${multi ? 'S' : ''}\n\n`;
-    prompt += `I want to update and improve ${multi ? 'these' : 'this'} existing Smile Project${multi ? 's' : ''}.\n\n`;
+    let prompt = `# UPDATE EXISTING dream PROJECT${multi ? 'S' : ''}\n\n`;
+    prompt += `I want to update and improve ${multi ? 'these' : 'this'} existing Dream Project${multi ? 's' : ''}.\n\n`;
 
     // User's plan / intent
     if (config.userPlan) {

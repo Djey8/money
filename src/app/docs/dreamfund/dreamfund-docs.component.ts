@@ -1,9 +1,19 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
-import { NgClass, NgFor, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
+import { DecimalPipe, NgClass, NgFor, NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, type Subscription } from 'rxjs';
+import { InfoFireComponent } from '../../panels/info/info-fire/info-fire.component';
+import { InfoSmileComponent } from '../../panels/info/info-smile/info-smile.component';
+import { InfoGrowComponent } from '../../panels/info/info-grow/info-grow.component';
+import {
+  EXAMPLE_FIRE,
+  EXAMPLE_GROW,
+  EXAMPLE_SMILE,
+  exampleCards,
+  type ExampleCard,
+} from './dreamfund-examples';
 import { DemoService } from '../../shared/services/demo.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
 import {
@@ -18,8 +28,8 @@ import {
 let AppComponent: any;
 setTimeout(() => import('src/app/app.component').then((m) => (AppComponent = m.AppComponent)));
 
-/** The languages the Dreamfund manual is written in; the others read the English one. */
-export const DREAMFUND_MANUAL_LANGUAGES = ['en', 'de'];
+/** The languages the Dreamer manual is written in; the others read the English one. */
+export const DREAMFUND_MANUAL_LANGUAGES = ['en'];
 export const DREAMFUND_MANUAL_FALLBACK = 'en';
 
 /** The manual file: the sections in the order of the page. */
@@ -28,18 +38,34 @@ interface DreamfundManual extends ManualContent {
 }
 
 /**
- * The Dreamfund (Traumtopf) game manual (JFK, 2026-10-26): what the game is, the map, every card type, the goals, and the statistics of
+ * The Dreamer (Träumer) game manual (JFK, 2026-10-26): what the game is, the map, every card type, the goals, and the statistics of
  * the characters. Made from docs/DREAMFUND_GAME.md and docs/DREAMFUND_GAME.de.md by `scripts/dreamfund-manual.js`, so the page and the
  * manual never differ; the statistics in it are written by the simulation. Only for game accounts, like the Cashflow manual.
  */
 @Component({
   selector: 'app-dreamfund-docs',
   standalone: true,
-  imports: [NgIf, NgFor, NgClass, NgSwitch, NgSwitchCase, RouterLink, TranslateModule],
+  imports: [
+    DecimalPipe,
+    NgIf,
+    NgFor,
+    NgClass,
+    NgSwitch,
+    NgSwitchCase,
+    RouterLink,
+    TranslateModule,
+    InfoFireComponent,
+    InfoSmileComponent,
+    InfoGrowComponent,
+  ],
   templateUrl: './dreamfund-docs.component.html',
   styleUrls: [
     '../selfhosted/selfhosted-docs.component.css',
     '../cashflow/cashflow-docs.component.css',
+    '../../main/fire/fire-emergencies/fire-emergencies.component.css',
+    '../../main/smile/smile-projects/smile-projects.component.css',
+    '../../main/grow/grow.component.css',
+    './dreamfund-docs.component.css',
     '../../landing/landing-page.component.css',
     '../../app.component.css',
   ],
@@ -52,6 +78,21 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
   loadFailed = false;
   /** The manual is not written in the app's language yet - the English text is shown. */
   usingFallback = false;
+  /** The cards of an example grid (real projects, in a planned phase). */
+  examples(kind: 'fire' | 'smile' | 'grow'): ExampleCard[] {
+    // made once: a new list on every check would draw the cards again under the press
+    return (this.exampleCache[kind] ??= exampleCards(kind));
+  }
+
+  private readonly exampleCache: Partial<Record<'fire' | 'smile' | 'grow', ExampleCard[]>> = {};
+
+  /** Opens the app's own info panel on an example project: read only, not in the account. */
+  openExample(kind: 'fire' | 'smile' | 'grow', index: number): void {
+    const z = 3000;
+    if (kind === 'fire') InfoFireComponent.openPreview(EXAMPLE_FIRE[index], z);
+    else if (kind === 'smile') InfoSmileComponent.openPreview(EXAMPLE_SMILE[index], z);
+    else InfoGrowComponent.openPreview(EXAMPLE_GROW[index], z);
+  }
 
   private langSubscription?: Subscription;
   private segmentCache = new Map<string, RichSegment[]>();
@@ -128,6 +169,11 @@ export class DreamfundDocsComponent implements OnInit, OnDestroy {
     } catch {
       this.loadFailed = true;
     }
+  }
+
+  /** The tone of an example card: the colour of its pile. */
+  pileTone(pile: string): string {
+    return pile === 'tree' ? '#2e7d32' : pile === 'sapling' ? '#558b2f' : '#7b1fa2';
   }
 
   selectSection(index: number): void {

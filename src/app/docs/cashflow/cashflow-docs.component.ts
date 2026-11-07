@@ -14,7 +14,7 @@ import {
   type CashflowMarketCard,
   type CashflowProfession,
 } from '@money/domain';
-import { CASHFLOW_GAME_SETS } from '../../shared/cashflow-content';
+import { CASHFLOW_GAME_SETS, ensureCashflowContent } from '../../shared/cashflow-content';
 import { DemoService } from '../../shared/services/demo.service';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { CashflowGameService } from '../../shared/services/cashflow-game.service';
@@ -161,6 +161,8 @@ export class CashflowDocsComponent implements OnInit, OnDestroy {
     this.usingFallback = wanted !== language;
     this.loadFailed = false;
     try {
+      // the manual draws its cards from the catalog, which is loaded on demand
+      if (CashflowGameService.wantsContent()) await ensureCashflowContent();
       this.tableCache.clear();
       this.faceCache.clear();
       this.content = await firstValueFrom(

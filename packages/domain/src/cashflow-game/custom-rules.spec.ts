@@ -49,10 +49,12 @@ describe('the rules of the Custom JFK edition', () => {
     expect(isPresetMode(mixed)).toBe(false);
     expect(isPresetMode(CUSTOM_RULE_PRESETS.guided)).toBe(true);
     // nonsense is clamped
-    expect(normalizeCustomRules({ dreamOffers: 99, maxOpenDreams: 0 })).toMatchObject({
+    expect(normalizeCustomRules({ dreamOffers: 99, maxOpenDreams: 99 })).toMatchObject({
       dreamOffers: 3,
-      maxOpenDreams: 1,
+      maxOpenDreams: 20,
     });
+    // 0 is no limit on the open dreams
+    expect(normalizeCustomRules({ maxOpenDreams: 0 }).maxOpenDreams).toBe(0);
   });
 
   it('the classic rules the engine enforces are those of the mode', () => {

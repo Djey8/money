@@ -1,8 +1,8 @@
-# Dreamfund (Traumtopf) - the game, the cards and the numbers
+# Dreamer (Träumer) - the game, the cards and the numbers
 
-Dreamfund is the Money Manager's own money game, played inside your real accounts of the app: you roll the dice, walk a map, and
+Dreamer is the Money Manager's own money game, played inside your real accounts of the app: you roll the dice, walk a map, and
 everything that happens - a salary, a bill, a share you buy, a dream you fund - is booked as a real transaction, a Grow project, a
-Smile or Fire project in the game's books. The aim is to build a life you can afford: pay back what you owe, keep a reserve, live
+Dream or Fire project in the game's books. The aim is to build a life you can afford: pay back what you owe, keep a reserve, live
 your dream and let your money work for you.
 
 The game's money is the **Traumtaler (TT)**. Everything in this page is about the **Medium** level, the one that is balanced first.
@@ -28,7 +28,7 @@ games and is written by the simulation itself (see `docs/DREAMFUND_SIMULATION.md
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | **Daily**   | Bills and everyday life: rent, food, insurance. Your salary lands here.                                                          |
 | **Splurge** | Spending that is only for fun.                                                                                                   |
-| **Smile**   | Your dreams. Every dream is a **Smile project** with buckets (flights, hotel, equipment...) that you fill.                       |
+| **Dream**   | Your dreams. Every dream is a **Dream project** with buckets (flights, hotel, equipment...) that you fill.                       |
 | **Fire**    | What must be paid: emergencies, the reserve, investments. Every payment to an Emergency or a purchase is a **Fire** transaction. |
 | **Mojo**    | Your emergency reserve: three months of expenses. It is a Fire project from day one and may only be used for emergencies.        |
 
@@ -46,7 +46,7 @@ you can hop in or out of an insurance with the next Payday. Without it, the bill
 
 ## The map
 
-A Dreamfund map is a closed track of tiles in a shape - **ring, infinity, rectangle, square or mountain** - and a size (**24, 36 or 48
+A Dreamer map is a closed track of tiles in a shape - **ring, infinity, yin yang, rectangle, square or mountain** - and a size (**24, 36 or 48
 tiles**). The map is made once when the game starts and never changes. A medium map of 36 tiles has:
 
 | Tile           | Count | Colour | What happens                                                                     |
@@ -61,6 +61,12 @@ tiles**). The map is made once when the game starts and never changes. A medium 
 
 Your **totem** stands next to the tile you are on, on the line from the middle of the map through the tile, and points at it. Before
 the first roll it waits at START.
+
+## Before the first roll
+
+At a table every player first reads **who they are**: the story, what matters to them, the goals, the income, the expenses and the
+debts - and chooses the **insurances**, which count at once. Until you say you are ready you can go back and choose another character
+(unless the characters are drawn). The game is begun in the background; the first turn starts when everybody is ready.
 
 ## A turn
 
@@ -77,9 +83,132 @@ Harvest cards still roll their own dice when you draw them; the draw is your act
 
 **Undo.** The last action of a turn can be undone.
 
+**At a table** an **investment** is first **planned**: its project opens in Grow with the numbers, nothing is bought. You decide
+there how many units to buy and book it with the **buy** button, or you leave it - then the chance is missed with the end of your
+turn. Everything another player draws and decides is told to the whole table, with the card, and the history lines open the card.
+
+## Your life: the attributes, the insurances and what they do
+
+Every character has a **life**, and the life is a handful of **attributes**. You see them as the badges on the game screen - tap one
+and a small card tells what it means and what it does in the game. They matter because **they decide which cards can happen to you**:
+a card that needs something you do not have is _lucky_ - it is told, put back, and the next one is drawn. A life with children meets the
+school trip and the braces; a life without a car never meets the flat tyre.
+
+| Attribute       | Values                                                      | What it does                                                                                                                                                                                                 | How it changes                                                                       |
+| --------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| ❤️ Relationship | single, in a relationship, living together, married         | Life cards about a partner (a proposal, moving in, a break-up) only happen when there is one; dreams for two are offered only with a partner; a partner can have bills (the dentist)                         | Life cards: falling in love, moving in, the proposal, a break-up                     |
+| 👶 Children     | a number                                                    | Every child costs a monthly sum (it depends on the living standard and the number of siblings); a job loss cuts the income less; the cards of a family (school trip, a sick child, braces) wait here         | The baby card (a die decides), then a few Paydays later                              |
+| 🏠 Home         | own flat, shared flat, with the parents, with the partner   | The rent or the mortgage; a flat of your own meets the washing machine, the fridge, the burglary, the fire - a room in a shared flat or the parents' home does not; the deposit is at risk when you move out | Life cards: a move, moving in together, a bad flatmate                               |
+| 📍 Place        | home city, another city, abroad (Europe), another continent | A move changes what you earn and what you pay, both as a share; a move ends the effects of the last one                                                                                                      | Life cards about a move                                                              |
+| 💼 Job          | employed, out of work, short-time work                      | The salary at every Payday; after a job loss a roll at a Payday may find a new one; only an employed player is promoted on the Career tile                                                                   | The job-loss card, the job search                                                    |
+| 🐱 Pet          | none, cat, dog                                              | A monthly cost and the vet emergencies of the Emergency pile                                                                                                                                                 | Life cards: a cat or a dog moves in                                                  |
+| 🚗 Car          | yes / no                                                    | A car meets the car emergencies (a speeding ticket, a dead battery, a clutch, a car insurance premium); the two **car insurances** are offered when you have one                                             | A vehicle dream that is lived, a company car at a career stage, a card that buys one |
+| 🎓 Education    | studying / not                                              | The cards for students (the semester fee, the laptop before the exams) find you only while you study                                                                                                         | **Ends at stage 2 of the career** (a dual student's first full-time contract)        |
+| 🛡️ Insurances   | how many you hold                                           | An insured emergency costs you the deductible, not the bill (see below)                                                                                                                                      | You hop in or out; at once before the first roll, with the next Payday later         |
+| 🎓 Career       | the stage on the ladder                                     | Salary, taxes, the living standard (and so what cards cost), a bonus every year                                                                                                                              | The Career tile promotes you when you have been long enough and the die allows it    |
+
+### Where the life starts
+
+Jonas starts as a **dual student**: a room in a **shared flat** (that is the rent line of his budget), **employed** half-time, **in
+education** - the study ends with his first full-time contract, at stage 2 of his career.
+The other nine characters start where their story says: Lena alone with her daughter, Katrin and Frank married with children, Peter
+married with grown children. The first table below says it for everybody.
+
+### Insurances
+
+The insurances of a character are **expense lines**: the premium is paid at every Payday, and in return an insured emergency costs you
+only the **deductible** - at most 500 TT on Normal (300 on Easy, 750 on Hard), whatever the bill is. Every character starts with the
+private **liability** and the **household** insurance, and every character pays **its own price**: a surgeon's household is worth more
+than a bus driver's, a freelancer carries his own liability. Jonas pays 24 TT a month for the two together (8.39 + 15.61); the others
+are scaled to their life, and the last column of the first table shows what they pay.
+
+- **At the start** you are asked to choose: before your first roll you can hop in or out of every insurance, and it counts **at once**.
+- **Later** a change is made at the **next Payday** - the premium and the cover change together, so nobody can insure just before the fire.
+- **A car brings the car insurances.** As soon as you have a car (a vehicle dream, a company car, a card), the **partial cover**
+  (Teilkasko) and the **full cover** (Vollkasko) are on offer in the insurance list, with a premium that fits your character. They cost
+  nothing until you hop in; an uninsured car damage costs the whole bill.
+- The private **liability** also covers the lost building key. A stolen bike is not insured by anything on this list.
+
+<!-- attributes:start -->
+
+#### Where every character starts
+
+| Character | Relationship | Children | Home        | Car | Study | Insurances (a month) |
+| --------- | ------------ | -------- | ----------- | --- | ----- | -------------------- |
+| Jonas     | single       | 0        | shared flat | no  | yes   | 24 TT                |
+| Mehmet    | single       | 0        | own flat    | yes | no    | 34 TT                |
+| Lena      | single       | 1        | own flat    | yes | no    | 22 TT                |
+| Sophie    | single       | 0        | own flat    | yes | no    | 32 TT                |
+| Tobias    | single       | 0        | own flat    | no  | no    | 35 TT                |
+| Katrin    | married      | 2        | own flat    | yes | no    | 53 TT                |
+| Frank     | married      | 1        | own flat    | yes | no    | 57 TT                |
+| Dr. Jan   | married      | 2        | own flat    | yes | no    | 81 TT                |
+| Heike     | single       | 0        | own flat    | yes | no    | 42 TT                |
+| Peter     | married      | 0        | own flat    | yes | no    | 21 TT                |
+
+#### Which card needs which attribute
+
+| Pile        | Card                                   | Needs                                                         |
+| ----------- | -------------------------------------- | ------------------------------------------------------------- |
+| Emergency   | Flashed! (E05)                         | a car                                                         |
+| Emergency   | Car Battery Dead (E12)                 | a car                                                         |
+| Emergency   | Washing Machine Breaks (E14)           | Home: own flat or with the partner                            |
+| Emergency   | Parking Bump (E38)                     | a car                                                         |
+| Emergency   | Laptop Dies Before Exams (E17)         | Study: studying                                               |
+| Emergency   | Cracked Windscreen (E19)               | a car                                                         |
+| Emergency   | Deposit Deductions (E21)               | Home: own flat or shared flat                                 |
+| Emergency   | Vet Emergency (E23)                    | a pet                                                         |
+| Emergency   | Fridge Dies in Summer (E24)            | Home: own flat or with the partner                            |
+| Emergency   | Clutch Gone (E25)                      | a car                                                         |
+| Emergency   | Burglary (E26)                         | Home: own flat or shared flat or with the partner             |
+| Emergency   | Water Damage Downstairs (E27)          | Home: own flat or shared flat or with the partner             |
+| Emergency   | Kitchen Fire (E29)                     | Home: own flat or shared flat or with the partner             |
+| Emergency   | The Flat Burns Down (E30)              | Home: own flat or shared flat or with the partner             |
+| Emergency   | School Trip and Supplies (E46)         | Children: at least 1                                          |
+| Emergency   | Sick Child, No Daycare (E47)           | Children: at least 1                                          |
+| Emergency   | Braces for the Child (E48)             | Children: at least 1                                          |
+| Emergency   | Semester Fee and Textbooks (E49)       | Study: studying                                               |
+| Emergency   | Partner Needs a Dentist (E50)          | Relationship: a partner                                       |
+| Life        | Falling in Love (L01)                  | Relationship: single                                          |
+| Life        | Moving In Together (L02)               | Relationship: in a relationship                               |
+| Life        | The Proposal (L03)                     | Relationship: in a relationship or living together            |
+| Life        | Break-Up (L04)                         | Relationship: in a relationship or living together or married |
+| Life        | Thinking About a Baby (L05)            | Relationship: in a relationship or living together or married |
+| Life        | It's a Baby! (L06)                     | Relationship: in a relationship or living together or married |
+| Life        | A Cat Moves In (L09)                   | Pet: none                                                     |
+| Life        | A Dog Moves In (L10)                   | Pet: none                                                     |
+| Life        | Grandpa's Old Car (L11)                | Car: false                                                    |
+| Life        | Back to Your Childhood Room (L14)      | Relationship: single or in a relationship                     |
+| Life        | New Flatmate (L15)                     | Relationship: single or in a relationship; Home: own flat     |
+| Life        | The Company Goes Under (L19)           | Job: employed                                                 |
+| Life        | Laid Off With Severance (L27)          | Job: employed                                                 |
+| Life        | Short-Time Work (L20)                  | Job: employed                                                 |
+| Dream       | The Big Wedding Party (D38)            | Relationship: a partner                                       |
+| Dream       | An Education Fund for Your Child (D39) | Children: at least 1                                          |
+| Opportunity | Rent Out a Room (P17)                  | Home: own flat                                                |
+| Opportunity | Freelance Data Consulting (P18)        | Career stage 3+                                               |
+| Opportunity | Consolidate Your Debt (P28)            | Debt >= 1,000 TT                                              |
+| Opportunity | Take Over an IT Service Company (T13)  | Career stage 4+                                               |
+| Opportunity | Vending Machine Network (T29)          | Owns: P15                                                     |
+
+<!-- attributes:end -->
+
+### How the cards ask for the life
+
+Three kinds of cards ask for something:
+
+- **Emergency** cards: a car or a pet (as always), or a **life** like yours - children, a partner, a study, a flat of your own.
+  Fifty cards now; five of them (the school trip, a sick child, the braces, the semester fee, the partner's dentist) belong to a certain
+  life, and the flat's emergencies and the student's laptop are bound to the home and the study.
+- **Life** cards: the relationship, the pet, the move - what has to be true before the card is told.
+- **Dream** and **Opportunity** cards: a dream for two or for the child, renting out a room, an investment that needs a career stage, a
+  debt or another holding.
+
+The second table lists every card that asks, so you can see which attribute opens which cards.
+
 ## The cards
 
-### 🌱 Opportunity - things to invest in (98 cards)
+### 🌱 Opportunity - things to invest in (107 cards)
 
 Landing on an Opportunity tile, you first **choose a pile**:
 
@@ -117,7 +246,17 @@ that is worth much or little. The card lists every number; you throw the die aft
 **Traps.** Some offers look like normal investments and are not (a "2% a week" lending app, a "pre-IPO" tip, a timeshare). Their
 numbers are not given away. The Harvest cards later show which were scams.
 
-### 🌾 Harvest - the markets (87 cards)
+**Pensions and employer benefits (S37-S39, P33, T32).** Plans you pay into: you take the card for the length you want (an employer
+savings plan of 12 Paydays, a company pension of 12 or 24, a state-subsidised pension of 24, a private pension of 36), it becomes a Grow
+project, and at every Payday the payment goes into it from the **Fire** account (it is money put aside, not an expense). At the end you get
+back what you paid in **plus a bonus** (50%, 20%, 45%, 35%, 55%: the employer's share, the state's allowance). Stopped early, only what
+you paid in comes back, less a tenth, and no bonus. The Grow project says how much has gone in so far.
+
+**Career and education (S40, P34, P35, T31).** A course, an evening diploma, a master craftsman's diploma, a part-time master's degree:
+you pay the fees now, the new pay starts when you have finished (3, 6, 12 or 24 Paydays), and **a die decides how much it raises your
+income** - nothing, a fair rise, or a big one. Nobody buys a course from you.
+
+### 🌾 Harvest - the markets (120 cards)
 
 Every market has an **index** that starts at 1.00 and drifts at every Payday (World stocks, Bonds, Tech, Gold, Bitcoin, Property...).
 What you own is worth its card price times the index of its market.
@@ -137,21 +276,44 @@ about - red when you own something with that word -, an **"Affects you / Not abo
 means for you. Every affected Grow project gets a note and a highlight.
 
 **Selling what the cards gave you.** What the Opportunity cards made is sold at the price of a Harvest card: in an open market, to a
-buyer, or on a hype. The offer stays open (for a few rolls, depending on the rules) even after you pressed **Done**: the project's
-**Sell** button in Grow then sells at the card's price.
+buyer, or on a hype. The offer **stays open for as many of your own turns as the table allows** (the setting _How long a sell offer stays
+open_, 1 to 5 turns, 2 by default) even after you pressed **Done** and across a Payday; then the deal is off. While it is open the project
+in Grow is highlighted and says what it pays and how many turns are left, and its **Sell** button sells at that price.
 
-**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it is rare - about one landing in a hundred rolls
-speaks of a given holding. So the **Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
+**Who buys what.** Every kind of holding has buyers among the Harvest cards - about one card in ten speaks of a property, a business, a side
+hustle, a loan, a collection, a metal or the shares of a market. The price is a roll of the die: a young family pays a little under or a
+little over what the flat is worth, an institution pays 1% to 20% over the screen price for a block of shares, a search fund pays three
+years of the profit of a business (at least a share of what you paid), a takeover bid pays a premium. A year-end rally opens every market;
+a wave of forced selling opens it too - at a loss, so you can also cut it.
+
+**A scam has a last exit.** One card says the price of a scam has fallen by 80% and the market is still open for one more turn; a claims
+buyer pays cents on the euro; a later card closes it for good. What you do with the last chance is yours.
+
+**Tax on the profit.** A table setting (_Tax on the profit of a sale_, advanced rules): when you sell something for more than you paid,
+you owe a share of the **profit** - the default is 26.375%, the German flat tax with the solidarity surcharge; 0 switches it off. The
+profit is what the sale brings after its costs and what is owed on it (a mortgage), less what you paid for the part you sell. A sale at a loss
+pays nothing, and the Grow project notes the tax. Pensions pay out untaxed.
+
+**There is always a way out.** A market card with a window or a buyer is the _best_ exit, but it does not come on every landing. So the
+**Sell** button of a project also sells **at any time at the market price, less a discount**: 5% for a share,
 15% for a coin, a collection or a property (the mortgage comes off the proceeds), and a business or a hustle for a year of what it pays
 (half of what a buyer on a card pays). Nothing is sold below that, and savings and scams cannot be sold at all.
 
-### 🔥 Emergency (45 cards)
+Each Opportunity card has, in its Grow project, how to invest, what to do and what not to do, its risk (1 to 5) with the reason, tasks, and
+links to read more.
+
+### 🔥 Emergency (50 cards)
 
 Something breaks. Cards come in five tiers - **spark, flame, blaze, wildfire, inferno** - from a broken bike grip to a house fire. An
 insurance may cover the bill; the rest is paid from your cash, by a payment plan, or by the Bank loan. In the guided and strict modes an
 emergency has to be dealt with before the game goes on.
 
-### ❤ Life (27 cards)
+At a **table** the emergency plays as it does alone: you can **pay it now**, spread it over **3, 6 or 12 Paydays** (with the plan's
+surcharge), or **create the Fire project** - nothing is paid yet, the project opens on the Fire page and you put money into it from
+there, step by step. In the guided and the strict game the turn is not over before an emergency taken as a Fire project is paid or
+planned. A fine or a fee that has to be paid at once cannot become a project.
+
+### ❤ Life (30 cards)
 
 Love, a baby, moving in together, a new job, a bad flatmate, a parent who needs help, lifestyle creep. There are four kinds:
 
@@ -172,13 +334,13 @@ successful roll. A promotion raises your salary - and your living costs.
 ### 😊 Dream (48 cards) and Dream moments
 
 Dreams are cards worth **points**, in tiers from _little_ to _legendary_, in categories like travel, adventure, vehicles, home, learning,
-creating and giving. Taking a dream makes a **Smile project** with buckets you fill by payment plans. You can have a few open at once.
+creating and giving. Taking a dream makes a **Dream project** with buckets you fill by payment plans. You can have a few open at once.
 **Dream moments** (an early-bird offer, a gift from family, a last-minute deal, a travel buddy, inspiration, side-project money,
 points for patience, a dream swap) help a dream along.
 
 ## The notes of a project
 
-Whatever happens to a Grow, Fire or Smile project is written into its **notes**, with the numbers: what a payment cost, how much cash you
+Whatever happens to a Grow, Fire or Dream project is written into its **notes**, with the numbers: what a payment cost, how much cash you
 had and how much the Bank lent you for it; what a buyer offers (the price, the costs of the sale, what is still owed, what you would
 receive) or what a market window pays per unit; every step of a hype with the die rolled and what the stake is worth; a sale with what
 was paid out and the cash afterwards; a dream moment with the cost before and after and what you have saved so far.
@@ -209,6 +371,56 @@ salary stops). The game goes on: the badge is a milestone, not the end.
 **Bankruptcy.** If the monthly cash flow turns negative the game ends.
 
 **How long is a game?** A normal game is about **90 turns** (roughly 36 months), a fast one 30, a long one 120.
+
+## Playing together: your ranking and your points
+
+Every player has **one rating** - the same idea as a chess rating. **Everybody starts at 1500.** It is the middle: the bots on the leaderboard run from about 1270 up to about 1700, so to get to place 1 you play your way up past the best bots. People and bots are on **one list**.
+
+### Which games count
+
+A game counts for your rating when the table is **ranked**, at least one person sat at it, the game was **finished**, and it either had a winner or ran **at least 8 rounds**. A game that does not count says why at the end ("Not ranked: under 8 rounds"). If you leave a game that has begun, it counts as a loss against everybody who stayed.
+
+### How a game places everybody
+
+At the end every player gets a score:
+
+| What                                                                                                                                             | Points    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| Each goal, in proportion to how far you got (the reserve, no debts, the dream, independence): a goal reached is 250, one that is 60% done is 150 | up to 250 |
+| Each dream point                                                                                                                                 | 25        |
+| Winning (all the goals)                                                                                                                          | 1000      |
+
+The order: whoever won comes first (the earliest winner on top), then everybody by score, and a tie is decided by net worth. A player who went bankrupt, or left, is behind everybody who did not.
+
+### From the place to your points
+
+Your place is compared with **each other player at the table**, one by one. Placing above a player is a win against them, below is a loss.
+
+- Beating a player with a **higher** rating earns **more** than beating one with a lower rating.
+- Losing to a player with a **lower** rating costs **more** than losing to a higher one.
+- The bigger the gap, the more surprising the result - and the more it moves you.
+
+You gain or lose the average of these duels. As a feeling: at a table of four players with equal ratings, **first place is about +20** and **last place about -13** (in your first 20 games the numbers are bigger, so a new rating finds its place quickly; they are shown with a `~` until you have played 5 games). Winning against three bots rated 1700 is worth about +30, against three bots rated 1300 about +10.
+
+### Harder game, more points
+
+The difficulty of the game is the **stake**: the points you **gain** are multiplied.
+
+| Difficulty | Points you gain | What you lose |
+| ---------- | --------------- | ------------- |
+| Easy       | x 0.7           | the same      |
+| Normal     | x 1             | the same      |
+| Hard       | x 1.5           | the same      |
+
+So the same win at an even table is about +14 on Easy, +20 on Normal and +30 on Hard. A bad game costs the same everywhere - so you never lose more for daring Hard. The character matters too: some characters are harder than others (we know it from thousands of simulated games), so the same place earns a little more with a hard character and a little less with an easy one.
+
+### The bots
+
+Every bot is a **strategy** at a **skill level** (master, strong, casual, beginner) - the master plays its strategy cleanly, the others slip now and then. Each has its own rating from the start, set by a tournament the bots played against each other, and it moves with its games like yours. That is why a beginner bot sits low and the best masters near 1700.
+
+### The leaderboard
+
+One list, best rating first. A person is on it only after switching on **Show me on the leaderboard**; a bot appears once it has played a ranked game. The rating never falls below 100.
 
 ## Rules and settings
 
@@ -440,7 +652,71 @@ Run `npm run simulate:dreamfund -- --games 100 --shapes ring,infinity --max-turn
 docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md` (build the domain package first). The tables above are rewritten between the markers; the text around them is
 written by hand. The raw games are saved beside the report as JSON.
 
-### Other characters
+## The ten characters and the three difficulties
 
-The next characters are balanced against Jonas's numbers (the same piles and the same cards, a different salary, expenses, debts
-and dream) and get their own statistics here.
+Ten lives from 23 to 57, from an apprentice's pay to a surgeon's. Everybody plays the same game with the same cards - **the cards are
+as big as the character's life** (their price level): a share, a property, a dream, a debt and an emergency cost that much more for
+Dr. Jan than for Jonas, and pay that much more, so what a card is worth _in proportion to the life_ is the same for everybody. What
+makes one character harder than another is what is left of a month, how big the debts are and how far away the dream is.
+
+| Character                      | Age | Life                          | Gross (a month) | Left of a month | Price level | Dream                           |
+| ------------------------------ | --- | ----------------------------- | --------------- | --------------- | ----------- | ------------------------------- |
+| Jonas, dual student IT         | 23  | studying, single              | 2,833           | 500             | 1.0         | Mountain guide                  |
+| Mehmet, journeyman electrician | 26  | single, first own flat        | 3,150           | 715             | 1.1         | Master craftsman + own workshop |
+| Lena, nurse                    | 29  | single mother, one child      | 3,450           | 600             | 1.2         | A year in a camper van          |
+| Sophie, primary teacher        | 33  | civil servant, single         | 4,350           | 860             | 1.5         | A year under sail               |
+| Tobias, freelance designer     | 36  | self-employed, irregular      | 3,900           | 700             | 1.4         | Studio and gallery in a loft    |
+| Katrin, head of marketing      | 40  | married, two children, house  | 6,300           | 990             | 2.2         | A house by the Baltic Sea       |
+| Frank, mechanical engineer     | 44  | married, teenager, house      | 7,600           | 1,080           | 2.7         | The energy-independent house    |
+| Dr. Jan, senior surgeon        | 48  | two teenagers, villa, leasing | 11,200          | 680             | 3.9         | His own practice                |
+| Heike, garage owner            | 52  | self-employed, four employees | 5,200           | 810             | 1.8         | A small vineyard                |
+| Peter, bus driver              | 57  | married, grown children       | 2,700           | 665             | 0.95        | A cabin by the lake             |
+
+The exact numbers are in the character's sheet in the game (the three panels: income statement, balance sheet, cash). They are built
+the same way for everyone (`cashflow-professions-builder.ts`): the German tax and social insurance are worked out from the gross
+salary, so a high earner pays a higher share to the state; the lifestyle, the debts and the dream follow from a few numbers in the
+description (`cashflow-professions-dreamfund.ts`).
+
+### Easy, Normal, Hard
+
+Every character exists three times; the story and the dream are the same, the numbers and the cards are not.
+
+| What                  | Easy - a good place to start, also for children                                                          | Normal - for everyone                     | Hard - a challenge that needs a strategy                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| The budget            | about nine lines with round amounts (50, 100, 500) and round card prices                                 | about seventeen lines, a realistic budget | the same lines, tight                                                                                            |
+| Left of a month       | 30 % more                                                                                                | as designed                               | 15 % less                                                                                                        |
+| Debts, savings, dream | debts 20 % lower, savings 50 % higher, dream 10 % cheaper                                                | -                                         | debts 10 % higher, savings 25 % lower, dream 5 % dearer                                                          |
+| Promotions            | a roll one lower                                                                                         | -                                         | a roll one higher                                                                                                |
+| Cards and the rest    | luck +1 on the good dice, two offers a landing, only four traps, selling every Payday, a friendly market | the cards as described in this document   | one offer a landing, the traps twice, selling only on the sell dates, a falling market, no help from the parents |
+
+### The map: characters, strategies and difficulties
+
+The simulation has played every character, on every difficulty, with every way of playing (200 games each, same seeds): the **map**. It
+is what the bots of the multiplayer game are drawn from and what the analyst compares a saved game with. `docs/dreamfund-balance/MATRIX.md`
+has the whole table, `matrix.json` the numbers. Run `npm run matrix:dreamfund` to make it again whenever a card, a character or a
+number changes. The best strategy of each character and difficulty (share of games won in up to 60 months):
+
+<!-- matrix:start -->
+
+| Character | Easy                             | Normal                           | Hard                             |
+| --------- | -------------------------------- | -------------------------------- | -------------------------------- |
+| Jonas     | **80%** Sapling business builder | **45%** Sapling business builder | **28%** Sapling business builder |
+| Tobias    | **72%** Sapling business builder | **26%** Informed investor        | **9%** Sapling business builder  |
+| Sophie    | **71%** Sapling business builder | **27%** Sapling business builder | **9%** Sapling business builder  |
+| Mehmet    | **72%** Sapling business builder | **34%** Informed investor        | **16%** Sapling business builder |
+| Katrin    | **65%** Sapling business builder | **27%** Sapling business builder | **10%** Sapling business builder |
+| Lena      | **67%** Sapling business builder | **24%** Sapling business builder | **11%** Informed investor        |
+| Frank     | **67%** Sapling business builder | **23%** Sapling business builder | **11%** Informed investor        |
+| Dr. Jan   | **38%** Sapling business builder | **9%** Sapling business builder  | **3%** Sapling business builder  |
+| Heike     | **63%** Sapling business builder | **21%** Sapling business builder | **4%** Informed investor         |
+| Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
+
+<!-- matrix:end -->
+
+### The Yin Yang map
+
+A circle with an S through it (2026-11-04). Every player walks one whole side: the **white** track is the S and the left half of the circle,
+the **black** track the right half of the circle and the S walked the other way. The S (with its two ends, where the sides meet) is common
+ground - the same tiles for both tracks, and all the Paydays except one more on each side of a large map. Each track has the tiles of the
+size (24, 36 or 48) with the usual mix. The seats take the tracks in turn, white first; with an odd number of players one side has one more.
+Both start on opposite sides of the circle - each on the first tile of their own half - walk their half, and meet on the S. The two dots of the symbol show the players of each side with their pictures. Solo, the player walks the white track.

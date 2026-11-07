@@ -85,7 +85,7 @@
       (click)="clickRow(classReference.allTransactions.length-i-1)"
       [hidden]="classReference.allTransactions[classReference.allTransactions.length-i-1].account != 'Daily' && classReference.allTransactions[classReference.allTransactions.length-i-1].account != 'Income'">
       <td>{{classReference.allTransactions.length-i}}</td>
-      <td>{{classReference.allTransactions[classReference.allTransactions.length-i-1].account}}</td>
+      <td>{{ classReference.allTransactions[classReference.allTransactions.length-i-1].account | accountLabel }}</td>
       <td
         class="{{classReference.allTransactions[classReference.allTransactions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">
         {{(classReference.allTransactions[classReference.allTransactions.length-i-1].account == "Income") ?
@@ -110,7 +110,7 @@
   <tbody>
     <tr *ngFor="let row of classReference.allSearchedTransactions; let i = index" (click)="clickRow(classReference.allSearchedTransactions.length-i-1)" [hidden]="!classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].isFiltered || (classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account != 'Daily' && classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account != 'Income')">
       <td>{{classReference.allSearchedTransactions.length-i}}</td>
-      <td>{{classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account}}</td>
+      <td>{{ classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account | accountLabel }}</td>
       <td
         class="{{classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">
         {{(classReference.allSearchedTransactions[classReference.allSearchedTransactions.length-i-1].account == "Income") ?
@@ -161,7 +161,7 @@
       <th class="headder" mat-header-cell *matHeaderCellDef mat-sort-header>
         {{ 'Common.account' | translate }}
       </th>
-      <td mat-cell *matCellDef="let row; let i = index">{{ row.account }}</td>
+      <td mat-cell *matCellDef="let row; let i = index">{{ row.account | accountLabel }}</td>
     </ng-container>
 
     <!-- Amount Column -->

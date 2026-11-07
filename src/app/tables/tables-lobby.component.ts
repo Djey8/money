@@ -35,6 +35,12 @@ import {
 import { ConfirmService } from '../shared/services/confirm.service';
 import { problemText } from './problem.texts';
 import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
+import { DreamApiService } from '../dreamfund-tables/dream-session.service';
+import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
+import { keepGame, savedGame, type TableGame } from './table-game';
+import { registerDemoGuide } from '../dreamfund-tables/demo/demo-guide.register';
+import { DreamDemoService } from '../dreamfund-tables/demo/demo-guide.service';
+import { demoLabels } from '../dreamfund-tables/demo/demo-steps';
 
 /** The account's own name: the one name at every table (the server uses the account's nickname whatever is sent). */
 function accountName(): string {
@@ -123,15 +129,71 @@ function savedFilters(): TableFilters {
         +
       </button>
     </div>
-    <app-add-table *ngIf="showAdd" (created)="onCreated($event)" (closed)="showAdd = false" />
+    <app-add-table
+      *ngIf="showAdd"
+      [game]="game"
+      [demo]="demoActive"
+      (created)="onCreated($event)"
+      (closed)="showAdd = false"
+    />
     <div class="tl-page" [attr.dir]="rtl ? 'rtl' : 'ltr'">
       <!-- where else to go: the same three places, always in the same row -->
-      <nav class="tl-nav" aria-label="Multiplayer">
-        <a class="tl-nav-item" routerLink="/leaderboard">🏆 {{ lb.title }}</a>
-        <button class="tl-nav-item" type="button" (click)="openMyGames()">
-          📒 {{ 'CashflowGame.myGames' | translate }}
+      <div class="tl-games" role="radiogroup" [attr.aria-label]="d.gameChoice">
+        <button
+          type="button"
+          role="radio"
+          [class.tl-games--on]="game === 'classic'"
+          [attr.aria-checked]="game === 'classic'"
+          (click)="setGame('classic')"
+        >
+          {{ d.gameClassic }}
         </button>
-        <a class="tl-nav-item" routerLink="/docs/cashflow">ⓘ {{ t.howItWorks }}</a>
+        <button
+          type="button"
+          role="radio"
+          [class.tl-games--on]="game === 'dreamfund'"
+          [attr.aria-checked]="game === 'dreamfund'"
+          (click)="setGame('dreamfund')"
+        >
+          {{ d.gameDream }}
+        </button>
+      </div>
+      <nav class="tl-nav" aria-label="Multiplayer">
+        <button
+          *ngIf="game === 'dreamfund'"
+          class="tl-nav-item tl-nav-demo"
+          type="button"
+          data-demo="lobby-learn"
+          [title]="demoTexts.learn"
+          [attr.aria-label]="demoTexts.learn"
+          (click)="startDemo()"
+        >
+          <span class="tl-nav-icon">▶️</span><span class="tl-nav-label">{{ demoTexts.learn }}</span>
+        </button>
+        <a
+          class="tl-nav-item"
+          routerLink="/leaderboard"
+          [title]="lb.title"
+          [attr.aria-label]="lb.title"
+          ><span class="tl-nav-icon">🏆</span><span class="tl-nav-label">{{ lb.title }}</span></a
+        >
+        <button
+          class="tl-nav-item"
+          type="button"
+          [title]="'CashflowGame.myGames' | translate"
+          [attr.aria-label]="'CashflowGame.myGames' | translate"
+          (click)="openMyGames()"
+        >
+          <span class="tl-nav-icon">📒</span
+          ><span class="tl-nav-label">{{ 'CashflowGame.myGames' | translate }}</span>
+        </button>
+        <a
+          class="tl-nav-item"
+          [routerLink]="game === 'dreamfund' ? '/docs/dreamfund' : '/docs/cashflow'"
+          [title]="t.howItWorks"
+          [attr.aria-label]="t.howItWorks"
+          ><span class="tl-nav-icon">ⓘ</span><span class="tl-nav-label">{{ t.howItWorks }}</span></a
+        >
       </nav>
 
       <!-- who you are at a table -->
@@ -327,6 +389,9 @@ function savedFilters(): TableFilters {
           }}</span>
           <span class="tl-chip" *ngIf="table.visibility === 'private'">🔒 {{ t.privateTag }}</span>
           <span class="tl-chip">{{ clockText(table) }}</span>
+          <span class="tl-chip" *ngIf="table.kind === 'dreamfund' && table.difficulty"
+            >{{ d[table.difficulty] }} · {{ table.shape }}</span
+          >
           <span class="tl-chip">{{ professionText(table) }}</span>
           <span class="tl-chip">{{ endText(table) }}</span>
         </div>
@@ -338,9 +403,9 @@ function savedFilters(): TableFilters {
             <button
               type="button"
               class="tl-seat"
-              [disabled]="!statsOf(seat)"
+              [disabled]="!statsOf(seat, table)"
               [title]="seat.name + ' · ' + seat.rating"
-              (click)="selected = statsOf(seat)"
+              (click)="selected = statsOf(seat, table)"
             >
               <app-seat-avatar
                 [name]="seat.name"
@@ -408,10 +473,33 @@ function savedFilters(): TableFilters {
         gap: 14px;
       }
       /* the places to go: three equal buttons in one row */
+      /* all the buttons in one row; when the row is too narrow for the words, only the pictures stay */
       .tl-nav {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        display: flex;
+        flex-wrap: nowrap;
         gap: 8px;
+        container-type: inline-size;
+      }
+      .tl-nav > .tl-nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      .tl-nav-icon {
+        flex: none;
+      }
+      .tl-nav-label {
+        margin-left: 0.4em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      @container (max-width: 640px) {
+        .tl-nav-label {
+          display: none;
+        }
+        .tl-nav-icon {
+          font-size: 1.3rem;
+        }
       }
       .tl-nav-item {
         display: flex;
@@ -744,6 +832,9 @@ export class TablesLobbyComponent implements OnInit {
   a: AddTableTexts = addTableTexts('en');
   h: HallTexts = hallTexts('en');
   lb: LeaderboardTexts = leaderboardTexts('en');
+  d: DreamTexts = dreamTexts('en');
+  /** The game the lobby shows: the classic tables, or the Dreamer ones (kept on this device). */
+  game: TableGame = savedGame();
   rtl = false;
   loading = true;
   busy = false;
@@ -765,6 +856,25 @@ export class TablesLobbyComponent implements OnInit {
   /** The letters on my token: kept on this device, sent with every join; empty is the default (the name's first two letters). */
   initials = savedInitials();
   private route = inject(ActivatedRoute, { optional: true });
+  private dreamApi = inject(DreamApiService);
+  readonly demoGuide = inject(DreamDemoService);
+
+  get demoActive(): boolean {
+    return this.demoGuide.active();
+  }
+
+  get demoTexts() {
+    return demoLabels(this.translate.currentLang || this.translate.defaultLang || 'en');
+  }
+
+  /** The guided demo game starts here: the Dreamer lobby, and the coach at the first step. */
+  startDemo(): void {
+    this.setGame('dreamfund');
+    this.showAdd = false;
+    this.demoGuide.start();
+    registerDemoGuide(this.demoGuide);
+    this.cdr.markForCheck();
+  }
 
   constructor(
     private api: TablesApiService,
@@ -810,7 +920,11 @@ export class TablesLobbyComponent implements OnInit {
       this.speak(event.lang);
       this.cdr.markForCheck();
     });
+    // the manual and the other entrances start the demo with ?demo=start
+    // the coach is on (the page was reloaded in the middle of the demo): it is hung into the app again
+    if (this.demoGuide.active()) registerDemoGuide(this.demoGuide);
     this.reload();
+    if (this.route?.snapshot.queryParamMap.get('demo') === 'start') this.startDemo();
   }
 
   private speak(lang: string): void {
@@ -818,6 +932,7 @@ export class TablesLobbyComponent implements OnInit {
     this.a = addTableTexts(lang);
     this.h = hallTexts(lang);
     this.lb = leaderboardTexts(lang);
+    this.d = dreamTexts(lang);
     this.rtl = lang.toLowerCase().startsWith('ar');
   }
 
@@ -837,7 +952,8 @@ export class TablesLobbyComponent implements OnInit {
         (f.game === 'any' || (f.game === 'ranked') === !!table.ranked) &&
         (f.clock === 'any' || (f.clock === 'timed') === (table.clock.mode !== 'none')) &&
         (f.professions === 'any' || table.professions === f.professions) &&
-        (f.end === 'any' || table.endCondition === f.end),
+        (f.end === 'any' ||
+          (table.endCondition === 'first-win' ? 'first-escape' : table.endCondition) === f.end),
     );
   }
 
@@ -947,7 +1063,7 @@ export class TablesLobbyComponent implements OnInit {
   }
 
   endText(table: TableSummary): string {
-    return table.endCondition === 'first-escape'
+    return table.endCondition === 'first-escape' || table.endCondition === 'first-win'
       ? this.a.endFirst
       : table.endCondition === 'all-done'
         ? this.a.endAll
@@ -977,8 +1093,9 @@ export class TablesLobbyComponent implements OnInit {
     return Array.from({ length: Math.min(12, Math.max(0, table.maxSeats - taken)) }, (_, i) => i);
   }
 
-  statsOf(seat: TableSeat): GamePlayer | null {
-    return seatToPlayer(seat);
+  statsOf(seat: TableSeat, table: TableSummary): GamePlayer | null {
+    // the stats panel is the classic board's: a Dreamer table shows the picture and the rating only
+    return table.kind === 'dreamfund' ? null : seatToPlayer(seat);
   }
 
   pictureOf(seat: TableSeat, table: TableSummary): string | null {
@@ -1019,6 +1136,17 @@ export class TablesLobbyComponent implements OnInit {
     CashflowGameComponent.openGamesList();
   }
 
+  /** The other game: its tables, its rating. */
+  setGame(game: TableGame): void {
+    if (game === this.game) return;
+    this.game = game;
+    keepGame(game);
+    this.open = [];
+    this.mine = [];
+    this.me = null;
+    this.reload();
+  }
+
   reload(): void {
     this.loading = true;
     this.error = null;
@@ -1030,7 +1158,7 @@ export class TablesLobbyComponent implements OnInit {
         this.cdr.markForCheck();
       }
     };
-    this.api.list('open').subscribe({
+    this.api.list('open', this.game).subscribe({
       next: (r) => {
         // the newest table first
         this.open = r.items
@@ -1043,7 +1171,7 @@ export class TablesLobbyComponent implements OnInit {
         done();
       },
     });
-    this.api.list('mine').subscribe({
+    this.api.list('mine', this.game).subscribe({
       next: (r) => {
         this.mine = r.items;
         done();
@@ -1054,6 +1182,23 @@ export class TablesLobbyComponent implements OnInit {
       },
     });
     // my rating and picture: nice to show, never in the way
+    if (this.game === 'dreamfund') {
+      // the Dreamer has one rating, like the classic game
+      this.dreamApi.me().subscribe({
+        next: (me) => {
+          this.me = {
+            playerId: me.pictureId ?? me.playerId,
+            ...(me.pictureVersion ? { pictureVersion: me.pictureVersion } : {}),
+            name: me.name,
+            rating: me.rating.rating,
+            provisional: me.rating.provisional,
+          } as GamePlayer;
+          this.cdr.markForCheck();
+        },
+        error: () => undefined,
+      });
+      return;
+    }
     this.api.me().subscribe({
       next: (me) => {
         this.me = me;

@@ -21,7 +21,7 @@ interface ScopeResource {
 const SCOPE_RESOURCES: ScopeResource[] = [
   { key: 'transactions', label: 'Transactions', levels: ['none', 'r', 'w', 'rw', 'bulk'] },
   { key: 'subscriptions', label: 'Subscriptions', levels: ['none', 'r', 'w', 'rw', 'bulk'] },
-  { key: 'smile', label: 'Smile', levels: ['none', 'r', 'w', 'rw'] },
+  { key: 'smile', label: 'Dream', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'fire', label: 'Fire', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'mojo', label: 'Mojo', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'grow', label: 'Grow', levels: ['none', 'r', 'w', 'rw'] },
@@ -38,7 +38,7 @@ const SCOPE_RESOURCES: ScopeResource[] = [
   { key: 'settings', label: 'Settings', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'encryption', label: 'Encryption config', levels: ['none', 'r', 'w', 'rw'] },
   { key: 'data', label: 'Full data export/import', levels: ['none', 'bulk'] },
-  { key: 'game', label: 'Dreamfund (game accounts only)', levels: ['none', 'r', 'w', 'rw'] },
+  { key: 'game', label: 'Dreamer (game accounts only)', levels: ['none', 'r', 'w', 'rw'] },
 ];
 
 /** The "AI Assistant" scope bundle documented on the Pro API docs page — every normal

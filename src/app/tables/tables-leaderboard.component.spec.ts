@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TablesLeaderboardComponent } from './tables-leaderboard.component';
 
@@ -33,9 +33,10 @@ describe('TablesLeaderboardComponent', () => {
   let element: HTMLElement;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TablesLeaderboardComponent, TranslateModule.forRoot()],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     fixture = TestBed.createComponent(TablesLeaderboardComponent);
     http = TestBed.inject(HttpTestingController);
@@ -53,6 +54,137 @@ describe('TablesLeaderboardComponent', () => {
       .flush(profile);
     fixture.detectChanges();
   };
+
+  it('shows the Dreamer board, one rating for everybody, in the same list', () => {
+    board([]);
+    me(player({ playerId: 'me', type: 'human' }));
+    fixture.componentInstance.setGame('dreamfund');
+    http
+      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?type=all'))
+      .flush({
+        items: [
+          {
+            place: 1,
+            playerId: 'b1',
+            name: 'Informed investor',
+            type: 'bot',
+            difficulty: 'medium',
+            rating: 1500,
+            peakRating: 1510,
+            ratedGames: 9,
+            provisional: false,
+            games: 9,
+            wins: 5,
+            won: 3,
+            bankruptcies: 0,
+            avgPlace: 1.7,
+            avgGoals: 2,
+          },
+        ],
+        next: null,
+      });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/me'))
+      .flush({
+        playerId: 'me',
+        name: 'Me',
+        visible: false,
+        rating: { rating: 1490, provisional: true },
+        recent: [],
+      });
+    fixture.detectChanges();
+    expect(element.textContent).toContain('Informed investor');
+    expect(element.textContent).toContain('1490');
+    // one list: no difficulty to choose, the people filter asks for the same list again
+    fixture.componentInstance.choose('human');
+    http
+      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?type=human'))
+      .flush({ items: [], next: null });
+    // the tabs of the three difficulties are gone: the buttons are the game, and who is on the list
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLElement>,
+    ).map((b) => b.textContent!.trim());
+    expect(buttons).not.toContain('Hard');
+    expect(buttons).not.toContain('Easy');
+    expect(localStorage.getItem('mm.tables.game')).toBe('dreamfund');
+  });
+
+  it('opens a Dreamer player: the way the rating moved and the fact table of the games', () => {
+    board([]);
+    me(player({ playerId: 'me', type: 'human' }));
+    fixture.componentInstance.setGame('dreamfund');
+    http
+      .expectOne((r) => r.url.includes('/v1/game/dreamfund/leaderboard?type=all'))
+      .flush({
+        items: [
+          {
+            place: 1,
+            playerId: 'dream-b1',
+            name: 'Informed investor',
+            type: 'bot',
+            rating: 1680,
+            peakRating: 1690,
+            ratedGames: 9,
+            provisional: false,
+            games: 9,
+            wins: 5,
+            won: 3,
+            bankruptcies: 0,
+            avgPlace: 1.7,
+            avgGoals: 2,
+          },
+        ],
+        next: null,
+      });
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/me'))
+      .flush({ playerId: 'me', name: 'Me', visible: false, rating: { rating: 1500 }, recent: [] });
+    fixture.detectChanges();
+    (element.querySelector('.lb-row') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    // the panel asks the Dreamer board for the player, by the player's own id
+    http
+      .expectOne((r) => r.url.endsWith('/v1/game/dreamfund/players/dream-b1'))
+      .flush({
+        playerId: 'dream-b1',
+        name: 'Informed investor',
+        type: 'bot',
+        rating: { rating: 1680, baseRating: 1650 },
+        history: [
+          { endedAt: null, rating: 1650 },
+          {
+            endedAt: '2026-11-06T10:00:00Z',
+            rating: 1662,
+            delta: 12,
+            place: 1,
+            difficulty: 'hard',
+          },
+          {
+            endedAt: '2026-11-06T11:00:00Z',
+            rating: 1680,
+            delta: 18,
+            place: 1,
+            difficulty: 'easy',
+          },
+        ],
+        facts: { games: 2, totals: { growBought: 7, fireReserveMinor: 1000000, smilePoints: 6 } },
+        recent: [],
+      });
+    fixture.detectChanges();
+    const panel = element.querySelector('.pi-panel') as HTMLElement;
+    expect(panel.textContent).toContain('Informed investor');
+    // one point for the base and one for each game
+    expect(panel.querySelectorAll('.pi-dot').length).toBe(3);
+    // Grow, Fire, Smile and Income, each with a total and an average per game
+    expect(
+      Array.from(panel.querySelectorAll('.pi-fact-group h5')).map((h) => h.textContent),
+    ).toEqual(['Grow', 'Fire', 'Dream', 'Income']);
+    const bought = Array.from(panel.querySelectorAll('.pi-fact')).find((row) =>
+      row.textContent?.includes('Cards bought'),
+    ) as HTMLElement;
+    expect(bought.textContent).toContain('7');
+    expect(bought.textContent).toContain('3.5');
+  });
 
   it('lists the players by rating, in columns, with the bots marked and the level named', () => {
     me(player({ playerId: 'me', name: 'Anna', type: 'human', visible: false, rating: 1512 }));

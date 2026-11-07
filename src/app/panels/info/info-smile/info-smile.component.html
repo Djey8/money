@@ -9,6 +9,10 @@
   [style.z-index]="classReference.zIndex + 1001"
 >
   <button id="closebtn" aria-label="Close" (click)="closeWindow()">x</button>
+  <!-- what living the dream is worth: in the upper left corner of the panel -->
+  <span class="points-badge points-badge--corner" *ngIf="classReference.points"
+    >🌟 {{ classReference.points }} {{ 'CashflowGame.dream.points' | translate }}</span
+  >
 
   <!-- ── VIEW MODE ── -->
   <div *ngIf="!classReference.isEdit">
@@ -33,7 +37,7 @@
     </div>
 
     <!-- Phase Advance -->
-    <div class="phase-advance" *ngIf="classReference.phase !== 'completed'">
+    <div class="phase-advance" *ngIf="classReference.phase !== 'completed' && !inGame">
       <button class="btn btn--sm btn--primary" (click)="advancePhase()">
         {{ 'Smile.advancePhase' | translate }} → {{ 'Smile.phase.' + getNextPhase() | translate }}
       </button>
@@ -354,7 +358,7 @@
                     class="clickable-row"
                   >
                     <td>{{ getTransactionId(tx) }}</td>
-                    <td>{{ tx.account }}</td>
+                    <td>{{ tx.account | accountLabel }}</td>
                     <td
                       class="{{
                         getAllocatedAmountForBucket(tx, bucket.id) >= 0
@@ -408,7 +412,7 @@
                   class="clickable-row"
                 >
                   <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
+                  <td>{{ tx.account | accountLabel }}</td>
                   <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                     {{ tx.amount | appNumber }} {{ currency }}
                   </td>
@@ -454,7 +458,7 @@
                   class="clickable-row"
                 >
                   <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
+                  <td>{{ tx.account | accountLabel }}</td>
                   <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                     {{ tx.amount | appNumber }} {{ currency }}
                   </td>
@@ -895,7 +899,7 @@
   <!-- ── EDIT MODE ── -->
   <div *ngIf="classReference.isEdit">
     <h4 id="infoTransactionTitle">
-      {{ 'Info.edit' | translate }} Smile #{{ classReference.index + 1 }}
+      {{ 'Info.edit' | translate }} Dream #{{ classReference.index + 1 }}
     </h4>
     <hr class="separator-white" />
 

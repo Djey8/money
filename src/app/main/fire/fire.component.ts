@@ -21,6 +21,7 @@ import { MatInputModule } from '@angular/material/input';
 import { RouterModule } from '@angular/router';
 import { SharedFilterComponent } from 'src/app/shared/components/shared-filter/shared-filter.component';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
+import { AccountLabelPipe } from '../../shared/pipes/account-label.pipe';
 
 /**
  * Represents the FireComponent class.
@@ -43,6 +44,7 @@ setTimeout(() =>
   selector: 'app-fire',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     CommonModule,
     FormsModule,
     TranslateModule,

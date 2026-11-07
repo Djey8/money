@@ -1,8 +1,8 @@
 import type { Localized } from './emergency-deck';
-import type { DiceBand } from './life-deck';
+import type { DiceBand, LifeRequirement } from './life-deck';
 
 /**
- * The Dreamfund Opportunity stack (JFK, 2026-10-26, temp_cards/dreamfund-opportunity-deck.md v1.0): the cards a player finds on an
+ * The Dreamer Opportunity stack (JFK, 2026-10-26, temp_cards/dreamfund-opportunity-deck.md v1.0): the cards a player finds on an
  * Opportunity tile. Every card becomes a Grow project; what it does to the books follows from its numbers. The cards are data, the rules
  * are in `opportunity.ts`. Amounts are in minor units (1 Traumtaler = 100).
  */
@@ -72,6 +72,8 @@ export interface OpportunityRequirement {
   owns?: string;
   /** At least this much debt (minor units). */
   debtMinor?: number;
+  /** A life it fits (children, a partner, a study...): see `LifeRequirement`. */
+  life?: LifeRequirement;
 }
 
 /** What only the engine may know about a trap (never shown to a player). */
@@ -129,9 +131,19 @@ export interface OpportunityCard {
   sideHustle?: boolean;
   rampPaydays?: number;
   lockedPaydays?: number;
+  /**
+   * A plan you pay into (JFK, 2026-11-06: a company pension, a savings contract of the employer): every Payday `monthlyMinor` goes in for
+   * `paydays` Paydays; at the end you get back what you paid in and a bonus (the employer's share, the state's allowance), in percent
+   * of what was paid in. Stopped early, only what was paid in comes back, less a fee.
+   */
+  contribution?: { monthlyMinor: number; paydays: number; bonusPercent: number };
+  /** Nobody buys it from you (a course you took): it has no price on the market and no standing sale. */
+  unsellable?: boolean;
   requires?: OpportunityRequirement;
   setsCar?: boolean;
   note?: string;
+  /** A tip and a warning (do / don't), a note of the Grow project of its own. */
+  tip?: string;
   trap?: OpportunityTrap;
 }
 

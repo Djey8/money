@@ -38,7 +38,7 @@ Every transaction sits on one **account**:
 | `Income`  | Money coming in (salary, interest, rent, dividends)              | — (it's the source)     |
 | `Daily`   | Everyday spending: rent, food, bills, transport                  | 60%                     |
 | `Splurge` | Guilt-free spending on anything                                  | 10%                     |
-| `Smile`   | Saving for medium-term goals (Smile projects)                    | 10%                     |
+| `Smile`   | Saving for medium-term goals (Dream projects)                    | 10%                     |
 | `Fire`    | Emergency funds for known risks (Fire projects) — not retirement | 20%                     |
 | `Mojo`    | The long-term reserve, a safety net sized in months of expenses  | — (filled from others)  |
 
@@ -98,7 +98,7 @@ this second view to judge the balance sheet.
 
 ## 5. Goals and investments
 
-- **Smile projects** (medium-term goals, e.g. a trip) and **Fire projects** (emergency funds, e.g. car repairs) are
+- **Dream projects** (medium-term goals, e.g. a trip) and **Fire projects** (emergency funds, e.g. car repairs) are
   split into **buckets**. Money reaches a bucket only through a contribution transaction; when the real bill is paid
   the bucket is **settled** with its actual cost. A **payment plan** turns a goal into a recurring subscription.
   Full rules: `smile_fire_mojo_guide`.

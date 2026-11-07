@@ -2,7 +2,7 @@ import type { Localized } from './emergency-deck';
 import type { DiceBand } from './life-deck';
 
 /**
- * The Dreamfund Harvest stack (JFK, 2026-10-26, temp_cards/dreamfund-harvest-deck.md v0.2): the market. A card moves the indices of
+ * The Dreamer Harvest stack (JFK, 2026-10-26, temp_cards/dreamfund-harvest-deck.md v0.2): the market. A card moves the indices of
  * the markets, opens a window to sell, brings a buyer, shakes up businesses, offers a gamble or reveals a trap. The cards are data made
  * of small operations; `harvest.ts` runs them. Amounts are minor units (1 Traumtaler = 100); an index of 1.00 is where a market begins.
  */
@@ -83,7 +83,7 @@ export interface HarvestLadder {
 export interface HarvestBuyer {
   targets: string[];
   /** What it is bought at: the index of the market, the value of an asset, the price of a property, months of cash flow, a fixed sum. */
-  basis: 'index' | 'asset' | 'property' | 'business' | 'fixed';
+  basis: 'index' | 'asset' | 'property' | 'business' | 'fixed' | 'paid';
   factor?: number;
   bands?: DiceBand<number>[];
   /** Art has a die of its own, and a six may roll again. */
@@ -92,6 +92,8 @@ export interface HarvestBuyer {
   saleCostsPercent?: number;
   monthsOfCashflow?: number;
   fixedMinor?: number;
+  /** A business is at least worth this share of what was paid for it (before the die): a buyer who wants it for more than its cash flow. */
+  paidShare?: number;
 }
 
 export type HarvestOp =
@@ -100,6 +102,8 @@ export type HarvestOp =
   | { op: 'nextPaydayIndex'; factors: Record<MarketTag, number> }
   | { op: 'recover'; fraction: number }
   | { op: 'sellWindow'; markets: MarketTag[] | 'ALL' }
+  /** The price of single holdings changes, whatever the market does: a company's own news, a scam that is found out (a factor). */
+  | { op: 'holdingValue'; targets: string[]; factor: number }
   | { op: 'buyer'; buyer: HarvestBuyer }
   | { op: 'cashflowFactor'; groups: string[]; factor: number; paydays: number | null }
   | { op: 'cashflowDice'; groups: string[]; bands: HarvestFactorBand[]; paydays: number | null }
@@ -195,6 +199,61 @@ export const HARVEST_GROUPS: Record<string, string[]> = {
   LENDING: ['P11'],
   SAVINGS: ['S09', 'S35'],
   SINGLE: ['P10'],
+  /** The groups of the buyers of the second Harvest stack (JFK, 2026-11-05): every business, hustle and loan has somebody to sell to. */
+  ONLINE: ['S28', 'S30', 'S32', 'S33', 'P19', 'P20', 'P21'],
+  CLIENTS: ['S29', 'S31', 'S34', 'P18'],
+  SMALLBIZ: [
+    'P15',
+    'P20',
+    'P22',
+    'P23',
+    'P24',
+    'P26',
+    'P27',
+    'P29',
+    'T11',
+    'T12',
+    'T13',
+    'T14',
+    'T16',
+    'T29',
+    'T30',
+  ],
+  ENERGYBIZ: ['S08', 'P25', 'T15'],
+  ALLBIZ: [
+    'S28',
+    'S29',
+    'S30',
+    'S31',
+    'S32',
+    'S33',
+    'S34',
+    'P18',
+    'P19',
+    'P21',
+    'P15',
+    'P20',
+    'P22',
+    'P23',
+    'P24',
+    'P26',
+    'P27',
+    'P29',
+    'T11',
+    'T12',
+    'T13',
+    'T14',
+    'T15',
+    'T16',
+    'T29',
+    'T30',
+    'S08',
+    'P25',
+    'P16',
+    'T10',
+    'P17',
+  ],
+  CLAIMS: ['S21', 'P09', 'T28'],
 };
 
 export type HarvestDeck = HarvestCard[];

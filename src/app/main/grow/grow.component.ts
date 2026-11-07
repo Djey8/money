@@ -1,4 +1,4 @@
-import { fromMinorUnits } from '@money/domain';
+import { fromMinorUnits, openOfferFor } from '@money/domain';
 import { Router } from '@angular/router';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
 import { Grow, GrowPhase, GrowType } from 'src/app/interfaces/grow';
@@ -286,7 +286,30 @@ export class GrowComponent implements OnInit, AfterViewInit {
   /** A Market card of this turn touched the project (an offer, a price move, a boost, a cost): look at it. */
   isAffected(project: Grow): boolean {
     const game = AppStateService.instance.cashflowGame;
-    return CashflowGameService.isCashflowGame() && !!game.turn?.affected?.includes(project.title);
+    if (!CashflowGameService.isCashflowGame()) return false;
+    // a sell offer of a Harvest card stays marked for as long as it is open (the setting of the game: for some turns)
+    return !!game.turn?.affected?.includes(project.title) || !!openOfferFor(game, project.title);
+  }
+
+  /**
+   * The sell offer a Harvest card has open for the project (JFK, 2026-11-05): what it pays and for how many more turns it stays - the
+   * price a sale from Grow gets, so it is told before the player sells. Null when no offer is open.
+   */
+  sellOffer(project: Grow): { price: number; left: number | null } | null {
+    const game = AppStateService.instance.cashflowGame;
+    if (!CashflowGameService.isCashflowGame()) return null;
+    const offer = openOfferFor(game, project.title);
+    if (!offer) return null;
+    const holding = (game.holdings ?? []).find((h) => !h.ended && h.title === project.title);
+    const minor =
+      offer.pricePerShareMinor !== undefined && holding?.units
+        ? offer.pricePerShareMinor * holding.units
+        : offer.salePriceMinor;
+    const left =
+      offer.validRolls !== undefined && offer.offeredAtRoll !== undefined && game.turn
+        ? offer.validRolls - (game.turn.count - offer.offeredAtRoll)
+        : null;
+    return { price: fromMinorUnits(minor), left };
   }
 
   /** A Cashflow game under rules that allow selling only to a Market card's offer hides the Sell button until there is one. */
@@ -307,7 +330,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Handles the click event on a row in the Smile Projects table.
+   * Handles the click event on a row in the Dream Projects table.
    * @param index - The index of the clicked row.
    */
   clickRow(index: number) {
@@ -387,7 +410,7 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Adds a new Smile Project.
+   * Adds a new Dream Project.
    */
   addGrowProject() {
     AddGrowComponent.zIndex = 1;
@@ -456,8 +479,8 @@ export class GrowComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Adds an amount to a Smile Project.
-   * @param index - The index of the Smile Project.
+   * Adds an amount to a Dream Project.
+   * @param index - The index of the Dream Project.
    */
   paybackProject(index: number) {
     // find liabilitie index

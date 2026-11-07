@@ -158,3 +158,43 @@ describe('the optional guards', () => {
     expect(parseGuards({ expectedVersion: '3' }).error).toMatch(/expectedVersion/);
   });
 });
+
+describe('what may be changed by hand (JFK, 2026-11-06)', () => {
+  it('takes a booking’s category, account and time, and nothing of the game', () => {
+    expect(
+      build({
+        type: 'edit_transaction',
+        index: 3,
+        patch: { category: '@Food', account: 'Splurge' },
+      }),
+    ).toEqual({
+      type: 'edit_transaction',
+      index: 3,
+      patch: { category: '@Food', account: 'Splurge' },
+    });
+    expect(error({ type: 'edit_transaction', index: 3, patch: { amount: 5 } })).toMatch(
+      /belong to the game/,
+    );
+    expect(error({ type: 'edit_transaction', index: 3, patch: {} })).toMatch(/needs a category/);
+    expect(error({ type: 'edit_transaction', index: -1, patch: { time: '09:00' } })).toMatch(
+      /booking number/,
+    );
+  });
+
+  it('takes the account of a payment and the phase of a project', () => {
+    expect(build({ type: 'edit_subscription', title: 'Rent', account: 'Splurge' })).toEqual({
+      type: 'edit_subscription',
+      title: 'Rent',
+      account: 'Splurge',
+    });
+    expect(build({ type: 'set_phase', kind: 'smile', id: 'life', phase: 'idea' })).toEqual({
+      type: 'set_phase',
+      kind: 'smile',
+      id: 'life',
+      phase: 'idea',
+    });
+    expect(error({ type: 'set_phase', kind: 'budget', id: 'x', phase: 'idea' })).toMatch(
+      /grow, smile or fire/,
+    );
+  });
+});

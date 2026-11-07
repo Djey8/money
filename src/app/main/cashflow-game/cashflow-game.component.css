@@ -1838,24 +1838,16 @@
   color: var(--color-text-secondary);
 }
 
+/* The buttons share the row by what is there: one button uses the whole width, two or three share it (a hidden button leaves no empty cell) */
 .cf-solo-decision-actions {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-}
-
-/* Pass (or Done) is gone: the buttons that are left share the whole row */
-.cf-solo-decision-actions[data-buttons='2'] {
-  grid-template-columns: 1fr 1fr;
-}
-
-.cf-solo-decision-actions[data-buttons='1'] {
-  grid-template-columns: 1fr;
 }
 
 /* The hint under the buttons (a payment that has to be made ...) uses the whole row, not the cell of a hidden button */
 .cf-solo-decision-actions > .cf-solo-hint {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   margin: 0;
 }
 
@@ -1938,10 +1930,14 @@
 }
 
 .cf-solo-decision-actions > .btn {
-  width: 100%;
-  flex: none;
+  flex: 1 1 6.5rem;
+  width: auto;
   padding: 10px 6px;
   font-size: 0.9rem;
+}
+
+.cf-solo-decision-actions > .btn.btn--primary {
+  flex-grow: 1.5;
 }
 
 .cf-dice-choice {
@@ -2345,16 +2341,7 @@
 /* The smallest phones (320 px): the decision buttons stay on one line each. */
 @media (max-width: 340px) {
   .cf-solo-decision-actions {
-    grid-template-columns: 1.9fr 1fr 1fr;
     gap: 6px;
-  }
-
-  .cf-solo-decision-actions[data-buttons='2'] {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .cf-solo-decision-actions[data-buttons='1'] {
-    grid-template-columns: 1fr;
   }
 
   .cf-solo-decision-actions > .btn {
@@ -3230,14 +3217,20 @@
   max-width: 100%;
 }
 
+/* one row of maps: more maps are scrolled to, never a second row (JFK, 2026-11-04) */
 .cf-shapes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr));
+  display: flex;
   gap: 8px;
   margin-bottom: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .cf-shape {
+  flex: 0 0 5.6rem;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3263,7 +3256,7 @@
   font-weight: 700;
 }
 
-/* The card of a tile of a Dreamfund map. */
+/* The card of a tile of a Dreamer map. */
 .cf-story-card {
   padding: 8px 10px;
   border: 3px solid var(--tc, #888);
@@ -3442,6 +3435,32 @@
   line-height: 1.4;
 }
 
+.cf-trait-card {
+  position: relative;
+}
+
+.cf-trait-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.cf-trait-more {
+  margin-top: 4px !important;
+}
+
+.cf-traits-hint {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.75;
+}
+
 .cf-trait-extra {
   margin-top: 4px !important;
   font-weight: 600;
@@ -3499,4 +3518,26 @@
 .cf-dashboard {
   max-width: 100%;
   overflow-x: clip;
+}
+
+.cf-tile-view {
+  position: relative;
+}
+
+/* the debug symbol of a card: top right, at the height of the back button */
+.cf-tile-debug {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.85;
 }

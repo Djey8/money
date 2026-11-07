@@ -1,7 +1,7 @@
 import type { OpportunityCard } from './cashflow-game/opportunity-deck';
 
 /**
- * The Opportunity stack of the Dreamfund game (JFK, 2026-10-26), generated from temp_cards/dreamfund-opportunity-deck.md v1.0: 98 cards,
+ * The Opportunity stack of the Dreamer game (JFK, 2026-10-26), generated from temp_cards/dreamfund-opportunity-deck.md v1.0: 98 cards,
  * Seed 36 / Sapling 32 / Tree 30. The traps carry an internal `trap` block that only the engine reads - it is never shown to a player.
  */
 export const OPPORTUNITY_CARDS: OpportunityCard[] = [

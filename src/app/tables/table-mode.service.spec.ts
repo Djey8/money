@@ -371,7 +371,25 @@ describe('TableModeService', () => {
     expect(mode.over()!.note).toBe('Not ranked: under 8 rounds');
   });
 
-  it('the settings menu: autoplay while away, the table page and the lobby; remove only for a host who is alone', () => {
+  it('says in the tab title that it is my turn while the game is played, and puts the title back when it is not', () => {
+    const original = document.title;
+    const mine = playingView({
+      youSeat: 0,
+      hostSeat: 0,
+      activeSeat: 0,
+      clock: { pausedAt: null },
+      players: [{ seat: 0, name: 'Ann', status: 'active', books: books() }],
+    } as unknown as Partial<TableView>);
+    const session = fakeSession(mine);
+    mode.begin(session, 'en', false);
+    TestBed.flushEffects();
+    expect(document.title).toContain('● Your turn');
+    (session.view as unknown as WritableSignal<TableView>).set({ ...mine, activeSeat: 1 });
+    TestBed.flushEffects();
+    expect(document.title).toBe(original);
+  });
+
+  it('the settings menu: autoplay while away and the lobby; remove only for a host who is alone', () => {
     const alone = playingView({
       youSeat: 0,
       hostSeat: 0,
@@ -388,7 +406,6 @@ describe('TableModeService', () => {
       'messages',
       'toasts',
       'autoplay',
-      'page',
       'lobby',
       'remove',
     ]);

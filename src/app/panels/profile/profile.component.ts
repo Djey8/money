@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { CrypticService } from 'src/app/shared/services/cryptic.service';
 import { AppStateService } from 'src/app/shared/services/app-state.service';
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { preloadCashflowContentFor } from 'src/app/shared/cashflow-content';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { SettingsComponent } from '../settings/settings.component';
@@ -94,7 +95,15 @@ export class ProfileComponent implements OnInit {
   static isProfile: boolean;
   static isUser: boolean;
   static username: string;
-  static mail: string;
+  private static mailValue: string;
+  /** The account's email; a game account ("cashflow") starts loading the game content the moment it is known. */
+  static get mail(): string {
+    return ProfileComponent.mailValue;
+  }
+  static set mail(value: string) {
+    ProfileComponent.mailValue = value;
+    preloadCashflowContentFor(value);
+  }
   static isImport: boolean;
 
   public classReference = ProfileComponent;

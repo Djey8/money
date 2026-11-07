@@ -292,7 +292,7 @@ export class AddGrowComponent extends BaseAddComponent {
   }
 
   /**
-   * Adds a smile project.
+   * Adds a dream project.
    */
   addGrowProject() {
     //First trim string

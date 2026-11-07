@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { TableRoomComponent } from './table-room.component';
 import { TableModeService } from './table-mode.service';
@@ -143,7 +143,7 @@ describe('TableRoomComponent', () => {
     expect(start.disabled).toBe(true);
   });
 
-  it('on my turn offers the roll the server lists, and sends it', async () => {
+  it('has no table page for a seated player once the game is on: only the way into the game screen', async () => {
     const session = fakeSession(
       {
         id: 'r1',
@@ -165,24 +165,22 @@ describe('TableRoomComponent', () => {
       ['roll'],
     );
     const fixture = await render(session);
-    expect(fixture.nativeElement.textContent).toContain('Your turn');
-    const roll = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
-      (b as HTMLElement).textContent!.includes('Roll the dice'),
-    ) as HTMLButtonElement;
-    roll.click();
-    expect(session.play).toHaveBeenCalledWith({ type: 'roll' });
-    // one token per player on the ring
-    expect(fixture.nativeElement.querySelectorAll('.rr-token--player')).toHaveLength(2);
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Open the game screen');
+    // no roll, no numbers of the players, no board: the game is played from Home with the game dashboard
+    expect(text).not.toContain('Roll the dice');
+    expect(fixture.nativeElement.querySelector('.rr-token--player')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.tr-players--books')).toBeNull();
   });
 
-  it('when it is not my turn there is no roll, and it says whose turn it is', async () => {
+  it('shows a spectator whose turn it is, without any move', async () => {
     const session = fakeSession({
       id: 'r1',
       version: 3,
       phase: 'playing',
       settings,
       hostSeat: 0,
-      youSeat: 1,
+      youSeat: null,
       activeSeat: 0,
       tableRound: 1,
       clock: { deadlineAt: null, pausedAt: null },
@@ -198,6 +196,7 @@ describe('TableRoomComponent', () => {
     expect(text).toContain('Turn of');
     expect(text).toContain('Ann');
     expect(text).not.toContain('Roll the dice');
+    expect(fixture.nativeElement.querySelectorAll('.rr-token--player')).toHaveLength(2);
   });
 
   it('counts the clock down from the server deadline', async () => {
@@ -209,7 +208,7 @@ describe('TableRoomComponent', () => {
       phase: 'playing',
       settings,
       hostSeat: 0,
-      youSeat: 0,
+      youSeat: null,
       activeSeat: 0,
       tableRound: 1,
       clock: { deadlineAt: Date.now() + 65_000, pausedAt: null },
@@ -233,7 +232,7 @@ describe('TableRoomComponent', () => {
       phase: 'playing',
       settings: { ...settings, clock: clockSettings },
       hostSeat: 0,
-      youSeat: 0,
+      youSeat: null,
       activeSeat: 0,
       tableRound: 1,
       clock: { pausedAt: null, banksMs: [], timeouts: [], ...clock },
@@ -283,27 +282,6 @@ describe('TableRoomComponent', () => {
       const fixture = await render(fakeSession(playing({ deadlineAt: null }, { mode: 'none' })));
       expect(fixture.nativeElement.textContent).toContain('away');
     });
-
-    it('says it is my turn in the tab title, and puts the title back when it is not', async () => {
-      const original = document.title;
-      const session = fakeSession(playing({ deadlineAt: null }, { mode: 'none' }));
-      const fixture = await render(session);
-      expect(document.title).toContain('● Your turn');
-      (session.view as ReturnType<typeof signal>).set({
-        ...(session.view() as object),
-        activeSeat: 1,
-      });
-      fixture.detectChanges();
-      expect(document.title).toBe(original);
-    });
-
-    it('puts the title back when the table is left', async () => {
-      const original = document.title;
-      const fixture = await render(fakeSession(playing({ deadlineAt: null }, { mode: 'none' })));
-      expect(document.title).not.toBe(original);
-      fixture.destroy();
-      expect(document.title).toBe(original);
-    });
   });
 
   describe('the result', () => {
@@ -313,7 +291,7 @@ describe('TableRoomComponent', () => {
       phase: 'finished',
       settings,
       hostSeat: 0,
-      youSeat: 1,
+      youSeat: null,
       activeSeat: null,
       tableRound: 4,
       clock: { deadlineAt: null, pausedAt: null, banksMs: [], timeouts: [] },
@@ -356,23 +334,6 @@ describe('TableRoomComponent', () => {
       expect(rows[0]).toContain('escaped the rat race');
       expect(rows[1]).toContain('Ann');
       expect(rows[1]).toContain('bankrupt');
-    });
-
-    it('files my game once, and then says it is saved', async () => {
-      const session = fakeSession(finished()) as ReturnType<typeof fakeSession> & {
-        save: jest.Mock;
-      };
-      session.save = jest.fn(async () => true);
-      const fixture = await render(session);
-      const button = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
-        (b as HTMLElement).textContent!.includes('Save to my games'),
-      ) as HTMLButtonElement;
-      button.click();
-      await Promise.resolve();
-      await Promise.resolve();
-      fixture.detectChanges();
-      expect(session.save).toHaveBeenCalledTimes(1);
-      expect(fixture.nativeElement.textContent).toContain('Saved in your games.');
     });
   });
 
@@ -597,10 +558,13 @@ describe('TableRoomComponent opens the game by itself', () => {
 
   it('puts the table into the game screen once it is being played and I am seated', async () => {
     const session = fakeSession(playing);
+    const navigate = jest.spyOn(Router.prototype, 'navigate').mockResolvedValue(true);
     await render(session, '');
     const mode = TestBed.inject(TableModeService);
     expect(mode.active()).toBe(true);
     expect(mode.session()).toBe(session);
+    // and the game is played from Home with the game dashboard, not from this page
+    expect(navigate).toHaveBeenCalledWith(['/home']);
   });
 
   it('stays on the page when asked to (coming back from the game)', async () => {

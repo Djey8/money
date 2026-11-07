@@ -34,7 +34,7 @@ describe('SmileProjectsComponent', () => {
     expect(AppStateService.instance.allSmileProjects).toHaveLength(0);
   });
 
-  it('search should filter smile projects by title', () => {
+  it('search should filter dream projects by title', () => {
     AppStateService.instance.allSmileProjects = [
       {
         title: 'Vacation',

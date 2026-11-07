@@ -1,18 +1,18 @@
-# Dreamfund (Traumtopf) - reviewing a game, and what an agent can do
+# Dreamer (Träumer) - reviewing a game, and what an agent can do
 
 For agents (MCP). Read `dreamfund_game_en` (or `dreamfund_game_de`) first: it explains the whole game - the accounts, the map, every card
 type, the goals, and the statistics of the simulation that the review is compared with.
 
 ## What an agent can do today
 
-| Task                                                                            | How                                                                                                                                                                 |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Teach or explain the game                                                       | `explain_concept` topic `dreamfund_game_en` / `dreamfund_game_de`, then answer from it.                                                                             |
-| Judge a game that was played                                                    | `get_cashflow_game` action `review` (the running game) or `review_save` (a saved game, `id`). The game must have its step history: save it in full (not `compact`). |
-| Read the state of the account                                                   | `get_cashflow_game` action `game` (the books: cash, subscriptions, Grow projects with their notes).                                                                 |
-| Play Dreamfund moves (plan a card, buy, sell, roll a die, dreams, life, career) | **Not available through the API yet.** The classic Cashflow moves are; the Dreamfund tiles are played in the app.                                                   |
+| Task                                                                          | How                                                                                                                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Teach or explain the game                                                     | `explain_concept` topic `dreamfund_game_en` / `dreamfund_game_de`, then answer from it.                                                                             |
+| Judge a game that was played                                                  | `get_cashflow_game` action `review` (the running game) or `review_save` (a saved game, `id`). The game must have its step history: save it in full (not `compact`). |
+| Read the state of the account                                                 | `get_cashflow_game` action `game` (the books: cash, subscriptions, Grow projects with their notes).                                                                 |
+| Play Träumer moves (plan a card, buy, sell, roll a die, dreams, life, career) | **Not available through the API yet.** The classic Cashflow moves are; the Träumer tiles are played in the app.                                                     |
 
-## The review of a Dreamfund game
+## The review of a Dreamer game
 
 `review` returns `kind: "dreamfund"` with a `review` object and a `text` in Markdown. It does not play positions on with a strategy (the
 classic analyst does that); it reads the story of the game from the history - the position before every step and the position now:
@@ -26,8 +26,14 @@ classic analyst does that); it reads the story of the game from the history - th
 - `savingCards`: how many of the six free saving cards were taken (every won game of the simulation took all six).
 - `findings`: the points to make, each good (`good`), bad (`bad`) or a tip (`tip`), with the month when there is one.
 
-The benchmark is the simulation of 2,400 games of Jonas on Medium: the best ways of playing reach the reserve about month 17, the debts
-22, the dream 39 and independence 52. A human game can be faster (luck on the dice cards) or slower.
+The benchmark is the simulation of the game's own character on its own difficulty (`benchmark` in the review: `character`, `level`,
+`bestStrategy`, `winRate`, `bankruptRate`, `strategies` and the month of each goal the best strategy reached in `months`). There are ten
+characters (Jonas, Mehmet, Lena, Sophie, Tobias, Katrin, Frank, Dr. Jan, Heike, Peter) in three difficulties (Easy, Normal, Hard), 200
+games per strategy and character and level - read explain_concept topic `dreamfund_map` for the whole table. Judge a game by its own
+cell: a win of Dr. Jan on Hard (about 4% of simulated games) is a far better game than a win of Peter on Easy (over 80%). Say which
+strategies did best for this character and which one the player's game resembled. Without a `benchmark` (an unknown character) the
+Jonas numbers apply: the reserve about month 17, the debts 22, the dream 39 and independence 52. A human game can be faster (luck on the
+dice cards) or slower.
 
 ## How to give the feedback
 

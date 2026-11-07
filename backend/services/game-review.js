@@ -13,7 +13,7 @@ const {
   reviewDreamfund,
   describeDreamfundReview,
 } = require('@money/domain');
-const { CASHFLOW_GAME_SETS } = require('@money/domain/dist/cashflow-content');
+const { CASHFLOW_GAME_SETS } = require('./game-sets');
 
 /**
  * The game analyst on the server (todo/cashflow-game-analysis.md, E6): runs the domain's `reviewGame` on a stored undo
@@ -98,7 +98,7 @@ function runWorker(data) {
  * @param options `strategy` (a preset id the games continue with), `rollouts`, `timeBudgetMs`, `money` (formatter)
  */
 async function reviewHistory(stack, live, options) {
-  // a Dreamfund game (it has a life) is read as a story - milestones, purchases, loans, missed chances - against what the simulation
+  // a Dreamer game (it has a life) is read as a story - milestones, purchases, loans, missed chances - against what the simulation
   // of thousands of games found; the classic analyst plays positions on with a strategy, which a game of dice cards and markets
   // does not allow
   if (live.cashflowGame && live.cashflowGame.life) {

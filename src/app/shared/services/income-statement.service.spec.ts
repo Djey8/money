@@ -258,7 +258,7 @@ describe('IncomeStatementService', () => {
       expect(AppStateService.instance.mojo.amount).toBe(50);
     });
 
-    it('tracks Smile project contributions', () => {
+    it('tracks Dream project contributions', () => {
       AppStateService.instance.allSmileProjects = [
         {
           title: 'Vacation',

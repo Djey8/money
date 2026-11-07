@@ -1,12 +1,12 @@
 import { spaceAt, type RatRaceBoard, type RatRaceSpace, type RatRaceSpaceKind } from './board';
 
 /**
- * The maps of Dreamfund (JFK, 2026-10-25): a closed track of tiles in a shape - ring, infinity, rectangle, square, mountain - and a
+ * The maps of Dreamer (JFK, 2026-10-25): a closed track of tiles in a shape - ring, infinity, rectangle, square, mountain - and a
  * size, with the tiles laid out by a seeded generator under a few rules. The engine only ever sees the ordered list of tiles (the
  * `RatRaceBoard`), exactly as with the classic ring; where a tile is drawn is geometry, and only the picture needs it.
  */
 
-/** The kinds of tile of a Dreamfund map. */
+/** The kinds of tile of a Dreamer map. */
 export type DreamfundTile =
   'payday' | 'dream' | 'emergency' | 'opportunity' | 'harvest' | 'life' | 'career';
 
@@ -20,7 +20,7 @@ export const DREAMFUND_TILES: readonly DreamfundTile[] = [
   'career',
 ];
 
-export type BoardShape = 'ring' | 'infinity' | 'rectangle' | 'square' | 'mountain';
+export type BoardShape = 'ring' | 'infinity' | 'yinyang' | 'rectangle' | 'square' | 'mountain';
 export type BoardSize = 'small' | 'medium' | 'large';
 /** How much luck and bad luck the map holds. Only `medium` is offered while the balance is being measured. */
 export type BoardDifficulty = 'easy' | 'medium' | 'hard';
@@ -28,6 +28,7 @@ export type BoardDifficulty = 'easy' | 'medium' | 'hard';
 export const BOARD_SHAPES: readonly BoardShape[] = [
   'ring',
   'infinity',
+  'yinyang',
   'rectangle',
   'square',
   'mountain',
@@ -41,6 +42,10 @@ export interface BoardSetup {
   /** The seed of the layout: the same seed gives the same tiles. */
   seed: number;
   difficulty?: BoardDifficulty;
+  /** False: a game for the life dream alone - the map has no Smile tiles, the Opportunity tiles take their place. */
+  dreams?: boolean;
+  /** The Yin Yang map has two tracks that share the S: which one this player walks (0 white, 1 black; absent: 0). */
+  lane?: number;
 }
 
 export const TILE_COUNTS: Record<BoardSize, number> = { small: 24, medium: 36, large: 48 };
@@ -126,9 +131,20 @@ function spreadEvenly(n: number, count: number, fixed: number[] = []): number[] 
  * a kind side by side, an Emergency never directly after a Payday, and the Paydays of a map with a crossing (the infinity) are the
  * crossing itself, which is walked twice a lap.
  */
-export function layoutTiles(setup: BoardSetup, fixedPaydays: number[] = []): DreamfundTile[] {
+export function layoutTiles(
+  setup: BoardSetup,
+  fixedPaydays: number[] = [],
+  preset: (DreamfundTile | null)[] = [],
+): DreamfundTile[] {
   const n = TILE_COUNTS[setup.size];
   const counts = { ...TILE_MIX[setup.size][setup.difficulty ?? 'medium'] };
+  // a game for the life dream alone has no dreams to collect: the tiles are dealt out again, with more Opportunity - and one
+  // more Emergency, so the map does not get easier (JFK, 2026-11-04)
+  if (setup.dreams === false && counts.dream > 0) {
+    counts.opportunity += counts.dream - 1;
+    counts.emergency += 1;
+    counts.dream = 0;
+  }
   const random = mulberry32(setup.seed * 7919 + n);
   const paydays = new Set(spreadEvenly(n, counts.payday, fixedPaydays));
   const rest = (Object.keys(counts) as DreamfundTile[]).filter((kind) => kind !== 'payday');
@@ -138,6 +154,14 @@ export function layoutTiles(setup: BoardSetup, fixedPaydays: number[] = []): Dre
   const placed: (DreamfundTile | null)[] = Array.from({ length: n }, (_, i) =>
     paydays.has(i) ? 'payday' : null,
   );
+  // tiles that are held in place (the part of a Yin Yang track that both players walk): they count against the mix
+  const locked = new Set<number>(paydays);
+  preset.forEach((kind, i) => {
+    if (!kind || kind === 'payday' || i >= n) return;
+    placed[i] = kind;
+    left[kind] -= 1;
+    locked.add(i);
+  });
 
   // each kind is spread round the track: the rarest first, every tile as far from the others of its kind as the free places allow
   // (JFK, 2026-10-26: well distributed, not clustered). The most common kind takes what is left.
@@ -172,7 +196,7 @@ export function layoutTiles(setup: BoardSetup, fixedPaydays: number[] = []): Dre
     }
   }
   const result = placed as DreamfundTile[];
-  repair(result, paydays, random);
+  repair(result, locked, random);
   return result;
 }
 
@@ -244,6 +268,8 @@ export interface DreamfundBoard {
   standsUp: boolean;
   /** The distance between neighbouring tiles. */
   spacing: number;
+  /** A map with two tracks (the Yin Yang): the tiles of both, drawn once, and where each track's tiles are among them. */
+  picture?: YinYangPicture;
 }
 
 function dense(count: number, at: (t: number) => BoardPoint): BoardPoint[] {
@@ -270,6 +296,7 @@ function roundedRectangle(width: number, height: number, radius: number): BoardP
 /** The closed outline of a shape, landscape, in a box `aspect` wide and 1 high, as a dense polyline. */
 function outline(shape: BoardShape): { points: BoardPoint[]; aspect: number } {
   switch (shape) {
+    case 'yinyang': // drawn by its own picture (`yinYang`); the outline is never used
     case 'ring':
       return {
         aspect: 1,
@@ -380,14 +407,206 @@ function resample(polyline: BoardPoint[], count: number): BoardPoint[] {
   return points;
 }
 
+/** A dense open polyline smoothed by averaging neighbours (its two ends kept): corners become gentle bends. */
+function smoothOpen(line: BoardPoint[], passes: number): BoardPoint[] {
+  let current = line;
+  for (let pass = 0; pass < passes; pass += 1) {
+    current = current.map((p, i) =>
+      i === 0 || i === current.length - 1
+        ? p
+        : {
+            x: (current[i - 1].x + 2 * p.x + current[i + 1].x) / 4,
+            y: (current[i - 1].y + 2 * p.y + current[i + 1].y) / 4,
+          },
+    );
+  }
+  return current;
+}
+
+/** `count` points at equal distances along an open polyline, the first and the last point of it included. */
+function resampleOpen(polyline: BoardPoint[], count: number): BoardPoint[] {
+  const lengths: number[] = [0];
+  for (let i = 1; i < polyline.length; i += 1) {
+    const a = polyline[i - 1];
+    const b = polyline[i];
+    lengths.push(lengths[i - 1] + Math.hypot(b.x - a.x, b.y - a.y));
+  }
+  const total = lengths[lengths.length - 1];
+  const points: BoardPoint[] = [];
+  let segment = 0;
+  for (let k = 0; k < count; k += 1) {
+    const target = (k * total) / (count - 1);
+    while (segment < polyline.length - 2 && lengths[segment + 1] < target) segment += 1;
+    const a = polyline[segment];
+    const b = polyline[segment + 1];
+    const span = lengths[segment + 1] - lengths[segment] || 1;
+    const f = Math.min(1, (target - lengths[segment]) / span);
+    points.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+  }
+  return points;
+}
+
 const cache = new Map<string, DreamfundBoard>();
+
+// ── the Yin Yang map ──
+
+/** The picture of a map with two tracks: every tile once, and where each track's tiles are among them. */
+export interface YinYangPicture {
+  tiles: { kind: DreamfundTile; x: number; y: number }[];
+  /** For each track (0 white, 1 black): the index into `tiles` of each of its tiles, in the order it is walked. */
+  lanes: number[][];
+  /** The two heads of the symbol, where the players of each side are shown (the centre and the radius, in the box of the map). */
+  heads: { x: number; y: number; radius: number }[];
+  /** The S that both tracks share, and the circle round the map. */
+  seam: BoardPoint[];
+  rim: BoardPoint[];
+}
+
+/** `count + 1` points on a circle of radius `r` round (cx, cy), from angle `from` to angle `to` (radians, y pointing down). */
+function arc(
+  cx: number,
+  cy: number,
+  r: number,
+  from: number,
+  to: number,
+  count = 90,
+): BoardPoint[] {
+  return Array.from({ length: count + 1 }, (_, i) => {
+    const angle = from + ((to - from) * i) / count;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  });
+}
+
+/** A track turned so it starts `by` tiles later (the same ring, another first tile). */
+function turn<T>(ring: T[], by: number): T[] {
+  return ring.map((_, i) => ring[(i + by) % ring.length]);
+}
+
+/**
+ * The Yin Yang map (JFK, 2026-11-04): a circle with an S through it. Every player walks a whole side: the white track is the S and
+ * the left half of the circle, the black track the right half of the circle and the S the other way. The S is common ground, and so
+ * are its Paydays; each track has `n` tiles, half of them on the S (the two ends of the S, where the tracks meet, included).
+ */
+function yinYang(setup: BoardSetup): {
+  boards: { kinds: DreamfundTile[]; points: BoardPoint[] }[];
+  picture: YinYangPicture;
+  spacing: number;
+} {
+  const n = TILE_COUNTS[setup.size];
+  const m = n / 2;
+  // The way both walk, from the top of the circle (0.5, 0) to the bottom (0.5, 1): a short stem, the S (the upper bulge to the
+  // right, the lower to the left), a short stem. The S stays clear of the circle, so tiles never crowd where the two meet.
+  const upper = arc(0.5, 0.3, 0.2, -Math.PI / 2, Math.PI / 2); // from the stem round the right to the centre
+  const lower = arc(0.5, 0.7, 0.2, -Math.PI / 2, -Math.PI * 1.5); // from the centre round the left to the stem
+  // the corners where the stems meet the S are rounded, so no tile has a neighbour much closer than the others
+  const way = smoothOpen(
+    resampleOpen([{ x: 0.5, y: 0 }, ...upper, ...lower.slice(1), { x: 0.5, y: 1 }], 600),
+    700,
+  );
+  const wayPoints = resampleOpen(way, m + 1);
+  // the half circles: the interior tiles of each, m - 1 of them, from the top down the right and from the bottom up the left
+  const rim = (side: 1 | -1, j: number): BoardPoint => {
+    const angle = (j / m) * Math.PI;
+    return side === 1
+      ? { x: 0.5 + 0.5 * Math.sin(angle), y: 0.5 - 0.5 * Math.cos(angle) }
+      : { x: 0.5 - 0.5 * Math.sin(angle), y: 0.5 + 0.5 * Math.cos(angle) };
+  };
+  const leftRim = Array.from({ length: m - 1 }, (_, j) => rim(-1, j + 1)); // bottom up to the top
+  const rightRim = Array.from({ length: m - 1 }, (_, j) => rim(1, j + 1)); // top down to the bottom
+  // the white track: the way from top to bottom, then the left half back up; the black one: the right half down, then the way back
+  const whitePoints = [...wayPoints, ...leftRim];
+  const blackPoints = [
+    wayPoints[0],
+    ...rightRim,
+    wayPoints[m],
+    ...[...wayPoints].reverse().slice(1, m),
+  ];
+  // The Paydays are spread evenly round the white track, as on every map: those on the S are common (the black track has them too),
+  // the others are on the white half; the black track gets the same on its own half, mirrored, so both have the usual spread.
+  const count = TILE_MIX[setup.size][setup.difficulty ?? 'medium'].payday;
+  const whiteFixed = Array.from({ length: count }, (_, j) => Math.floor((j * n) / count));
+  const blackFixed = whiteFixed.map((w) =>
+    w === 0 ? 0 : w === m ? m : w < m ? m + (m - w) : n - w,
+  );
+  const whiteKinds = layoutTiles(setup, whiteFixed);
+  // the S of the black track is the white one walked the other way: its tiles are the same tiles
+  const blackPreset: (DreamfundTile | null)[] = Array.from({ length: n }, () => null);
+  blackPreset[0] = whiteKinds[0];
+  blackPreset[m] = whiteKinds[m];
+  for (let j = 1; j < m; j += 1) blackPreset[m + j] = whiteKinds[m - j];
+  const blackKinds = layoutTiles({ ...setup, seed: setup.seed + 977 }, blackFixed, blackPreset);
+  // the picture: the tiles of the white track, then the black track's own ones
+  const tiles = whiteKinds.map((kind, i) => ({ kind, x: whitePoints[i].x, y: whitePoints[i].y }));
+  const whiteLane = whiteKinds.map((_, i) => i);
+  const blackLane: number[] = [];
+  for (let i = 0; i < n; i += 1) {
+    if (i === 0) blackLane.push(0);
+    else if (i === m) blackLane.push(m);
+    else if (i > m) blackLane.push(m - (i - m));
+    else {
+      blackLane.push(tiles.length);
+      tiles.push({ kind: blackKinds[i], x: blackPoints[i].x, y: blackPoints[i].y });
+    }
+  }
+  // the distance between neighbours: the mean over the white track (the stems and the rim differ by a few percent)
+  const spacing =
+    whitePoints.reduce((sum, p, i) => {
+      const q = whitePoints[(i + 1) % n];
+      return sum + Math.hypot(q.x - p.x, q.y - p.y);
+    }, 0) / n;
+  return {
+    spacing,
+    // Both start on their own half of the circle, on opposite sides, and meet on the S: the white track begins at the first tile of
+    // the left half (just after the bottom), the black one at the first tile of the right half (just after the top).
+    boards: [
+      { kinds: turn(whiteKinds, m + 1), points: turn(whitePoints, m + 1) },
+      { kinds: turn(blackKinds, 1), points: turn(blackPoints, 1) },
+    ],
+    picture: {
+      tiles,
+      lanes: [turn(whiteLane, m + 1), turn(blackLane, 1)],
+      // the heads of the symbol: the players of the white track show in the white one (the lower), the black in the upper
+      heads: [
+        { x: 0.5, y: 0.7, radius: 0.1 },
+        { x: 0.5, y: 0.3, radius: 0.1 },
+      ],
+      seam: way,
+      rim: [
+        ...arc(0.5, 0.5, 0.5, -Math.PI / 2, Math.PI / 2),
+        ...arc(0.5, 0.5, 0.5, Math.PI / 2, Math.PI * 1.5).slice(1),
+      ],
+    },
+  };
+}
 
 /** The map of a setup: its tiles for the engine and where they stand for the picture. The same setup is always the same map. */
 export function buildDreamfundBoard(setup: BoardSetup): DreamfundBoard {
-  const key = `${setup.shape}/${setup.size}/${setup.seed}/${setup.difficulty ?? 'medium'}`;
+  const lane = setup.shape === 'yinyang' ? (setup.lane ?? 0) % 2 : 0;
+  const key = `${setup.shape}/${setup.size}/${setup.seed}/${setup.difficulty ?? 'medium'}/${setup.dreams === false ? 'life' : 'dreams'}/${lane}`;
   const cached = cache.get(key);
   if (cached) return cached;
   const n = TILE_COUNTS[setup.size];
+  if (setup.shape === 'yinyang') {
+    const built = yinYang(setup);
+    const mine = built.boards[lane];
+    const spaces: RatRaceSpace[] = mine.kinds.map((kind, index) => ({
+      index,
+      kind: kind as RatRaceSpaceKind,
+      printed: kind,
+    }));
+    const spacing = built.spacing;
+    const result: DreamfundBoard = {
+      setup,
+      board: Object.freeze(spaces.map((space) => Object.freeze(space))),
+      points: mine.points,
+      aspect: 1,
+      standsUp: false,
+      spacing,
+      picture: built.picture,
+    };
+    cache.set(key, result);
+    return result;
+  }
   const { points: outlinePoints, aspect } = outline(setup.shape);
   const points = resample(outlinePoints, n);
   // the crossing of the infinity is walked twice a lap: both visits are its Paydays

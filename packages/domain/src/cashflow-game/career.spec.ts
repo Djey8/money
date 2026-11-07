@@ -140,6 +140,17 @@ describe('the career of the Dual Student (temp_cards v0.2)', () => {
     expect(salary.amountMinor).toBe(Math.round(5600000 / 12));
   });
 
+  it('the study ends with the first full-time contract: stage 2 takes the student out of education', () => {
+    const books = start();
+    expect(books.state.life?.education).toBe(true);
+    const effects = applyCareerStage(books, findStage(track, 'C2')!, {
+      date: '2026-12-15',
+      lang: 'en',
+    });
+    expect(effects.state.life?.education).toBe(false);
+    expect(effects.state.life?.home).toBe('shared_flat');
+  });
+
   it('each stage up the ladder keeps raising the cash flow', () => {
     let books = start();
     let last = cashflow(books);

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AppStateService } from './app-state.service';
 import { LocalService } from './local.service';
 import { ProfileComponent } from '../../panels/profile/profile.component';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DemoService {
@@ -18,6 +19,12 @@ export class DemoService {
 
   /** Activate demo mode: seed sample data, set flag, navigate to home. */
   startDemo(): void {
+    // signed in with a game account on the self-hosted edition: the Demo button is the guided Dreamer demo game (JFK, 2026-11-06);
+    // anybody else - a normal account, nobody - gets the normal demo
+    if (environment.mode === 'selfhosted' && (ProfileComponent.mail ?? '').includes('cashflow')) {
+      void this.router.navigate(['/tables'], { queryParams: { game: 'dreamfund', demo: 'start' } });
+      return;
+    }
     sessionStorage.setItem('demo_mode', 'true');
 
     const today = new Date();
@@ -202,7 +209,7 @@ export class DemoService {
       { tag: 'Student Loan', amount: 4800, investment: false, credit: 12000 },
     ];
 
-    // ── Smile Projects ──
+    // ── Dream Projects ──
     const nowIso = iso(today);
     const sampleSmileProjects = [
       {

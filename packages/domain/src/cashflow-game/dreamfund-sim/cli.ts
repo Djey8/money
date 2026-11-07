@@ -3,9 +3,14 @@ import { dirname } from 'node:path';
 import { reportMarkdown, runBatch, type BatchConfig } from './batch';
 import type { CustomRules } from '../custom-rules';
 import { injectStats, statsMarkdown } from './stats-doc';
+import { CASHFLOW_GAME_SETS } from '../../cashflow-content';
+import { setDefaultTableGameSets } from '../table/default-game-sets';
+
+// the lab plays with the printed catalog (the domain package does not import it itself)
+setDefaultTableGameSets(CASHFLOW_GAME_SETS);
 
 /**
- * Runs a batch of Dreamfund games from the command line (JFK, 2026-10-26):
+ * Runs a batch of Dreamer games from the command line (JFK, 2026-10-26):
  *
  *   npm run simulate:dreamfund -- --games 100 --policies saver,etf --shapes ring,infinity --sizes medium --out reports/run.md
  *
@@ -32,6 +37,7 @@ const config: BatchConfig = {
   policies: list('policies'),
   shapes: list('shapes') as BatchConfig['shapes'],
   sizes: list('sizes') as BatchConfig['sizes'],
+  professionId: option('character'),
   maxTurns: option('max-turns') ? Number(option('max-turns')) : undefined,
   firstSeed: option('first-seed') ? Number(option('first-seed')) : undefined,
   rules,

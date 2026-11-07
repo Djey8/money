@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { buildDreamfundBoard, type BoardShape } from '@money/domain';
-import { DreamBoardComponent, tokenSpots } from './dream-board.component';
+import { DreamBoardComponent, seamSpot, tokenSpots } from './dream-board.component';
+import type { BoardToken } from './rat-race-board.component';
 
 describe('DreamBoardComponent', () => {
   let fixture: ComponentFixture<DreamBoardComponent>;
@@ -154,6 +155,104 @@ describe('DreamBoardComponent', () => {
       expect(Math.hypot(spot.x - centre.x, spot.y - centre.y)).toBeLessThan(
         Math.hypot(radial.x, radial.y),
       );
+    });
+  });
+
+  describe('the Yin Yang map', () => {
+    const renderYinYang = (tokens: BoardToken[]) => {
+      fixture = TestBed.createComponent(DreamBoardComponent);
+      fixture.componentRef.setInput(
+        'map',
+        buildDreamfundBoard({ shape: 'yinyang', size: 'medium', seed: 2 }),
+      );
+      fixture.componentRef.setInput('position', 3);
+      fixture.componentRef.setInput('tokens', tokens);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    };
+    const token = (id: string, lane: number, position: number | null): BoardToken => ({
+      id,
+      lane,
+      position,
+      color: lane === 0 ? '#1976d2' : '#d81b60',
+      label: id.toUpperCase(),
+      name: 'Player ' + id,
+      photo: id === 'a' ? 'https://example.test/a.jpg' : null,
+    });
+
+    it('draws every tile of both tracks once, the S and the circle, and the two heads', () => {
+      const element = renderYinYang([]);
+      // 36 tiles on a track; the S with its ends (19) is shared: 2 x 36 - 19
+      expect(element.querySelectorAll('.db-tile')).toHaveLength(53);
+      expect(element.querySelectorAll('polyline.db-track, polygon.db-track')).toHaveLength(2);
+      expect(element.querySelectorAll('.db-head-disc')).toHaveLength(2);
+    });
+
+    it('shows the players of each side in the head of their colour, small and side by side when there are several', () => {
+      const element = renderYinYang([
+        token('a', 0, 3),
+        token('b', 1, 3),
+        token('c', 0, 20),
+        token('d', 0, null),
+      ]);
+      const heads = Array.from(element.querySelectorAll('.db-head'));
+      expect(heads[0].querySelectorAll('.db-head-ring')).toHaveLength(3);
+      expect(heads[1].querySelectorAll('.db-head-ring')).toHaveLength(1);
+      // the picture of a player who has one is drawn, the others show a letter on their colour
+      expect(heads[0].querySelectorAll('image')).toHaveLength(1);
+      expect(element.querySelectorAll('.db-token--player')).toHaveLength(4);
+    });
+
+    it('on the S each track stays on its own side the whole way: no jumping from one side of the tiles to the other', () => {
+      for (const size of ['small', 'medium', 'large'] as const) {
+        const map = buildDreamfundBoard({ shape: 'yinyang', size, seed: 2 });
+        const picture = map.picture!;
+        const scale = 100 / map.spacing;
+        const seam = picture.seam.map((p) => ({ x: p.x * scale, y: p.y * scale }));
+        const tiles = picture.tiles.map((t) => ({ x: t.x * scale, y: t.y * scale }));
+        const shared = picture.lanes[0].filter((i) => picture.lanes[1].includes(i));
+        // which side of the way (top to bottom) a spot is on: the sign of the cross product with the way's direction there
+        const sideOf = (tile: { x: number; y: number }, spot: { x: number; y: number }) => {
+          let nearest = 0;
+          seam.forEach((p, k) => {
+            if (
+              Math.hypot(p.x - tile.x, p.y - tile.y) <
+              Math.hypot(seam[nearest].x - tile.x, seam[nearest].y - tile.y)
+            )
+              nearest = k;
+          });
+          const before = seam[Math.max(0, nearest - 3)];
+          const after = seam[Math.min(seam.length - 1, nearest + 3)];
+          return Math.sign(
+            (after.x - before.x) * (spot.y - tile.y) - (after.y - before.y) * (spot.x - tile.x),
+          );
+        };
+        const sides = { white: new Set<number>(), black: new Set<number>() };
+        for (const index of shared) {
+          const white = seamSpot(tiles[index], seam, 1, tiles);
+          const black = seamSpot(tiles[index], seam, -1, tiles);
+          sides.white.add(sideOf(tiles[index], white));
+          sides.black.add(sideOf(tiles[index], black));
+          // and a token beside a tile covers no other tile
+          for (const spot of [white, black]) {
+            const room = Math.min(
+              ...tiles
+                .filter((_, k) => k !== index)
+                .map((t) => Math.hypot(spot.x - t.x, spot.y - t.y)),
+            );
+            expect(room).toBeGreaterThanOrEqual(38 + 4);
+          }
+        }
+        expect(sides.white.size).toBe(1);
+        expect(sides.black.size).toBe(1);
+        expect([...sides.white][0]).toBe(-[...sides.black][0]);
+      }
+    });
+
+    it('a token of each track stands on its own side of a tile the tracks share', () => {
+      const element = renderYinYang([token('a', 0, 3), token('b', 1, 0)]);
+      const [white, black] = Array.from(element.querySelectorAll<HTMLElement>('.db-token--player'));
+      expect(white.style.transform).not.toBe(black.style.transform);
     });
   });
 });

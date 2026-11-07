@@ -22,11 +22,14 @@ const {
 } = require('@money/domain/dist/cashflow-game/table/bot-catalog');
 const { createGameRoomService, problemFor } = require('../services/game-rooms');
 const { createGameStats } = require('../services/game-stats');
+const { createDreamStats } = require('../services/game-dream-stats');
 const { fileFinishedGame } = require('../repositories/game-saves');
 const { GameActionError } = require('../repositories/game-play');
 const { createGameRoomHub } = require('../services/game-room-hub');
 const { createRoomClocks } = require('../services/game-room-clocks');
 const { createBotDriver } = require('../services/game-room-bots');
+const { dreamfund } = require('../services/game-room-kinds');
+const profilePicture = require('../repositories/profile-picture');
 const { parseCommand, parseGuards } = require('../services/game-room-commands');
 
 /**
@@ -76,6 +79,24 @@ function stats() {
   }
   return statsService;
 }
+/** The Dreamer leaderboard (services/game-dream-stats.js): a world of its own next to the classic one. */
+let dreamStatsService = null;
+function dreamStats() {
+  if (!dreamStatsService) {
+    dreamStatsService = createDreamStats({
+      db: getGameStatsDb(),
+      nicknameOf,
+      // a person's picture is the account's: fetched under the id of the account's game profile (made when it is missing)
+      pictureOf: async (accountId) => {
+        const picture = await profilePicture.getPicture(getUsersDb(), accountId);
+        if (!picture) return null;
+        const profile = await stats().ensureHumanProfile(accountId);
+        return profile ? { playerId: profile.playerId, pictureVersion: picture.updatedAt } : null;
+      },
+    });
+  }
+  return dreamStatsService;
+}
 const hub = createGameRoomHub();
 // One timer per table that is being played with a clock; when it rings the service decides (services/game-room-clocks.js).
 const clocks = createRoomClocks({
@@ -94,15 +115,16 @@ function rooms() {
       clocks,
       bots,
       // A finished game is filed in a player's own saved games through the saved-games store (slice S5).
-      filer: (userId, books, name, multiplayer) =>
+      filer: (userId, books, name, multiplayer, extras) =>
         fileFinishedGame(
           { usersDb: getUsersDb(), authDb: getAuthDb(), savesDb: getGameSavesDb() },
           userId,
-          { books, name, multiplayer },
+          { books, name, multiplayer, extras },
         ),
       // one name per account: the nickname of the account is the name at every table
       nicknameOf,
       stats: stats(),
+      dreamStats: dreamStats(),
       db: getGameRoomsDb(),
       log: (message, meta) => logger.warn(message, meta),
     });
@@ -159,7 +181,11 @@ router.get(
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
       return invalid(res, 'limit must be a whole number from 1 to 200.');
     }
-    return res.json({ items: await rooms().listRooms(req.userId, { scope, limit }) });
+    const kind = req.query.kind === undefined ? 'classic' : req.query.kind;
+    if (!['classic', 'dreamfund', 'all'].includes(kind)) {
+      return invalid(res, "kind must be 'classic', 'dreamfund' or 'all'.");
+    }
+    return res.json({ items: await rooms().listRooms(req.userId, { scope, limit, kind }) });
   }),
 );
 
@@ -214,6 +240,36 @@ router.get(
   '/bots',
   ...guard('r'),
   handle(async (req, res) => {
+    // the bots of a Dreamer table are the twelve strategies of the simulation (docs/DREAMFUND_SIMULATION.md): `?kind=dreamfund`
+    if (req.query.kind === 'dreamfund') {
+      const skills = dreamfund.levels.map((l) => l.id);
+      const idOf = (id, skill) => (skill === 'master' ? id : `${id}--${skill}`);
+      // what each bot is rated at each skill level (the lobby sorts and shows it)
+      let rated = {};
+      try {
+        rated = await dreamStats().botRatings(
+          dreamfund.policies
+            .filter((p) => !p.demo)
+            .flatMap((p) => skills.map((skill) => idOf(p.id, skill))),
+        );
+      } catch (error) {
+        logger.warn('Dreamer bot ratings could not be read', { error: error.message });
+      }
+      return res.json({
+        items: dreamfund.policies.map((policy) => ({
+          id: policy.id,
+          name: policy.name,
+          policyId: policy.id,
+          ...(policy.demo ? { demo: true, description: policy.description } : {}),
+          ratings: Object.fromEntries(
+            skills
+              .filter((skill) => rated[idOf(policy.id, skill)] !== undefined)
+              .map((skill) => [skill, rated[idOf(policy.id, skill)]]),
+          ),
+        })),
+        levels: dreamfund.levels,
+      });
+    }
     const profiles = botProfiles();
     const levels = Object.keys(BOT_LEVELS);
     const botIdOf = (id, level) => (level === 'master' ? id : `${id}--${level}`);
@@ -253,22 +309,25 @@ const MAX_WAIT_SECONDS = () => Number(process.env.GAME_ROOMS_MAX_WAIT_SECONDS) |
 async function withRating(view) {
   if (view.table.phase !== 'finished') return view;
   try {
-    const result = await require('../repositories/game-stats-store').getResult(
-      getGameStatsDb(),
-      view.id,
-    );
+    // each game has a board of its own: the result is filed there
+    const dream = view.table.kind === 'dreamfund';
+    const result = await require(
+      dream ? '../repositories/game-dream-stats-store' : '../repositories/game-stats-store',
+    ).getResult(getGameStatsDb(), view.id);
     if (!result) return view;
     return {
       ...view,
       rating: {
         ranked: result.counted,
-        ...(result.counted ? {} : { why: result.rankedWhy }),
-        changes: result.participants.map((p) => ({
-          seat: p.seat,
-          before: Math.round(p.ratingBefore),
-          after: Math.round(p.ratingAfter),
-          delta: Math.round(p.delta * 10) / 10,
-        })),
+        ...(result.counted ? {} : { why: dream ? result.why : result.rankedWhy }),
+        changes: result.participants
+          .filter((p) => p.ratingBefore !== undefined)
+          .map((p) => ({
+            seat: p.seat,
+            before: Math.round(p.ratingBefore),
+            after: Math.round(p.ratingAfter),
+            delta: Math.round(p.delta * 10) / 10,
+          })),
       },
     };
   } catch {
@@ -279,6 +338,30 @@ async function withRating(view) {
 /** The table as an agent needs it to play: the seats without their books, and only the reader's own books. */
 function slimView(view) {
   const { table } = view;
+  if (table.kind === 'dreamfund') {
+    return {
+      id: view.id,
+      kind: 'dreamfund',
+      version: table.version,
+      phase: table.phase,
+      tableRound: table.tableRound,
+      activeSeat: table.activeSeat,
+      youSeat: table.youSeat,
+      paused: table.clock ? table.clock.pausedAt !== null : false,
+      legalActions: view.legalActions,
+      trade: table.trade,
+      players: table.players.map((p) => ({
+        seat: p.seat,
+        name: p.name,
+        bot: !!p.bot,
+        away: !!p.away,
+        professionId: p.professionId,
+        ...(p.seat === table.youSeat
+          ? { life: p.life, pending: p.pending, harvest: p.harvest }
+          : {}),
+      })),
+    };
+  }
   return {
     id: view.id,
     version: table.version,
@@ -305,6 +388,15 @@ function readerHasMove(view) {
   if (table.phase !== 'playing') return table.phase !== 'lobby';
   if (table.youSeat === null || table.youSeat === undefined) return false;
   if (table.clock && table.clock.pausedAt !== null) return false;
+  if (table.kind === 'dreamfund') {
+    // your turn, a Harvest card's options for you, or a card on offer you may answer
+    return (
+      table.activeSeat === table.youSeat ||
+      view.legalActions.some((a) =>
+        ['harvest_sell', 'harvest_accept', 'harvest_ladder', 'accept_trade'].includes(a.type),
+      )
+    );
+  }
   return (
     table.activeSeat === table.youSeat ||
     (Array.isArray(table.holdSeats) && table.holdSeats.includes(table.youSeat)) ||
@@ -321,6 +413,68 @@ router.get(
   ...guard('r'),
   handle(async (req, res) => {
     res.json({ seats: await rooms().seatsOfRoom(req.userId, req.params.roomId) });
+  }),
+);
+
+/**
+ * `GET /game/rooms/{roomId}/review` - a short review of a running (or finished) Dreamer table, for somebody who only watches it: where
+ * every player stands on the goals, what they have and owe, how they compare with the simulation of their character and level, and
+ * what to watch. A page, not the table: an agent asked "how are we doing?" reads this and not the books and the history. Anybody who may
+ * look at the table may ask (a public table, or a seat at it); a classic table answers 400.
+ */
+router.get(
+  '/:roomId/review',
+  ...guard('r'),
+  handle(async (req, res) => {
+    res.json(await rooms().reviewRoom(req.userId, req.params.roomId));
+  }),
+);
+
+/**
+ * `GET /game/rooms/{roomId}/advice?strategy=` - advice for the reader's own seat at a Dreamer table: the goals, the money, the moves a
+ * strategy would send now (each with a sentence), and what to keep in mind. A page, not the table.
+ */
+router.get(
+  '/:roomId/advice',
+  ...guard('r'),
+  handle(async (req, res) => {
+    const policyId = req.query.strategy === undefined ? 'expert' : String(req.query.strategy);
+    res.json(await rooms().adviseRoom(req.userId, req.params.roomId, { policyId }));
+  }),
+);
+
+/**
+ * `POST /game/rooms/{roomId}/autoplay {strategy?, maxTurns?, maxMoves?, waitSeconds?}` - plays the reader's own seat at a Dreamer
+ * table for a while with a strategy of the simulation, move by move through the rules, and answers what was played and why it stopped.
+ */
+router.post(
+  '/:roomId/autoplay',
+  ...guard('w'),
+  handle(async (req, res) => {
+    const body = isObject(req.body) ? req.body : {};
+    const whole = (value, name, min, max, fallback) => {
+      if (value === undefined) return { value: fallback };
+      return Number.isInteger(value) && value >= min && value <= max
+        ? { value }
+        : { error: `${name} must be a whole number from ${min} to ${max}.` };
+    };
+    if (body.strategy !== undefined && typeof body.strategy !== 'string') {
+      return invalid(res, 'strategy must be the id of a strategy.');
+    }
+    const maxTurns = whole(body.maxTurns, 'maxTurns', 1, 10, 1);
+    const maxMoves = whole(body.maxMoves, 'maxMoves', 1, 80, 25);
+    const waitSeconds = whole(body.waitSeconds, 'waitSeconds', 0, 25, 0);
+    for (const checked of [maxTurns, maxMoves, waitSeconds]) {
+      if (checked.error) return invalid(res, checked.error);
+    }
+    res.json(
+      await rooms().autoplayRoom(req.userId, req.params.roomId, {
+        policyId: body.strategy ?? 'expert',
+        maxTurns: maxTurns.value,
+        maxMoves: maxMoves.value,
+        waitSeconds: waitSeconds.value,
+      }),
+    );
   }),
 );
 
@@ -484,6 +638,44 @@ lobbyRoute('post', '/:roomId/start', () => ({ type: 'start' }));
 lobbyRoute('post', '/:roomId/bots', (body) => {
   if (typeof body.policyId !== 'string')
     return 'policyId must be the id of a bot (see GET /game/rooms/bots).';
+  // a seat of a Dreamer table: one of its strategies (`GET /game/rooms/bots?kind=dreamfund`), sent as `dream:<id>` or plain
+  const dreamId = body.policyId.replace(/^dream:/, '');
+  const dreamParts = dreamfund.splitBotId(dreamId);
+  if (body.policyId.startsWith('dream:') || (dreamParts && !splitBotId(body.policyId))) {
+    if (!dreamParts) {
+      return `Unknown strategy or level '${dreamId}': see GET /game/rooms/bots?kind=dreamfund.`;
+    }
+    if (body.level !== undefined && !dreamfund.levels.some((l) => l.id === body.level)) {
+      return `level must be one of: ${dreamfund.levels.map((l) => l.id).join(', ')}.`;
+    }
+    // Coach has one level of its own: it is the guided demo's bot
+    if (dreamId === 'coach') {
+      return {
+        type: 'add_bot',
+        name: body.name !== undefined ? body.name : 'Coach',
+        policyId: 'coach',
+      };
+    }
+    const dreamPolicy = dreamfund.policies.find((policy) => policy.id === dreamParts.base);
+    // a level given on its own applies to a plain strategy id; an id that already carries one keeps it
+    const chosen =
+      body.level !== undefined && dreamParts.level === 'master'
+        ? body.level === 'master'
+          ? dreamParts.base
+          : `${dreamParts.base}--${body.level}`
+        : dreamId;
+    if (body.name !== undefined && typeof body.name !== 'string') return 'name must be a string.';
+    if (body.professionId !== undefined && typeof body.professionId !== 'string') {
+      return 'professionId must be a character id.';
+    }
+    return {
+      type: 'add_bot',
+      name: body.name !== undefined ? body.name : dreamPolicy.name,
+      policyId: chosen,
+      ...(body.professionId ? { professionId: body.professionId } : {}),
+      ...(body.color ? { color: body.color } : {}),
+    };
+  }
   if (body.level !== undefined && !Object.prototype.hasOwnProperty.call(BOT_LEVELS, body.level)) {
     return `level must be one of: ${Object.keys(BOT_LEVELS).join(', ')}.`;
   }
@@ -642,6 +834,7 @@ module.exports.resetServiceForTests = () => {
 };
 module.exports.hub = hub;
 module.exports.stats = stats;
+module.exports.dreamStats = dreamStats;
 module.exports.rooms = rooms;
 module.exports.nicknameOf = nicknameOf;
 /**
@@ -684,3 +877,5 @@ module.exports.clocks = clocks;
 module.exports.bots = bots;
 /** After a restart: arm the clock of every table being played. */
 module.exports.startClocks = () => rooms().rearmAll();
+/** The housekeeping of the tables runs on its own timer, not in a request. */
+module.exports.startSweeper = () => rooms().startSweeper();

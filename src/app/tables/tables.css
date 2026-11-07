@@ -129,3 +129,56 @@
     min-height: 40px;
   }
 }
+
+/* the choice of game (Classic / Dreamer): the same switch in the lobby and on the leaderboard */
+.tl-games {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-border, #d9dde3);
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+}
+.tl-games button {
+  min-height: 2.4rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tl-games--on {
+  background: var(--color-primary, #2a7de1) !important;
+  color: #fff !important;
+}
+
+/* the job search of a Payday: the chances and the player's own die */
+.tl-job {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-primary, #1976d2);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.tl-job p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+.tl-job-result {
+  font-weight: 700;
+}
+
+.tl-brief-back {
+  position: fixed;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%);
+  z-index: 3100;
+}

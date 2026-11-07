@@ -223,8 +223,12 @@ export function whyCannotBorrow(
  */
 export function offerIsOpen(
   state: Pick<CashflowGameState, 'rules' | 'turn'>,
-  offer: Pick<CashflowMarketOffer, 'offeredAtRoll'>,
+  offer: Pick<CashflowMarketOffer, 'offeredAtRoll' | 'validRolls'>,
 ): boolean {
+  // a Harvest card of the Dreamer game names its own number of turns (the setting of the table)
+  if (offer.validRolls !== undefined && offer.offeredAtRoll !== undefined && state.turn) {
+    return state.turn.count - offer.offeredAtRoll < offer.validRolls;
+  }
   const rules = rulesOf(state);
   const rolls = rules.sellOfferRolls;
   if (rolls <= 0 || offer.offeredAtRoll === undefined || !state.turn) return true;

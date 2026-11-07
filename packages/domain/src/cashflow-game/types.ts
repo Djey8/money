@@ -70,7 +70,7 @@ export interface CashflowExpenseLine {
   insurance?: InsuranceKind;
 }
 
-/** The Smile project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
+/** The Dream project of a character's dream, in one language: its buckets with what they cost and why, links, tasks and notes. */
 export interface CashflowDreamProject {
   /** The project's name: also the category its payments carry. */
   title: string;
@@ -90,7 +90,14 @@ export interface CashflowDreamProject {
 }
 
 /** The conditions of winning a character has; each is ticked off once it is met. */
-export type CashflowGoalId = 'parentsLoan' | 'carLoan' | 'dream' | 'reserve' | 'independence';
+export type CashflowGoalId =
+  | 'parentsLoan'
+  | 'carLoan'
+  | 'dream'
+  | 'reserve'
+  | 'independence'
+  /** A debt of the character's starter kit, by its key (`debt:studentLoanDebt`): the goal is met when it is repaid. */
+  | `debt:${string}`;
 
 /** What a character is about, in one language (JFK, 2026-10-25): shown when a character is chosen. */
 export interface CashflowProfileTexts {
@@ -103,7 +110,7 @@ export interface CashflowProfileTexts {
   /** What it takes to win: a lead-in line, then the conditions as a checklist (all of them have to come true). */
   goal: string;
   goalItems: { id: CashflowGoalId; text: string }[];
-  /** The dream the character starts with (their first Smile project). */
+  /** The dream the character starts with (their first Dream project). */
   dream: { title: string; summary: string; project?: CashflowDreamProject };
   /** The emergency reserve every character has to build (three monthly expenses): a Fire project from the first day. */
   reserve?: { summary: string; project: CashflowDreamProject };
@@ -122,6 +129,10 @@ export interface CashflowProfession {
    * cards' amounts - emergencies first - higher, so every character has the same chance. Absent: 1.
    */
   priceFactor?: number;
+  /** Easy: the amounts of the character and of the cards are round and nice (JFK, 2026-10-27). */
+  roundNumbers?: boolean;
+  /** The difficulty variants of a character are characters of their own that share the story: this is the id of the one they belong to. */
+  variantOf?: string;
   id: string;
   title: string;
   salaryMinor: number;
@@ -134,6 +145,10 @@ export interface CashflowProfession {
   starterKit: CashflowStarterKit;
   /** Custom editions: who this is, what matters to them and what they dream of. The classic cards have none. */
   profile?: CashflowProfessionProfile;
+  /** Where the life starts, as far as it differs from a single person with a flat of their own (JFK, 2026-11-02): home, partner, children, car, study. */
+  lifeStart?: Partial<LifeState>;
+  /** What this character's insurances cost compared with the Dual Student's (1): the premiums at the start and for a car added later. Absent: 1. */
+  insuranceFactor?: number;
 }
 
 export interface CashflowLoanRule {
@@ -247,16 +262,18 @@ export interface CashflowMarketOffer {
   pricePerShareMinor?: number;
   /** The player's roll count when the card was played: with `sellOfferRolls` it decides how long the offer stays open. */
   offeredAtRoll?: number;
+  /** A Harvest card of the Dreamer game: the offer stays open for this many of the player's own turns (counted from `offeredAtRoll`), across Paydays. */
+  validRolls?: number;
 }
 
 export type CashflowDeckKind = 'dealSmall' | 'dealBig' | 'market' | 'doodad';
 
 export interface CashflowDecks {
-  /** The Dream stack of a Dreamfund game: generic dreams to take as Smile projects. */
+  /** The Dream stack of a Dreamer game: generic dreams to take as Dream projects. */
   dream?: DreamCard[];
-  /** The Life stack of a Dreamfund game (the heart tile). */
+  /** The Life stack of a Dreamer game (the heart tile). */
   life?: LifeCard[];
-  /** The Emergency stack of a Dreamfund game (the Fire tile). */
+  /** The Emergency stack of a Dreamer game (the Fire tile). */
   emergency?: EmergencyCard[];
   /** The Opportunity stack (Seed, Sapling, Tree): ways to raise the monthly cash flow, each becoming a Grow project. */
   opportunity?: OpportunityCard[];
@@ -340,7 +357,7 @@ type DreamfundTileKind = 'dream' | 'emergency' | 'opportunity' | 'harvest' | 'li
 
 export interface CashflowPendingDecision {
   /**
-   * `story`: a tile of a Dreamfund map (dream, emergency, opportunity, harvest, life, career) - its card is read and ticked off;
+   * `story`: a tile of a Dreamer map (dream, emergency, opportunity, harvest, life, career) - its card is read and ticked off;
    * what the tiles do comes with their cards (`tile` says which).
    */
   kind: 'deal' | 'market' | 'doodad' | 'story';
@@ -368,7 +385,7 @@ export interface CashflowPendingDecision {
   dream?: {
     offers?: string[];
     moment?: string;
-    /** The Smile project of the dream that was taken. */
+    /** The Dream project of the dream that was taken. */
     taken?: string;
     declined?: boolean;
     /** A moment that has been applied: what it did, in words for the log. */
@@ -403,6 +420,8 @@ export interface CashflowPendingDecision {
     projectTitle?: string;
     planned?: boolean;
   };
+  /** The dice the effects of this card used, in the order they fell (JFK, 2026-11): the card shows them until it is done. */
+  dice?: number[];
   emergency?: {
     cardId: string;
     choiceId?: string;
@@ -485,12 +504,12 @@ export interface CashflowGameState {
   /** Which real Subscription titles belong to this game — Payday only ever acts on these. */
   gameSubscriptionTitles: string[];
   /**
-   * Payment plans that fund a Smile project or a Fire emergency (JFK, 2026-10-25): Payday posts them like the game's own
+   * Payment plans that fund a Dream project or a Fire emergency (JFK, 2026-10-25): Payday posts them like the game's own
    * subscriptions - one payment per Payday, from the plan's start to its end in game dates - but they are savings, not expenses, so
    * they are never part of the monthly picture (`summarizeGameFinances` reads `gameSubscriptionTitles` only).
    */
   fundingSubscriptionTitles?: string[];
-  /** The map of a Dreamfund game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
+  /** The map of a Dreamer game (shape, size, seed): the tiles and where they stand are made from it. Absent: the classic ring. */
   boardSetup?: BoardSetup;
   /** The Emergency stack: what was drawn since the last reshuffle, and what is out of the game for good. */
   emergencyDeck?: EmergencyDeckState;
@@ -502,6 +521,8 @@ export interface CashflowGameState {
     active: string[];
     premiums: Record<string, string>;
     pending: { kind: string; on: boolean }[];
+    /** Insurances newly on offer (a car was bought): the player has not answered yet. */
+    fresh?: string[];
   };
   /** The life of the character (JFK, 2026-10-26): partner, children, pet, car, home, city, job - the badges of the profile. */
   life?: LifeState;

@@ -174,6 +174,16 @@ async function createIndexes() {
       index: { fields: ['kind', 'phase', 'visibility'] },
       name: 'gamerooms-lobby-index',
     });
+    // The rooms that are playing (the clocks and bots look at them again and again) and the count of open rooms (a new table asks).
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'phase'] },
+      name: 'gamerooms-phase-index',
+    });
+    // The finished tables whose move-by-move history is due to go (the sweep reads them a few at a time).
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'compactAfter'] },
+      name: 'gamerooms-compact-index',
+    });
     await gameRoomsDb.createIndex({
       index: { fields: ['inviteCode'] },
       name: 'gamerooms-invite-index',
@@ -181,6 +191,16 @@ async function createIndexes() {
     await gameRoomsDb.createIndex({
       index: { fields: ['kind', 'updatedAt'] },
       name: 'gamerooms-updated-index',
+    });
+    // The seat markers: of a room (kept in step with who sits at it, after every move) and of an account (the limits, the lists).
+    // Without these every move of a table scanned the whole database - seconds, growing with every event ever written.
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'roomId'] },
+      name: 'gamerooms-markers-room-index',
+    });
+    await gameRoomsDb.createIndex({
+      index: { fields: ['kind', 'userId'] },
+      name: 'gamerooms-markers-user-index',
     });
     await gameRoomsDb.createIndex({
       index: { fields: ['roomId', 'seq'] },
@@ -201,10 +221,58 @@ async function createIndexes() {
       name: 'gamestats-results-index',
     });
 
+    // The board of all players (visible, by rating) and the same per type; the audit trail of an account by time; the community's
+    // threads by their last activity. Each query of the app is answered from one of these (tests/integration/query-indexes.test.js).
+    await gameStatsDb.createIndex({
+      index: { fields: ['kind', 'visible', 'rating'] },
+      name: 'gamestats-board-all-index',
+    });
+    await auditDb.createIndex({
+      index: { fields: ['userId', 'timestamp'] },
+      name: 'audit-user-time-index',
+    });
+    await auditDb.createIndex({
+      index: { fields: ['userId', 'resource', 'timestamp'] },
+      name: 'audit-user-resource-time-index',
+    });
+    await communityDb.createIndex({
+      index: { fields: ['type', 'lastActivityAt'] },
+      name: 'community-thread-activity-index',
+    });
+    // The results one player took part in (both boards), newest first: a view, since an index cannot look into a list of players.
+    await upsertDesign(gameStatsDb, '_design/results', {
+      views: {
+        byPlayer: {
+          map: "function (doc) { if ((doc.kind === 'result' || doc.kind === 'dresult') && doc.playerIds) { for (var i = 0; i < doc.playerIds.length; i++) { emit([doc.kind, doc.playerIds[i], doc.endedAt || ''], null); } } }",
+        },
+      },
+    });
+
+    // The board of the players who have played (rated at least once) and are visible, best first, for all of them and per type.
+    await upsertDesign(gameStatsDb, '_design/board', {
+      views: {
+        listed: {
+          map: "function (doc) { if (doc.kind === 'profile' && doc.visible === true && doc.rated >= 1) { emit(['all', doc.rating], null); emit([doc.type, doc.rating], null); } }",
+        },
+      },
+    });
+
     console.log('Indexes created successfully');
   } catch (error) {
     console.error('Error creating indexes:', error);
   }
+}
+
+/** Writes a design document when it is missing or has changed. */
+async function upsertDesign(db, id, body) {
+  let existing = null;
+  try {
+    existing = await db.get(id);
+  } catch (error) {
+    if (error.statusCode !== 404) throw error;
+  }
+  if (existing && JSON.stringify(existing.views) === JSON.stringify(body.views)) return;
+  await db.insert({ ...body, _id: id, ...(existing ? { _rev: existing._rev } : {}) });
 }
 
 async function setupDatabaseSecurity() {

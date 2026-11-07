@@ -1,7 +1,7 @@
-# Traumtopf (Dreamfund) - das Spiel, die Karten und die Zahlen
+# Träumer (Träumer) - das Spiel, die Karten und die Zahlen
 
-Traumtopf ist das eigene Geldspiel der Money-Manager-App: Du würfelst, gehst über eine Karte, und alles, was geschieht - ein Gehalt, eine
-Rechnung, eine Aktie, die du kaufst, ein Traum, den du finanzierst - wird als echte Buchung, als Grow-Projekt oder als Smile- oder
+Träumer ist das eigene Geldspiel der Money-Manager-App: Du würfelst, gehst über eine Karte, und alles, was geschieht - ein Gehalt, eine
+Rechnung, eine Aktie, die du kaufst, ein Traum, den du finanzierst - wird als echte Buchung, als Grow-Projekt oder als Traum- oder
 Fire-Projekt in den Büchern des Spiels verbucht. Das Ziel: ein Leben aufbauen, das du dir leisten kannst - Schulden zurückzahlen, eine
 Reserve halten, deinen Traum leben und dein Geld für dich arbeiten lassen.
 
@@ -30,14 +30,14 @@ Spiele und wird von der Simulation selbst geschrieben.
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | **Daily**   | Rechnungen und Alltag: Miete, Essen, Versicherungen. Dein Gehalt landet hier.                                                            |
 | **Splurge** | Ausgaben nur zum Spaß.                                                                                                                   |
-| **Smile**   | Deine Träume. Jeder Traum ist ein **Smile-Projekt** mit Töpfen (Flüge, Hotel, Ausrüstung ...), die du füllst.                            |
+| **Traum**   | Deine Träume. Jeder Traum ist ein **Traumprojekt** mit Töpfen (Flüge, Hotel, Ausrüstung ...), die du füllst.                             |
 | **Fire**    | Was bezahlt werden muss: Notfälle, die Reserve, Investitionen. Jede Zahlung für einen Notfall oder einen Kauf ist eine **Fire**-Buchung. |
 | **Mojo**    | Deine Notreserve: drei Monatsausgaben. Sie ist vom ersten Tag an ein Fire-Projekt und darf nur für Notfälle genutzt werden.              |
 
 **Grow** ist der Ort der Investitionen: Jede Karte, die du nimmst, wird ein **Grow-Projekt** (eine Aktie, eine Investition oder ein
 Vermögenswert) mit Zahlen, Notizen und Aufgaben. Gekauft und verkauft wird mit den normalen Buttons Kaufen und Verkaufen von Grow.
 
-**Zahlungspläne.** Ein großes Ziel (die Reserve, ein Traumtopf) wird nicht auf einmal bezahlt: Du richtest einen Zahlungsplan ein, der
+**Zahlungspläne.** Ein großes Ziel (die Reserve, ein Träumer) wird nicht auf einmal bezahlt: Du richtest einen Zahlungsplan ein, der
 jeden Monat einen Teil des freien Geldes hineinlegt. Das Spiel zwingt dich nicht; es zeigt dir, was fällig ist.
 
 **Der Bankkredit.** Ist eine Zahlung größer als dein Bargeld, leiht dir die Bank den fehlenden Betrag automatisch. Er kostet **10 % des
@@ -48,7 +48,7 @@ Selbstbehalt; mit dem nächsten Zahltag kannst du in eine Versicherung ein- oder
 
 ## Die Karte
 
-Eine Traumtopf-Karte ist eine geschlossene Strecke aus Feldern in einer Form - **Ring, Unendlichkeit, Rechteck, Quadrat oder Berg** - und
+Eine Träumer-Karte ist eine geschlossene Strecke aus Feldern in einer Form - **Ring, Unendlichkeit, Rechteck, Quadrat oder Berg** - und
 einer Größe (**24, 36 oder 48 Felder**). Die Karte wird beim Spielstart einmal gemacht und ändert sich nie. Eine mittlere Karte mit 36
 Feldern hat:
 
@@ -65,6 +65,13 @@ Feldern hat:
 Dein **Totem** steht neben dem Feld, auf dem du bist, auf der Linie von der Mitte der Karte durch das Feld, und zeigt darauf. Vor dem
 ersten Wurf wartet es am START.
 
+## Vor dem ersten Wurf
+
+An einem Tisch liest zuerst jeder, **wer er ist**: die Geschichte, was ihm wichtig ist, die Ziele, das Einkommen, die Ausgaben und die
+Schulden - und wählt die **Versicherungen**, die sofort gelten. Solange du nicht bereit bist, kannst du zurückgehen und einen anderen
+Charakter wählen (außer die Charaktere werden gelost). Das Spiel ist im Hintergrund schon begonnen; der erste Zug startet, wenn alle
+bereit sind.
+
 ## Ein Zug
 
 1. **Würfle** (ein oder zwei Würfel; manche Karten sagen, welche).
@@ -80,9 +87,134 @@ Chancen-Karten (der Kauf wartet auf deinen Wurf, und Fertig wird verweigert, bis
 
 **Rückgängig.** Die letzte Handlung eines Zugs lässt sich rückgängig machen.
 
+**An einem Tisch** wird eine **Anlage** zuerst **geplant**: Ihr Projekt öffnet sich in Grow mit den Zahlen, gekauft ist nichts. Dort
+entscheidest du, wie viele Einheiten du kaufst, und buchst es mit dem **Kaufen**-Knopf - oder du lässt es, dann ist die Chance mit dem
+Ende deines Zuges verpasst. Alles, was ein anderer Spieler zieht und entscheidet, wird dem ganzen Tisch mit der Karte erzählt, und die
+Zeilen der Historie öffnen die Karte.
+
+## Dein Leben: die Merkmale, die Versicherungen und was sie bewirken
+
+Jeder Charakter hat ein **Leben**, und das Leben besteht aus ein paar **Merkmalen**. Du siehst sie als Abzeichen auf dem Spielbildschirm -
+tippe eines an, und eine kleine Karte sagt, was es bedeutet und was es im Spiel bewirkt. Sie sind wichtig, weil **sie entscheiden, welche
+Karten dir passieren können**: Eine Karte, die etwas braucht, was du nicht hast, hat _Glück_ - sie wird erzählt, zurückgelegt, und die
+nächste wird gezogen. Ein Leben mit Kindern trifft die Klassenfahrt und die Zahnspange; ein Leben ohne Auto trifft nie den Platten.
+
+| Merkmal           | Werte                                                          | Was es bewirkt                                                                                                                                                                                                | Wie es sich ändert                                                                               |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| ❤️ Beziehung      | Single, in einer Beziehung, zusammenlebend, verheiratet        | Lebenskarten über einen Partner (ein Antrag, Zusammenziehen, eine Trennung) passieren nur, wenn es einen gibt; Träume zu zweit werden nur mit Partner angeboten; ein Partner kann Rechnungen haben (Zahnarzt) | Lebenskarten: Verlieben, Zusammenziehen, der Antrag, eine Trennung                               |
+| 👶 Kinder         | eine Zahl                                                      | Jedes Kind kostet monatlich (abhängig vom Lebensstandard und den Geschwistern); ein Jobverlust kürzt das Einkommen weniger; die Karten einer Familie (Klassenfahrt, krankes Kind, Zahnspange) warten hier     | Die Babykarte (ein Würfel entscheidet), einige Zahltage später                                   |
+| 🏠 Wohnen         | eigene Wohnung, WG, bei den Eltern, beim Partner               | Die Miete oder Rate; eine eigene Wohnung trifft Waschmaschine, Kühlschrank, Einbruch, Brand - ein WG-Zimmer oder das Elternhaus nicht; die Kaution ist beim Auszug in Gefahr                                  | Lebenskarten: ein Umzug, Zusammenziehen, ein schlechter Mitbewohner                              |
+| 📍 Ort            | Heimatstadt, andere Stadt, Ausland (Europa), anderer Kontinent | Ein Umzug ändert, was du verdienst und zahlst, jeweils als Anteil; ein Umzug beendet die Wirkung des letzten                                                                                                  | Lebenskarten über einen Umzug                                                                    |
+| 💼 Job            | angestellt, ohne Arbeit, Kurzarbeit                            | Das Gehalt an jedem Zahltag; nach einem Jobverlust findet vielleicht ein Wurf an einem Zahltag einen neuen; nur wer angestellt ist, wird auf dem Karrierefeld befördert                                       | Die Jobverlust-Karte, die Jobsuche                                                               |
+| 🐱 Haustier       | keins, Katze, Hund                                             | Eine monatliche Ausgabe und die Tierarzt-Notfälle des Notfallstapels                                                                                                                                          | Lebenskarten: eine Katze oder ein Hund zieht ein                                                 |
+| 🚗 Auto           | ja / nein                                                      | Ein Auto trifft die Auto-Notfälle (ein Blitzer, eine leere Batterie, die Kupplung, ein Beitrag der Kfz-Versicherung); die zwei **Kfz-Versicherungen** werden angeboten, wenn du eins hast                     | Ein gelebter Fahrzeug-Traum, ein Dienstwagen auf einer Karrierestufe, eine Karte, die eins kauft |
+| 🎓 Studium        | im Studium / nicht                                             | Die Karten für Studierende (Semesterbeitrag, der Laptop vor den Prüfungen) treffen dich nur, solange du studierst                                                                                             | **Endet auf Stufe 2 der Karriere** (der erste Vollzeitvertrag eines dualen Studenten)            |
+| 🛡️ Versicherungen | wie viele du hast                                              | Ein versicherter Notfall kostet dich die Selbstbeteiligung, nicht die Rechnung (siehe unten)                                                                                                                  | Du steigst ein oder aus; vor dem ersten Wurf sofort, später mit dem nächsten Zahltag             |
+| 🎓 Karriere       | die Stufe auf der Leiter                                       | Gehalt, Steuern, der Lebensstandard (und damit, was Karten kosten), ein Bonus im Jahr                                                                                                                         | Das Karrierefeld befördert dich, wenn du lange genug dabei bist und der Würfel es erlaubt        |
+
+### Wo das Leben beginnt
+
+Jonas startet als **dualer Student**: ein Zimmer in einer **WG** (das ist die Mietzeile seines Budgets), **angestellt** in Teilzeit,
+**in Ausbildung** - das Studium endet mit seinem ersten Vollzeitvertrag, auf Stufe 2 seiner Karriere. Die anderen neun Charaktere starten dort, wo ihre Geschichte sie hinstellt: Lena allein mit ihrer Tochter, Katrin und Frank
+verheiratet mit Kindern, Peter verheiratet mit erwachsenen Kindern. Die erste Tabelle unten sagt es für alle.
+
+### Versicherungen
+
+Die Versicherungen eines Charakters sind **Ausgabenzeilen**: Die Prämie wird an jedem Zahltag gezahlt, und dafür kostet dich ein
+versicherter Notfall nur die **Selbstbeteiligung** - höchstens 500 TT auf Normal (300 auf Leicht, 750 auf Schwer), egal wie hoch die
+Rechnung ist. Jeder Charakter startet mit der privaten **Haftpflicht** und der **Hausratversicherung**, und jeder zahlt **seinen eigenen
+Preis**: Der Hausrat eines Chirurgen ist mehr wert als der eines Busfahrers, ein Freiberufler trägt seine Haftpflicht selbst. Jonas zahlt
+zusammen 24 TT im Monat (8,39 + 15,61); die anderen sind auf ihr Leben skaliert, die letzte Spalte der ersten Tabelle zeigt, was sie zahlen.
+
+- **Am Anfang** wirst du gefragt: Vor deinem ersten Wurf kannst du bei jeder Versicherung ein- oder aussteigen, und es gilt **sofort**.
+- **Später** wird eine Änderung mit dem **nächsten Zahltag** wirksam - Prämie und Schutz ändern sich zusammen, so kann niemand kurz vor dem
+  Brand noch eine Versicherung abschließen.
+- **Ein Auto bringt die Kfz-Versicherungen.** Sobald du ein Auto hast (ein Fahrzeug-Traum, ein Dienstwagen, eine Karte), werden die
+  **Teilkasko** und die **Vollkasko** in der Versicherungsliste angeboten, mit einer Prämie, die zu deinem Charakter passt. Sie kosten
+  nichts, bis du einsteigst; ein unversicherter Autoschaden kostet die ganze Rechnung.
+- Die private **Haftpflicht** deckt auch den verlorenen Haustürschlüssel. Ein gestohlenes Fahrrad ist von nichts in dieser Liste versichert.
+
+<!-- attributes:start -->
+
+#### Wo jeder Charakter startet
+
+| Charakter | Beziehung   | Kinder | Wohnen         | Auto | Studium | Versicherungen (im Monat) |
+| --------- | ----------- | ------ | -------------- | ---- | ------- | ------------------------- |
+| Jonas     | Single      | 0      | WG             | nein | ja      | 24 TT                     |
+| Mehmet    | Single      | 0      | eigene Wohnung | ja   | nein    | 34 TT                     |
+| Lena      | Single      | 1      | eigene Wohnung | ja   | nein    | 22 TT                     |
+| Sophie    | Single      | 0      | eigene Wohnung | ja   | nein    | 32 TT                     |
+| Tobias    | Single      | 0      | eigene Wohnung | nein | nein    | 35 TT                     |
+| Katrin    | verheiratet | 2      | eigene Wohnung | ja   | nein    | 53 TT                     |
+| Frank     | verheiratet | 1      | eigene Wohnung | ja   | nein    | 57 TT                     |
+| Dr. Jan   | verheiratet | 2      | eigene Wohnung | ja   | nein    | 81 TT                     |
+| Heike     | Single      | 0      | eigene Wohnung | ja   | nein    | 42 TT                     |
+| Peter     | verheiratet | 0      | eigene Wohnung | ja   | nein    | 21 TT                     |
+
+#### Welche Karte welches Merkmal braucht
+
+| Stapel  | Karte                                 | Braucht                                                            |
+| ------- | ------------------------------------- | ------------------------------------------------------------------ |
+| Notfall | Geblitzt! (E05)                       | ein Auto                                                           |
+| Notfall | Autobatterie leer (E12)               | ein Auto                                                           |
+| Notfall | Waschmaschine kaputt (E14)            | Wohnen: eigene Wohnung oder beim Partner                           |
+| Notfall | Parkrempler (E38)                     | ein Auto                                                           |
+| Notfall | Laptop stirbt vor der Prüfung (E17)   | Studium: im Studium                                                |
+| Notfall | Steinschlag (E19)                     | ein Auto                                                           |
+| Notfall | Kaution einbehalten (E21)             | Wohnen: eigene Wohnung oder WG                                     |
+| Notfall | Tierarzt-Notfall (E23)                | ein Haustier                                                       |
+| Notfall | Kühlschrank stirbt im Sommer (E24)    | Wohnen: eigene Wohnung oder beim Partner                           |
+| Notfall | Kupplung hinüber (E25)                | ein Auto                                                           |
+| Notfall | Einbruch (E26)                        | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Wasserschaden beim Nachbarn (E27)     | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Küchenbrand (E29)                     | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Die Wohnung brennt ab (E30)           | Wohnen: eigene Wohnung oder WG oder beim Partner                   |
+| Notfall | Klassenfahrt und Schulbedarf (E46)    | Kinder: mindestens 1                                               |
+| Notfall | Krankes Kind, keine Betreuung (E47)   | Kinder: mindestens 1                                               |
+| Notfall | Zahnspange fürs Kind (E48)            | Kinder: mindestens 1                                               |
+| Notfall | Semesterbeitrag und Fachbücher (E49)  | Studium: im Studium                                                |
+| Notfall | Partner braucht den Zahnarzt (E50)    | Beziehung: ein Partner                                             |
+| Leben   | Verliebt (L01)                        | Beziehung: Single                                                  |
+| Leben   | Zusammenziehen (L02)                  | Beziehung: in einer Beziehung                                      |
+| Leben   | Der Antrag (L03)                      | Beziehung: in einer Beziehung oder zusammenlebend                  |
+| Leben   | Trennung (L04)                        | Beziehung: in einer Beziehung oder zusammenlebend oder verheiratet |
+| Leben   | Kinderwunsch (L05)                    | Beziehung: in einer Beziehung oder zusammenlebend oder verheiratet |
+| Leben   | Es ist ein Baby! (L06)                | Beziehung: in einer Beziehung oder zusammenlebend oder verheiratet |
+| Leben   | Eine Katze zieht ein (L09)            | Haustier: keins                                                    |
+| Leben   | Ein Hund zieht ein (L10)              | Haustier: keins                                                    |
+| Leben   | Opas altes Auto (L11)                 | Auto: false                                                        |
+| Leben   | Zurück ins Kinderzimmer (L14)         | Beziehung: Single oder in einer Beziehung                          |
+| Leben   | Neuer Mitbewohner (L15)               | Beziehung: Single oder in einer Beziehung; Wohnen: eigene Wohnung  |
+| Leben   | Die Firma ist pleite — hard (L19)     | Job: angestellt                                                    |
+| Leben   | Gekündigt mit Abfindung — soft (L27)  | Job: angestellt                                                    |
+| Leben   | Kurzarbeit (L20)                      | Job: angestellt                                                    |
+| Traum   | Die große Hochzeitsfeier (D38)        | Beziehung: ein Partner                                             |
+| Traum   | Ein Bildungsfonds für dein Kind (D39) | Kinder: mindestens 1                                               |
+| Chance  | Ein Zimmer untervermieten (P17)       | Wohnen: eigene Wohnung                                             |
+| Chance  | Freelance-Datenberatung (P18)         | Karrierestufe 3+                                                   |
+| Chance  | Schulden umschulden (P28)             | Schulden >= 1.000 TT                                               |
+| Chance  | Ein IT-Dienstleister übernehmen (T13) | Karrierestufe 4+                                                   |
+| Chance  | Automaten-Netzwerk (T29)              | Besitzt: P15                                                       |
+
+<!-- attributes:end -->
+
+### Wie die Karten nach dem Leben fragen
+
+Drei Arten von Karten verlangen etwas:
+
+- **Notfall**-Karten: ein Auto oder ein Haustier (wie immer) oder ein **Leben** wie deins - Kinder, ein Partner, ein Studium, eine eigene
+  Wohnung. Es sind jetzt fünfzig Karten; fünf davon (die Klassenfahrt, ein krankes Kind, die Zahnspange, der Semesterbeitrag, der
+  Zahnarzt des Partners) gehören zu einem bestimmten Leben, und die Notfälle der Wohnung und der Laptop des Studenten sind an Wohnen und
+  Studium gebunden.
+- **Leben**-Karten: die Beziehung, das Haustier, der Umzug - was wahr sein muss, bevor die Karte erzählt wird.
+- **Traum**- und **Chance**-Karten: ein Traum zu zweit oder fürs Kind, ein Zimmer untervermieten, eine Anlage, die eine Karrierestufe,
+  Schulden oder ein anderes Investment braucht.
+
+Die zweite Tabelle listet jede Karte, die fragt - so siehst du, welches Merkmal welche Karten öffnet.
+
 ## Die Karten
 
-### 🌱 Chance - Dinge zum Investieren (98 Karten)
+### 🌱 Chance - Dinge zum Investieren (107 Karten)
 
 Wer auf einem Chance-Feld landet, **wählt zuerst einen Stapel**:
 
@@ -123,7 +255,17 @@ schlechtem Start, eine Sammlung, die viel oder wenig wert ist. Die Karte listet 
 **Fallen.** Manche Angebote sehen aus wie normale Investitionen und sind es nicht (eine Verleih-App mit „2 % pro Woche“, ein
 „Pre-IPO“-Tipp, ein Timesharing). Ihre Zahlen werden nicht verraten. Die Ernte-Karten zeigen später, was Betrug war.
 
-### 🌾 Ernte - die Märkte (87 Karten)
+**Altersvorsorge und Leistungen vom Arbeitgeber (S37-S39, P33, T32).** Verträge, in die du einzahlst: Du nimmst die Karte mit der Laufzeit,
+die du willst (Sparvertrag vom Arbeitgeber 12 Zahltage, Betriebsrente 12 oder 24, geförderte Altersvorsorge 24, private Rente 36), sie wird zum
+Grow-Projekt, und bei jedem Zahltag geht die Zahlung vom **Fire**-Konto hinein (es ist zurückgelegtes Geld, keine Ausgabe). Am Ende bekommst du
+das Eingezahlte **plus Bonus** zurück (50 %, 20 %, 45 %, 35 %, 55 %: Zuschuss des Arbeitgebers, Zulage des Staates). Früher beendet, kommt nur das
+Eingezahlte zurück, abzüglich eines Zehntels, ohne Bonus. Das Grow-Projekt sagt, wie viel bisher eingezahlt ist.
+
+**Karriere und Bildung (S40, P34, P35, T31).** Ein Kurs, ein Abendabschluss, ein Meisterbrief, ein berufsbegleitender Master: Du zahlst die
+Gebühren jetzt, das neue Gehalt beginnt, wenn du fertig bist (3, 6, 12 oder 24 Zahltage), und **ein Würfel entscheidet, wie viel es dein Einkommen
+anhebt** - nichts, eine ordentliche Erhöhung oder eine große. Einen Kurs kauft dir keiner ab.
+
+### 🌾 Ernte - die Märkte (120 Karten)
 
 Jeder Markt hat einen **Index**, der bei 1,00 beginnt und bei jedem Zahltag driftet (Weltaktien, Anleihen, Technologie, Gold, Bitcoin,
 Immobilien ...). Was du besitzt, ist so viel wert wie sein Kartenpreis mal dem Index seines Marktes.
@@ -143,22 +285,47 @@ Jede Karte zeigt ihre **Gruppe** (Markt, Aktien, Krypto, Hype, Metalle, Sammlers
 sie für alle tut und was sie für dich bedeutet. Jedes betroffene Grow-Projekt bekommt eine Notiz und eine Markierung.
 
 **Verkaufen, was du bekommen hast.** Was die Chance-Karten dir gebracht haben, verkaufst du zum Preis einer Ernte-Karte: in einem offenen
-Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot bleibt offen (je nach Regeln mehrere Würfe lang), auch nachdem du auf
-**Fertig** gedrückt hast: Der **Verkaufen**-Button des Projekts in Grow verkauft dann zum Preis der Karte.
+Markt, an einen Käufer oder auf der Hype-Leiter. Das Angebot **bleibt so viele eigene Züge offen, wie der Tisch erlaubt** (die Einstellung
+_Wie lange ein Verkaufsangebot offen bleibt_, 1 bis 5 Züge, standardmäßig 2), auch nachdem du auf **Fertig** gedrückt hast und über einen Zahltag
+hinweg; dann ist das Geschäft vorbei. Solange es offen ist, ist das Projekt in Grow hervorgehoben und sagt, was es zahlt und wie viele Züge
+bleiben; sein **Verkaufen**-Button verkauft zu diesem Preis.
 
-**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber selten - auf etwa hundert Würfe
-kommt eine Landung, die von einem bestimmten Besitz spricht. Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
+**Wer was kauft.** Jede Art von Besitz hat unter den Ernte-Karten Käufer - etwa jede zehnte Karte spricht von einer Immobilie, einem
+Unternehmen, einem Nebenprojekt, einem Kredit, einer Sammlung, einem Metall oder den Aktien eines Marktes. Der Preis ist ein Würfelwurf: Eine
+junge Familie zahlt etwas unter oder über dem Wert der Wohnung, ein Institut zahlt 1 % bis 20 % über dem Kurs für ein Aktienpaket, ein
+Search-Fund zahlt drei Jahre Gewinn für ein Unternehmen (mindestens einen Teil dessen, was du gezahlt hast), ein Übernahmeangebot zahlt einen
+Aufschlag. Eine Jahresendrally öffnet jeden Markt; eine Welle von Zwangsverkäufen öffnet ihn auch - mit Verlust, du kannst also auch Verluste
+begrenzen.
+
+**Ein Betrug hat einen letzten Ausstieg.** Eine Karte sagt, der Kurs eines Betrugs sei um 80 % gefallen und der Markt noch einen Zug offen; ein
+Forderungskäufer zahlt Cent pro Euro; eine spätere Karte schließt ihn endgültig. Was du mit der letzten Chance tust, ist deine Sache.
+
+**Steuer auf den Gewinn.** Eine Tischeinstellung (_Steuer auf den Gewinn beim Verkauf_, erweiterte Regeln): Verkaufst du etwas für mehr, als du
+bezahlt hast, schuldest du einen Anteil des **Gewinns** - Standard sind 26,375 %, die deutsche Abgeltungsteuer mit Solidaritätszuschlag; 0 schaltet
+sie aus. Der Gewinn ist, was der Verkauf nach seinen Kosten und dem Geschuldeten (einer Hypothek) bringt, abzüglich dessen, was du für den
+verkauften Teil bezahlt hast. Ein Verkauf mit Verlust zahlt nichts, und das Grow-Projekt vermerkt die Steuer. Renten werden steuerfrei ausgezahlt.
+
+**Einen Ausweg gibt es immer.** Eine Marktkarte mit Fenster oder Käufer ist der _beste_ Ausstieg, aber sie kommt nicht bei jeder Landung.
+Deshalb verkauft der **Verkaufen**-Button eines Projekts auch **jederzeit zum
 Marktpreis, abzüglich eines Abschlags**: 5 % bei einer Aktie, 15 % bei einer Münze, einer Sammlung oder einer Immobilie (die Hypothek geht vom
 Erlös ab), und ein Unternehmen oder Nebenprojekt für ein Jahr dessen, was es zahlt (die Hälfte dessen, was ein Käufer auf einer Karte zahlt).
 Darunter wird nichts verkauft, und Ersparnisse und Betrug lassen sich gar nicht verkaufen.
 
-### 🔥 Notfall (45 Karten)
+Jede Chance-Karte hat in ihrem Grow-Projekt, wie man investiert, was man tun und was man lassen sollte, ihr Risiko (1 bis 5) mit Begründung,
+Aufgaben und Links zum Weiterlesen.
+
+### 🔥 Notfall (50 Karten)
 
 Etwas geht kaputt. Die Karten haben fünf Stufen - **Funke, Flamme, Brand, Lauffeuer, Inferno** - vom kaputten Lenkergriff bis zum
 Hausbrand. Eine Versicherung kann die Rechnung decken; den Rest zahlst du aus dem Bargeld, mit einem Zahlungsplan oder mit dem
 Bankkredit. In den Modi geführt und streng muss ein Notfall erledigt werden, bevor das Spiel weitergeht.
 
-### ❤ Leben (27 Karten)
+An einem **Tisch** läuft ein Notfall wie allein: Du kannst ihn **sofort bezahlen**, auf **3, 6 oder 12 Zahltage** verteilen (mit dem
+Aufschlag des Plans) oder das **Fire-Projekt anlegen** - bezahlt ist dann noch nichts, das Projekt öffnet sich auf der Fire-Seite, und
+du zahlst dort Schritt für Schritt ein. Im geführten und im strengen Spiel ist der Zug erst vorbei, wenn ein als Fire-Projekt
+genommener Notfall bezahlt oder geplant ist. Ein Bußgeld oder eine Gebühr, die sofort bezahlt werden muss, wird kein Projekt.
+
+### ❤ Leben (30 Karten)
 
 Liebe, ein Baby, zusammenziehen, ein neuer Job, ein schwieriger Mitbewohner, ein Elternteil, das Hilfe braucht, Lebensstil-Inflation. Es
 gibt vier Arten:
@@ -181,13 +348,13 @@ Mindestzahl an Zahltagen und einen erfolgreichen Wurf. Sie erhöht dein Gehalt -
 ### 😊 Traum (48 Karten) und Traum-Momente
 
 Träume sind **Punkte** wert, in Stufen von _klein_ bis _legendär_, in Kategorien wie Reisen, Abenteuer, Fahrzeuge, Zuhause, Lernen,
-Erschaffen und Geben. Ein Traum macht ein **Smile-Projekt** mit Töpfen, die du mit Zahlungsplänen füllst. Du kannst einige gleichzeitig
+Erschaffen und Geben. Ein Traum macht ein **Traumprojekt** mit Töpfen, die du mit Zahlungsplänen füllst. Du kannst einige gleichzeitig
 offen haben. **Traum-Momente** (ein Frühbucher-Angebot, ein Geschenk der Familie, ein Last-Minute-Angebot, ein Reisepartner,
 Inspiration, Geld für ein Nebenprojekt, Punkte für Geduld, ein Traumtausch) helfen einem Traum weiter.
 
 ## Die Notizen eines Projekts
 
-Alles, was mit einem Grow-, Fire- oder Smile-Projekt geschieht, steht mit den Zahlen in seinen **Notizen**: was eine Zahlung gekostet hat,
+Alles, was mit einem Grow-, Fire- oder Traumprojekt geschieht, steht mit den Zahlen in seinen **Notizen**: was eine Zahlung gekostet hat,
 wie viel Bargeld du hattest und wie viel die Bank dir dafür geliehen hat; was ein Käufer bietet (der Preis, die Verkaufskosten, was noch
 geschuldet ist, was du bekämst) oder was ein Marktfenster je Anteil zahlt; jeder Schritt eines Hypes mit dem gewürfelten Wert und dem Wert
 des Einsatzes; ein Verkauf mit dem Ausgezahlten und dem Bargeld danach; ein Traum-Moment mit den Kosten vorher und nachher und dem, was du
@@ -219,6 +386,56 @@ wegfällt). Das Spiel geht weiter: Das Abzeichen ist ein Meilenstein, nicht das 
 **Pleite.** Wird der monatliche Cashflow negativ, endet das Spiel.
 
 **Wie lang ist ein Spiel?** Ein normales Spiel dauert etwa **90 Züge** (grob 36 Monate), ein schnelles 30, ein langes 120.
+
+## Zusammen spielen: dein Ranking und deine Punkte
+
+Jeder Spieler hat **eine Wertung** - dasselbe Prinzip wie eine Schachwertung. **Alle starten bei 1500.** Das ist die Mitte: die Bots in der Bestenliste reichen von etwa 1270 bis etwa 1700, du spielst dich also an den besten Bots vorbei auf Platz 1. Menschen und Bots stehen in **einer Liste**.
+
+### Welche Spiele zählen
+
+Ein Spiel zählt für deine Wertung, wenn der Tisch **gewertet** ist, mindestens ein Mensch am Tisch saß, das Spiel **beendet** wurde und es entweder einen Sieger gab oder **mindestens 8 Runden** gespielt wurden. Zählt ein Spiel nicht, steht am Ende warum ("Nicht gewertet: unter 8 Runden"). Wer ein begonnenes Spiel verlässt, hat gegen alle verloren, die geblieben sind.
+
+### Wie ein Spiel alle platziert
+
+Am Ende bekommt jeder Spieler eine Punktzahl:
+
+| Was                                                                                                                                                     | Punkte     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Jedes Ziel, im Verhältnis zu deinem Fortschritt (Reserve, schuldenfrei, Traum, Unabhängigkeit): ein erreichtes Ziel sind 250, eines zu 60% erledigt 150 | bis zu 250 |
+| Jeder Traumpunkt                                                                                                                                        | 25         |
+| Gewinnen (alle Ziele)                                                                                                                                   | 1000       |
+
+Die Reihenfolge: wer gewonnen hat, steht vorn (der früheste Sieger zuerst), dann alle nach Punktzahl, bei Gleichstand entscheidet das Vermögen. Wer pleite ging oder gegangen ist, liegt hinter allen, die es nicht sind.
+
+### Vom Platz zu deinen Punkten
+
+Dein Platz wird mit **jedem anderen Spieler am Tisch** einzeln verglichen. Über einem Spieler zu landen ist ein Sieg gegen ihn, darunter eine Niederlage.
+
+- Gegen einen Spieler mit **höherer** Wertung zu gewinnen bringt **mehr** als gegen einen mit niedrigerer.
+- Gegen einen Spieler mit **niedrigerer** Wertung zu verlieren kostet **mehr** als gegen einen höheren.
+- Je größer der Abstand, desto überraschender das Ergebnis - und desto mehr bewegt es dich.
+
+Du bekommst den Durchschnitt dieser Duelle. Als Gefühl: an einem Tisch mit vier gleich bewerteten Spielern ist **Platz 1 etwa +20** und **der letzte Platz etwa -13** (in deinen ersten 20 Spielen sind die Zahlen größer, damit eine neue Wertung schnell ihren Platz findet; mit `~` markiert, bis du 5 Spiele gespielt hast). Ein Sieg gegen drei Bots mit 1700 ist etwa +30 wert, gegen drei Bots mit 1300 etwa +10.
+
+### Schwerer spielen, mehr Punkte
+
+Die Schwierigkeit des Spiels ist der **Einsatz**: die Punkte, die du **gewinnst**, werden multipliziert.
+
+| Schwierigkeit | Punkte, die du gewinnst | Was du verlierst |
+| ------------- | ----------------------- | ---------------- |
+| Leicht        | x 0,7                   | dasselbe         |
+| Normal        | x 1                     | dasselbe         |
+| Schwer        | x 1,5                   | dasselbe         |
+
+Derselbe Sieg an einem gleich starken Tisch ist also etwa +14 auf Leicht, +20 auf Normal und +30 auf Schwer. Ein schlechtes Spiel kostet überall dasselbe - du verlierst nie mehr, weil du dich an Schwer wagst. Auch der Charakter zählt: manche sind schwerer als andere (das wissen wir aus tausenden simulierten Spielen), derselbe Platz bringt mit einem schweren Charakter etwas mehr und mit einem leichten etwas weniger.
+
+### Die Bots
+
+Jeder Bot ist eine **Strategie** auf einer **Spielstärke** (Meister, stark, gelegentlich, Anfänger) - der Meister spielt seine Strategie sauber, die anderen verpatzen mal etwas. Jeder hat von Anfang an seine eigene Wertung aus einem Turnier, das die Bots gegeneinander gespielt haben, und sie bewegt sich mit seinen Spielen wie deine. Darum steht ein Anfänger-Bot niedrig und die besten Meister bei etwa 1700.
+
+### Die Bestenliste
+
+Eine Liste, beste Wertung zuerst. Ein Mensch steht erst darauf, wenn er **Mich in der Bestenliste zeigen** einschaltet; ein Bot erscheint, sobald er ein gewertetes Spiel gespielt hat. Die Wertung fällt nie unter 100.
 
 ## Regeln und Einstellungen
 
@@ -449,7 +666,65 @@ bedeuten etwas._
 docs/DREAMFUND_GAME.md --doc-de docs/DREAMFUND_GAME.de.md` (vorher das Domain-Paket bauen). Die Tabellen oben werden zwischen den
 Markierungen neu geschrieben; der Text drumherum ist von Hand geschrieben. Die rohen Spiele liegen daneben als JSON.
 
-### Weitere Charaktere
+## Die zehn Charaktere und die drei Schwierigkeiten
 
-Die nächsten Charaktere werden gegen die Zahlen von Jonas ausbalanciert (dieselben Stapel und dieselben Karten, anderes Gehalt, andere
-Ausgaben, Schulden und ein anderer Traum) und bekommen hier ihre eigenen Statistiken.
+Zehn Leben von 23 bis 57, vom Azubi-Gehalt bis zum Chirurgen. Alle spielen dasselbe Spiel mit denselben Karten - **die Karten sind so
+groß wie das Leben des Charakters** (sein Preisniveau): eine Aktie, eine Immobilie, ein Traum, eine Schuld und ein Notfall kosten für
+Dr. Jan entsprechend mehr als für Jonas und zahlen entsprechend mehr, sodass der Wert einer Karte _im Verhältnis zum Leben_ für alle
+gleich ist. Was einen Charakter schwerer macht als einen anderen, ist das, was am Monatsende übrig bleibt, die Höhe der Schulden und
+die Entfernung zum Traum.
+
+| Charakter                        | Alter | Leben                            | Brutto (Monat) | Monatsrest | Preisniveau | Traum                           |
+| -------------------------------- | ----- | -------------------------------- | -------------- | ---------- | ----------- | ------------------------------- |
+| Jonas, Dualer Student Informatik | 23    | studiert, Single                 | 2.833          | 500        | 1,0         | Bergführer                      |
+| Mehmet, Elektroniker-Geselle     | 26    | Single, erste eigene Wohnung     | 3.150          | 715        | 1,1         | Meisterbrief + eigene Werkstatt |
+| Lena, Pflegefachfrau             | 29    | alleinerziehend, ein Kind        | 3.450          | 600        | 1,2         | Ein Jahr im Camper mit Emma     |
+| Sophie, Grundschullehrerin       | 33    | Beamtin, Single                  | 4.350          | 860        | 1,5         | Ein Jahr unter Segeln           |
+| Tobias, Grafikdesigner (frei)    | 36    | selbstständig, unregelmäßig      | 3.900          | 700        | 1,4         | Atelier und Galerie im Loft     |
+| Katrin, Marketingleiterin        | 40    | verheiratet, zwei Kinder, Haus   | 6.300          | 990        | 2,2         | Ein Haus an der Ostsee          |
+| Frank, Maschinenbauingenieur     | 44    | verheiratet, Teenager, Haus      | 7.600          | 1.080      | 2,7         | Das energieautarke Haus         |
+| Dr. Jan, Oberarzt Chirurgie      | 48    | zwei Teenager, Villa, Leasing    | 11.200         | 680        | 3,9         | Die eigene Praxis               |
+| Heike, Werkstattinhaberin        | 52    | selbstständig, vier Angestellte  | 5.200          | 810        | 1,8         | Ein kleines Weingut             |
+| Peter, Busfahrer                 | 57    | verheiratet, Kinder aus dem Haus | 2.700          | 665        | 0,95        | Eine Hütte am See               |
+
+Die genauen Zahlen stehen auf dem Charakterblatt im Spiel (die drei Tafeln: Einkommensrechnung, Bilanz, Kasse). Sie werden für alle auf
+dieselbe Weise gebaut (`cashflow-professions-builder.ts`): Steuern und Sozialabgaben werden aus dem Bruttogehalt berechnet, ein
+Gutverdiener zahlt also einen höheren Anteil an den Staat; Lebensstil, Schulden und Traum folgen aus wenigen Zahlen in der
+Beschreibung (`cashflow-professions-dreamfund.ts`).
+
+### Leicht, Normal, Schwer
+
+Jeden Charakter gibt es dreimal; Geschichte und Traum sind gleich, die Zahlen und die Karten nicht.
+
+| Was                        | Leicht - ein guter Einstieg, auch für Kinder                                                                            | Normal - für alle                              | Schwer - eine Herausforderung, die eine Strategie braucht                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Das Budget                 | etwa neun Zeilen mit runden Beträgen (50, 100, 500) und runde Kartenpreise                                              | etwa siebzehn Zeilen, ein realistisches Budget | dieselben Zeilen, knapp                                                                                              |
+| Monatsrest                 | 30 % mehr                                                                                                               | wie entworfen                                  | 15 % weniger                                                                                                         |
+| Schulden, Rücklagen, Traum | Schulden 20 % niedriger, Rücklagen 50 % höher, Traum 10 % billiger                                                      | -                                              | Schulden 10 % höher, Rücklagen 25 % niedriger, Traum 5 % teurer                                                      |
+| Beförderungen              | ein Würfelwert weniger nötig                                                                                            | -                                              | ein Würfelwert mehr nötig                                                                                            |
+| Karten und der Rest        | Glück +1 auf den guten Würfeln, zwei Angebote je Landung, nur vier Fallen, Verkauf an jedem Zahltag, freundlicher Markt | die Karten wie in diesem Dokument              | ein Angebot je Landung, die Fallen doppelt, Verkauf nur an Verkaufsterminen, fallender Markt, keine Hilfe der Eltern |
+
+### Die Karte: Charaktere, Strategien und Schwierigkeiten
+
+Die Simulation hat jeden Charakter, auf jeder Schwierigkeit, mit jeder Spielweise gespielt (je 200 Spiele, dieselben Startwerte): die
+**Karte**. Aus ihr werden die Bots des Mehrspielerspiels gezogen, und mit ihr vergleicht der Analyst ein gespeichertes Spiel.
+`docs/dreamfund-balance/MATRIX.md` hat die ganze Tabelle, `matrix.json` die Zahlen. `npm run matrix:dreamfund` erzeugt sie neu, wenn
+sich eine Karte, ein Charakter oder eine Zahl ändert. Die beste Strategie je Charakter und Schwierigkeit (Anteil gewonnener Spiele in
+bis zu 60 Monaten):
+
+<!-- matrix:start -->
+
+| Charakter | Leicht                           | Normal                           | Schwer                           |
+| --------- | -------------------------------- | -------------------------------- | -------------------------------- |
+| Jonas     | **80%** Sapling business builder | **45%** Sapling business builder | **28%** Sapling business builder |
+| Tobias    | **72%** Sapling business builder | **26%** Informed investor        | **9%** Sapling business builder  |
+| Sophie    | **71%** Sapling business builder | **27%** Sapling business builder | **9%** Sapling business builder  |
+| Mehmet    | **72%** Sapling business builder | **34%** Informed investor        | **16%** Sapling business builder |
+| Katrin    | **65%** Sapling business builder | **27%** Sapling business builder | **10%** Sapling business builder |
+| Lena      | **67%** Sapling business builder | **24%** Sapling business builder | **11%** Informed investor        |
+| Frank     | **67%** Sapling business builder | **23%** Sapling business builder | **11%** Informed investor        |
+| Dr. Jan   | **38%** Sapling business builder | **9%** Sapling business builder  | **3%** Sapling business builder  |
+| Heike     | **63%** Sapling business builder | **21%** Sapling business builder | **4%** Informed investor         |
+| Peter     | **81%** Sapling business builder | **48%** Sapling business builder | **18%** Sapling business builder |
+
+<!-- matrix:end -->

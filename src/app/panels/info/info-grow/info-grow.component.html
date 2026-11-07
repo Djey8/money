@@ -3,6 +3,7 @@
   role="dialog"
   aria-modal="true"
   appTrapFocus
+  [class.preview]="classReference.preview"
   *ngIf="classReference.isInfo"
   (click)="highlight()"
   [style.z-index]="classReference.zIndex + 1001"
@@ -38,7 +39,7 @@
     </div>
 
     <!-- Phase Advance -->
-    <div class="phase-advance" *ngIf="classReference.phase !== 'completed'">
+    <div class="phase-advance" *ngIf="classReference.phase !== 'completed' && !inGame">
       <button class="btn btn--sm btn--primary" (click)="advancePhase()">
         {{ 'Grow.advancePhase' | translate }} → {{ 'Grow.phase.' + getNextPhase() | translate }}
       </button>
@@ -435,7 +436,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let tx of relatedTransactions" (click)="openTransaction(tx)">
-                <td>{{ tx.account }}</td>
+                <td>{{ tx.account | accountLabel }}</td>
                 <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                   {{ tx.amount | appNumber }} {{ currency }}
                 </td>

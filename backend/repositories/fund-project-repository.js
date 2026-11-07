@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Smile projects and Fire emergency funds are the same entity with a
+ * Dream projects and Fire emergency funds are the same entity with a
  * different storage key (`data.smile` / `data.fire`): same phases, same
  * bucket/link/note/actionItem/payment-plan shapes, same create/edit/delete
  * semantics in the UI (`add-smile`/`info-smile` vs `add-fire`/`info-fire`).
@@ -764,7 +764,7 @@ function createFundProjectRepository({ kind, label, codePrefix }) {
 
   /**
    * Computes and persists a new payment plan (`status: 'planned'`) onto a
-   * Smile project's `plannedSubscriptions` array, matching `savePlan()`'s own
+   * Dream project's `plannedSubscriptions` array, matching `savePlan()`'s own
    * create path in `payment-planner-dialog.component.ts` — see
    * `docs/domain/PAYMENT_PLAN_FORMULA.md`. Only creation is in scope
    * (SMILE-7's own catalog entry); activating/deactivating/editing a plan

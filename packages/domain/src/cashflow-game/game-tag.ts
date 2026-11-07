@@ -1,5 +1,5 @@
 /**
- * The tag every transaction and subscription of a game carries in its comment (JFK, 2026-10-25: the game is Dreamfund, so its tag is
+ * The tag every transaction and subscription of a game carries in its comment (JFK, 2026-10-25: the game is Dreamer, so its tag is
  * too). Games saved before the rename carry `#cashflow`: it is still recognised, nothing is rewritten.
  */
 export const GAME_TAG = '#dreamfund';

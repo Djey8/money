@@ -1,0 +1,258 @@
+/* Example cards, example projects and the career ladder of the Dreamer manual: drawings only. */
+.dreamfund-manual .df-faces {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.dreamfund-manual .df-faces .manual-face-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--tone);
+  color: #fff;
+}
+.dreamfund-manual .df-kind {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+.dreamfund-manual .df-note {
+  margin: 0;
+  padding: 8px 12px 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7785);
+  border-top: 1px dashed var(--color-border);
+}
+.dreamfund-manual .df-caption {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7785);
+}
+
+/* the example projects */
+.dreamfund-manual .df-projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.dreamfund-manual .df-project {
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.dreamfund-manual .df-project:hover,
+.dreamfund-manual .df-project:focus-visible {
+  border-color: var(--color-primary);
+}
+.dreamfund-manual .df-project h4 {
+  margin: 6px 0 2px;
+}
+.dreamfund-manual .df-project small {
+  color: var(--color-text-secondary, #6b7785);
+}
+.dreamfund-manual .df-icon {
+  font-size: 26px;
+}
+.dreamfund-manual .df-bar {
+  height: 8px;
+  margin: 10px 0 4px;
+  border-radius: 4px;
+  background: var(--color-background-alt, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+}
+.dreamfund-manual .df-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+.dreamfund-manual .df-bar--emergency > span {
+  background: #e53935;
+}
+.dreamfund-manual .df-chip {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--color-background-alt, rgba(0, 0, 0, 0.08));
+}
+.dreamfund-manual .df-open-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+/* the info window of an example project */
+.dreamfund-manual .df-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 12px;
+  overflow-y: auto;
+  background: rgba(8, 16, 32, 0.6);
+}
+.dreamfund-manual .df-sheet {
+  width: min(560px, 100%);
+  padding: 18px 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+.dreamfund-manual .df-sheet header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.dreamfund-manual .df-sheet header h3 {
+  flex: 1;
+  margin: 0;
+}
+.dreamfund-manual .df-close {
+  border: 0;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+.dreamfund-manual .df-example {
+  margin: 10px 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  background: rgba(255, 179, 0, 0.16);
+  border: 1px dashed #ffb300;
+}
+.dreamfund-manual .df-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.dreamfund-manual .df-facts div {
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-background-alt, rgba(0, 0, 0, 0.06));
+}
+.dreamfund-manual .df-facts small {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-secondary, #6b7785);
+}
+.dreamfund-manual .df-sheet h5 {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary, #6b7785);
+}
+.dreamfund-manual .df-bucket {
+  margin-bottom: 10px;
+}
+.dreamfund-manual .df-bucket-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dreamfund-manual .df-bucket small {
+  color: var(--color-text-secondary, #6b7785);
+}
+.dreamfund-manual .df-plan {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-primary);
+}
+.dreamfund-manual .df-plan strong {
+  display: block;
+}
+.dreamfund-manual .df-sheet ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* the career ladder */
+.dreamfund-manual .df-ladder {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.dreamfund-manual .df-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.dreamfund-manual .df-stage:not(:last-child)::after {
+  content: '›';
+  position: absolute;
+  right: -11px;
+  top: 50%;
+  z-index: 1;
+  width: 14px;
+  text-align: center;
+  font-size: 22px;
+  color: var(--color-primary);
+}
+.dreamfund-manual .df-stage-n {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+}
+.dreamfund-manual .df-stage h4 {
+  margin: 0;
+}
+.dreamfund-manual .df-stage .df-pay {
+  font-size: 18px;
+  font-weight: 700;
+}
+.dreamfund-manual .df-stage p {
+  margin: 0;
+  font-size: 12px;
+}
+.dreamfund-manual .df-stage .df-up {
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-border);
+  color: var(--color-text-secondary, #6b7785);
+}
+@media (max-width: 900px) {
+  .dreamfund-manual .df-ladder {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dreamfund-manual .df-stage::after {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .dreamfund-manual .df-ladder {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* the drawings use the whole width of the page (the classic manual's single card is 440px wide) */
+.dreamfund-manual .manual-figure {
+  max-width: none;
+}

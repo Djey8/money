@@ -1,4 +1,5 @@
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { RemoteGameHook } from 'src/app/shared/services/remote-game';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -29,6 +30,7 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 import { PaymentPlannerDialogComponent } from 'src/app/shared/components/payment-planner-dialog/payment-planner-dialog.component';
+import { AccountLabelPipe } from '../../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let AppComponent: any;
@@ -75,6 +77,7 @@ setTimeout(() =>
   selector: 'app-info-fire',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -91,6 +94,11 @@ setTimeout(() =>
   ],
 })
 export class InfoFireComponent extends BaseInfoComponent {
+  /** At a table of a game played with others (the payment plans of a project are the table's: activated and stopped there). */
+  get atTable(): boolean {
+    return !!RemoteGameHook.current?.dreamfund;
+  }
+
   static index = 1;
 
   static title = 'Emergency Fund';
@@ -554,9 +562,8 @@ export class InfoFireComponent extends BaseInfoComponent {
     AddComponent.url = '/fireemergencies';
     const remaining = this.getTotalTarget() - this.getTotalAmount();
     // in a game the amount that finishes the project is already filled in
-    if (this.inGame && remaining > 0) {
-      AddComponent.amountTextField = (Math.round(remaining * 100) / -100).toString();
-    }
+    AddComponent.amountTextField =
+      this.inGame && remaining > 0 ? (Math.round(remaining * 100) / -100).toString() : '';
     AddComponent.commentTextField = `${InfoFireComponent.title} ${remaining} `;
     InfoFireComponent.isInfo = false;
     AddComponent.isAdd = true;
@@ -1233,6 +1240,36 @@ export class InfoFireComponent extends BaseInfoComponent {
     const phases: FirePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
     const currentIndex = phases.indexOf(InfoFireComponent.phase);
     return phases[Math.min(currentIndex + 1, phases.length - 1)];
+  }
+
+  phaseOptions: FirePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
+
+  getPreviousPhase(): FirePhase {
+    const phases = this.phaseOptions;
+    const currentIndex = phases.indexOf(InfoFireComponent.phase);
+    return phases[Math.max(currentIndex - 1, 0)];
+  }
+
+  /** The phase set by hand, forwards or backwards (a project can go back to an idea, or be reopened). */
+  setPhase(phase: FirePhase) {
+    const project = AppStateService.instance.allFireEmergencies[InfoFireComponent.index];
+    if (!project || project.phase === phase) return;
+    project.phase = phase;
+    project.updatedAt = new Date().toISOString();
+    if (phase === 'completed' && !project.completionDate) {
+      project.completionDate = new Date().toISOString().split('T')[0];
+    }
+    if (phase !== 'completed') delete project.completionDate;
+    InfoFireComponent.phase = phase;
+    this.persistence.writeAndSync({
+      tag: 'fire',
+      data: AppStateService.instance.allFireEmergencies,
+      localStorageKey: 'fire',
+      logEvent: 'set_fire_phase',
+      logMetadata: { title: project.title, phase },
+      onSuccess: () => this.toastService.show('Phase changed', 'update'),
+      onError: (error) => this.showError(error.message || 'Failed to change the phase'),
+    });
   }
 
   advancePhase() {

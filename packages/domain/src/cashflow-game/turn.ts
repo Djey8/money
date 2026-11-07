@@ -152,7 +152,7 @@ export function playTurn(books: GameBooks, deps: TurnDeps, request: TurnRequest 
     case 'harvest':
     case 'life':
     case 'career':
-      // the tiles of a Dreamfund map draw a card from their stack; for now each stack holds one filler card
+      // the tiles of a Dreamer map draw a card from their stack; for now each stack holds one filler card
       pending = {
         kind: 'story',
         tile: move.landed.kind,

@@ -114,7 +114,7 @@
       <tr *ngFor="let row of classReference.allSubscriptions; let i = index" (click)="clickRow(classReference.allSubscriptions.length-i-1)">
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions.length-i}}</td>
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].title}}</td>
-        <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].account}}</td>
+        <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{ classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].account | accountLabel }}</td>
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)" class="{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].amount | appNumber}} {{settingsReference.currency}}</td>
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].startDate | date:"dd.MM.yyyy"}}</td>
       </tr>
@@ -128,7 +128,7 @@
       <tr [hidden]="classReference.noInactiveSubscriptions()" *ngFor="let row of classReference.allSubscriptions; let i = index" (click)="clickRow(classReference.allSubscriptions.length-i-1)">
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions.length-i}}</td>
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].title}}</td>
-        <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].account}}</td>
+        <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{ classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].account | accountLabel }}</td>
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)" class="{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].amount | appNumber}} {{settingsReference.currency}}</td>
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSubscriptions[classReference.allSubscriptions.length-i-1].endDate | date:"dd.MM.yyyy"}}</td>
       </tr>
@@ -149,7 +149,7 @@
       <tr *ngFor="let row of classReference.allSearchedSubscriptions; let i = index" (click)="clickRow(classReference.allSearchedSubscriptions.length-i-1)" [hidden]="!classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].isFiltered">
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions.length-i}}</td>
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].title}}</td>
-        <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].account}}</td>
+        <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{ classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].account | accountLabel }}</td>
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)" class="{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].amount | appNumber}} {{settingsReference.currency}}</td>
         <td [hidden]="classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].startDate | date:"dd.MM.yyyy"}}</td>
       </tr>
@@ -162,7 +162,7 @@
       <tr *ngFor="let row of classReference.allSearchedSubscriptions; let i = index" (click)="clickRow(classReference.allSearchedSubscriptions.length-i-1)" [hidden]="!classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].isFiltered">
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions.length-i}}</td>
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].title}}</td>
-        <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].account}}</td>
+        <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{ classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].account | accountLabel }}</td>
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)" class="{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].amount>=0 ? 'amount-positive' : 'amount-negative'}}">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].amount | appNumber}} {{settingsReference.currency}}</td>
         <td [hidden]="!classReference.isActive(classReference.allSubscriptions.length-i-1)">{{classReference.allSearchedSubscriptions[classReference.allSearchedSubscriptions.length-i-1].startDate | date:"dd.MM.yyyy"}}</td>
       </tr> 
@@ -213,7 +213,7 @@
         {{ 'Common.account' | translate }}
       </th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="classReference.isActive(sub.id)">
-        {{ sub.account }}
+        {{ sub.account | accountLabel }}
       </td>
     </ng-container>
 
@@ -328,7 +328,7 @@
     <ng-container matColumnDef="account">
       <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ 'Common.account' | translate }}</th>
       <td mat-cell *matCellDef="let sub; let i = index" [hidden]="!classReference.isActive(sub.id)">
-        {{ sub.account }}
+        {{ sub.account | accountLabel }}
       </td>
     </ng-container>
 

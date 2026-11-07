@@ -3,6 +3,13 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { TablesApiService } from './tables-api.service';
 import { leaderboardTexts } from './leaderboard.texts';
+import { TurnAlert } from './table-turn-alert';
+import { tableRoomTexts } from './table-room.texts';
+import {
+  APP_LANGUAGES,
+  LanguageService,
+  type AppLanguage,
+} from '../shared/services/language.service';
 import { problemText } from './problem.texts';
 import { TableStageComponent } from './table-stage.component';
 import {
@@ -10,6 +17,7 @@ import {
   snapshotFromBooks,
   type GameBooks,
   type TableView,
+  withoutDroppedPremiums,
 } from '@money/domain';
 import { TranslateService } from '@ngx-translate/core';
 import { AppStateService } from '../shared/services/app-state.service';
@@ -27,8 +35,21 @@ import {
 } from '../shared/services/remote-game';
 import { historyLines } from './table-history';
 import { TablePresenter } from './table-presenter';
+import { applyDreamExtrasToApp, dreamLifeToApp } from './dream-books-bridge';
+import {
+  captureShown,
+  EDITABLE_TAGS,
+  reconcileEdit,
+  type ShownBooks,
+} from './dream-edit-reconcile';
+import { dreamTexts } from '../dreamfund-tables/dream-texts';
+import { extrasOf, lifeOf, pendingOf } from '../dreamfund-tables/dream-table-view';
+import { withDreamPending } from '../dreamfund-tables/dream-pending';
+import { CASHFLOW_GAME_SETS } from '../shared/cashflow-content';
+import { shownDebtTags, withShownGameText, withShownLineTitles } from './table-line-titles';
 import { CashflowGameComponent } from '../main/cashflow-game/cashflow-game.component';
 import { TableGameDriver } from './table-game-driver';
+import { DreamTableGameDriver } from '../dreamfund-tables/dream-table-game-driver';
 import { TableBannerComponent } from './table-banner.component';
 import { TableLayerComponent } from './table-layer.component';
 import { tableLayerTexts } from './table-layer.texts';
@@ -78,16 +99,67 @@ export class TableModeService {
     if (!books) return [];
     const rolls = view.settings.rules?.sellOfferRolls ?? 0;
     const count = books.state.turn?.count ?? 0;
-    return (books.state.marketOffers ?? []).map((offer) => ({
-      title: offer.title,
-      label: offer.label,
-      priceMinor: offer.pricePerShareMinor ?? offer.pricePerCoinMinor ?? offer.salePriceMinor,
-      cardId: offer.cardId,
-      left:
-        rolls > 0 && offer.offeredAtRoll !== undefined
-          ? Math.max(1, rolls - (count - offer.offeredAtRoll))
-          : null,
-    }));
+    return (books.state.marketOffers ?? [])
+      .map((offer) => {
+        // a Harvest card of the Dreamer game names its own number of turns (the setting of the table), the classic ones the rules'
+        const turns = offer.validRolls ?? rolls;
+        return {
+          title: offer.title,
+          label: offer.label,
+          priceMinor: offer.pricePerShareMinor ?? offer.pricePerCoinMinor ?? offer.salePriceMinor,
+          cardId: offer.cardId,
+          left:
+            turns > 0 && offer.offeredAtRoll !== undefined
+              ? turns - (count - offer.offeredAtRoll)
+              : null,
+        };
+      })
+      .filter((offer) => offer.left === null || offer.left > 0);
+  });
+
+  /** The tab says "your turn" while it is (and a notification, only if the player asked for them): it moved here from the table page. */
+  readonly alert = new TurnAlert({
+    document,
+    Notification: typeof Notification === 'undefined' ? undefined : (Notification as never),
+  });
+  private readonly alerting = effect(() => {
+    const view = this.view();
+    const mine =
+      this.active() &&
+      !!view &&
+      view.youSeat !== null &&
+      view.phase === 'playing' &&
+      view.activeSeat === view.youSeat &&
+      view.clock.pausedAt === null;
+    untracked(() => {
+      if (mine && view)
+        this.alert.turnStarted(tableRoomTexts(this.lang).yourTurn, view.settings?.name ?? '');
+      else this.alert.turnEnded();
+    });
+  });
+
+  /** The app speaks the language the table is played in, whoever opens it. */
+  private readonly tableLanguage = effect(() => {
+    const code = this.session()?.room?.()?.language as AppLanguage['code'] | undefined;
+    if (!this.active() || !code || !APP_LANGUAGES.some((lang) => lang.code === code)) return;
+    untracked(() => {
+      const languages = this.injector.get(LanguageService);
+      if (code === languages.current) return;
+      this.lang = code;
+      void languages.use(code);
+    });
+  });
+
+  /** The amounts of the table show its money (a setting of the table) while it is open: a reload brings the account's own back. */
+  private readonly tableCurrency = effect(() => {
+    const view = this.view() as unknown as { settings?: { currency?: string } } | null;
+    const room = this.session()?.room?.();
+    if (!this.active() || !view) return;
+    const chosen = view.settings?.currency ?? 'game';
+    const code = chosen === 'game' ? (room?.language === 'de' ? 'TT' : 'DT') : chosen;
+    untracked(() => {
+      AppStateService.instance.currency = code;
+    });
   });
 
   private lastOffersKey = '';
@@ -175,8 +247,16 @@ export class TableModeService {
       // no storage: a reload then lands on the lobby
     }
     DatabaseService.readOnly = true;
+    DatabaseService.onBlockedWrite =
+      (session.view() as { kind?: string } | null)?.kind === 'dreamfund'
+        ? (tag, data) => void this.editedAtTable(tag, data)
+        : null;
     LocalService.shadow = shownData();
-    RemoteGameHook.current = new TableGameDriver(
+    const Driver =
+      (session.view() as { kind?: string } | null)?.kind === 'dreamfund'
+        ? DreamTableGameDriver
+        : TableGameDriver;
+    const driver = new Driver(
       session,
       () => this.refusal(),
       () => this.history(),
@@ -194,6 +274,15 @@ export class TableModeService {
         runMenu: (id) => this.runTableMenu(id),
       },
     );
+    if (driver instanceof DreamTableGameDriver) {
+      driver.lang = lang;
+      driver.originalTag = (shown) => this.debtNames.get(shown) ?? shown;
+    }
+    RemoteGameHook.current = driver;
+    RemoteGameHook.debug = {
+      on: () => this.debugOn(),
+      open: (start) => this.debugPanel.set(start ?? {}),
+    };
     RemoteGameHook.otherDice = () => this.presenter.dice();
     RemoteGameHook.leaveGame = () =>
       this.leave(() => {
@@ -213,6 +302,7 @@ export class TableModeService {
     RemoteGameHook.tokens = (mine) => this.tokens(mine);
     session.onEvents = (lines, view) => this.presenter.push(lines, view);
     this.active.set(true);
+    preloadTablePages();
     // the small confirmations (saved, done ...) can be switched off while playing: they sit over the buttons on a phone
     ToastService.quiet = () => !this.presenter.toasts();
     document.body.classList.add('table-mode');
@@ -229,7 +319,12 @@ export class TableModeService {
       // nothing stored
     }
     LocalService.shadow = null;
+    DatabaseService.onBlockedWrite = null;
+    this.shownBooks = null;
+    this.alert.turnEnded();
     RemoteGameHook.current = null;
+    RemoteGameHook.debug = null;
+    this.debugPanel.set(null);
     RemoteGameHook.layer = null;
     RemoteGameHook.banner = null;
     RemoteGameHook.onMenuEntry = null;
@@ -268,6 +363,24 @@ export class TableModeService {
     return this.historyMemo.lines;
   }
 
+  /** The profile pictures of the seats (by seat), fetched once for a table that shows them on its map. */
+  readonly pictures = signal<Record<number, string | null>>({});
+  private picturesOf = '';
+
+  private loadPictures(): void {
+    const id = this.session()?.tableId;
+    if (!id || this.picturesOf === id) return;
+    this.picturesOf = id;
+    const api = this.injector.get(TablesApiService);
+    api.seats(id).subscribe({
+      next: (r) =>
+        this.pictures.set(
+          Object.fromEntries(r.seats.map((seat) => [seat.seat, api.pictureUrl(seat, id)])),
+        ),
+      error: () => undefined,
+    });
+  }
+
   /** Everybody's token for the board: their own books say where each stands; mine is where the screen draws it right now. */
   private tokens(mine: number | null): BoardToken[] {
     const view = this.view();
@@ -276,11 +389,25 @@ export class TableModeService {
     const told = this.presenter.tokenAt();
     // the board is the table's: it shows where everybody stands, whoever's books are looked at. Only the player's own token walks
     // while their roll is animated (`mine`); looking at somebody else changes nothing on it.
-    const walking = RemoteGameHook.holdUpdates && this.looking() === null;
+    // (the screen's own token only counts in the player's own turn: while somebody else's move is told it stands wherever it is - at START
+    // when the player has not walked yet - and the player's token would jump back to START, JFK 2026-11-03)
+    const walking =
+      RemoteGameHook.holdUpdates && this.looking() === null && view.activeSeat === view.youSeat;
     return view.players.map((player) => {
       const books = player.books as unknown as GameBooks | null;
+      const setup = books?.state.boardSetup;
+      if (setup?.shape === 'yinyang') this.loadPictures();
       return {
         id: String(player.seat),
+        // the Yin Yang map: the track of the player, and who is shown in the head of it
+        ...(setup?.shape === 'yinyang'
+          ? {
+              lane: setup.lane ?? 0,
+              name: player.name,
+              photo: this.pictures()[player.seat] ?? null,
+              bot: !!player.bot,
+            }
+          : {}),
         position:
           player.seat === view.youSeat && walking
             ? mine
@@ -292,6 +419,44 @@ export class TableModeService {
         active: player.seat === view.activeSeat,
       };
     });
+  }
+
+  /** What was on screen of the player's own books when they started to edit (see `dream-edit-reconcile.ts`). */
+  private shownBooks: ShownBooks | null = null;
+  private editing: Promise<void> = Promise.resolve();
+
+  /**
+   * A page wrote something while a Dreamer table is on screen (JFK, 2026-11-05): what does not change the game is kept - the
+   * category, time and account of a booking, the account a payment is paid from, the phase of a project -, the rest is put back.
+   */
+  private editedAtTable(tag: string, data: unknown): Promise<void> {
+    if (!EDITABLE_TAGS.includes(tag)) return this.editing;
+    const shown = this.shownBooks;
+    const driver = RemoteGameHook.current as DreamTableGameDriver | null;
+    if (!shown || this.looking() !== null || !(driver instanceof DreamTableGameDriver)) {
+      return this.editing;
+    }
+    const worked = reconcileEdit(tag, data, shown);
+    if (worked.commands.length === 0 && !worked.refused) return this.editing;
+    // one edit after the other: the table numbers its answers
+    this.editing = this.editing.then(async () => {
+      let failed: string | undefined;
+      for (const command of worked.commands) {
+        const outcome = await driver.editEntry(command as unknown as Record<string, unknown>);
+        if (!outcome.ok) failed = outcome.message ?? 'The change did not go through.';
+      }
+      if (worked.refused || failed) {
+        try {
+          this.injector
+            .get(ToastService)
+            .show(failed ?? dreamTexts(this.lang).editRefused, 'error');
+        } catch {
+          // without the app's own services (a bare test) there is nothing to tell
+        }
+        this.showLatest();
+      }
+    });
+    return this.editing;
   }
 
   /** Puts the latest books of whoever is being looked at on screen (after a held animation). */
@@ -346,7 +511,11 @@ export class TableModeService {
     }
     if (session?.can('pause')) items.push({ id: 'pause', label: words.pauseGame });
     if (session?.can('resume')) items.push({ id: 'resume', label: words.resumeGame });
-    items.push({ id: 'page', label: words.tablePage }, { id: 'lobby', label: words.toLobby });
+    // the browser can tell the player when it is their turn, once they have allowed it
+    if (this.alert.canAsk) {
+      items.push({ id: 'notify', label: tableRoomTexts(this.lang).notifyMe });
+    }
+    items.push({ id: 'lobby', label: words.toLobby });
     // the table is the host's to take away only while nobody else is at it; with others it is left (resigned) like any seat
     const others = view.players.filter(
       (player, seat) => seat !== view.youSeat && !player.bot && player.status === 'active',
@@ -362,11 +531,33 @@ export class TableModeService {
     return { title: words.settingsTitle, items };
   }
 
+  /** The debug panel of a debug game (the host's): open on a pile, on all of them, or closed (null). */
+  readonly debugPanel = signal<{ tile?: string; pile?: string } | null>(null);
+
+  /** A debug game, and the player is its host: the cards can be loaded at will. */
+  debugOn(): boolean {
+    const view = this.view() as unknown as {
+      kind?: string;
+      phase?: string;
+      youSeat: number | null;
+      hostSeat?: number;
+      settings?: { debug?: boolean };
+    } | null;
+    return (
+      view?.kind === 'dreamfund' &&
+      view.settings?.debug === true &&
+      view.phase === 'playing' &&
+      view.youSeat !== null &&
+      view.youSeat === view.hostSeat
+    );
+  }
+
   /** The small switches kept on the game screen itself, so they need no trip into the settings. */
   quickToggles(): { id: string; icon: string; title: string; on: boolean }[] {
     const words = tableLayerTexts(this.lang);
     const on = this.presenter.messages();
     return [
+      ...(this.debugOn() ? [{ id: 'debug', icon: '🛠', title: 'Debug', on: true }] : []),
       {
         id: 'messages',
         icon: on ? '🔔' : '🔕',
@@ -384,25 +575,16 @@ export class TableModeService {
 
   async runTableMenu(id: string): Promise<void> {
     const view = this.view();
-    if (id === 'messages') this.presenter.setMessages(!this.presenter.messages());
+    if (id === 'debug') this.debugPanel.set({});
+    else if (id === 'messages') this.presenter.setMessages(!this.presenter.messages());
     else if (id === 'toasts') this.presenter.setToasts(!this.presenter.toasts());
     else if (id === 'autoplay') {
       const away = !!view?.players[view.youSeat ?? -1]?.away;
       await this.session()?.play({ type: away ? 'back' : 'away' });
     } else if (id === 'pause' || id === 'resume') await this.session()?.play({ type: id });
-    else if (id === 'page') this.toTablePage();
+    else if (id === 'notify') await this.alert.ask();
     else if (id === 'lobby') this.toLobby();
     else if (id === 'remove') await this.removeTable();
-  }
-
-  /** The table's own page (pause and resume, the table's state): the game screen is left, the table stays and goes on. */
-  toTablePage(): void {
-    const id = this.view()?.id;
-    if (!id) return this.toLobby();
-    this.leave(() => {
-      window.location.hash = `#/tables/${id}?lobby=1`;
-      window.location.reload();
-    });
   }
 
   /** Back to the table's lobby: the app is reloaded on its own account, the lobby page asks not to jump straight back in. */
@@ -510,6 +692,39 @@ export class TableModeService {
   gate(): RemoteGate | null {
     const view = this.view();
     const words = tableLayerTexts(this.lang);
+    // a Dreamer turn ends when the player says so: after the roll, and once every card of the tile is dealt with
+    if ((view as { kind?: string } | null)?.kind === 'dreamfund') {
+      if (!view || view.youSeat === null || view.phase !== 'playing') return null;
+      // a Harvest card of this turn affects the player: they say Continue when they have read it and sold what they wanted
+      if (this.harvestWaitsFor(view.youSeat) && this.looking() === null) {
+        return { label: words.continueLabel, disabled: this.presenter.busy() };
+      }
+      if (view.activeSeat !== view.youSeat || !view.turnRolled || this.looking() !== null)
+        return null;
+      // a Life, Fire or Harvest card cannot be left without opening it: no End turn before that
+      const turn = AppStateService.instance.cashflowGame.turn;
+      const key = RemoteGameHook.openedKey(turn);
+      const tile = turn?.pending?.kind === 'story' ? turn.pending.tile : '';
+      if (
+        key &&
+        (tile === 'life' || tile === 'emergency' || tile === 'harvest') &&
+        RemoteGameHook.opened() !== key
+      ) {
+        return null;
+      }
+      const open = pendingOf(view, view.youSeat) as {
+        kind?: string;
+        planned?: unknown;
+        rolling?: unknown;
+      } | null;
+      // an investment planned in Grow can be left with the turn (the chance is missed), as in the solo game
+      if (
+        (open && !(open.kind === 'opportunity' && open.planned && !open.rolling)) ||
+        RemoteGameHook.holdUpdates
+      )
+        return null;
+      return { label: words.endTurn, disabled: this.presenter.busy() };
+    }
     if (!view || view.youSeat === null || !view.holdSeats.includes(view.youSeat)) return null;
     if (this.looking() !== null) return null;
     // not while the player's own roll is still being shown
@@ -518,6 +733,15 @@ export class TableModeService {
       label: view.activeSeat === view.youSeat ? words.endTurn : words.continueLabel,
       disabled: this.presenter.busy(),
     };
+  }
+
+  /** The seats a Harvest card of this turn affects who have not yet said Continue. */
+  harvestWaiting(): number[] {
+    return (this.view() as unknown as { harvestWaiting?: number[] } | null)?.harvestWaiting ?? [];
+  }
+
+  harvestWaitsFor(seat: number): boolean {
+    return this.harvestWaiting().includes(seat);
   }
 
   /** The default location's name and sub name, in the language of the app. */
@@ -535,6 +759,20 @@ export class TableModeService {
     }
   }
 
+  /** The debts of a table character by the word they are shown with, and the tag of the server (to pay one off). */
+  private debtNames = new Map<string, string>();
+
+  /** The starting debts (tag and key) of a Dreamer seat's character. */
+  private debtsOf(view: TableView, seat: number): { tag: string; key?: string }[] {
+    const id = (view.players[seat] as { professionId?: string | null }).professionId;
+    const set = CASHFLOW_GAME_SETS.find((candidate) => candidate.id === 'jfk-stories');
+    const profession = set?.professions.find((candidate) => candidate.id === id);
+    return (profession?.starterKit.liabilities ?? []).map((line) => ({
+      tag: line.tag,
+      key: line.key,
+    }));
+  }
+
   /**
    * Shows one player's books: the app's in-memory state becomes theirs. Called on every table update, so the panel always shows
    * the table as the server has it.
@@ -544,7 +782,54 @@ export class TableModeService {
     const books = player?.books as unknown as GameBooks | null | undefined;
     if (!books) return;
     this.seat.set(seat);
-    applyBooksToApp(AppStateService.instance, books, discardsOf(view), this.bankLocationNames());
+    // a Dreamer seat's open decision is written into the turn as the solo screen keeps it (the card the server drew)
+    const shown = lifeOf(view, seat)
+      ? withDreamPending(books, pendingOf(view, seat), { ...extrasOf(view, seat), lang: this.lang })
+      : books;
+    // the lines of the budget in the language of the screen (the server's books keep the card's own titles)
+    let shownInLanguage = shown;
+    if (lifeOf(view, seat)) {
+      try {
+        const translate = this.injector.get(TranslateService);
+        const say = (key: string) => {
+          const text = translate.instant(key);
+          return text === key ? null : text;
+        };
+        const debts = this.debtsOf(view, seat);
+        shownInLanguage = withShownGameText(
+          withShownLineTitles(shown, say, debts),
+          (key, params) => {
+            const text = translate.instant(key, params);
+            return text === key ? null : text;
+          },
+        );
+        this.debtNames = shownDebtTags(debts, say);
+      } catch {
+        // without the app's own translations (a bare test) the books are shown as they are
+      }
+    }
+    // the title a payment is shown by, and the one the table knows it by (the screen shows the lines in its own language)
+    const subscriptionTitles: Record<string, string> = {};
+    shownInLanguage.subscriptions.forEach((sub, index) => {
+      const own = shown.subscriptions[index]?.title;
+      if (own && own !== sub.title) subscriptionTitles[sub.title] = own;
+    });
+    // the subscriptions are the bill of the next Payday: the premium of an insurance that is dropped is not on it
+    if (lifeOf(view, seat)) shownInLanguage = withoutDroppedPremiums(shownInLanguage);
+    applyBooksToApp(
+      AppStateService.instance,
+      shownInLanguage,
+      discardsOf(view),
+      this.bankLocationNames(),
+    );
+    // a Dreamer seat keeps its Mojo, its dreams and its reserve in the app's own entities: the bridge puts them on screen
+    const life = lifeOf(view, seat);
+    if (life) {
+      applyDreamExtrasToApp(
+        AppStateService.instance,
+        dreamLifeToApp(life, this.lang, new Date().toISOString()),
+      );
+    }
     // the income statement, the Cashflow page and the funds are rebuilt from the transactions, exactly as the solo game does after a move
     try {
       this.injector.get(IncomeStatementService).recalculate();
@@ -555,6 +840,11 @@ export class TableModeService {
     // move - the table's books arrive without a save, so nothing else tells them (JFK, 2026-10-18).
     AppStateService.instance.transactionsUpdated$.next();
     AppStateService.instance.subscriptionsUpdated$.next();
+    // what a player may change by hand is compared with this: only their own books can be edited
+    this.shownBooks =
+      life && seat === view.youSeat
+        ? captureShown(AppStateService.instance as never, subscriptionTitles)
+        : null;
   }
 }
 
@@ -680,4 +970,43 @@ export function applyBooksToApp(
   state.tier3GrowLoaded = true;
   state.tier3BalanceLoaded = true;
   state.tier3CashflowGameLoaded = true;
+}
+
+let preloaded = false;
+
+/**
+ * The pages and panels a player opens while playing are loaded in the background as soon as a table is open (JFK, 2026-11-03: no
+ * waiting for a page, a project or the Add dialog to be fetched at the click). One after the other, when the browser has nothing to do.
+ */
+function preloadTablePages(): void {
+  if (preloaded) return;
+  preloaded = true;
+  const loads: (() => Promise<unknown>)[] = [
+    () => import('../main/home/home.component'),
+    () => import('../main/grow/grow.component'),
+    () => import('../main/smile/smile-projects/smile-projects.component'),
+    () => import('../main/fire/fire-emergencies/fire-emergencies.component'),
+    () => import('../panels/info/info-grow/info-grow.component'),
+    () => import('../panels/info/info-smile/info-smile.component'),
+    () => import('../panels/info/info-fire/info-fire.component'),
+    () => import('../panels/info/info-liabilitie/info-liabilitie.component'),
+    () => import('../main/cashflow/balance/balance.component'),
+    () => import('../main/accounting/accounting.component'),
+    () => import('../main/subscription/subscription.component'),
+    () => import('../main/cashflow/cashflow.component'),
+  ];
+  const idle: (run: () => void) => void =
+    typeof requestIdleCallback === 'function'
+      ? (run) => requestIdleCallback(run)
+      : (run) => setTimeout(run, 200);
+  const next = (): void => {
+    const load = loads.shift();
+    if (!load) return;
+    idle(() => {
+      load()
+        .catch(() => undefined)
+        .then(next);
+    });
+  };
+  next();
 }

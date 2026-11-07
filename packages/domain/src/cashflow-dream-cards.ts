@@ -1,10 +1,14 @@
 /**
- * The Dreamfund Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): 48 dreams in English and German. A dream is
- * generic - it belongs to no character - and becomes a Smile project when it is taken. Amounts are minor units of the game money.
+ * The Dreamer Dream stack (JFK, 2026-10-26, temp_cards/dreamfund-dream-deck.md v0.2): 48 dreams in English and German. A dream is
+ * generic - it belongs to no character - and becomes a Dream project when it is taken. Amounts are minor units of the game money.
  */
 import type { DreamCard } from './cashflow-game/dream-deck';
+import { withDreamDetails } from './cashflow-dream-details';
+import { MORE_TRAVEL } from './cashflow-dreams-more-travel';
+import { MORE_DOING } from './cashflow-dreams-more-doing';
+import { MORE_LIFE } from './cashflow-dreams-more-life';
 
-export const DREAM_CARDS: DreamCard[] = [
+const BASE_DREAM_CARDS: DreamCard[] = [
   {
     id: 'D01',
     category: 'wonders',
@@ -3202,3 +3206,11 @@ export const DREAM_CARDS: DreamCard[] = [
     giving: true,
   },
 ];
+
+/** The dreams with their detail (`cashflow-dream-details.ts`): what a project made from a card has filled in. */
+export const DREAM_CARDS: DreamCard[] = withDreamDetails([
+  ...BASE_DREAM_CARDS,
+  ...MORE_TRAVEL.cards,
+  ...MORE_DOING.cards,
+  ...MORE_LIFE.cards,
+]);

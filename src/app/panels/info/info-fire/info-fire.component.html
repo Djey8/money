@@ -33,7 +33,7 @@
     </div>
 
     <!-- Phase Advance -->
-    <div class="phase-advance" *ngIf="classReference.phase !== 'completed'">
+    <div class="phase-advance" *ngIf="classReference.phase !== 'completed' && !inGame">
       <button class="btn btn--sm btn--primary" (click)="advancePhase()">
         {{ 'Fire.advancePhase' | translate }} → {{ 'Fire.phase.' + getNextPhase() | translate }}
       </button>
@@ -97,7 +97,7 @@
       </div>
 
       <!-- the reserve of a game is the Mojo: this project follows it (JFK, 2026-10-26) -->
-      <div class="info-section reserve-note" *ngIf="isReserve">
+      <div class="info-section reserve-note" *ngIf="isReserve && !atTable">
         <h5 class="section-label">{{ 'Fire.reserveMojoTitle' | translate }}</h5>
         <p class="section-text">{{ 'Fire.reserveMojo' | translate }}</p>
         <button type="button" class="btn btn--fire" (click)="payIntoMojo()">
@@ -344,7 +344,7 @@
                     class="clickable-row"
                   >
                     <td>{{ getTransactionId(tx) }}</td>
-                    <td>{{ tx.account }}</td>
+                    <td>{{ tx.account | accountLabel }}</td>
                     <td
                       class="{{
                         getAllocatedAmountForBucket(tx, bucket.id) >= 0
@@ -399,7 +399,7 @@
                 class="clickable-row"
               >
                 <td>{{ getTransactionId(tx) }}</td>
-                <td>{{ tx.account }}</td>
+                <td>{{ tx.account | accountLabel }}</td>
                 <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                   {{ tx.amount | appNumber }} {{ currency }}
                 </td>
@@ -444,7 +444,7 @@
                   class="clickable-row"
                 >
                   <td>{{ getTransactionId(tx) }}</td>
-                  <td>{{ tx.account }}</td>
+                  <td>{{ tx.account | accountLabel }}</td>
                   <td class="{{ tx.amount >= 0 ? 'amount-positive' : 'amount-negative' }}">
                     {{ tx.amount | appNumber }} {{ currency }}
                   </td>
@@ -513,7 +513,7 @@
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Common.account' | translate }}:</span>
-                <span class="plan-value">{{ plan.account }}</span>
+                <span class="plan-value">{{ plan.account | accountLabel }}</span>
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Fire.paymentPlans.period' | translate }}:</span>
@@ -590,7 +590,7 @@
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Common.account' | translate }}:</span>
-                <span class="plan-value">{{ plan.account }}</span>
+                <span class="plan-value">{{ plan.account | accountLabel }}</span>
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Fire.paymentPlans.period' | translate }}:</span>
@@ -658,7 +658,7 @@
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Common.account' | translate }}:</span>
-                <span class="plan-value">{{ plan.account }}</span>
+                <span class="plan-value">{{ plan.account | accountLabel }}</span>
               </div>
               <div class="plan-row">
                 <span class="plan-label">{{ 'Fire.paymentPlans.period' | translate }}:</span>

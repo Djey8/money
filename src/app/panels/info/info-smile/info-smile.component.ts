@@ -1,4 +1,5 @@
 import { CashflowGameService } from 'src/app/shared/services/cashflow-game.service';
+import { RemoteGameHook } from 'src/app/shared/services/remote-game';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalService } from 'src/app/shared/services/local.service';
@@ -29,6 +30,7 @@ import { AppNumberPipe } from 'src/app/shared/pipes/app-number.pipe';
 import { AppDatePipe } from 'src/app/shared/pipes/app-date.pipe';
 import { TrapFocusDirective } from 'src/app/shared/directives/trap-focus.directive';
 import { PaymentPlannerDialogComponent } from 'src/app/shared/components/payment-planner-dialog/payment-planner-dialog.component';
+import { AccountLabelPipe } from '../../../shared/pipes/account-label.pipe';
 
 // Deferred imports — resolved after module init to break circular chains
 let AppComponent: any;
@@ -65,6 +67,7 @@ setTimeout(() =>
   selector: 'app-info-smile',
   standalone: true,
   imports: [
+    AccountLabelPipe,
     TrapFocusDirective,
     CommonModule,
     FormsModule,
@@ -81,10 +84,17 @@ setTimeout(() =>
   ],
 })
 export class InfoSmileComponent extends BaseInfoComponent {
+  /** At a table of a game played with others (the payment plans of a project are the table's: activated and stopped there). */
+  get atTable(): boolean {
+    return !!RemoteGameHook.current?.dreamfund;
+  }
+
   static index = 1;
 
   static title = 'Driver Licence';
   static sub = '';
+  /** What living the dream is worth in dream points (a project of a Dreamer card). */
+  static points = 0;
   static phase: SmilePhase = 'planning';
   static description = '';
   static buckets: SmileBucket[] = [];
@@ -121,6 +131,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     InfoSmileComponent.index = id;
     InfoSmileComponent.title = project.title;
     InfoSmileComponent.sub = project.sub || '';
+    InfoSmileComponent.points = project.points ?? 0;
     InfoSmileComponent.phase = project.phase || 'planning';
     InfoSmileComponent.description = project.description || '';
     InfoSmileComponent.buckets = project.buckets;
@@ -216,7 +227,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
   }
 
   get relatedTransactions() {
-    // Find transactions that reference this smile project (by title or bucket comment tags)
+    // Find transactions that reference this dream project (by title or bucket comment tags)
     const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
     if (!project) return [];
 
@@ -559,9 +570,9 @@ export class InfoSmileComponent extends BaseInfoComponent {
     AddComponent.categoryTextField = `@${InfoSmileComponent.title}`;
     AddComponent.selectedOption = 'Smile';
     AddComponent.commentTextField = `${InfoSmileComponent.title} ${totalRemaining}`;
-    if (this.inGame && totalRemaining > 0) {
-      AddComponent.amountTextField = (Math.round(totalRemaining * 100) / -100).toString();
-    }
+    // what finishes the project is filled in; with nothing left the field is empty, never the amount of the last payment
+    AddComponent.amountTextField =
+      this.inGame && totalRemaining > 0 ? (Math.round(totalRemaining * 100) / -100).toString() : '';
 
     AddComponent.url = '/smileprojects';
     AddComponent.isAdd = true;
@@ -680,6 +691,36 @@ export class InfoSmileComponent extends BaseInfoComponent {
 
     // Check if ALL buckets are full
     return project.buckets.every((bucket) => bucket.amount >= bucket.target);
+  }
+
+  phaseOptions: SmilePhase[] = ['idea', 'planning', 'saving', 'ready', 'completed'];
+
+  getPreviousPhase(): SmilePhase {
+    const phases = this.phaseOptions;
+    const currentIndex = phases.indexOf(InfoSmileComponent.phase);
+    return phases[Math.max(currentIndex - 1, 0)];
+  }
+
+  /** The phase set by hand, forwards or backwards (a project can go back to an idea, or be reopened). */
+  setPhase(phase: SmilePhase) {
+    const project = AppStateService.instance.allSmileProjects[InfoSmileComponent.index];
+    if (!project || project.phase === phase) return;
+    project.phase = phase;
+    project.updatedAt = new Date().toISOString();
+    if (phase === 'completed' && !project.completionDate) {
+      project.completionDate = new Date().toISOString().split('T')[0];
+    }
+    if (phase !== 'completed') delete project.completionDate;
+    InfoSmileComponent.phase = phase;
+    this.persistence.writeAndSync({
+      tag: 'smile',
+      data: AppStateService.instance.allSmileProjects,
+      localStorageKey: 'smile',
+      logEvent: 'set_smile_phase',
+      logMetadata: { title: project.title, phase },
+      onSuccess: () => this.toastService.show('Phase changed', 'update'),
+      onError: (error) => this.showError(error.message || 'Failed to change the phase'),
+    });
   }
 
   advancePhase() {
@@ -1239,7 +1280,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
     }
 
     if (this.buckets.length === 0) {
-      this.showError('Add at least one bucket to your Smile project.');
+      this.showError('Add at least one bucket to your Dream project.');
       return;
     }
 
@@ -1248,7 +1289,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       this.titleTextField
     ) {
       if (this.invalidTitle(this.titleTextField)) {
-        this.showError('This smile project already exists.');
+        this.showError('This dream project already exists.');
         return;
       }
     }
@@ -1293,7 +1334,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
       onSuccess: () => {
         AppStateService.instance.isSaving = false;
         this.clearError();
-        this.toastService.show('Smile project updated', 'update');
+        this.toastService.show('Dream project updated', 'update');
         AppComponent.gotoTop();
       },
       onError: (error) => {
@@ -1335,7 +1376,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
         }
       }
 
-      //now delete smile project
+      //now delete dream project
       AppStateService.instance.allSmileProjects.splice(index, 1);
 
       // Recalculate income statement if transactions were actually deleted
@@ -1373,7 +1414,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           onSuccess: () => {
             AppStateService.instance.isSaving = false;
             this.incomeStatement.saveToLocalStorage();
-            this.toastService.show('Smile project deleted', 'delete');
+            this.toastService.show('Dream project deleted', 'delete');
             AppComponent.gotoTop();
             this.router.navigate(['/smileprojects']);
           },
@@ -1383,7 +1424,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           },
         });
       } else {
-        // Simple delete - just smile project (no transactions were deleted)
+        // Simple delete - just dream project (no transactions were deleted)
         this.persistence.writeAndSync({
           tag: 'smile',
           data: AppStateService.instance.allSmileProjects,
@@ -1392,7 +1433,7 @@ export class InfoSmileComponent extends BaseInfoComponent {
           logMetadata: { title: deletedTitle, index: index },
           onSuccess: () => {
             AppStateService.instance.isSaving = false;
-            this.toastService.show('Smile project deleted', 'delete');
+            this.toastService.show('Dream project deleted', 'delete');
             AppComponent.gotoTop();
             this.router.navigate(['/smileprojects']);
           },
