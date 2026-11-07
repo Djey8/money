@@ -257,6 +257,13 @@ export class InfoGrowComponent extends BaseInfoComponent {
     return AppStateService.instance.allGrowProjects[InfoGrowComponent.index];
   }
 
+  /** In a game the phases follow the game flow: nobody moves a project on by hand. */
+  get inGame(): boolean {
+    return (
+      CashflowGameService.isCashflowGame() && !!AppStateService.instance.cashflowGame.professionId
+    );
+  }
+
   /** Buy / Sell are offered for shares, properties and assets - the same projects the Grow grid offers them for. */
   get canTrade(): boolean {
     return this.growTrade.canTrade(this.openProject);

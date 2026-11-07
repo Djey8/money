@@ -11,7 +11,38 @@ import { GAME_DE, GAME_EN, GAME_STEPS } from './demo-steps-game';
  */
 
 /** Where in the app the step is shown. */
-export type DemoScreen = 'lobby' | 'room' | 'game';
+export type DemoScreen =
+  | 'lobby'
+  | 'room'
+  | 'game'
+  | 'home'
+  | 'grow'
+  | 'fire'
+  | 'smile'
+  | 'subs'
+  | 'transactions'
+  | 'other';
+
+/** Where the person is in the app: the coach follows them from page to page. */
+export function demoScreen(): DemoScreen {
+  const path = (window.location.hash || '').replace(/^#/, '').split('?')[0];
+  if (path === '/tables') return 'lobby';
+  if (path.startsWith('/tables/')) return 'room';
+  // the game screen is a panel over whatever page is behind it
+  const panel = document.querySelector('.cf-panel');
+  if (panel && panel.getBoundingClientRect().width > 0) return 'game';
+  if (path === '/grow') return 'grow';
+  if (path === '/fireemergencies') return 'fire';
+  if (path === '/smileprojects') return 'smile';
+  if (path.startsWith('/subscription')) return 'subs';
+  if (path === '/transactions') return 'transactions';
+  return path === '/home' || path === '' || path === '/' ? 'home' : 'other';
+}
+
+/** Whether the step is for the page the person is on. */
+export function stepIsFor(step: DemoStep, screen: DemoScreen): boolean {
+  return [step.screen].flat().includes(screen);
+}
 
 /** What the coach knows about the app right now: read each moment from the table and the page. */
 export interface DemoContext {
@@ -47,7 +78,8 @@ export interface DemoContext {
 
 export interface DemoStep {
   id: string;
-  screen: DemoScreen;
+  /** The page (or pages) the step is shown on. */
+  screen: DemoScreen | DemoScreen[];
   /** What to light up (a CSS selector, usually `[data-demo="..."]`); absent: a card in the middle. */
   target?: string;
   place?: 'top' | 'bottom' | 'center' | 'corner';
@@ -326,6 +358,7 @@ export const DEMO_LABELS = {
       meet: 'Meet Jonas',
       screen: 'The screen',
       turn: 'The first rounds',
+      finish: 'Your way on',
     } as Record<string, string>,
   },
   de: {
@@ -346,6 +379,7 @@ export const DEMO_LABELS = {
       meet: 'Triff Jonas',
       screen: 'Der Bildschirm',
       turn: 'Die ersten Runden',
+      finish: 'Dein Weg weiter',
     } as Record<string, string>,
   },
 };

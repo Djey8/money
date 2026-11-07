@@ -41,9 +41,8 @@ import { firstValueFrom } from 'rxjs';
 import { TableModeService } from './table-mode.service';
 import { bankSeconds, clockReading, formatClock } from './table-clock';
 import { tableRoomTexts, type TableRoomTexts } from './table-room.texts';
-import { DreamDemoGuideComponent } from '../dreamfund-tables/demo/demo-guide.component';
+import { registerDemoGuide } from '../dreamfund-tables/demo/demo-guide.register';
 import { DreamDemoService } from '../dreamfund-tables/demo/demo-guide.service';
-import { demoContext, demoLabels } from '../dreamfund-tables/demo/demo-steps';
 
 /** A player's numbers as the table shows them to everyone. */
 interface PlayerRow {
@@ -78,7 +77,6 @@ const money = (minor: number | null): string =>
     RatRaceBoardComponent,
     TableInspectorComponent,
     TableWaitingRoomComponent,
-    DreamDemoGuideComponent,
   ],
   providers: [
     {
@@ -133,11 +131,6 @@ const money = (minor: number | null): string =>
       >
         {{ t.reconnecting }}
       </p>
-      <app-dream-demo-guide
-        *ngIf="demoGuide.active()"
-        [context]="demoContext"
-        (stopRequested)="stopDemo()"
-      ></app-dream-demo-guide>
       <p class="tr-banner tr-banner--warn" *ngIf="session.connection() === 'closed'" role="alert">
         {{ t.closedStream }}
       </p>
@@ -477,33 +470,21 @@ export class TableRoomComponent implements OnInit, OnDestroy {
   readonly view = this.session.view;
   /** The guided demo game: the coach follows the person into the table. */
   readonly demoGuide = inject(DreamDemoService);
-  readonly demoContext = () =>
-    demoContext(
-      'room',
-      this.view(),
-      this.session.legalActions(),
-      (selector) => !!document.querySelector(selector),
-    );
+  private readonly resumeDemo = (() => {
+    // the coach reads the table through this page's session while the table is only a lobby
+    this.demoGuide.roomSession.set(this.session);
+    if (this.demoGuide.active()) registerDemoGuide(this.demoGuide);
+  })();
   private readonly adoptDemo = effect(() => {
     const table = this.view();
     if ((table?.settings as unknown as { demo?: string } | undefined)?.demo === 'basics') {
-      untracked(() => this.demoGuide.adopt(table!.id));
+      untracked(() => {
+        this.demoGuide.adopt(table!.id);
+        registerDemoGuide(this.demoGuide);
+      });
     }
   });
 
-  /** "Stop tutorial": the demo table is removed and the person is back in the lobby. */
-  async stopDemo(): Promise<void> {
-    const id = this.session.tableId;
-    this.demoGuide.stop();
-    if (id) {
-      try {
-        await firstValueFrom(this.api.remove(id));
-      } catch {
-        // the table may be gone already
-      }
-    }
-    void this.router.navigate(['/tables']);
-  }
   private readonly api = inject(TablesApiService);
   private readonly now = signal(Date.now());
   private timer: ReturnType<typeof setInterval> | null = null;

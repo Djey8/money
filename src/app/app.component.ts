@@ -57,6 +57,7 @@ import { CashflowGameComponent as CashflowGameComp } from './main/cashflow-game/
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
+import { DemoGuideHook } from './shared/demo-guide-hook';
 import { OnboardingComponent } from './shared/components/onboarding/onboarding.component';
 import { TourOverlayComponent } from './shared/components/tour-overlay/tour-overlay.component';
 import { PullToRefreshComponent } from './shared/components/pull-to-refresh/pull-to-refresh.component';
@@ -202,6 +203,7 @@ export class AppComponent {
   showPages = true;
 
   static instance: AppComponent;
+  readonly demoGuide = DemoGuideHook;
   appMode: 'firebase' | 'selfhosted' = environment.mode as 'firebase' | 'selfhosted';
 
   public classReference = AppComponent;

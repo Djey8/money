@@ -36,30 +36,9 @@
       </p>
     </div>
 
-    <!-- Phase: back, any phase, forward (JFK, 2026-11-05: a project can be parked or reopened, not only advanced) -->
-    <div class="phase-advance phase-stepper">
-      <button
-        class="btn btn--sm"
-        *ngIf="getPreviousPhase() !== classReference.phase"
-        (click)="setPhase(getPreviousPhase())"
-      >
-        ← {{ 'Smile.phase.' + getPreviousPhase() | translate }}
-      </button>
-      <select
-        class="phase-select"
-        [ngModel]="classReference.phase"
-        (ngModelChange)="setPhase($event)"
-        [attr.aria-label]="'Grow.phaseLabel' | translate"
-      >
-        <option *ngFor="let option of phaseOptions" [value]="option">
-          {{ 'Smile.phase.' + option | translate }}
-        </option>
-      </select>
-      <button
-        class="btn btn--sm btn--primary"
-        *ngIf="classReference.phase !== 'completed'"
-        (click)="advancePhase()"
-      >
+    <!-- Phase Advance -->
+    <div class="phase-advance" *ngIf="classReference.phase !== 'completed' && !inGame">
+      <button class="btn btn--sm btn--primary" (click)="advancePhase()">
         {{ 'Smile.advancePhase' | translate }} → {{ 'Smile.phase.' + getNextPhase() | translate }}
       </button>
     </div>

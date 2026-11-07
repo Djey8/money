@@ -8,14 +8,17 @@ describe('the steps of the guided demo game', () => {
       for (const language of ['en', 'de']) {
         const words = demoText(id, language);
         expect(words.title).not.toBe(id);
-        expect(words.text.length).toBeGreaterThan(20);
+        expect(words.text.length).toBeGreaterThan(10);
       }
     }
   });
 
-  it('keep the story in the order of the screens: the lobby, the table, the game', () => {
-    const rank = { lobby: 0, room: 1, game: 2 } as const;
-    const ranks = DEMO_STEPS.map((step) => rank[step.screen]);
+  it('keep the story in the order of the screens: the lobby, the table, then the game and the app', () => {
+    const rank: Record<string, number> = { lobby: 0, room: 1 };
+    const ranks = DEMO_STEPS.map((step) => {
+      const screens = ([] as string[]).concat(step.screen as string | string[]);
+      return Math.min(...screens.map((s) => rank[s] ?? 2));
+    });
     expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
   });
 

@@ -38,9 +38,9 @@ import { leaderboardTexts, type LeaderboardTexts } from './leaderboard.texts';
 import { DreamApiService } from '../dreamfund-tables/dream-session.service';
 import { dreamTexts, type DreamTexts } from '../dreamfund-tables/dream-texts';
 import { keepGame, savedGame, type TableGame } from './table-game';
-import { DreamDemoGuideComponent } from '../dreamfund-tables/demo/demo-guide.component';
+import { registerDemoGuide } from '../dreamfund-tables/demo/demo-guide.register';
 import { DreamDemoService } from '../dreamfund-tables/demo/demo-guide.service';
-import { demoContext, demoLabels } from '../dreamfund-tables/demo/demo-steps';
+import { demoLabels } from '../dreamfund-tables/demo/demo-steps';
 
 /** The account's own name: the one name at every table (the server uses the account's nickname whatever is sent). */
 function accountName(): string {
@@ -92,7 +92,6 @@ function savedFilters(): TableFilters {
     AddTableComponent,
     SeatAvatarComponent,
     TablePlayerInfoComponent,
-    DreamDemoGuideComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./tables.css', '../app.component.css'],
@@ -130,11 +129,6 @@ function savedFilters(): TableFilters {
         +
       </button>
     </div>
-    <app-dream-demo-guide
-      *ngIf="demoGuide.active()"
-      [context]="demoContext"
-      (stopRequested)="stopDemo()"
-    ></app-dream-demo-guide>
     <app-add-table
       *ngIf="showAdd"
       [game]="game"
@@ -873,21 +867,12 @@ export class TablesLobbyComponent implements OnInit {
     return demoLabels(this.translate.currentLang || this.translate.defaultLang || 'en');
   }
 
-  readonly demoContext = () =>
-    demoContext('lobby', null, [], (selector) => !!document.querySelector(selector));
-
   /** The guided demo game starts here: the Dreamfund lobby, and the coach at the first step. */
   startDemo(): void {
     this.setGame('dreamfund');
     this.showAdd = false;
     this.demoGuide.start();
-    this.cdr.markForCheck();
-  }
-
-  /** "Stop tutorial" in the lobby: nothing to remove yet - the coach is off. */
-  stopDemo(): void {
-    this.demoGuide.stop();
-    this.showAdd = false;
+    registerDemoGuide(this.demoGuide);
     this.cdr.markForCheck();
   }
 
@@ -936,6 +921,8 @@ export class TablesLobbyComponent implements OnInit {
       this.cdr.markForCheck();
     });
     // the manual and the other entrances start the demo with ?demo=start
+    // the coach is on (the page was reloaded in the middle of the demo): it is hung into the app again
+    if (this.demoGuide.active()) registerDemoGuide(this.demoGuide);
     this.reload();
     if (this.route?.snapshot.queryParamMap.get('demo') === 'start') this.startDemo();
   }

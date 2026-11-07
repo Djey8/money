@@ -975,16 +975,6 @@ interface OpportunityBandLike extends OpportunityRollLike {
                 </button>
               </ng-container>
             </ng-container>
-            <!-- at a table the turn goes on from the card itself: no way back to the dashboard first -->
-            <button
-              type="button"
-              class="tc-btn tc-btn--wide"
-              *ngIf="dreamTable && o.taken && !o.rollFor"
-              [disabled]="busy"
-              (click)="finish.emit()"
-            >
-              {{ 'CashflowGame.solo.done' | translate }}
-            </button>
             <p *ngIf="o.passed">{{ 'CashflowGame.opportunity.passed' | translate }}</p>
           </ng-container>
         </ng-container>

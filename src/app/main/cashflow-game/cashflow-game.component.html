@@ -1411,6 +1411,7 @@
                   </button>
                   <button
                     class="btn btn--primary"
+                    data-demo="solo-done"
                     *ngIf="stackPlayed && stackOpened"
                     [disabled]="isBusy"
                     (click)="finishSoloDecision('done')"
@@ -1485,6 +1486,7 @@
                 <div class="cf-actions">
                   <button
                     class="btn btn--primary"
+                    data-demo="solo-done"
                     [disabled]="isBusy"
                     (click)="finishSoloDecision('done')"
                   >
@@ -2714,6 +2716,7 @@
           <div class="cf-actions" *ngIf="cardInHandPlayed">
             <button
               class="btn btn--primary"
+              data-demo="solo-done"
               [disabled]="isBusy"
               (click)="finishSoloDecision('done')"
             >

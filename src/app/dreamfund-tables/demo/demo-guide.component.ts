@@ -3,27 +3,33 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  EventEmitter,
-  Input,
   NgZone,
   OnDestroy,
   OnInit,
-  Output,
 } from '@angular/core';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { TablesApiService } from '../../tables/tables-api.service';
 import { CommonModule } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
 import { richSegments, type RichSegment } from '../../docs/cashflow/manual-content';
+import { TableModeService } from '../../tables/table-mode.service';
 import { DreamDemoService } from './demo-guide.service';
 import {
   DEMO_STEPS,
   demoLabels,
   demoText,
+  demoContext,
+  demoScreen,
+  stepIsFor,
   type DemoContext,
   type DemoScreen,
   type DemoStep,
 } from './demo-steps';
 
-const RANK: Record<DemoScreen, number> = { lobby: 0, room: 1, game: 2 };
+/** The table's own screens come in this order; every other page (Grow, Fire ...) is the game's level: the story never skips over it. */
+const RANK: Partial<Record<DemoScreen, number>> = { lobby: 0, room: 1 };
+const rankOf = (screen: DemoScreen): number => RANK[screen] ?? 2;
 
 interface Hole {
   top: number;
@@ -144,7 +150,7 @@ interface Hole {
             {{ isLast ? labels.finish : labels.next }} ›
           </button>
         </div>
-        <button type="button" class="dg-stop" (click)="stopRequested.emit()">
+        <button type="button" class="dg-stop" (click)="stop()">
           {{ labels.stop }}
         </button>
       </section>
@@ -285,10 +291,11 @@ interface Hole {
   ],
 })
 export class DreamDemoGuideComponent implements OnInit, OnDestroy {
-  /** What the host knows right now (re-read on every tick, so the host may pass a fresh object). */
-  @Input() context: (() => DemoContext) | null = null;
-  /** The person pressed "Stop tutorial": the host removes the demo table and leaves. */
-  @Output() stopRequested = new EventEmitter<void>();
+  /** The step may be shown: its place is on the page (and has settled). */
+  private ready = false;
+  private foundSince = 0;
+  private missingSince = 0;
+  private lastIndex = -1;
 
   hole: Hole | null = null;
   cardStyle: Record<string, string> = {};
@@ -304,7 +311,20 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
     private readonly cdr: ChangeDetectorRef,
     private readonly zone: NgZone,
     private readonly host: ElementRef<HTMLElement>,
+    private readonly router: Router,
+    private readonly mode: TableModeService,
+    private readonly api: TablesApiService,
   ) {}
+
+  /** What the coach knows right now: the table (wherever the person is in the app) and the page. */
+  private context(): DemoContext {
+    return demoContext(
+      demoScreen(),
+      this.table(),
+      (this.mode.session() ?? this.demo.roomSession())?.legalActions() ?? [],
+      (selector) => !!document.querySelector(selector),
+    );
+  }
 
   ngOnInit(): void {
     // the coach lives on the body: inside the game panel (which is moved and scaled) a fixed overlay would be placed against the panel,
@@ -312,7 +332,9 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
     document.body.appendChild(this.host.nativeElement);
     // outside Angular's zone: the tick checks the page by itself and only draws when something changed
     this.zone.runOutsideAngular(() => {
-      this.timer = setInterval(() => this.tick(), 150);
+      this.timer = setInterval(() => {
+        this.tick();
+      }, 150);
     });
   }
 
@@ -363,14 +385,42 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
 
   /** The step is for this screen and there is a coach at all. */
   get shown(): boolean {
-    const step = this.step;
-    const context = this.context?.();
-    return !!step && !!context && step.screen === context.screen;
+    return this.ready && !!this.step;
+  }
+
+  /** "Stop tutorial": over at once. A demo table is taken away and the person is back in the lobby, free to play for real. */
+  /** The table the person is at: the game screen's, or the table page's while it is only a lobby. */
+  private table() {
+    return (this.mode.session() ?? this.demo.roomSession())?.view() ?? null;
+  }
+
+  /** "Stop tutorial": over at once. A demo table is taken away and the person is back in the lobby, free to play for real. */
+  async stop(): Promise<void> {
+    const view = this.table();
+    const id = view?.id ?? null;
+    const demoTable = (view?.settings as unknown as { demo?: string } | undefined)?.demo;
+    this.demo.stop(id);
+    this.ready = false;
+    this.draw();
+    if (id && demoTable === 'basics') {
+      try {
+        await firstValueFrom(this.api.remove(id));
+      } catch {
+        // the table may be gone already
+      }
+      // the app is reloaded on the lobby: nothing of the table is left on the screen
+      window.location.hash = '#/tables?lobby=1';
+      window.location.reload();
+    } else {
+      void this.router.navigate(['/tables']);
+    }
   }
 
   next(): void {
     if (this.isLast) {
-      this.demo.stop();
+      // the story is told: the demo table stays, and the game goes on to its end
+      this.demo.stop(this.table()?.id ?? null);
+      this.ready = false;
       this.draw();
       return;
     }
@@ -387,7 +437,9 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
   assist(): void {
     const how = this.step?.assist ?? '';
     if (how.startsWith('click:')) {
-      (document.querySelector(how.slice('click:'.length)) as HTMLElement | null)?.click();
+      this.find(how.slice('click:'.length))?.click();
+    } else if (how.startsWith('go:')) {
+      void this.router.navigateByUrl(how.slice('go:'.length));
     }
   }
 
@@ -397,8 +449,8 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
 
   /** Every quarter second: move on when the step is done, find the lit place, and draw only when something changed. */
   private tick(): void {
-    const context = this.context?.();
-    if (!context || !this.demo.active()) {
+    const context = this.context();
+    if (!this.demo.active()) {
       if (this.lastLook !== '') {
         this.lastLook = '';
         this.draw();
@@ -407,12 +459,18 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
     }
     // the person is further than the step (they pressed what it pointed at, or went their own way): the story catches up
     let moved = false;
+    if (this.lastIndex !== this.demo.index()) {
+      this.lastIndex = this.demo.index();
+      this.foundSince = 0;
+      this.missingSince = 0;
+    }
     for (let guard = 0; guard < DEMO_STEPS.length; guard += 1) {
       const step = DEMO_STEPS[this.demo.index()];
       if (!step) break;
-      const behind = RANK[step.screen] < RANK[context.screen];
-      const finished =
-        step.next === 'event' && step.screen === context.screen && !!step.done?.(context);
+      const stepRank = Math.min(...[step.screen].flat().map(rankOf));
+      const behind = stepRank < rankOf(context.screen);
+      // a step is done by what has happened, wherever the person is (the page of the step may be left behind: Fire, Grow ...)
+      const finished = step.next === 'event' && !!step.done?.(context);
       if (!behind && !finished) break;
       if (this.demo.index() >= DEMO_STEPS.length - 1) {
         this.demo.stop();
@@ -425,8 +483,21 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
     const step = this.step;
     let hole: Hole | null = null;
     this.tall = false;
-    if (step && step.screen === context.screen && step.target && step.place !== 'center') {
+    let ready = !!step && stepIsFor(step, context.screen);
+    if (step && ready && step.target && step.place !== 'center') {
       const element = this.find(step.target);
+      // a place that is not on the page yet (a card still being drawn, dice still rolling): the coach waits for it - and for a moment
+      // after it has appeared - instead of talking about something the person cannot see
+      if (!element) {
+        // still not there after a long while (the person went another way): the card shows in the corner, so they can read it or skip
+        if (this.missingSince === 0) this.missingSince = Date.now();
+        ready = Date.now() - this.missingSince > 12000;
+        this.foundSince = 0;
+      } else {
+        this.missingSince = 0;
+        if (this.foundSince === 0) this.foundSince = Date.now();
+        if (Date.now() - this.foundSince < 450) ready = false;
+      }
       if (element) {
         const rect = element.getBoundingClientRect();
         // a place that is taller than most of the screen (a sheet to scroll) is not lit: its card says what to look at
@@ -448,8 +519,12 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
         }
       }
     }
+    if (!(step && step.target)) this.foundSince = 0;
+    if (ready !== this.ready) moved = true;
+    this.ready = ready;
     const look = JSON.stringify([
       this.demo.index(),
+      ready,
       this.demo.active(),
       hole,
       window.innerWidth,
@@ -474,7 +549,12 @@ export class DreamDemoGuideComponent implements OnInit, OnDestroy {
   private find(target: string): HTMLElement | null {
     const [selector, text] = target.split('@@');
     if (!text) return document.querySelector(selector) as HTMLElement | null;
-    const all = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    const all = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
+      (e) => e.offsetParent !== null,
+    );
+    // `@@~text`: the one whose text contains it; `@@text`: whose text is exactly it
+    if (text.startsWith('~'))
+      return all.find((element) => (element.textContent ?? '').includes(text.slice(1))) ?? null;
     return all.find((element) => (element.textContent ?? '').trim() === text) ?? null;
   }
 

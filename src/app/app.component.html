@@ -37,6 +37,10 @@
 <app-info></app-info>
 <app-cashflow-game></app-cashflow-game>
 <app-toast></app-toast>
+<!-- the coach of the guided Dreamfund demo game (self-hosted editions register it; nothing here otherwise) -->
+<ng-container *ngIf="demoGuide.component && demoGuide.on()"
+  ><ng-container *ngComponentOutlet="demoGuide.component"></ng-container
+></ng-container>
 <app-confirm-dialog></app-confirm-dialog>
 
 <!-- Saving spinner overlay -->
