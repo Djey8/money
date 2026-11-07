@@ -42,6 +42,7 @@ function passive(legal) {
   if (has('roll')) return { type: 'roll' };
   if (has('pay_emergency')) return { type: 'pay_emergency', pay: 'now' };
   if (has('answer_life')) return { type: 'answer_life', decision: 'decline' };
+  if (has('roll_career')) return { type: 'roll_career' };
   if (has('choose_career_branch')) return { type: 'choose_career_branch', index: 0 };
   if (has('skip')) return { type: 'skip' };
   if (has('end_turn')) return { type: 'end_turn' };
@@ -556,33 +557,30 @@ describe('a Dreamer room', () => {
       expect((await stats.seedBots()).moved).toBe(0);
     },
   );
-  maybe(
-    'lists who sits at a Dreamer table, with their rating on the Dreamer board',
-    async () => {
-      const made = await call(host, 'post', '/game/rooms', {
-        kind: 'dreamfund',
-        nickname: 'Hanna',
-        settings: { name: 'Seats', difficulty: 'hard', ranked: true },
-      });
-      const roomId = made.body.id;
-      roomIds.push(roomId);
-      await call(host, 'post', `/game/rooms/${roomId}/bots`, {
-        policyId: 'dream:expert',
-        level: 'casual',
-      });
-      const mine = await call(host, 'get', '/game/rooms?scope=mine&kind=dreamfund');
-      const row = mine.body.items.find((r) => r.id === roomId);
-      expect(row.seats).toHaveLength(2);
-      const bot = row.seats.find((seat) => seat.bot);
-      expect(bot.level).toBe('casual');
-      expect(typeof bot.rating).toBe('number');
-      const person = row.seats.find((seat) => !seat.bot);
-      expect(typeof person.rating).toBe('number');
-      const seats = await call(host, 'get', `/game/rooms/${roomId}/seats`);
-      expect(seats.body.seats).toHaveLength(2);
-      await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
-    },
-  );
+  maybe('lists who sits at a Dreamer table, with their rating on the Dreamer board', async () => {
+    const made = await call(host, 'post', '/game/rooms', {
+      kind: 'dreamfund',
+      nickname: 'Hanna',
+      settings: { name: 'Seats', difficulty: 'hard', ranked: true },
+    });
+    const roomId = made.body.id;
+    roomIds.push(roomId);
+    await call(host, 'post', `/game/rooms/${roomId}/bots`, {
+      policyId: 'dream:expert',
+      level: 'casual',
+    });
+    const mine = await call(host, 'get', '/game/rooms?scope=mine&kind=dreamfund');
+    const row = mine.body.items.find((r) => r.id === roomId);
+    expect(row.seats).toHaveLength(2);
+    const bot = row.seats.find((seat) => seat.bot);
+    expect(bot.level).toBe('casual');
+    expect(typeof bot.rating).toBe('number');
+    const person = row.seats.find((seat) => !seat.bot);
+    expect(typeof person.rating).toBe('number');
+    const seats = await call(host, 'get', `/game/rooms/${roomId}/seats`);
+    expect(seats.body.seats).toHaveLength(2);
+    await call(host, 'delete', `/game/rooms/${roomId}?confirm=true`);
+  });
   maybe('offers the strategies with their rating at every skill level', async () => {
     const bots = await call(host, 'get', '/game/rooms/bots?kind=dreamfund');
     expect(bots.status).toBe(200);
