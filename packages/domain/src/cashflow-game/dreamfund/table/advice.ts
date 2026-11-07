@@ -76,6 +76,8 @@ export function sayMove(command: DreamCommand): string {
       return 'Deal with the emergency card step by step.';
     case 'answer_life':
       return `Answer the life card: ${String(c['decision'])}.`;
+    case 'roll_career':
+      return 'Throw the career die: it decides the promotion.';
     case 'choose_career_branch':
       return 'Choose the career branch.';
     case 'take_dream':

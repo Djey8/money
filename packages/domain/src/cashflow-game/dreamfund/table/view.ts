@@ -414,6 +414,9 @@ export function dreamLegalActions(table: DreamTable, viewerId: string | null): D
       case 'life':
         add('answer_life', { cardId: p.cardId });
         break;
+      case 'career_roll':
+        add('roll_career');
+        break;
       case 'career_branch':
         add('choose_career_branch', { options: p.options });
         break;

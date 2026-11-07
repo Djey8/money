@@ -104,7 +104,7 @@ export const CAPABILITIES: Capability[] = [
     group: 'life',
     summary: 'The career tile: the promotion die and, where the ladder forks, the branch.',
     status: 'engine',
-    commands: ['choose_career_branch', 'throw_job_search'],
+    commands: ['roll_career', 'choose_career_branch', 'throw_job_search'],
     note: 'The branch is always the first; the job search die is thrown for the bot.',
   },
   // ── money ──
@@ -318,6 +318,7 @@ const ALL_COMMANDS: Record<DreamCommand['type'], true> = {
   plan_opportunity: true,
   buy_planned: true,
   roll_opportunity: true,
+  roll_career: true,
   skip: true,
   end_turn: true,
   settle_payday: true,

@@ -219,6 +219,7 @@ const PLAY_COMMANDS = new Set<DreamCommand['type']>([
   'plan_opportunity',
   'buy_planned',
   'roll_opportunity',
+  'roll_career',
   'throw_job_search',
   'debug_load',
   'debug_payday',
@@ -996,6 +997,23 @@ function doCommand(
         },
       };
     }
+    case 'roll_career': {
+      if (pending?.kind !== 'career_roll') return refuse('There is no career die to throw.');
+      const result = pending.result;
+      if (result.kind === 'branch') {
+        return { pending: { kind: 'career_branch', options: result.options, roll: result.roll } };
+      }
+      p.careerApply(result);
+      emit('career', id, { result: result.kind });
+      return {
+        pending: null,
+        resolved: {
+          kind: 'career',
+          result,
+          ...(result.kind === 'promoted' ? { reached: result.to } : {}),
+        },
+      };
+    }
     case 'choose_career_branch': {
       if (pending?.kind !== 'career_branch') return refuse('There is no career branch to choose.');
       if (!pending.options[command.index]) return refuse('There is no such path.');
@@ -1105,6 +1123,7 @@ function doCommand(
       if (
         pending.kind === 'emergency' ||
         pending.kind === 'life' ||
+        pending.kind === 'career_roll' ||
         pending.kind === 'career_branch'
       ) {
         return refuse('This one has to be answered.');
@@ -1381,19 +1400,11 @@ function enterTile(
     case 'career': {
       const result = p.careerRoll();
       if (!result) return { pending: null };
-      if (result.kind === 'branch') {
-        return { pending: { kind: 'career_branch', options: result.options, roll: result.roll } };
-      }
+      // a die decides: the player throws it, as with every other card (JFK, 2026-11-07); the result is fixed now and told on the throw
+      if ('roll' in result) return { pending: { kind: 'career_roll', result } };
       p.careerApply(result);
       emit('career', id, { result: result.kind });
-      return {
-        pending: null,
-        resolved: {
-          kind: 'career',
-          result,
-          ...(result.kind === 'promoted' ? { reached: result.to } : {}),
-        },
-      };
+      return { pending: null, resolved: { kind: 'career', result } };
     }
     case 'dream': {
       const drawn = p.drawDream();
@@ -1863,6 +1874,8 @@ export function passiveCommands(table: DreamTable, playerId: string): DreamComma
         { type: 'answer_life', decision: 'pass' },
         { type: 'answer_life', decision: 'accept' },
       ];
+    case 'career_roll':
+      return [{ type: 'roll_career' }];
     case 'career_branch':
       return [{ type: 'choose_career_branch', index: 0 }];
     case 'opportunity':

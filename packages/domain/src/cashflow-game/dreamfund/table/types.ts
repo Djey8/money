@@ -1,3 +1,4 @@
+import type { CareerResult } from '../../career';
 import type { CustomMode, CustomRules } from '../../custom-rules';
 import type { Difficulty } from '../../difficulty';
 import type { BoardSetup } from '../../dreamfund-board';
@@ -81,6 +82,8 @@ export type DreamPending =
         rerolled?: boolean;
       }
     | { kind: 'life'; cardId: string }
+    /** The Career tile: the die waits for the player's throw (as alone); what it said is fixed already and told when it is thrown. */
+    | { kind: 'career_roll'; result: CareerResult }
     | { kind: 'career_branch'; options: string[]; roll?: number }
     | { kind: 'dream'; offers: string[] }
     | { kind: 'opportunity_pile' }
@@ -314,6 +317,8 @@ export type DreamCommand =
       type: 'answer_life';
       decision: 'accept' | 'decline' | 'roll' | 'pass' | 'give' | 'lend' | { option: string };
     }
+  /** The player throws the die of the Career tile. */
+  | { type: 'roll_career' }
   | { type: 'choose_career_branch'; index: number }
   | { type: 'take_dream'; cardId: string }
   | { type: 'choose_pile'; pile: OpportunityPile }

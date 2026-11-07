@@ -71,6 +71,7 @@ export type DreamPending =
       rerolled?: boolean;
     }
   | { kind: 'life'; cardId: string }
+  | { kind: 'career_roll' }
   | { kind: 'career_branch'; options: string[]; roll?: number }
   | { kind: 'dream'; offers: string[] }
   | { kind: 'opportunity_pile' }

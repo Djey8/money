@@ -156,6 +156,12 @@ describe('the guided demo game', () => {
     play({ type: 'settle_payday' });
     next();
     turn(19);
+    // the die is the person's to throw: the tile waits for it, and what it says was fixed when the token landed
+    expect(mine(table).pending).toMatchObject({
+      kind: 'career_roll',
+      result: { kind: 'promoted' },
+    });
+    play({ type: 'roll_career' });
     expect(mine(table).resolved).toMatchObject({ kind: 'career', result: { kind: 'promoted' } });
     expect(table.demoStep).toBe(DEMO_RIGS.length);
   });

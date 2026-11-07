@@ -601,6 +601,35 @@ describe('the Dream and Career tiles at a Dreamfund table', () => {
     expect(seatOf(left, who).resolved).toMatchObject({ kind: 'dream', declined: true });
   });
 
+  it('waits for the player to throw the career die, then tells what it said', () => {
+    const t = started();
+    const who = t.activePlayerId!;
+    const waiting = {
+      ...t,
+      turnRolled: true,
+      players: t.players.map((p) =>
+        p.id === who
+          ? {
+              ...p,
+              pending: {
+                kind: 'career_roll' as const,
+                result: { kind: 'failed' as const, roll: 3 },
+              },
+            }
+          : p,
+      ),
+    };
+    expect(() => run(waiting, who, { type: 'end_turn' })).toThrow(/decide about the card/i);
+    expect(() => run(waiting, who, { type: 'skip' })).toThrow(/has to be answered/i);
+    const thrown = run(waiting, who, { type: 'roll_career' });
+    expect(seatOf(thrown, who).pending).toBeNull();
+    expect(seatOf(thrown, who).resolved).toMatchObject({
+      kind: 'career',
+      result: { kind: 'failed', roll: 3 },
+    });
+    expect(() => run(thrown, who, { type: 'roll_career' })).toThrow(/no career die/i);
+  });
+
   it('keeps the die of a career branch, and the path taken', () => {
     const t = started();
     const who = t.activePlayerId!;

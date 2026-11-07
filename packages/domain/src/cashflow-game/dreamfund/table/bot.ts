@@ -136,6 +136,8 @@ function pendingCommand(
       if (decision.kind === 'fate') return { type: 'answer_life', decision: 'pass' };
       return { type: 'answer_life', decision: decision.kind };
     }
+    case 'career_roll':
+      return { type: 'roll_career' };
     case 'career_branch':
       return { type: 'choose_career_branch', index: 0 };
     case 'dream': {

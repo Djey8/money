@@ -567,7 +567,7 @@ interface OpportunityBandLike extends OpportunityRollLike {
             </ng-container>
             <ng-template #careerOpen>
               <button
-                *ngIf="next?.eligible"
+                *ngIf="next?.eligible || dreamTable"
                 type="button"
                 class="tc-btn tc-btn--gold tc-btn--wide"
                 [disabled]="busy || rolling"
@@ -3015,6 +3015,8 @@ export class TileCardComponent implements OnInit, OnDestroy {
         if (view) return view.done;
         // nothing to roll for (too early, or at the top of the ladder): the turn goes on
         const next = this.service.careerNext;
+        // at a table the die of a due promotion is thrown by the player: the turn cannot end before
+        if (this.dreamTable && next?.eligible) return false;
         // a due promotion may be left unrolled only where the rules allow it
         return !next || !next.eligible || !this.service.careerMustRoll;
       }
@@ -3342,8 +3344,14 @@ export class TileCardComponent implements OnInit, OnDestroy {
   }
 
   rollCareer(): void {
-    // the table has rolled the die already
-    if (this.dreamTable) return;
+    // at a table the throw is the player's, as alone: the die tumbles, the table answers, and its faces are read from the result
+    if (this.dreamTable) {
+      void this.roll(async () => {
+        if (!(await this.dreamMove({ decision: 'rollCareer' }))) return [];
+        return this.careerDice();
+      });
+      return;
+    }
     void this.roll(() => {
       this.service.rollCareerTile(this.callbacks);
       const result = this.service.careerView?.result;
@@ -3353,6 +3361,15 @@ export class TileCardComponent implements OnInit, OnDestroy {
       if ('momentRoll' in result && result.momentRoll) dice.push(result.momentRoll);
       return dice;
     });
+  }
+
+  /** The faces of the career result that is shown. */
+  private careerDice(): number[] {
+    const result = this.service.careerView?.result as unknown as
+      Record<string, number> | null | undefined;
+    return [result?.['roll'], result?.['confirmRoll'], result?.['momentRoll']].filter(
+      (face): face is number => typeof face === 'number' && face > 0,
+    );
   }
 
   chooseBranch(id: string): void {

@@ -145,6 +145,7 @@ const DREAMFUND_COMMANDS = {
   },
   throw_job_search: { ...none, build: () => ({ type: 'throw_job_search' }) },
   roll_opportunity: { ...none, build: () => ({ type: 'roll_opportunity' }) },
+  roll_career: { ...none, build: () => ({ type: 'roll_career' }) },
   confirm_briefing: { ...none, build: () => ({ type: 'confirm_briefing' }) },
   end_turn: { ...none, build: () => ({ type: 'end_turn' }) },
   settle_payday: { ...none, build: () => ({ type: 'settle_payday' }) },

@@ -193,11 +193,12 @@ t = plain(t, { type: 'settle_payday' });
 endTurn();
 
 // turn 8: the Career tile - a promotion
-t = rollTo(
-  19,
-  'roll 8 -> Career, promoted',
-  (r) => me(r.table).resolved?.result?.kind === 'promoted',
-);
+t = rollTo(19, 'roll 8 -> Career, promoted', (r) => {
+  const p = pendingOf(r);
+  return p?.kind === 'career_roll' && p.result.kind === 'promoted';
+});
+// the person throws the career die themselves: what it says was fixed when the token landed
+t = plain(t, { type: 'roll_career' }, 'throw the career die');
 console.log(
   'promoted',
   JSON.stringify(me(t).resolved),

@@ -16,6 +16,7 @@ const DECISIONS: Record<string, (d: Rest) => Record<string, unknown>> = {
     decision: d['answer'],
     ...(d['option'] ? { option: d['option'] } : {}),
   }),
+  rollCareer: () => ({ type: 'roll_career' }),
   branch: (d) => ({ type: 'choose_career_branch', index: d['index'] }),
   takeDream: (d) => ({ type: 'take_dream', cardId: d['cardId'] }),
   pile: (d) => ({ type: 'choose_pile', pile: d['pile'] }),

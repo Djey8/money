@@ -314,6 +314,15 @@ export const TURN_STEPS: DemoStep[] = [
   // ── turn 8: the Career tile ──
   roll('t8-roll', 8),
   step({ id: 't8-career', screen: GAME }),
+  step({
+    id: 't8-die',
+    screen: GAME,
+    target: '.tc-btn--gold',
+    next: 'event',
+    done: (c) => c.resolved === 'career',
+    assist: 'click:.tc-btn--gold',
+  }),
+  step({ id: 't8-result', screen: GAME }),
   // ── the character's sheet, the menu, and the end ──
   step({
     id: 'i-open',
@@ -549,6 +558,14 @@ export const TURN_EN: Record<string, DemoText> = {
     title: 'A promotion',
     text: 'A die decides if Jonas climbs a stage. His salary rises, and so do his living costs. Careers are, next to cards, the other way to raise your income.',
   },
+  't8-die': {
+    title: 'Throw it yourself',
+    text: 'Press the gold button and throw the career die. Your own luck decides - a high number climbs a stage.',
+  },
+  't8-result': {
+    title: 'The promotion',
+    text: 'Here is what the die said, with the salary before and after. More salary means more cashflow every month. Press **Next**.',
+  },
   'i-open': {
     title: 'Who Jonas is: the info button',
     text: 'Press **ⓘ** to open the sheet of your character any time.',
@@ -769,6 +786,14 @@ export const TURN_DE: Record<string, DemoText> = {
   't8-career': {
     title: 'Eine Beförderung',
     text: 'Ein Würfel entscheidet, ob Jonas eine Stufe aufsteigt. Sein Gehalt steigt, seine Lebenshaltungskosten auch.',
+  },
+  't8-die': {
+    title: 'Wirf selbst',
+    text: 'Drücke den goldenen Knopf und wirf den Karriere-Würfel. Dein eigenes Glück entscheidet - eine hohe Zahl bringt dich eine Stufe weiter.',
+  },
+  't8-result': {
+    title: 'Die Beförderung',
+    text: 'Das sagt der Würfel, mit dem Gehalt davor und danach. Mehr Gehalt heißt jeden Monat mehr Cashflow. Drücke **Weiter**.',
   },
   'i-open': {
     title: 'Wer Jonas ist: der Info-Knopf',
