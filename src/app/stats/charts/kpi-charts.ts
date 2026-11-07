@@ -11,6 +11,7 @@ import { GrowComponent } from '../../main/grow/grow.component';
 import { FireComponent } from '../../main/fire/fire.component';
 import { viewportHeight } from '../viewport';
 import { HomeComponent } from '../../main/home/home.component';
+import { accountLabel } from '../../shared/account-label';
 
 export function createKPI(kpiType: string) {
   switch (kpiType) {
@@ -1078,7 +1079,7 @@ export function createIncomeStreamsBreakdown(selectedPeriod = 'all', selectedInd
       .attr('text-anchor', 'end')
       .style('font-size', '12px')
       .style('cursor', 'pointer')
-      .text((d) => (d.type === 'expense' ? d.name.replace('@', '') : d.name)) // Remove @ for expense categories
+      .text((d) => (d.type === 'expense' ? d.name.replace('@', '') : accountLabel(d.name))) // Remove @ for expense categories
       .filter((d) => d.x0 < width / 2)
       .attr('x', (d) => d.x1 + 6)
       .attr('text-anchor', 'start')

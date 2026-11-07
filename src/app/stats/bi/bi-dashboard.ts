@@ -2,6 +2,7 @@ import { StatsComponent } from '../stats.component';
 import * as d3 from 'd3';
 import { ChartFilterService } from '../../shared/services/chart-filter.service';
 import { AppStateService } from '../../shared/services/app-state.service';
+import { accountLabel } from '../../shared/account-label';
 
 function escapeHtml(unsafe: string): string {
   return unsafe
@@ -2163,7 +2164,7 @@ export function createDashboard4CategoryTable(container: any, transactions: any[
         'font-weight',
         StatsComponent.dashboard4SelectedCategory === d.category ? 'bold' : 'normal',
       )
-      .text(d.category);
+      .text(accountLabel(d.category));
 
     row
       .append('td')
@@ -2418,7 +2419,7 @@ export function createDashboard4TransactionTable(container: any, transactions: a
 
     row.append('td').style('padding', '12px').text(formattedDate);
 
-    row.append('td').style('padding', '12px').text(t.account);
+    row.append('td').style('padding', '12px').text(accountLabel(t.account));
 
     row
       .append('td')
@@ -3310,7 +3311,7 @@ export function createAccountBalanceTable(container: any, data: any[], width: nu
     .style('padding', '12px')
     .style('font-weight', 'bold')
     .style('white-space', 'nowrap')
-    .text((d) => d.account);
+    .text((d) => accountLabel(d.account));
 
   rows
     .append('td')
@@ -3491,7 +3492,7 @@ export function createMonthlyExpenseTable(container: any, width: number) {
       .style('font-weight', 'bold')
       .style('border', '1px solid var(--color-border)')
       .style('min-width', '80px')
-      .text(account);
+      .text(accountLabel(account));
 
     months.forEach((month) => {
       const value = expenseData.get(account)!.get(month) || 0;
@@ -3822,7 +3823,7 @@ export function createAccountDevelopmentChart(svg: any, width: number, height: n
       .style('font-size', '11px')
       .style('fill', colors[account])
       .style('font-weight', 'bold')
-      .text(account);
+      .text(accountLabel(account));
   });
 
   // Axes
@@ -4405,7 +4406,9 @@ export function createCategoryTimelineChart(svg: any, width: number, height: num
         .attr('y', 10)
         .attr('dy', '.35em')
         .style('font-size', '10px')
-        .text(d.category.length > 12 ? d.category.substring(0, 12) + '...' : d.category);
+        .text(
+          accountLabel(d.category.length > 12 ? d.category.substring(0, 12) + '...' : d.category),
+        );
     });
   }
 }
@@ -5003,13 +5006,13 @@ export function createTransactionDetailsTable(container: any, width: number) {
     .append('td')
     .style('padding', '10px')
     .style('font-size', '12px')
-    .text((d) => d.account);
+    .text((d) => accountLabel(d.account));
 
   rows
     .append('td')
     .style('padding', '10px')
     .style('font-size', '12px')
-    .text((d: any) => (d.isOutlier ? `⚠️ ${d.category}` : d.category));
+    .text((d: any) => (d.isOutlier ? `⚠️ ${accountLabel(d.category)}` : accountLabel(d.category)));
 
   rows
     .append('td')

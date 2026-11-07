@@ -2,7 +2,8 @@ import { leftMarginForLabels } from './axis-margin';
 import { StatsComponent } from '../stats.component';
 import * as d3 from 'd3';
 import { ChartFilterService, ChartFilterState } from '../../shared/services/chart-filter.service';
-import { gameMarkerFor } from './game-markers';
+import { GAME_MARKER_STYLE, gameMarkerFor, type GameMarkerKind } from './game-markers';
+import { gameCardKindOf, isGameAccount } from './game-card-kinds';
 import { AppStateService } from '../../shared/services/app-state.service';
 import { IncomeStatementService } from '../../shared/services/income-statement.service';
 import { IncomeComponent } from '../../main/cashflow/income/income.component';
@@ -14,6 +15,7 @@ import { FireComponent } from '../../main/fire/fire.component';
 import { viewportHeight } from '../viewport';
 import { HomeComponent } from '../../main/home/home.component';
 import { SettingsComponent } from 'src/app/panels/settings/settings.component';
+import { accountLabel } from '../../shared/account-label';
 
 export function createZoomableChart() {
   const svgElement = d3.select('#chart-container').select('svg');
@@ -917,6 +919,8 @@ function drawEventMarker(
     iconHref?: string;
     emoji: string;
     clipId?: string;
+    /** What the marker is, shown when the pointer rests on it. */
+    label?: string;
     onClick: () => void;
   },
 ): void {
@@ -926,6 +930,8 @@ function drawEventMarker(
     .attr('transform', `translate(${options.x}, ${options.y})`)
     .style('cursor', 'pointer')
     .on('click', options.onClick);
+
+  if (options.label) group.append('title').text(options.label);
 
   group
     .append('circle')
@@ -1033,14 +1039,15 @@ export function createChart(
   const dailyFireTransactions = new Map<string, any[]>();
   const dailyAddMojoTransactions = new Map<string, any[]>();
   const dailyGrowTransactions = new Map<string, any[]>();
-  // Cashflow game: the Bank loan moves, drawn as a bank symbol - one marker for taking a loan, one for paying it back.
-  const dailyLoanTakenTransactions = new Map<string, any[]>();
-  const dailyLoanRepaidTransactions = new Map<string, any[]>();
-  // Cashflow game: every Schnickschnack (Doodad) payment carries the #doodad tag in its comment.
-  const dailyDoodadTransactions = new Map<string, any[]>();
+  // Cashflow game: what happened on a day, by kind - the Bank loan moves, a Doodad paid, and the cards of the Dreamer (an
+  // Opportunity, a Harvest, a Life event, an Emergency, a Career step). The kinds of one day sit side by side.
+  const dailyGameEvents = new Map<string, Map<GameMarkerKind, any[]>>();
+  // the income of a card that keeps paying (an Opportunity) is marked on its first day only, not at every Payday
+  const incomeSeen = new Set<string>();
 
   // The game's own markers (bank loan, Doodad) exist only while a game is running.
-  const gameRunning = Boolean(AppStateService.instance.cashflowGame?.professionId);
+  const gameRunning =
+    Boolean(AppStateService.instance.cashflowGame?.professionId) || isGameAccount();
 
   for (const t of transactions) {
     const dateStr = t.date.toISOString().split('T')[0];
@@ -1089,20 +1096,18 @@ export function createChart(
     const gameMarker = gameMarkerFor(
       { amount: t.amount, category: t.original.category, comment: t.original.comment },
       gameRunning,
+      gameCardKindOf,
     );
-    if (isChecked && (gameMarker === 'loanTaken' || gameMarker === 'loanRepaid')) {
-      const loanMoves =
-        gameMarker === 'loanTaken' ? dailyLoanTakenTransactions : dailyLoanRepaidTransactions;
-      if (!loanMoves.has(dateStr)) {
-        loanMoves.set(dateStr, []);
+    if (isChecked && gameMarker) {
+      const key = `${gameMarker}|${(t.original.category || '').toLowerCase()}`;
+      const repeats = t.amount > 0 && gameMarker === 'opportunity' && incomeSeen.has(key);
+      if (t.amount > 0 && gameMarker === 'opportunity') incomeSeen.add(key);
+      if (!repeats) {
+        if (!dailyGameEvents.has(dateStr)) dailyGameEvents.set(dateStr, new Map());
+        const day = dailyGameEvents.get(dateStr)!;
+        if (!day.has(gameMarker)) day.set(gameMarker, []);
+        day.get(gameMarker)!.push(t);
       }
-      loanMoves.get(dateStr)!.push(t);
-    }
-    if (isChecked && gameMarker === 'doodad') {
-      if (!dailyDoodadTransactions.has(dateStr)) {
-        dailyDoodadTransactions.set(dateStr, []);
-      }
-      dailyDoodadTransactions.get(dateStr)!.push(t);
     }
     if (
       isChecked &&
@@ -1440,54 +1445,40 @@ export function createChart(
     }
   }
 
-  // === BANK LOAN INDICATORS ===
-  // Orange with a "+" when a loan is taken, green with a "-" when it is paid back.
+  // === GAME INDICATORS (Bank loan, Doodad, the cards of the Dreamer) ===
+  // One circle per kind and day, in the colour and with the symbol of the kind (GAME_MARKER_STYLE); "+" when the day's money came
+  // in, "-" when it went out. The kinds of one day sit beside the other day markers (Grow, Dream, ...), left and right in turn.
   if (isChecked) {
-    const drawLoanIndicators = (moves: Map<string, any[]>, kind: 'taken' | 'repaid'): void => {
-      for (const [dateStr, loanTransactions] of moves.entries()) {
-        const accounts = new Set<string>(
-          loanTransactions.map((t: any) => (t.account || '').toLocaleLowerCase()),
-        );
-        const dataPoint = dataset.find((d) => d.date.toISOString().split('T')[0] === dateStr);
-        if (!dataPoint || (filter !== 'income' && !accounts.has(filter.toLocaleLowerCase()))) {
-          continue;
-        }
-        drawEventMarker(svg, {
-          className: `loan-indicator loan-${kind}`,
-          // Sits beside the other day markers (Grow, Smile, ...) instead of on top of them.
-          x: x(new Date(dateStr)) + 28,
-          y: y(dataPoint.value),
-          color: kind === 'taken' ? '#e67e22' : '#2e8b57',
-          sign: kind === 'taken' ? '+' : '-',
-          emoji: '\ud83c\udfe6',
-          onClick: () => showTransactionDetails(loanTransactions, dateStr, filter),
-        });
-      }
-    };
-    drawLoanIndicators(dailyLoanTakenTransactions, 'taken');
-    drawLoanIndicators(dailyLoanRepaidTransactions, 'repaid');
-  }
-
-  // === DOODAD (SCHNICKSCHNACK) INDICATORS ===
-  // A purple marker with a "-" on each day a Doodad card was paid, left of the day's other markers.
-  if (isChecked) {
-    for (const [dateStr, doodadTransactions] of dailyDoodadTransactions.entries()) {
-      const accounts = new Set<string>(
-        doodadTransactions.map((t: any) => (t.account || '').toLocaleLowerCase()),
-      );
+    const slots = [28, -28, 56, -56, 84, -84, 112, -112];
+    for (const [dateStr, kinds] of dailyGameEvents.entries()) {
       const dataPoint = dataset.find((d) => d.date.toISOString().split('T')[0] === dateStr);
-      if (!dataPoint || (filter !== 'income' && !accounts.has(filter.toLocaleLowerCase()))) {
-        continue;
+      if (!dataPoint) continue;
+      let slot = 0;
+      for (const [kind, gameTransactions] of kinds.entries()) {
+        const accounts = new Set<string>(
+          gameTransactions.map((t: any) => (t.account || '').toLocaleLowerCase()),
+        );
+        if (filter !== 'income' && !accounts.has(filter.toLocaleLowerCase())) continue;
+        const style = GAME_MARKER_STYLE[kind];
+        const net = gameTransactions.reduce((sum: number, t: any) => sum + t.amount, 0);
+        const className =
+          kind === 'loanTaken' || kind === 'loanRepaid'
+            ? `loan-indicator loan-${kind === 'loanTaken' ? 'taken' : 'repaid'}`
+            : kind === 'doodad'
+              ? 'doodad-indicator'
+              : `game-indicator game-${kind}`;
+        drawEventMarker(svg, {
+          className,
+          x: x(new Date(dateStr)) + slots[slot % slots.length],
+          y: y(dataPoint.value),
+          color: style.color,
+          sign: net >= 0 ? '+' : '-',
+          emoji: style.emoji,
+          label: `${style.label}, ${dateStr}`,
+          onClick: () => showTransactionDetails(gameTransactions, dateStr, filter),
+        });
+        slot += 1;
       }
-      drawEventMarker(svg, {
-        className: 'doodad-indicator',
-        x: x(new Date(dateStr)) - 28,
-        y: y(dataPoint.value),
-        color: '#8e44ad',
-        sign: '-',
-        emoji: '\ud83d\udecd\ufe0f',
-        onClick: () => showTransactionDetails(doodadTransactions, dateStr, filter),
-      });
     }
   }
 
@@ -1627,7 +1618,7 @@ export function showTransactionDetails(anyTransactions: any[], dateStr: string, 
         listItem
           .append('div')
           .style('color', 'var(--color-text-secondary)')
-          .text(`Account: ${transaction.original.account}`);
+          .text(`Account: ${accountLabel(transaction.original.account)}`);
       }
 
       if (transaction.original.date) {
@@ -1650,7 +1641,7 @@ export function showTransactionDetails(anyTransactions: any[], dateStr: string, 
         listItem
           .append('div')
           .style('color', 'var(--color-text-secondary)')
-          .text(`Category: ${transaction.original.category}`);
+          .text(`Category: ${accountLabel(transaction.original.category)}`);
       }
 
       if (transaction.original.comment) {

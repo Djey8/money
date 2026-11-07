@@ -24,3 +24,40 @@ describe('gameMarkerFor', () => {
     ).toBeNull();
   });
 });
+
+describe('gameMarkerFor: the cards of the Dreamer', () => {
+  const kinds: Record<string, 'opportunity' | 'life' | 'emergency' | 'career' | 'harvest'> = {
+    'ai subscription audit': 'opportunity',
+    'gym membership': 'life',
+    'car breakdown': 'emergency',
+    'junior data analyst': 'career',
+    'wheat sale': 'harvest',
+  };
+  const cardKindOf = (title: string) => kinds[title.toLowerCase()] ?? null;
+  const book = (category: string, amount = -100) => ({
+    amount,
+    category,
+    comment: `${category}\n#dreamfund`,
+  });
+
+  it('marks a booking tagged #dreamfund whose category is the title of a card', () => {
+    expect(gameMarkerFor(book('@Gym Membership'), true, cardKindOf)).toBe('life');
+    expect(gameMarkerFor(book('@Car breakdown'), true, cardKindOf)).toBe('emergency');
+    expect(gameMarkerFor(book('@Junior Data Analyst', -300), true, cardKindOf)).toBe('career');
+    expect(gameMarkerFor(book('@AI Subscription Audit', 6), true, cardKindOf)).toBe('opportunity');
+    expect(gameMarkerFor(book('@Wheat sale', 900), true, cardKindOf)).toBe('harvest');
+  });
+
+  it('leaves ordinary bookings, untagged ones and a normal account alone', () => {
+    expect(gameMarkerFor(book('@Groceries'), true, cardKindOf)).toBeNull();
+    expect(
+      gameMarkerFor(
+        { amount: -5, category: '@Gym Membership', comment: 'my own note' },
+        true,
+        cardKindOf,
+      ),
+    ).toBeNull();
+    expect(gameMarkerFor(book('@Gym Membership'), false, cardKindOf)).toBeNull();
+    expect(gameMarkerFor(book('@Gym Membership'), true)).toBeNull();
+  });
+});
